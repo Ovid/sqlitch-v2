@@ -12,8 +12,8 @@
 - [X] T006 Define Docker Compose harness in `scripts/docker-compose/compose.yaml` plus helper scripts (`up`, `down`, `wait`) for MySQL 8 and PostgreSQL 15 containers.
 - [X] T007 Seed Sqitch parity fixtures under `tests/support/` (plan files, registry snapshots) for regression comparisons.
 - [X] T008 Create `.github/workflows/ci.yml` enforcing macOS/Linux/Windows matrices, docker setup, and coverage/quality gates.
-- [ ] T008a Build `scripts/check-skips.py` (invoked by the tox lint stage/CI) that fails when skip markers remain on tests whose implementation tasks are in progress, ensuring the skip-removal gate is automated.
-- [ ] T008b Update `.github/pull_request_template.md` to include a mandatory checkbox confirming `scripts/check-skips.py` was run and that relevant skips were removed before starting implementation.
+- [X] T008a Build `scripts/check-skips.py` (invoked by the tox lint stage/CI) that fails when skip markers remain on tests whose implementation tasks are in progress, ensuring the skip-removal gate is automated.
+- [X] T008b Update `.github/pull_request_template.md` to include a mandatory checkbox confirming `scripts/check-skips.py` was run and that relevant skips were removed before starting implementation.
 
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
 *All tests in this phase ship with skip markers and have those skips removed immediately before the corresponding implementation tasks start (FR-012).* 
