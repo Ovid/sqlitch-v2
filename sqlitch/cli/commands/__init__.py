@@ -131,6 +131,7 @@ COMMAND_MODULES: tuple[str, ...] = (
     "checkout",
     "config",
     "deploy",
+    "engine",
     "init",
     "plan",
     "revert",
