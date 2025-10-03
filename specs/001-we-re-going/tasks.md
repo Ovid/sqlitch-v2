@@ -4,43 +4,44 @@
 **Prerequisites**: plan.md (required), research.md, data-model.md, contracts/, quickstart.md
 
 ## Phase 3.1: Setup
-- [ ] T001 Create SQLitch project skeleton (`sqlitch/` root, `bin/`, `lib/`, `etc/`, `t/`, `xt/`, `scripts/`) to mirror Sqitch layout.
+- [ ] T001 Create SQLitch project skeleton (`sqlitch/` root, `bin/`, `lib/`, `etc/`, `tests/`, `xt/`, `scripts/`) with `tests/` as a top-level sibling to `sqlitch/`, mirroring Sqitch’s layout without the legacy `t/` root.
 - [ ] T002 Author `sqlitch/pyproject.toml` with runtime dependencies (Click, Rich, SQLAlchemy Core, sqlite3, `psycopg[binary]`, `mysqlclient`, python-dateutil, tomli, pydantic, docker SDK) and dev tool configurations (black, isort, flake8, pylint, mypy, bandit, pytest, pytest-cov, hypothesis, tox).
 - [ ] T003 Configure linting and type checking (`.flake8`, `.pylintrc`, `mypy.ini`, black/isort sections in `pyproject.toml`) ensuring zero-warning gates per FR-004.
 - [ ] T004 Create `pytest.ini` and `tests/__init__.py` enforcing ≥90% coverage, deterministic seed configuration, and Rich output capture.
 - [ ] T005 Add `tox.ini` matrix (py311 + OS overrides) running lint, type, security, and coverage suites with failure on warnings.
 - [ ] T006 Define Docker Compose harness in `sqlitch/scripts/docker-compose/compose.yaml` plus helper scripts (`up`, `down`, `wait`) for MySQL 8 and PostgreSQL 15 containers.
-- [ ] T007 Seed Sqitch parity fixtures under `sqlitch/tests/support/` (plan files, registry snapshots) for regression comparisons.
+- [ ] T007 Seed Sqitch parity fixtures under `tests/support/` (plan files, registry snapshots) for regression comparisons.
 - [ ] T008 Create `.github/workflows/ci.yml` enforcing macOS/Linux/Windows matrices, docker setup, and coverage/quality gates.
 
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
-- [ ] T009 [P] Add failing contract test for `sqlitch add` parity in `sqlitch/tests/cli/contracts/test_add_contract.py`.
-- [ ] T010 [P] Add failing contract test for `sqlitch bundle` parity in `sqlitch/tests/cli/contracts/test_bundle_contract.py`.
-- [ ] T011 [P] Add failing contract test for `sqlitch checkout` parity in `sqlitch/tests/cli/contracts/test_checkout_contract.py`.
-- [ ] T012 [P] Add failing contract test for `sqlitch config` parity in `sqlitch/tests/cli/contracts/test_config_contract.py`.
-- [ ] T013 [P] Add failing contract test for `sqlitch deploy` parity in `sqlitch/tests/cli/contracts/test_deploy_contract.py`.
-- [ ] T014 [P] Add failing contract test for `sqlitch engine` parity in `sqlitch/tests/cli/contracts/test_engine_contract.py`.
-- [ ] T015 [P] Add failing contract test for `sqlitch help` parity in `sqlitch/tests/cli/contracts/test_help_contract.py`.
-- [ ] T016 [P] Add failing contract test for `sqlitch init` parity in `sqlitch/tests/cli/contracts/test_init_contract.py`.
-- [ ] T017 [P] Add failing contract test for `sqlitch log` parity in `sqlitch/tests/cli/contracts/test_log_contract.py`.
-- [ ] T018 [P] Add failing contract test for `sqlitch plan` parity in `sqlitch/tests/cli/contracts/test_plan_contract.py`.
-- [ ] T019 [P] Add failing contract test for `sqlitch rebase` parity in `sqlitch/tests/cli/contracts/test_rebase_contract.py`.
-- [ ] T020 [P] Add failing contract test for `sqlitch revert` parity in `sqlitch/tests/cli/contracts/test_revert_contract.py`.
-- [ ] T021 [P] Add failing contract test for `sqlitch rework` parity in `sqlitch/tests/cli/contracts/test_rework_contract.py`.
-- [ ] T022 [P] Add failing contract test for `sqlitch show` parity in `sqlitch/tests/cli/contracts/test_show_contract.py`.
-- [ ] T023 [P] Add failing contract test for `sqlitch status` parity in `sqlitch/tests/cli/contracts/test_status_contract.py`.
-- [ ] T024 [P] Add failing contract test for `sqlitch tag` parity in `sqlitch/tests/cli/contracts/test_tag_contract.py`.
-- [ ] T025 [P] Add failing contract test for `sqlitch target` parity in `sqlitch/tests/cli/contracts/test_target_contract.py`.
-- [ ] T026 [P] Add failing contract test for `sqlitch upgrade` parity in `sqlitch/tests/cli/contracts/test_upgrade_contract.py`.
-- [ ] T027 [P] Add failing contract test for `sqlitch verify` parity in `sqlitch/tests/cli/contracts/test_verify_contract.py`.
-- [ ] T028 [P] Integration test parity against existing Sqitch projects in `sqlitch/tests/regression/test_sqitch_parity.py`.
-- [ ] T029 [P] Integration test contributor onboarding workflow (quickstart) in `sqlitch/tests/regression/test_onboarding_workflow.py`.
-- [ ] T030 [P] Integration test drop-in support for `sqitch.*` artifacts without conflicts in `sqlitch/tests/regression/test_sqitch_dropin.py`.
-- [ ] T031 [P] Regression test immediate failure for unsupported engines in `sqlitch/tests/regression/test_unsupported_engine.py`.
-- [ ] T032 [P] Regression test timestamp/timezone parity across engines in `sqlitch/tests/regression/test_timestamp_parity.py`.
-- [ ] T033 [P] Regression test Docker-unavailable skip behavior in `sqlitch/tests/regression/test_docker_skip.py`.
-- [ ] T034 [P] Regression test configuration-root override isolation in `sqlitch/tests/regression/test_config_root_override.py`.
-- [ ] T035 [P] Regression test artifact cleanup guarantees in `sqlitch/tests/regression/test_artifact_cleanup.py`.
+- [ ] T009 [P] Add failing contract test for `sqlitch add` parity in `tests/cli/contracts/test_add_contract.py`.
+- [ ] T010 [P] Add failing contract test for `sqlitch bundle` parity in `tests/cli/contracts/test_bundle_contract.py`.
+- [ ] T011 [P] Add failing contract test for `sqlitch checkout` parity in `tests/cli/contracts/test_checkout_contract.py`.
+- [ ] T012 [P] Add failing contract test for `sqlitch config` parity in `tests/cli/contracts/test_config_contract.py`.
+- [ ] T013 [P] Add failing contract test for `sqlitch deploy` parity in `tests/cli/contracts/test_deploy_contract.py`.
+- [ ] T014 [P] Add failing contract test for `sqlitch engine` parity in `tests/cli/contracts/test_engine_contract.py`.
+- [ ] T015 [P] Add failing contract test for `sqlitch help` parity in `tests/cli/contracts/test_help_contract.py`.
+- [ ] T016 [P] Add failing contract test for `sqlitch init` parity in `tests/cli/contracts/test_init_contract.py`.
+- [ ] T017 [P] Add failing contract test for `sqlitch log` parity in `tests/cli/contracts/test_log_contract.py`.
+- [ ] T018 [P] Add failing contract test for `sqlitch plan` parity in `tests/cli/contracts/test_plan_contract.py`.
+- [ ] T019 [P] Add failing contract test for `sqlitch rebase` parity in `tests/cli/contracts/test_rebase_contract.py`.
+- [ ] T020 [P] Add failing contract test for `sqlitch revert` parity in `tests/cli/contracts/test_revert_contract.py`.
+- [ ] T021 [P] Add failing contract test for `sqlitch rework` parity in `tests/cli/contracts/test_rework_contract.py`.
+- [ ] T022 [P] Add failing contract test for `sqlitch show` parity in `tests/cli/contracts/test_show_contract.py`.
+- [ ] T023 [P] Add failing contract test for `sqlitch status` parity in `tests/cli/contracts/test_status_contract.py`.
+- [ ] T024 [P] Add failing contract test for `sqlitch tag` parity in `tests/cli/contracts/test_tag_contract.py`.
+- [ ] T025 [P] Add failing contract test for `sqlitch target` parity in `tests/cli/contracts/test_target_contract.py`.
+- [ ] T026 [P] Add failing contract test for `sqlitch upgrade` parity in `tests/cli/contracts/test_upgrade_contract.py`.
+- [ ] T027 [P] Add failing contract test for `sqlitch verify` parity in `tests/cli/contracts/test_verify_contract.py`.
+- [ ] T028 [P] Integration test parity against existing Sqitch projects in `tests/regression/test_sqitch_parity.py`.
+- [ ] T029 [P] Integration test contributor onboarding workflow (quickstart) in `tests/regression/test_onboarding_workflow.py`.
+- [ ] T030 [P] Integration test drop-in support for `sqitch.*` artifacts without conflicts in `tests/regression/test_sqitch_dropin.py`.
+- [ ] T030a [P] Regression test enforcing the blocking error when both `sqitch.*` and `sqlitch.*` artifacts are present in `tests/regression/test_sqitch_conflicts.py`.
+- [ ] T031 [P] Regression test immediate failure for unsupported engines in `tests/regression/test_unsupported_engine.py`.
+- [ ] T032 [P] Regression test timestamp/timezone parity across engines in `tests/regression/test_timestamp_parity.py`.
+- [ ] T033 [P] Regression test Docker-unavailable skip behavior in `tests/regression/test_docker_skip.py`.
+- [ ] T034 [P] Regression test configuration-root override isolation in `tests/regression/test_config_root_override.py`.
+- [ ] T035 [P] Regression test artifact cleanup guarantees in `tests/regression/test_artifact_cleanup.py`.
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 - [ ] T036 Implement plan domain models (Change, Tag, Plan entries) in `sqlitch/lib/sqlitch/plan/model.py`.
@@ -78,8 +79,8 @@
 - [ ] T068 [P] Implement `sqlitch target` command handler in `sqlitch/lib/sqlitch/cli/commands/target.py`.
 - [ ] T069 [P] Implement `sqlitch upgrade` command handler in `sqlitch/lib/sqlitch/cli/commands/upgrade.py`.
 - [ ] T070 [P] Implement `sqlitch verify` command handler in `sqlitch/lib/sqlitch/cli/commands/verify.py`.
-- [ ] T071 Implement parity smoke-test CLI (`sqlitch/bin/sqlitch-parity`) generating diff reports vs Sqitch outputs.
-- [ ] T072 Implement pytest fixtures (`sqlitch/tests/conftest.py`) for Docker lifecycle, config-root isolation, and artifact cleanup.
+- [ ] T071 Implement parity smoke-test CLI (`sqlitch/bin/sqlitch-parity`) that diff-checks SQLitch output against repository-managed Sqitch golden fixtures (generated ahead of time) without invoking Sqitch during test execution.
+- [ ] T072 Implement pytest fixtures (`tests/conftest.py`) for Docker lifecycle, config-root isolation, and artifact cleanup.
 
 ## Phase 3.4: Integration
 - [ ] T073 Integrate engine adapters with registry layer and plan execution pipeline in `sqlitch/lib/sqlitch/engine/__init__.py`.
@@ -88,8 +89,8 @@
 - [ ] T076 Finalize quickstart and docs updates (`sqlitch/quickstart.md`, `sqlitch/docs/ARCHITECTURE.md`, `sqlitch/docs/PARITY.md`) reflecting implementation details and smoke tests.
 
 ## Phase 3.5: Polish
-- [ ] T077 [P] Add targeted unit tests for utilities (`sqlitch/tests/unit/test_utils_fs.py`, `test_utils_time.py`).
-- [ ] T078 [P] Add performance regression test ensuring CLI non-deploy commands complete <200ms in `sqlitch/tests/perf/test_cli_latency.py`.
+- [ ] T077 [P] Add targeted unit tests for utilities (`tests/unit/test_utils_fs.py`, `tests/unit/test_utils_time.py`).
+- [ ] T078 [P] Add performance regression test ensuring CLI non-deploy commands complete <200ms in `tests/perf/test_cli_latency.py`.
 - [ ] T079 [P] Update `sqlitch/README.md` and `Changes` with release notes and coverage badge.
 - [ ] T080 [P] Run final tox + coverage, ensure ≥90%, zero warnings, and capture parity report for release checklist.
 

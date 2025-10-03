@@ -31,7 +31,7 @@
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-Rebuild Sqitch as a Python-first CLI named SQLitch that delivers drop-in behavioral parity for SQLite, MySQL, and PostgreSQL projects. The new tool will reuse Sqitch’s directory and testing layout, while implementing the command surface with Click, enforcing 90%+ coverage, and running Docker-backed integration tests whenever containers are available.
+Rebuild Sqitch as a Python-first CLI named SQLitch that delivers drop-in behavioral parity for SQLite, MySQL, and PostgreSQL projects. The new tool will reuse Sqitch’s directory and testing layout, while implementing the command surface with Click, enforcing 90%+ coverage, and running Docker-backed integration tests whenever containers are available. Parity verification compares SQLitch outputs against repository-managed golden fixtures that were generated from Sqitch ahead of time; the automated test suite itself never invokes Sqitch.
 
 ## Technical Context
 **Language/Version**: Python 3.11 (CPython)  
@@ -117,7 +117,7 @@ sqlitch/
       └── docker-compose/    # Engine harness definitions
 ```
 
-**Structure Decision**: Mirror Sqitch’s `bin/`, `lib/`, `etc/`, and `xt/` directories under a new `sqlitch/` root while implementing Python modules inside `lib/sqlitch`. Move automated tests into a Pythonic `tests/` hierarchy that mirrors the former Sqitch `t/` layout (cli/, engine/, plan/, regression/, support/, unit/). Nightly/extended cases remain in `xt/`. Supporting scripts and packaging metadata live at the root to integrate with Python tooling while honoring the original layout.
+**Structure Decision**: Mirror Sqitch’s `bin/`, `lib/`, `etc/`, and `xt/` directories under a new `sqlitch/` root while implementing Python modules inside `lib/sqlitch`. Create a sibling top-level `tests/` directory (next to `sqlitch/`) that mirrors the former Sqitch `t/` layout via subpackages (cli/, engine/, plan/, regression/, support/, unit/, fixtures/). Nightly/extended cases remain in `xt/`. Supporting scripts and packaging metadata live at the root to integrate with Python tooling while honoring the original layout.
 
 ## Phase 0: Outline & Research
 1. Investigate Sqitch Perl internals for command workflows, plan file semantics, registry schema, and template expansion rules that must be mirrored in Python.
@@ -132,7 +132,7 @@ sqlitch/
 
 1. Derive core domain entities (Change, Plan, Tag, RegistryRecord, EngineTarget) and interactions → capture schemas, invariants, and lifecycle diagrams in `data-model.md`.
 2. For each CLI command (`add`, `bundle`, `checkout`, `config`, `deploy`, `engine`, `help`, `init`, `log`, `plan`, `rebase`, `revert`, `rework`, `show`, `status`, `tag`, `target`, `upgrade`, `verify`), author command contracts in `/contracts/cli-<command>.md` describing inputs, flags, environment variables, expected stdout/stderr/exit codes, and timestamp formatting rules.
-3. Outline pytest skeleton suites (under `t/`) mirroring Sqitch test files, including Docker-based fixtures; ensure contract tests fail until implementation.
+3. Outline pytest skeleton suites under the repository-level `tests/` directory (mirroring the legacy `t/` subdirectories) with Docker-based fixtures; ensure contract tests fail until implementation.
 4. Produce `quickstart.md` guiding contributors through `python -m venv`, dependency installation, Docker prerequisites, and parity verification steps with references to the `tests/` hierarchy.
 5. Update Copilot agent context by running `.specify/scripts/bash/update-agent-context.sh copilot`, appending new tech choices (Click, docker SDK, connectors) while keeping the file concise.
 
@@ -192,4 +192,4 @@ sqlitch/
 - [x] Complexity deviations documented (none)
 
 ---
-*Based on Constitution v2.1.1 - See `/memory/constitution.md`*
+*Based on Constitution v1.2.0 - See `.specify/memory/constitution.md`*
