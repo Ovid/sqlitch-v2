@@ -82,6 +82,11 @@
 - Advisory Clarity: When recommending an approach, explicitly call out any
 	potential risks, uncertainties, or reasons it might be a bad idea, and explain
 	the rationale so reviewers can evaluate the trade-offs.
+- Skip Lifecycle Discipline: Tests for unimplemented features MAY be committed
+	with skip markers, but removing those skips is a mandatory pre-implementation
+	gate. Before any implementation task begins, the responsible engineer MUST
+	delete the related skip marker(s), confirm the test fails, and treat the
+	unskipped failure as part of the Red→Green→Refactor loop.
 
 ## Development Workflow & Quality Gates
 

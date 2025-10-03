@@ -22,6 +22,7 @@
 - Deliver identical command-line ergonomics, messaging, and plan behaviors so existing automation continues to work.
 - Emphasize maintainability: clear documentation, mirrored directory/test layout, and enforceable quality gates are non-negotiable.
 - Highlight any intentional deviations from Sqitch behavior so stakeholders can approve them explicitly.
+- Commit contract and regression tests in a skipped state until immediately before their corresponding implementation begins; immediately prior to starting the feature, remove the skip so the test fails and use that failure as the kickoff checklist item before writing code.
 
 ---
 
@@ -65,6 +66,7 @@ Database release engineers need to execute database change management workflows 
 - **FR-009**: SQLitch MUST allow the Sqitch-compatible global configuration root (normally `~/.sqitch/`) to be overridden so tests can isolate configuration in temporary directories without touching user environments.
 - **FR-010**: All automated tests MUST clean up any files, databases, containers, or other artifacts they create, ensuring repeated runs leave no residual state.
 - **FR-011**: SQLitch MUST support existing `sqitch.*` project artifacts as drop-in inputs, while emitting a blocking error if both `sqitch.*` and `sqlitch.*` files are detected in the same scope to prevent ambiguous configuration.
+- **FR-012**: Tests covering unimplemented features MUST be committed with skip markers (e.g., `pytest.mark.skip`) and MUST have those skips removed immediately before the corresponding implementation work starts. Removing the skip and confirming the test failure is an absolute pre-implementation checklist item that re-establishes the Red→Green workflow while keeping CI stable for unstarted features.
 
 ### Key Entities *(include if feature involves data)*
 - **Deployment Plan**: Represents the ordered list of database changes, tags, and dependencies; must remain fully compatible with existing Sqitch plan files.
@@ -83,7 +85,7 @@ Database release engineers need to execute database change management workflows 
 - [x] All mandatory sections completed
 
 ### Requirement Completeness
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous  
 - [x] Success criteria are measurable
 - [x] Scope is clearly bounded

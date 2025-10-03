@@ -52,7 +52,7 @@ Rebuild Sqitch as a Python-first CLI named SQLitch that delivers drop-in behavio
 - **Library-First Modules**: Core logic resides in importable `lib/sqlitch` modules with thin CLI wrapper; no business logic in entry script → **PASS**
 - **Sqitch Behavioral Parity**: Research and contracts replicate Sqitch command semantics, timestamp formatting, and plan mutation rules → **PASS (tracked via parity reports)**
 - **Simplicity & Non-Duplication**: Reuse shared abstractions for engines; forbid unnecessary features beyond Sqitch scope → **PASS**
-- **AI Enablement**: Internal tooling (agents, CI bots) configured to default to Claude Sonnet 4; documented in automation steps → **PASS**
+- **AI Enablement**: Internal tooling (agents, CI bots) configured per current automation defaults; no constitution-mandated assistant → **PASS**
 
 ## Project Structure
 
@@ -132,7 +132,7 @@ sqlitch/
 
 1. Derive core domain entities (Change, Plan, Tag, RegistryRecord, EngineTarget) and interactions → capture schemas, invariants, and lifecycle diagrams in `data-model.md`.
 2. For each CLI command (`add`, `bundle`, `checkout`, `config`, `deploy`, `engine`, `help`, `init`, `log`, `plan`, `rebase`, `revert`, `rework`, `show`, `status`, `tag`, `target`, `upgrade`, `verify`), author command contracts in `/contracts/cli-<command>.md` describing inputs, flags, environment variables, expected stdout/stderr/exit codes, and timestamp formatting rules.
-3. Outline pytest skeleton suites under the repository-level `tests/` directory (mirroring the legacy `t/` subdirectories) with Docker-based fixtures; ensure contract tests fail until implementation.
+3. Outline pytest skeleton suites under the repository-level `tests/` directory (mirroring the legacy `t/` subdirectories) with Docker-based fixtures; mark each new test as skipped until the corresponding implementation task is ready to start, then—immediately before beginning that implementation—remove the skip so the test fails per FR-012.
 4. Produce `quickstart.md` guiding contributors through `python -m venv`, dependency installation, Docker prerequisites, and parity verification steps with references to the `tests/` hierarchy.
 5. Update Copilot agent context by running `.specify/scripts/bash/update-agent-context.sh copilot`, appending new tech choices (Click, docker SDK, connectors) while keeping the file concise.
 
@@ -164,6 +164,8 @@ sqlitch/
 **Phase 3**: Task execution (/tasks command creates tasks.md)  
 **Phase 4**: Implementation (execute tasks.md following constitutional principles)  
 **Phase 5**: Validation (run tests, execute quickstart.md, performance validation)
+
+**Mandatory Test Gate**: Before beginning any implementation task generated in Phase 3.2 (e.g., T036+), engineers MUST remove the corresponding skip markers, confirm the tests fail, and treat that failure as the starting point for the Red→Green→Refactor loop.
 
 ### Engine Implementation Order & Manual Gates
 1. Implement the SQLite engine adapter first. After the adapter and its automated tests land (T046), halt feature work to perform manual parity verification, capture findings, and raise a dedicated PR for review and merge before touching other engines.
@@ -198,4 +200,4 @@ sqlitch/
 - [x] Complexity deviations documented (none)
 
 ---
-*Based on Constitution v1.2.0 - See `.specify/memory/constitution.md`*
+*Based on Constitution v1.3.0 - See `.specify/memory/constitution.md`*
