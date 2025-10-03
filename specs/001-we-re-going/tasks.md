@@ -56,7 +56,7 @@
 - [X] T038 Implement plan formatter and checksum utilities in `sqlitch/plan/formatter.py`.
 - [X] T039 Implement configuration loader with layered scopes in `sqlitch/config/loader.py`.
 - [X] T040 Implement configuration resolver & overrideable root handling in `sqlitch/config/resolver.py`.
-- [ ] T041 Implement registry state read/write operations in `sqlitch/registry/state.py`.
+- [X] T041 Implement registry state read/write operations in `sqlitch/registry/state.py`.
 - [ ] T042 Implement registry migrations aligned with Sqitch SQL in `sqlitch/registry/migrations.py`.
 - [ ] T043 Implement filesystem utilities for drop-in detection and cleanup in `sqlitch/utils/fs.py`.
 - [ ] T044 Implement timestamp/zone handling helpers in `sqlitch/utils/time.py`.
