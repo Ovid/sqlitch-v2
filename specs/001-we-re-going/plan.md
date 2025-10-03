@@ -166,6 +166,8 @@ sqlitch/
 **Phase 5**: Validation (run tests, execute quickstart.md, performance validation)
 
 **Mandatory Test Gate**: Before beginning any implementation task generated in Phase 3.2 (e.g., T036+), engineers MUST remove the corresponding skip markers, confirm the tests fail, and treat that failure as the starting point for the Red→Green→Refactor loop.
+- **Automation**: Task T008a creates `scripts/check-skips.py` and wires it into the tox lint stage/CI so pipelines fail if targeted skips remain when implementation begins.
+- **Review Checklist**: Task T008b updates the pull request template with a mandatory checkbox confirming the script has passed and skips were removed prior to starting implementation work.
 
 ### Engine Implementation Order & Manual Gates
 1. Implement the SQLite engine adapter first. After the adapter and its automated tests land (T046), halt feature work to perform manual parity verification, capture findings, and raise a dedicated PR for review and merge before touching other engines.

@@ -12,6 +12,8 @@
 - [ ] T006 Define Docker Compose harness in `sqlitch/scripts/docker-compose/compose.yaml` plus helper scripts (`up`, `down`, `wait`) for MySQL 8 and PostgreSQL 15 containers.
 - [ ] T007 Seed Sqitch parity fixtures under `tests/support/` (plan files, registry snapshots) for regression comparisons.
 - [ ] T008 Create `.github/workflows/ci.yml` enforcing macOS/Linux/Windows matrices, docker setup, and coverage/quality gates.
+- [ ] T008a Build `scripts/check-skips.py` (invoked by the tox lint stage/CI) that fails when skip markers remain on tests whose implementation tasks are in progress, ensuring the skip-removal gate is automated.
+- [ ] T008b Update `.github/pull_request_template.md` to include a mandatory checkbox confirming `scripts/check-skips.py` was run and that relevant skips were removed before starting implementation.
 
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
 *All tests in this phase ship with skip markers and have those skips removed immediately before the corresponding implementation tasks start (FR-012).* 
@@ -107,6 +109,7 @@
 - Engine adapters must execute in strict sequence: T046 → T081 → T047 → T082 → T048 → T083.
 - T081 must complete (merged) before starting T047; T082 must complete (merged) before starting T048; T083 must complete (merged) before any integration work (Phase 3.4).
 - T051 must complete before command handler tasks T052–T070.
+- T008a and T008b must finish before Phase 3.3 work begins to ensure the skip-removal gate is active in tooling and reviews.
 - Integration tasks T073–T074 depend on completion of all relevant command and engine tasks.
 - Polish tasks (T077–T080) run only after integration is solid.
 
