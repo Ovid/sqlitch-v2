@@ -23,6 +23,7 @@
 - Emphasize maintainability: clear documentation, mirrored directory/test layout, and enforceable quality gates are non-negotiable.
 - Highlight any intentional deviations from Sqitch behavior so stakeholders can approve them explicitly.
 - Commit contract and regression tests in a skipped state until immediately before their corresponding implementation begins; immediately prior to starting the feature, remove the skip so the test fails, run the `scripts/check-skips.py` gate, and tick the PR checklist item before writing code (enforced via tasks T008a/T008b).
+- Before committing, review the full diff (`git diff`) and working tree (`git status`), resolve any discovered issues, and only proceed once the post-review test run is clean.
 - Public modules, classes, and functions MUST ship with clear docstrings that describe behavior, inputs, outputs, and error modes; private helpers MAY rely on concise inline comments when necessary.
 
 ---
