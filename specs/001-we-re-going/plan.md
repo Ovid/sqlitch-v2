@@ -103,19 +103,21 @@ sqlitch/
 │   ├── templates/
 │   └── tools/
 ├── docs/
-├── t/
+├── tests/
 │   ├── cli/
 │   ├── engine/
 │   ├── plan/
 │   ├── regression/
-│   └── support/
+│   ├── support/
+│   ├── unit/
+│   └── fixtures/
 ├── xt/
 │   └── nightly/
 └── scripts/
       └── docker-compose/    # Engine harness definitions
 ```
 
-**Structure Decision**: Mirror Sqitch’s `bin/`, `lib/`, `etc/`, `t/`, and `xt/` directories under a new `sqlitch/` root while implementing Python modules inside `lib/sqlitch`. Tests remain in `t/` to preserve naming conventions; nightly/extended cases live in `xt/`. Supporting scripts and packaging metadata live at the root to integrate with Python tooling while honoring the original layout.
+**Structure Decision**: Mirror Sqitch’s `bin/`, `lib/`, `etc/`, and `xt/` directories under a new `sqlitch/` root while implementing Python modules inside `lib/sqlitch`. Move automated tests into a Pythonic `tests/` hierarchy that mirrors the former Sqitch `t/` layout (cli/, engine/, plan/, regression/, support/, unit/). Nightly/extended cases remain in `xt/`. Supporting scripts and packaging metadata live at the root to integrate with Python tooling while honoring the original layout.
 
 ## Phase 0: Outline & Research
 1. Investigate Sqitch Perl internals for command workflows, plan file semantics, registry schema, and template expansion rules that must be mirrored in Python.
@@ -131,7 +133,7 @@ sqlitch/
 1. Derive core domain entities (Change, Plan, Tag, RegistryRecord, EngineTarget) and interactions → capture schemas, invariants, and lifecycle diagrams in `data-model.md`.
 2. For each CLI command (`add`, `bundle`, `checkout`, `config`, `deploy`, `engine`, `help`, `init`, `log`, `plan`, `rebase`, `revert`, `rework`, `show`, `status`, `tag`, `target`, `upgrade`, `verify`), author command contracts in `/contracts/cli-<command>.md` describing inputs, flags, environment variables, expected stdout/stderr/exit codes, and timestamp formatting rules.
 3. Outline pytest skeleton suites (under `t/`) mirroring Sqitch test files, including Docker-based fixtures; ensure contract tests fail until implementation.
-4. Produce `quickstart.md` guiding contributors through `python -m venv`, dependency installation, Docker prerequisites, and parity verification steps.
+4. Produce `quickstart.md` guiding contributors through `python -m venv`, dependency installation, Docker prerequisites, and parity verification steps with references to the `tests/` hierarchy.
 5. Update Copilot agent context by running `.specify/scripts/bash/update-agent-context.sh copilot`, appending new tech choices (Click, docker SDK, connectors) while keeping the file concise.
 
 **Output**: `data-model.md`, `/contracts/*`, `quickstart.md`, docker-aware pytest scaffolds (documented), and refreshed Copilot agent file.
