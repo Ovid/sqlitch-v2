@@ -1,0 +1,9 @@
+[flake8]
+max-line-length = 100
+extend-ignore =
+exclude =
+  .git,
+  __pycache__,
+  build,
+  dist
+per-file-ignores =

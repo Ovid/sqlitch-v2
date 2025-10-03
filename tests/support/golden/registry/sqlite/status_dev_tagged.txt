@@ -1,0 +1,9 @@
+# On database db:sqlite:dev/flipr_dev.db
+# Project:  flipr
+# Change:   60ee3aba0445bf3287f9dc1dd97b1877523fa139
+# Name:     userflips
+# Tag:      @v1.0.0-dev1
+# Deployed: 2013-12-31 11:19:15 -0800
+# By:       Marge N. O’Vera <marge@example.com>
+# 
+Nothing to deploy (up-to-date)

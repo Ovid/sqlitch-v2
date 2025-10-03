@@ -25,10 +25,9 @@ pip install --upgrade pip
 
 ## 3. Install Dependencies
 ```bash
-pip install -r requirements-dev.txt
-pip install -e sqlitch
+pip install ".[dev]"
 ```
-Includes runtime (Click, SQLAlchemy, psycopg[binary], mysqlclient, python-dateutil, pydantic) and tooling (pytest, pytest-cov, hypothesis, tox, black, isort, flake8, pylint, mypy, bandit, docker, rich).
+Includes runtime (Click, SQLAlchemy, psycopg[binary], PyMySQL, python-dateutil, pydantic) and tooling (pytest, pytest-cov, hypothesis, tox, black, isort, flake8, pylint, mypy, bandit, docker, rich). All subsequent commands assume the virtual environment remains activated.
 
 ## 4. Configure Docker Test Harness
 ```bash
@@ -41,12 +40,17 @@ Provisioned services:
 - SQLite uses in-memory driver (no container)
 
 ## 5. Initialize Sample Project
-```bash
-cd examples/basic
-sqlitch/bin/sqlitch init myapp --engine pg
-```
-- Detects existing `sqitch.*` files if copying samples; tool aborts if conflicting `sqlitch.*` detected.
-- Generated plan/scripts mirror Sqitch layout.
+- **Status**: Pending implementation (tasks T051–T056). Commands are not yet wired, so running this today raises `Error: No such command 'init'.`
+- Once the CLI command surface lands, usage will look like:
+
+	```bash
+	cd examples/basic
+	sqlitch init myapp --engine pg
+	```
+
+	- `sqlitch` installs as a console script (plus a compatibility shim in `bin/sqlitch` for direct invocation).
+	- Detects existing `sqitch.*` files if copying samples; tool aborts if conflicting `sqlitch.*` detected.
+	- Generated plan/scripts mirror Sqitch layout.
 
 ## 6. Run Test Suite
 ```bash
@@ -58,7 +62,7 @@ pytest --maxfail=1 --disable-warnings --cov=sqlitch --cov-report=term-missing
 ## 7. Parity Smoke Test
 ```bash
 # In comparisons/basic fixture
-sqlitch/bin/sqlitch plan --json > sqlitch.json
+bin/sqlitch plan --json > sqlitch.json
 sqitch plan --json > sqitch.json
 diff -u sqitch.json sqlitch.json
 ```
@@ -72,7 +76,7 @@ scripts/docker-compose/down
 
 ## Troubleshooting
 - **Docker not available**: Tests print `WARNING: Skipping dockerized engine tests (Docker unavailable)`.
-- **mysqlclient build errors**: Install MySQL client libraries (`brew install mysql-client`, `apt-get install libmysqlclient-dev`).
+- **PyMySQL import errors**: Ensure the virtual environment is activated; PyMySQL is pure Python, so reinstall with `pip install --force-reinstall pymysql` if the package appears missing.
 - **psycopg binary dependency**: ensure `libpq` present (`brew install libpq`), add to `PATH` as needed.
 
 ## Next Steps

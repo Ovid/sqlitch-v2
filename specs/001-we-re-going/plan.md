@@ -35,13 +35,13 @@ Rebuild Sqitch as a Python-first CLI named SQLitch that delivers drop-in behavio
 
 ## Technical Context
 **Language/Version**: Python 3.11 (CPython)  
-**Primary Dependencies**: Click (CLI), Rich (structured console output), SQLAlchemy core for plan parsing, sqlite3 stdlib, `psycopg[binary]`, `mysqlclient`, `python-dateutil`, `tomli`, `pydantic` for config validation, packaging extras for Docker orchestration (`docker` SDK)  
+**Primary Dependencies**: Click (CLI), Rich (structured console output), SQLAlchemy core for plan parsing, sqlite3 stdlib, `psycopg[binary]`, `PyMySQL`, `python-dateutil`, `tomli`, `pydantic` for config validation, packaging extras for Docker orchestration (`docker` SDK)  
 **Storage**: SQLite (stdlib driver), MySQL (Docker: mysql:8), PostgreSQL (Docker: postgres:15); Sqitch registry stored via same engines  
 **Testing**: pytest + pytest-cov, hypothesis (property coverage for plan semantics), tox for matrix, Docker Compose harness for engines  
 **Target Platform**: Cross-platform CLI (macOS, Linux, Windows) running in terminals with optional container runtime  
 **Project Type**: Single CLI/service package with mirrored Sqitch layout  
 **Performance Goals**: CLI invocations complete <200ms for non-deploy commands; deployments stream progress; parity with Sqitch output  
-**Constraints**: 90%+ coverage, zero lint/type/security warnings (black, isort, flake8, pylint, mypy, bandit), deterministic outputs matching Sqitch, Docker tests skip-with-warning if unavailable  
+**Constraints**: 90%+ coverage, zero lint/type/security warnings (black, isort, flake8, pylint, mypy, bandit), deterministic outputs matching Sqitch, Docker tests skip-with-warning if unavailable, public APIs documented with rich docstrings (private helpers may use comments)  
 **Scale/Scope**: MVP limited to SQLite, MySQL, PostgreSQL; feature parity with Sqitch core command set; ready for multi-platform CI matrix
 
 ## Constitution Check
@@ -49,7 +49,7 @@ Rebuild Sqitch as a Python-first CLI named SQLitch that delivers drop-in behavio
 
 - **Test-First Development**: Plan mandates pytest-first workflow, contract specs, and dockerized integration suites before implementation → **PASS**
 - **CLI-First, Text I/O Contracts**: Click-based CLI mirrors Sqitch outputs, ensures JSON mode parity, and enforces deterministic stdout/stderr → **PASS**
-- **Library-First Modules**: Core logic resides in importable `lib/sqlitch` modules with thin CLI wrapper; no business logic in entry script → **PASS**
+- **Library-First Modules**: Core logic resides in the importable `sqlitch` package with a thin CLI wrapper; no business logic in entry script → **PASS**
 - **Sqitch Behavioral Parity**: Research and contracts replicate Sqitch command semantics, timestamp formatting, and plan mutation rules → **PASS (tracked via parity reports)**
 - **Simplicity & Non-Duplication**: Reuse shared abstractions for engines; forbid unnecessary features beyond Sqitch scope → **PASS**
 - **AI Enablement**: Internal tooling (agents, CI bots) configured per current automation defaults; no constitution-mandated assistant → **PASS**
@@ -69,40 +69,40 @@ specs/[###-feature]/
 
 ### Source Code (repository root)
 ```
-sqlitch/
 ├── pyproject.toml
 ├── README.md
 ├── Changes
 ├── bin/
 │   └── sqlitch            # Click entry script invoking library CLI shim
-├── lib/
-│   └── sqlitch/
-│       ├── __init__.py
-│       ├── cli/
-│       │   ├── __init__.py
-│       │   ├── main.py     # Click group + command wiring
-│       │   └── options.py
-│       ├── engine/
-│       │   ├── base.py
-│       │   ├── sqlite.py
-│       │   ├── mysql.py
-│       │   └── postgres.py
-│       ├── plan/
-│       │   ├── parser.py
-│       │   └── formatter.py
-│       ├── config/
-│       │   ├── loader.py
-│       │   └── resolver.py
-│       ├── registry/
-│       │   ├── state.py
-│       │   └── migrations.py
-│       └── utils/
-│           ├── fs.py
-│           └── time.py
+├── docs/
 ├── etc/
 │   ├── templates/
 │   └── tools/
-├── docs/
+├── scripts/
+│   └── docker-compose/    # Engine harness definitions
+├── sqlitch/
+│   ├── __init__.py
+│   ├── cli/
+│   │   ├── __init__.py
+│   │   ├── main.py        # Click group + command wiring
+│   │   └── options.py
+│   ├── engine/
+│   │   ├── base.py
+│   │   ├── sqlite.py
+│   │   ├── mysql.py
+│   │   └── postgres.py
+│   ├── plan/
+│   │   ├── parser.py
+│   │   └── formatter.py
+│   ├── config/
+│   │   ├── loader.py
+│   │   └── resolver.py
+│   ├── registry/
+│   │   ├── state.py
+│   │   └── migrations.py
+│   └── utils/
+│       ├── fs.py
+│       └── time.py
 ├── tests/
 │   ├── cli/
 │   ├── engine/
@@ -111,17 +111,15 @@ sqlitch/
 │   ├── support/
 │   ├── unit/
 │   └── fixtures/
-├── xt/
-│   └── nightly/
-└── scripts/
-      └── docker-compose/    # Engine harness definitions
+└── xt/
+   └── nightly/
 ```
 
-**Structure Decision**: Mirror Sqitch’s `bin/`, `lib/`, `etc/`, and `xt/` directories under a new `sqlitch/` root while implementing Python modules inside `lib/sqlitch`. Create a sibling top-level `tests/` directory (next to `sqlitch/`) that mirrors the former Sqitch `t/` layout via subpackages (cli/, engine/, plan/, regression/, support/, unit/, fixtures/). Nightly/extended cases remain in `xt/`. Supporting scripts and packaging metadata live at the root to integrate with Python tooling while honoring the original layout.
+**Structure Decision**: Keep Sqitch’s sibling directories (`bin/`, `docs/`, `etc/`, `scripts/`, `xt/`) at the repository root while housing the Python implementation in a top-level `sqlitch/` package. This layout feels idiomatic to Python developers yet preserves the one-to-one mapping of module subdirectories (engine, plan, registry, etc.) with the Perl codebase for easy cross-reference.
 
 ## Phase 0: Outline & Research
 1. Investigate Sqitch Perl internals for command workflows, plan file semantics, registry schema, and template expansion rules that must be mirrored in Python.
-2. Validate Python ecosystem choices: compare `psycopg[binary]` vs `asyncpg`, `mysqlclient` vs `PyMySQL`, and confirm Click patterns for nested command trees that match Sqitch help text.
+2. Validate Python ecosystem choices: compare `psycopg[binary]` vs `asyncpg`, confirm `PyMySQL` meets parity and installation goals for MySQL connectivity, and confirm Click patterns for nested command trees that match Sqitch help text.
 3. Prototype Docker orchestration scripts to spin up SQLite (in-memory), MySQL, and PostgreSQL containers with deterministic seed data and timestamp controls.
 4. Document findings in `research.md` (decision, rationale, alternatives) with links back to Sqitch source references.
 
@@ -135,6 +133,7 @@ sqlitch/
 3. Outline pytest skeleton suites under the repository-level `tests/` directory (mirroring the legacy `t/` subdirectories) with Docker-based fixtures; mark each new test as skipped until the corresponding implementation task is ready to start, then—immediately before beginning that implementation—remove the skip so the test fails per FR-012.
 4. Produce `quickstart.md` guiding contributors through `python -m venv`, dependency installation, Docker prerequisites, and parity verification steps with references to the `tests/` hierarchy.
 5. Update Copilot agent context by running `.specify/scripts/bash/update-agent-context.sh copilot`, appending new tech choices (Click, docker SDK, connectors) while keeping the file concise.
+6. Establish documentation standards: enumerate which modules/classes/functions are considered public, and capture docstring formatting rules (follow numpy/google style?) to ensure consistency once implementation begins.
 
 **Output**: `data-model.md`, `/contracts/*`, `quickstart.md`, docker-aware pytest scaffolds (documented), and refreshed Copilot agent file.
 
@@ -160,6 +159,19 @@ sqlitch/
 
 ## Phase 3+: Future Implementation
 *These phases are beyond the scope of the /plan command*
+
+### Phase 3.3 Implementation Milestones (SQLite → MySQL → PostgreSQL)
+1. **SQLite Parity Slice (Milestone M1)**
+   - Complete engine abstractions (T045) and the SQLite adapter (T046).
+   - Stand up CLI scaffolding (T050–T051) and the command surface required to walk through the Sqitch tutorial end-to-end (T052–T070, constrained initially to SQLite-backed operations).
+   - Execute T081 with an expanded checklist that now includes manual CLI walkthroughs (`sqlitch init`, `sqlitch plan`, etc.), validation that all touched public code paths carry docstrings, and update the parity report.
+   - Only after these steps pass may work continue.
+2. **MySQL Parity Slice (Milestone M2)**
+   - Branch from the merged SQLite milestone, implement the MySQL adapter (T047), update CLI handlers where engine branching is required, and complete parity gate T082.
+3. **PostgreSQL Parity Slice (Milestone M3)**
+   - Repeat the flow for PostgreSQL (T048 + T083) before broader integration tasks resume.
+
+This sequencing guarantees a fully functional SQLite experience at the shell before additional engines begin, making manual validation straightforward and reducing regression risk.
 
 **Phase 3**: Task execution (/tasks command creates tasks.md)  
 **Phase 4**: Implementation (execute tasks.md following constitutional principles)  

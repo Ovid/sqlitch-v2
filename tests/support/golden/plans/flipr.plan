@@ -1,0 +1,10 @@
+%syntax-version=1.0.0
+%project=flipr
+%uri=https://github.com/sqitchers/sqitch-sqlite-intro/
+
+users 2013-12-31T18:26:59Z Marge N. O’Vera <marge@example.com> # Creates table to track our users.
+flips [users] 2013-12-31T19:05:44Z Marge N. O’Vera <marge@example.com> # Adds table for storing flips.
+userflips [users flips] 2013-12-31T19:19:15Z Marge N. O’Vera <marge@example.com> # Creates the userflips view.
+@v1.0.0-dev1 2013-12-31T19:19:15Z Marge N. O’Vera <marge@example.com> # Deployment tag for first dev release.
+hashtags [flips] 2013-12-31T19:30:53Z Marge N. O’Vera <marge@example.com> # Adds table for storing hashtags.
+

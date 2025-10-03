@@ -6,7 +6,7 @@ Display command-specific or concept-specific documentation identical to Sqitchâ€
 ## Inputs
 - **Invocation**: `sqlitch help [<command_or_guide>] [--man] [--usage]`
 - **Environment**: respects `PAGER`, `MANWIDTH`, and locale variables; aligns with Sqitch fallback logic when pager unavailable.
-- **Files**: consumes documentation under `lib/sqlitchdocs/` (mirroring Sqitch `lib/sqitch`).
+- **Files**: consumes documentation under `docs/` (mirroring Sqitch `lib/sqitch`).
 
 ## Behavior
 1. Without arguments, display high-level command list identical to Sqitch (alphabetized, grouped).

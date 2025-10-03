@@ -1,0 +1,105 @@
+"""Configuration loader supporting layered scopes."""
+
+from __future__ import annotations
+
+import configparser
+from dataclasses import dataclass
+from enum import Enum
+from pathlib import Path
+from typing import Mapping, Sequence
+
+
+class ConfigScope(str, Enum):
+    """Configuration scope precedence, ordered from lowest to highest."""
+
+    SYSTEM = "system"
+    USER = "user"
+    LOCAL = "local"
+
+
+@dataclass(frozen=True)
+class ConfigProfile:
+    """Materialized configuration data and metadata."""
+
+    root_dir: Path
+    files: tuple[Path, ...]
+    settings: Mapping[str, Mapping[str, str]]
+    active_engine: str | None
+
+
+class ConfigConflictError(ValueError):
+    """Raised when conflicting config files are discovered within the same scope."""
+
+
+_CONFIG_FILENAMES: Sequence[str] = ("sqlitch.conf", "sqitch.conf")
+
+
+def load_config(
+    *,
+    root_dir: Path | str,
+    scope_dirs: Mapping[ConfigScope, Path | str],
+    config_filenames: Sequence[str] | None = None,
+) -> ConfigProfile:
+    """Load configuration across scopes and merge with precedence.
+
+    Parameters
+    ----------
+    root_dir:
+        The primary project directory associated with the configuration profile.
+    scope_dirs:
+        Mapping of :class:`ConfigScope` to directories that may contain config files.
+        Only scopes present in the mapping are considered.
+    config_filenames:
+        Optional tuple ordering of config filenames to search within each scope.
+        Defaults to ``("sqlitch.conf", "sqitch.conf")`` allowing drop-in usage of
+        legacy Sqitch configuration files.
+    """
+
+    search_names: Sequence[str] = config_filenames or _CONFIG_FILENAMES
+    root_path = Path(root_dir)
+    resolved_scopes = {scope: Path(path) for scope, path in scope_dirs.items()}
+
+    ordered_files: list[Path] = []
+    merged_sections: "dict[str, dict[str, str]]" = {}
+
+    for scope in ConfigScope:
+        directory = resolved_scopes.get(scope)
+        if directory is None:
+            continue
+        candidates = [directory / name for name in search_names if (directory / name).exists()]
+        if len(candidates) > 1:
+            conflict_list = ", ".join(name.name for name in candidates)
+            raise ConfigConflictError(
+                f"Multiple configuration files found for {scope.value} scope: {conflict_list}"
+            )
+        if not candidates:
+            continue
+
+        config_path = candidates[0]
+        ordered_files.append(config_path)
+
+        parser = configparser.ConfigParser(interpolation=None)
+        parser.optionxform = str  # preserve case
+        parser.read(config_path, encoding="utf-8")
+
+        if parser.defaults():
+            defaults = merged_sections.setdefault("DEFAULT", {})
+            defaults.update(parser.defaults())
+
+        for section in parser.sections():
+            target = merged_sections.setdefault(section, {})
+            target.update(parser[section])
+
+    active_engine = None
+    core_section = merged_sections.get("core")
+    if core_section is not None:
+        active_engine = core_section.get("engine")
+
+    frozen_settings = {section: dict(values) for section, values in merged_sections.items()}
+
+    return ConfigProfile(
+        root_dir=root_path,
+        files=tuple(ordered_files),
+        settings=frozen_settings,
+        active_engine=active_engine,
+    )

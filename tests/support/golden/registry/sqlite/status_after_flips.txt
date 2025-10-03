@@ -1,0 +1,8 @@
+# On database flipr_test
+# Project:  flipr
+# Change:   32ee57069c0d7fec52b6f86f453dc0c16bc1090a
+# Name:     flips
+# Deployed: 2013-12-31 11:05:44 -0800
+# By:       Marge N. O’Vera <marge@example.com>
+# 
+Nothing to deploy (up-to-date)

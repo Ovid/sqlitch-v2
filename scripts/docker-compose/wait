@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+COMPOSE="${SCRIPT_DIR}/compose.yaml"
+SERVICES=("mysql" "postgres")
+
+for service in "${SERVICES[@]}"; do
+  printf 'Waiting for %s to become ready...' "${service}"
+  attempt=0
+  while true; do
+    if [[ "${service}" == "mysql" ]]; then
+      if docker compose -f "${COMPOSE}" exec -T mysql mysqladmin ping -h localhost --silent >/dev/null 2>&1; then
+        break
+      fi
+    else
+      if docker compose -f "${COMPOSE}" exec -T postgres pg_isready -U sqlitch >/dev/null 2>&1; then
+        break
+      fi
+    fi
+    attempt=$((attempt + 1))
+    if (( attempt % 10 == 0 )); then
+      printf ' (still waiting after %d attempts)' "${attempt}"
+    fi
+    sleep 2
+  done
+  echo " done."
+  if [[ "${service}" == "mysql" ]]; then
+    docker compose -f "${COMPOSE}" exec -T mysql mysql -usqlitch -psqlitch -e "SET GLOBAL time_zone = '+00:00';" >/dev/null 2>&1 || true
+  fi
+  if [[ "${service}" == "postgres" ]]; then
+    docker compose -f "${COMPOSE}" exec -T postgres psql -U sqlitch -d sqlitch -c "SET TIME ZONE 'UTC';" >/dev/null 2>&1 || true
+  fi
+  echo
+done

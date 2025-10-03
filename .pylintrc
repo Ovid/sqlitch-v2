@@ -1,0 +1,27 @@
+[MASTER]
+ignore=tests
+jobs=1
+persistent=no
+load-plugins=
+
+[MESSAGES CONTROL]
+disable=
+
+[REPORTS]
+output-format=colorized
+reports=no
+score=no
+
+[FORMAT]
+max-line-length=100
+
+[BASIC]
+good-names=i,j,k,ex,Run,_,db
+
+[DESIGN]
+max-args=10
+max-attributes=15
+max-public-methods=20
+
+[TYPECHECK]
+ignore-mixin-members=yes

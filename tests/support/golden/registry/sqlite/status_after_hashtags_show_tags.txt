@@ -1,0 +1,11 @@
+# On database flipr_test
+# Project:  flipr
+# Change:   1352464e8b5f3d5eeac76a1986379f07de43bffd
+# Name:     hashtags
+# Deployed: 2013-12-31 11:30:53 -0800
+# By:       Marge N. O’Vera <marge@example.com>
+# 
+# Tag:
+#   @v1.0.0-dev1 - 2013-12-31 11:13:49 -0800 - Marge N. O’Vera <marge@example.com>
+# 
+Nothing to deploy (up-to-date)

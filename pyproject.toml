@@ -1,0 +1,77 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sqlitch"
+version = "0.1.0"
+description = "Python-based Sqitch-compatible CLI"
+requires-python = ">=3.11"
+authors = [{name = "SQLitch Contributors"}]
+license = {text = "MIT"}
+dependencies = [
+  "click>=8.1,<9",
+  "rich>=13,<14",
+  "sqlalchemy>=2.0,<3",
+  "psycopg[binary]>=3.1,<4",
+  "PyMySQL>=1.1,<2",
+  "python-dateutil>=2.8,<3",
+  "tomli>=2.0,<3",
+  "pydantic>=2.4,<3",
+  "docker>=7.0,<8",
+]
+
+[project.scripts]
+sqlitch = "sqlitch.cli.main:main"
+
+[project.optional-dependencies]
+dev = [
+  "black>=24.8",
+  "isort>=5.13",
+  "flake8>=7.1",
+  "pylint>=3.2",
+  "mypy>=1.10",
+  "bandit>=1.7",
+  "pytest>=8.3",
+  "pytest-cov>=5.0",
+  "pytest-randomly>=3.15",
+  "hypothesis>=6.100",
+  "tox>=4.15",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sqlitch*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra --strict-markers --strict-config --cov=sqlitch --cov-report=term-missing --cov-report=xml --randomly-seed=1337"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_configs = true
+warn_unused_ignores = true
+strict = true
+
+[tool.bandit]
+target = ["sqlitch"]
+
+[tool.coverage.run]
+branch = true
+source = ["sqlitch"]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+
+[tool.tox]
+legacy_tox_ini = "tox.ini"
