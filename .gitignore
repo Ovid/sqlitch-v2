@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.build/
+.eggs/
+*.egg-info/
+*.egg
+
+# venvs
+.venv/
+venv/
+
+# pytest
+.pytest_cache/
+
+# coverage
+htmlcov/
+.coverage*
+
+# dist
+build/
+dist/
+
+# macOS
+.DS_Store
+
+# IDE/editor
+.vscode/
+.idea/
+
+# Miscellaneous
+sqitch/
+notes.md
+temp/
