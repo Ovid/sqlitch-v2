@@ -126,7 +126,7 @@ def test_registry_state_mutations_round_trip() -> None:
     with pytest.raises(KeyError):
         state.record_verify(uuid4(), "success")
 
-    with pytest.raises(ValueError, match="already recorded"):
+    with pytest.raises(ValueError, match="RegistryState already contains change_id"):
         state.record_deploy(base_entry)
 
 
@@ -155,5 +155,5 @@ def test_registry_state_forbids_unknown_verify_status() -> None:
     )
     state.record_deploy(entry)
 
-    with pytest.raises(ValueError, match="Unknown verify status"):
+    with pytest.raises(ValueError, match=r"RegistryEntry\.verify_status"):
         state.record_verify(entry.change_id, "flaky")

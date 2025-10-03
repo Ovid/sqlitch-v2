@@ -166,35 +166,16 @@ class Engine(ABC):
 
 
 ENGINE_REGISTRY: dict[str, type[Engine]] = {}
-"""Global registry mapping engine names to their implementation classes.
+"""Global registry mapping canonical engine names to their implementations.
 
-**Lifecycle & Thread Safety:**
+The registry lifecycle is documented in detail in ``docs/architecture/registry-lifecycle.md``.
+In summary, engine modules register themselves during import, client code treats the
+registry as immutable afterwards, and tests may temporarily patch registrations so long
+as they restore the previous state using the ``register_engine(..., replace=True)`` /
+``unregister_engine`` pattern shown in the documentation.
 
-1. **Registration Phase** (module import time):
-   - Engine implementations register themselves via :func:`register_engine`
-   - Occurs during module import (e.g., ``sqlitch.engine.sqlite`` imports trigger registration)
-   - Registration is deterministic and occurs before application logic runs
-
-2. **Operational Phase** (after imports complete):
-   - Registry is effectively immutable once all modules are loaded
-   - Lookups via :func:`get_engine` are thread-safe (dict reads are atomic in CPython)
-   - No modifications should occur after initial registration
-
-3. **Test Isolation:**
-   - Tests should NOT modify this global registry
-   - Each test should use isolated engine instances
-   - If tests absolutely must modify the registry, they should restore the original state
-
-**Example Usage:**
-
-    >>> from sqlitch.engine import get_engine
-    >>> engine_cls = get_engine("sqlite")
-    >>> engine = engine_cls(config)
-
-**Warning:**
-    Modifying this registry after module initialization may lead to race conditions
-    or inconsistent behavior across concurrent operations. The registry is considered
-    frozen once :func:`get_engine` is first called.
+The registry is intentionally a plain dictionary to keep lookup overhead negligible.
+Outside of controlled registration helpers, code MUST NOT mutate it directly.
 """
 
 

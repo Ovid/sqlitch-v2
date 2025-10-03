@@ -175,43 +175,25 @@ grep -rE "\bOptional\[" sqlitch/
 
 ## Remaining Tasks
 
-### T088: Document Registry Lifecycle (HIGH PRIORITY)
-**Status**: Not started  
-**Effort**: 2 hours (documentation only)
-
-**Action Items**:
-- Document `ENGINE_REGISTRY` lifecycle in `sqlitch/engine/base.py`
-- Document `_COMMAND_REGISTRY` lifecycle in `sqlitch/cli/commands/__init__.py`
-- Explain initialization phases, immutability expectations
-- Document test cleanup pattern (`_clear_registry()`)
+### ✅ T088: Document Registry Lifecycle (HIGH PRIORITY)
+**Status**: Completed (2025-10-03)  
+**Artifacts**: Added ``docs/architecture/registry-lifecycle.md`` and expanded module docstrings for ``ENGINE_REGISTRY`` and ``_COMMAND_REGISTRY`` to spell out registration, operational, and test isolation phases.
 
 ---
 
-### T090: Extract Complex Validation (MEDIUM PRIORITY)
-**Status**: Not started  
-**Effort**: 2-3 hours (refactoring)
-
-**Target**: `sqlitch/plan/model.py` - `Change.__post_init__` (40+ lines)
-
-**Approach**:
-1. Create `Change.create()` classmethod
-2. Extract `_validate_and_normalize()` static method
-3. Keep `__post_init__` minimal
-4. Add unit tests for validation logic independently
-
-**Risk**: Medium (behavioral change risk, needs careful testing)
+### ✅ T090: Extract Complex Validation (MEDIUM PRIORITY)
+**Status**: Completed (2025-10-03)  
+**Highlights**: Introduced ``Change.create`` factory and ``_normalize_change_fields`` helper so ``Change.__post_init__`` now delegates to reusable validation logic backed by dedicated unit tests.
 
 ---
 
 ### T092: Standardize Error Messages (MEDIUM PRIORITY)
-**Status**: Not started  
-**Effort**: 1-2 hours
+**Status**: In progress  
+**Effort**: 1-2 hours remaining
 
-**Action**: Ensure all validation errors include field/context information
-
-**Examples**:
-- Bad: `"Tag name is required"`
-- Good: `"Tag.name is required"` or `"{label} is required"`
+**Next Steps**:
+- Audit remaining validation errors to ensure each message identifies its field/context (for example ``RegistryEntry.verify_status``).
+- Update regression tests to assert message content where appropriate.
 
 ---
 

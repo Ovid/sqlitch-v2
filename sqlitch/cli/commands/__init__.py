@@ -18,46 +18,20 @@ CommandRegistrar = t.Callable[[click.Group], None]
 """Callable responsible for attaching a command to the root Click group."""
 
 _COMMAND_REGISTRY: dict[str, CommandRegistrar] = {}
-"""Global registry mapping command names to their Click registration functions.
+"""Registry mapping command names to their Click registration functions.
 
-**Lifecycle & Thread Safety:**
+The registry lifecycle mirrors the process documented in
+``docs/architecture/registry-lifecycle.md``:
 
-1. **Registration Phase** (module import time):
-   - Command modules register themselves via :func:`register_command`
-   - Occurs during module import when command modules are loaded
-   - Registration happens before CLI execution begins
+* Command modules call :func:`register_command` during import (registration phase).
+* :func:`iter_command_registrars` feeds the CLI bootstrap, after which the registry is
+  treated as immutable (operational phase).
+* Tests that import command modules must call :func:`_clear_registry` during teardown to
+  avoid leaking state (test isolation phase).
 
-2. **Wiring Phase** (:func:`wire_commands` call):
-   - Called once during CLI initialization
-   - Iterates through all registered commands and attaches them to the Click group
-   - After wiring, the registry is effectively frozen
-
-3. **Operational Phase** (CLI execution):
-   - No registry modifications occur during command execution
-   - Registry lookups are not performed after wiring
-
-4. **Test Isolation:**
-   - Tests MUST call :func:`_clear_registry` to reset state between test runs
-   - Prevents test pollution from command registration side effects
-   - Each test module should start with a clean registry
-
-**Example Usage:**
-
-    # In a command module (e.g., sqlitch/cli/commands/plan.py)
-    @register_command("plan")
-    def wire_plan_command(cli: click.Group) -> None:
-        @cli.command()
-        def plan():
-            ...
-
-    # In tests
-    def teardown_module():
-        _clear_registry()  # Clean up after tests
-
-**Thread Safety:**
-    Command registration is NOT thread-safe. All registration must complete
-    before concurrent CLI invocations begin. This is guaranteed by Python's
-    module import system.
+Command registration is intentionally single-threaded and should complete before any
+parallel CLI invocations occur. Do not mutate ``_COMMAND_REGISTRY`` outside the helpers
+defined in this module.
 """
 
 
