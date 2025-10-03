@@ -73,7 +73,7 @@
 - [X] T057 [P] Implement `sqlitch engine` command handler in `sqlitch/cli/commands/engine.py` with SQLite parity.
 - [X] T058 [P] Implement `sqlitch help` command handler in `sqlitch/cli/commands/help.py` with SQLite parity.
 - [X] T059 [P] Implement `sqlitch init` command handler in `sqlitch/cli/commands/init.py` with SQLite parity.
-- [ ] T060 [P] Implement `sqlitch log` command handler in `sqlitch/cli/commands/log.py` with SQLite parity.
+- [X] T060 [P] Implement `sqlitch log` command handler in `sqlitch/cli/commands/log.py` with SQLite parity.
 - [X] T061 [P] Implement `sqlitch plan` command handler in `sqlitch/cli/commands/plan.py` with SQLite parity.
 - [ ] T062 [P] Implement `sqlitch rebase` command handler in `sqlitch/cli/commands/rebase.py` with SQLite parity.
 - [X] T063 [P] Implement `sqlitch revert` command handler in `sqlitch/cli/commands/revert.py` with SQLite parity.
