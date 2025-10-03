@@ -80,7 +80,13 @@ class EngineTarget:
 
 
 class ConnectionFactory:
-    """Callable factory that loads a Python DB-API driver on demand."""
+    """Callable factory that loads a Python DB-API driver on demand.
+
+    Instances know the canonical engine name, the module path to import, and the
+    attribute that exposes the DB-API ``connect`` callable. They provide a
+    uniform ``connect`` method so higher layers can remain agnostic to driver
+    specifics.
+    """
 
     __slots__ = ("engine", "module_name", "connect_attribute")
 
@@ -90,6 +96,7 @@ class ConnectionFactory:
         self.connect_attribute = connect_attribute
 
     def connect(self, arguments: ConnectArguments) -> Any:
+        """Import the configured driver and invoke its ``connect`` function."""
         module = _import_module(self.module_name)
         connect_callable = getattr(module, self.connect_attribute)
         return connect_callable(*arguments.args, **arguments.kwargs)
@@ -105,6 +112,14 @@ ENGINE_DRIVERS: Mapping[str, Tuple[str, str]] = MappingProxyType(
 
 
 def connection_factory_for_engine(engine: str) -> ConnectionFactory:
+    """Return a :class:`ConnectionFactory` for the requested engine.
+
+    Args:
+        engine: Engine identifier or alias (case-insensitive).
+
+    Raises:
+        UnsupportedEngineError: If no driver mapping exists for ``engine``.
+    """
     canonical = canonicalize_engine_name(engine)
 
     driver = ENGINE_DRIVERS.get(canonical)
@@ -119,23 +134,31 @@ EngineType = TypeVar("EngineType", bound="Engine")
 
 
 class Engine:
-    """Base engine implementation."""
+    """Base engine implementation providing connection helpers.
+
+    Subclasses specialise the construction of connection arguments for their
+    registry and workspace databases while sharing lazy driver loading logic.
+    """
 
     def __init__(self, target: EngineTarget, **_: Any) -> None:
         self.target = target
         self._connection_factory = connection_factory_for_engine(target.engine)
 
     def build_registry_connect_arguments(self) -> ConnectArguments:
+        """Return the connection arguments for registry operations."""
         raise NotImplementedError
 
     def build_workspace_connect_arguments(self) -> ConnectArguments:
+        """Return the connection arguments for workspace operations."""
         raise NotImplementedError
 
     def connect_registry(self) -> Any:
+        """Open a connection to the engine's registry database."""
         arguments = self.build_registry_connect_arguments()
         return self._connection_factory.connect(arguments)
 
     def connect_workspace(self) -> Any:
+        """Open a connection to the engine's workspace database."""
         arguments = self.build_workspace_connect_arguments()
         return self._connection_factory.connect(arguments)
 
@@ -144,6 +167,23 @@ ENGINE_REGISTRY: Dict[str, Type[Engine]] = {}
 
 
 def register_engine(name: str, engine_cls: Type[EngineType], *, replace: bool = False) -> Type[Engine] | None:
+    """Register an :class:`Engine` implementation under ``name``.
+
+    Args:
+        name: Engine identifier or alias.
+        engine_cls: Concrete subclass implementing :class:`Engine`.
+        replace: Whether to replace an existing registration.
+
+    Returns:
+        The previously registered engine class if ``replace`` is ``True`` and an
+        entry existed; otherwise :data:`None`.
+
+    Raises:
+        UnsupportedEngineError: If ``name`` cannot be canonicalized.
+        TypeError: If ``engine_cls`` is not a subclass of :class:`Engine`.
+        EngineError: If the engine is already registered and ``replace`` is
+            :data:`False`.
+    """
     canonical = canonicalize_engine_name(name)
     if not issubclass(engine_cls, Engine):
         raise TypeError("engine_cls must be a subclass of Engine")
@@ -157,11 +197,19 @@ def register_engine(name: str, engine_cls: Type[EngineType], *, replace: bool = 
 
 
 def unregister_engine(name: str) -> Type[Engine] | None:
+    """Remove the engine associated with ``name`` and return it if present."""
     canonical = canonicalize_engine_name(name)
     return ENGINE_REGISTRY.pop(canonical, None)
 
 
 def create_engine(target: EngineTarget, **kwargs: Any) -> Engine:
+    """Instantiate the registered engine for ``target``.
+
+    Keyword arguments are forwarded to the engine constructor.
+
+    Raises:
+        UnsupportedEngineError: If no engine has been registered for the target.
+    """
     engine_cls = ENGINE_REGISTRY.get(target.engine)
     if engine_cls is None:
         raise UnsupportedEngineError(f"engine {target.engine!r} is not registered")
@@ -169,6 +217,7 @@ def create_engine(target: EngineTarget, **kwargs: Any) -> Engine:
 
 
 def registered_engines() -> Tuple[str, ...]:
+    """Return the sorted tuple of canonical engine names currently registered."""
     return tuple(sorted(ENGINE_REGISTRY.keys()))
 
 

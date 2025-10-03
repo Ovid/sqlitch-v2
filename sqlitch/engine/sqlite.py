@@ -1,3 +1,5 @@
+"""SQLite engine adapter implementation."""
+
 from __future__ import annotations
 
 from typing import Any, Mapping, Tuple
@@ -22,9 +24,11 @@ class SQLiteEngine(Engine):
         self._connect_kwargs = dict(connect_kwargs or {})
 
     def build_registry_connect_arguments(self) -> ConnectArguments:
+        """Return connection arguments pointing to the registry database."""
         return self._build_connect_arguments(self.target.registry_uri)
 
     def build_workspace_connect_arguments(self) -> ConnectArguments:
+        """Return connection arguments pointing to the workspace database."""
         return self._build_connect_arguments(self.target.uri)
 
     def _build_connect_arguments(self, uri: str) -> ConnectArguments:
@@ -36,6 +40,7 @@ class SQLiteEngine(Engine):
 
 
 def _parse_sqlite_uri(uri: str) -> Tuple[str, bool]:
+    """Return (database, is_uri) parsed from a SQLitch-style SQLite URI."""
     if not uri.startswith(SQLITE_SCHEME_PREFIX):
         raise SQLiteEngineError(f"unexpected sqlite URI format: {uri!r}")
 
