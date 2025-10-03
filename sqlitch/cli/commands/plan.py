@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping, Sequence
+from dataclasses import replace
 from pathlib import Path
 
 import click
@@ -73,9 +74,12 @@ def plan_command(
     plan_path = _resolve_plan_path(project_root, override=plan_override, env=environment)
     raw_content = _read_plan_text(plan_path)
 
-    requires_model = bool(project_filter or change_filters or tag_filters or output_format.lower() == "json")
+    normalized_format = output_format.lower()
+    requires_model = bool(
+        project_filter or change_filters or tag_filters or normalized_format == "json" or short_output
+    )
 
-    if output_format.lower() == "human" and not requires_model:
+    if normalized_format == "human" and not requires_model:
         text = _prepare_human_output(raw_content, strip_headers=suppress_headers, short=short_output)
         click.echo(text, nl=False)
         return
@@ -89,18 +93,22 @@ def plan_command(
 
     filtered_entries = _filter_entries(plan, change_filters, tag_filters)
 
-    if output_format.lower() == "json":
+    if normalized_format == "json":
         payload = _build_json_payload(plan, filtered_entries)
         click.echo(json.dumps(payload, indent=2, sort_keys=False))
         return
 
+    entries_to_render = filtered_entries
+    if short_output:
+        entries_to_render = _strip_notes_from_entries(entries_to_render)
+
     rendered = format_plan(
         project_name=plan.project_name,
         default_engine=plan.default_engine,
-        entries=filtered_entries,
+        entries=entries_to_render,
         base_path=plan.file_path.parent,
     )
-    text = _prepare_human_output(rendered, strip_headers=suppress_headers, short=short_output)
+    text = _prepare_human_output(rendered, strip_headers=suppress_headers, short=False)
     click.echo(text, nl=False)
 
 
@@ -259,3 +267,13 @@ def _format_path(path: Path | None, base_dir: Path) -> str | None:
         return path.relative_to(base_dir).as_posix()
     except ValueError:
         return path.resolve().as_posix()
+
+
+def _strip_notes_from_entries(entries: Sequence[PlanEntry]) -> tuple[PlanEntry, ...]:
+    sanitized: list[PlanEntry] = []
+    for entry in entries:
+        if isinstance(entry, Change) and entry.notes:
+            sanitized.append(replace(entry, notes=None))
+        else:
+            sanitized.append(entry)
+    return tuple(sanitized)
