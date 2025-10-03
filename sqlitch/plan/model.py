@@ -6,8 +6,9 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from types import MappingProxyType
 from typing import TypeAlias
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from sqlitch.utils.time import ensure_timezone
 
@@ -66,9 +67,7 @@ class Change:
         normalized_planned_at = ensure_timezone(self.planned_at, "Change.planned_at")
         object.__setattr__(self, "planned_at", normalized_planned_at)
 
-        if self.change_id is None:
-            object.__setattr__(self, "change_id", uuid4())
-        elif not isinstance(self.change_id, UUID):
+        if self.change_id is not None and not isinstance(self.change_id, UUID):
             raise ValueError(f"Change.change_id must be a UUID instance, got: {type(self.change_id).__name__}")
 
         validated_scripts: dict[str, Path | None] = {}
@@ -85,7 +84,7 @@ class Change:
             validated_scripts["verify"] = _ensure_path(verify_path)
         else:
             validated_scripts["verify"] = None
-        object.__setattr__(self, "script_paths", validated_scripts)
+        object.__setattr__(self, "script_paths", MappingProxyType(validated_scripts))
 
         normalized_dependencies = tuple(self.dependencies or tuple())
         if len(set(normalized_dependencies)) != len(normalized_dependencies):

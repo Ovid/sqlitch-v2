@@ -11,6 +11,8 @@ from pathlib import Path
 __all__ = [
     "ConfigScope",
     "ConfigConflictError",
+    "ConfigProfile",
+    "load_config",
     "load_configuration",
 ]
 
@@ -109,3 +111,6 @@ def load_config(
         settings=frozen_settings,
         active_engine=active_engine,
     )
+
+
+load_configuration = load_config

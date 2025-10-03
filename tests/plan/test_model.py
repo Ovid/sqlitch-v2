@@ -133,13 +133,17 @@ def test_plan_rejects_dependency_defined_after_change():
         )
 
 
-def test_change_generates_uuid_when_not_provided():
+def test_change_preserves_missing_change_id():
     change = _make_change()
-    change2 = _make_change()
 
-    assert change.change_id is not None
-    assert change2.change_id is not None
-    assert change.change_id != change2.change_id
+    assert change.change_id is None
+
+
+def test_change_script_paths_are_immutable():
+    change = _make_change()
+
+    with pytest.raises(TypeError):
+        change.script_paths["deploy"] = Path("other.sql")
 
 
 def test_change_requires_timezone_aware_timestamp():
