@@ -166,6 +166,36 @@ class Engine(ABC):
 
 
 ENGINE_REGISTRY: dict[str, type[Engine]] = {}
+"""Global registry mapping engine names to their implementation classes.
+
+**Lifecycle & Thread Safety:**
+
+1. **Registration Phase** (module import time):
+   - Engine implementations register themselves via :func:`register_engine`
+   - Occurs during module import (e.g., ``sqlitch.engine.sqlite`` imports trigger registration)
+   - Registration is deterministic and occurs before application logic runs
+
+2. **Operational Phase** (after imports complete):
+   - Registry is effectively immutable once all modules are loaded
+   - Lookups via :func:`get_engine` are thread-safe (dict reads are atomic in CPython)
+   - No modifications should occur after initial registration
+
+3. **Test Isolation:**
+   - Tests should NOT modify this global registry
+   - Each test should use isolated engine instances
+   - If tests absolutely must modify the registry, they should restore the original state
+
+**Example Usage:**
+
+    >>> from sqlitch.engine import get_engine
+    >>> engine_cls = get_engine("sqlite")
+    >>> engine = engine_cls(config)
+
+**Warning:**
+    Modifying this registry after module initialization may lead to race conditions
+    or inconsistent behavior across concurrent operations. The registry is considered
+    frozen once :func:`get_engine` is first called.
+"""
 
 
 def register_engine(name: str, engine_cls: type[EngineType], *, replace: bool = False) -> type[Engine] | None:

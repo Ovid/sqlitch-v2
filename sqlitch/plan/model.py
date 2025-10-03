@@ -36,11 +36,11 @@ class Tag:
 
     def __post_init__(self) -> None:
         if not self.name:
-            raise ValueError("Tag name is required")
+            raise ValueError("Tag.name is required")
         if not self.change_ref:
-            raise ValueError("Tag change reference is required")
+            raise ValueError("Tag.change_ref is required")
         if not self.planner:
-            raise ValueError("Tag planner is required")
+            raise ValueError("Tag.planner is required")
         normalized = ensure_timezone(self.tagged_at, "Tag tagged_at")
         object.__setattr__(self, "tagged_at", normalized)
 
@@ -60,24 +60,24 @@ class Change:
 
     def __post_init__(self) -> None:
         if not self.name:
-            raise ValueError("Change name is required")
+            raise ValueError("Change.name is required")
         if not self.planner:
-            raise ValueError("Change planner is required")
-        normalized_planned_at = ensure_timezone(self.planned_at, "Change planned_at")
+            raise ValueError("Change.planner is required")
+        normalized_planned_at = ensure_timezone(self.planned_at, "Change.planned_at")
         object.__setattr__(self, "planned_at", normalized_planned_at)
 
         if self.change_id is None:
             object.__setattr__(self, "change_id", uuid4())
         elif not isinstance(self.change_id, UUID):
-            raise ValueError("change_id must be a UUID instance")
+            raise ValueError(f"Change.change_id must be a UUID instance, got: {type(self.change_id).__name__}")
 
         validated_scripts: dict[str, Path | None] = {}
         deploy_path = self.script_paths.get("deploy") if self.script_paths else None
         revert_path = self.script_paths.get("revert") if self.script_paths else None
         if deploy_path is None:
-            raise ValueError("Change deploy script path is required")
+            raise ValueError("Change.script_paths['deploy'] is required")
         if revert_path is None:
-            raise ValueError("Change revert script path is required")
+            raise ValueError("Change.script_paths['revert'] is required")
         validated_scripts["deploy"] = _ensure_path(deploy_path)
         validated_scripts["revert"] = _ensure_path(revert_path)
         verify_path = self.script_paths.get("verify") if self.script_paths else None
@@ -89,12 +89,12 @@ class Change:
 
         normalized_dependencies = tuple(self.dependencies or tuple())
         if len(set(normalized_dependencies)) != len(normalized_dependencies):
-            raise ValueError("Change has duplicate dependency entries")
+            raise ValueError(f"Change.dependencies contains duplicates: {self.dependencies}")
         object.__setattr__(self, "dependencies", normalized_dependencies)
 
         normalized_tags = tuple(self.tags or tuple())
         if len(set(normalized_tags)) != len(normalized_tags):
-            raise ValueError("Change has duplicate tag entries")
+            raise ValueError(f"Change.tags contains duplicates: {self.tags}")
         object.__setattr__(self, "tags", normalized_tags)
 
 
@@ -113,37 +113,37 @@ class Plan:
 
     def __post_init__(self) -> None:
         if not self.project_name:
-            raise ValueError("Plan project_name is required")
+            raise ValueError("Plan.project_name is required")
         if not self.checksum:
-            raise ValueError("Plan checksum is required")
+            raise ValueError("Plan.checksum is required")
         if not self.default_engine:
-            raise ValueError("Plan default_engine is required")
+            raise ValueError("Plan.default_engine is required")
 
         object.__setattr__(self, "file_path", _ensure_path(self.file_path))
 
         normalized_entries: tuple[PlanEntry, ...] = tuple(self.entries or tuple())
         for entry in normalized_entries:
             if not isinstance(entry, (Change, Tag)):
-                raise TypeError("Plan entries must be Change or Tag instances")
+                raise TypeError(f"Plan.entries must contain Change or Tag instances, got: {type(entry).__name__}")
         object.__setattr__(self, "entries", normalized_entries)
 
         seen_changes: dict[str, Change] = {}
         for entry in normalized_entries:
             if isinstance(entry, Change):
                 if entry.name in seen_changes:
-                    raise ValueError(f"Duplicate change name detected: {entry.name}")
+                    raise ValueError(f"Plan contains duplicate change name: {entry.name}")
                 for dependency in entry.dependencies:
                     if dependency == entry.name:
-                        raise ValueError(f"Change {entry.name} cannot depend on itself")
+                        raise ValueError(f"Change '{entry.name}' cannot depend on itself")
                     if dependency not in seen_changes:
                         raise ValueError(
-                            f"Change {entry.name} has dependency {dependency} which is not defined before it"
+                            f"Change '{entry.name}' depends on '{dependency}' which is not defined before it"
                         )
                 seen_changes[entry.name] = entry
             else:
                 if entry.change_ref not in seen_changes:
                     raise ValueError(
-                        f"Tag {entry.name} references unknown change {entry.change_ref}"
+                        f"Tag '{entry.name}' references unknown change '{entry.change_ref}'"
                     )
 
     @property

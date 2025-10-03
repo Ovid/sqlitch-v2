@@ -50,11 +50,11 @@ class RegistryEntry:
 
     def __post_init__(self) -> None:
         if not self.engine_target:
-            raise ValueError("engine_target is required")
+            raise ValueError("RegistryEntry.engine_target is required")
         if not self.change_name:
-            raise ValueError("change_name is required")
+            raise ValueError("RegistryEntry.change_name is required")
         if not self.planner:
-            raise ValueError("planner is required")
+            raise ValueError("RegistryEntry.planner is required")
 
         normalized_id = _coerce_uuid(self.change_id)
         normalized_deployed_at = coerce_datetime(self.deployed_at, "RegistryEntry deployed_at")
