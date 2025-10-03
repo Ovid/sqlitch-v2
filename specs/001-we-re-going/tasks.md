@@ -111,7 +111,7 @@
 *Based on comprehensive code review (REPORT.md, 2025-10-03), address identified best practices before scaling to full command implementation.*
 - [X] T084 [P] Standardize all type hints to use modern Python 3.9+ built-ins (`dict`, `list`, `tuple`, `type`) instead of typing module equivalents across all files in `sqlitch/` (addresses REPORT.md Issue 1.1, FR-014).
 - [X] T085 [P] Remove all `Optional` imports and replace with `X | None` union syntax throughout codebase (addresses REPORT.md Issue 1.2, FR-014).
-- [ ] T086 [P] Add `abc.ABC` inheritance and `@abstractmethod` decorators to `Engine` base class in `sqlitch/engine/base.py` (addresses REPORT.md Issue 2.4, FR-017).
+- [X] T086 [P] Add `abc.ABC` inheritance and `@abstractmethod` decorators to `Engine` base class in `sqlitch/engine/base.py` (addresses REPORT.md Issue 2.4, FR-017).
 - [X] T087 [P] Add `__all__` exports to public modules missing them: `sqlitch/registry/state.py`, `sqlitch/plan/model.py`, `sqlitch/config/loader.py` (addresses REPORT.md Issue 3.3, FR-015).
 - [X] T088 Document registry lifecycle for `ENGINE_REGISTRY` and `_COMMAND_REGISTRY`, including initialization phases and test cleanup patterns (addresses REPORT.md Issue 2.1, FR-018).
 - [X] T089 Refactor `ConfigConflictError` to extend `RuntimeError` instead of `ValueError` for semantic consistency in `sqlitch/config/loader.py` (addresses REPORT.md Issue 2.3, FR-016).
