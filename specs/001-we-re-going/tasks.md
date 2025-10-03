@@ -45,6 +45,9 @@
 - [X] T033 [P] Add skipped regression test (remove skip immediately before implementation) for Docker-unavailable skip behavior in `tests/regression/test_docker_skip.py`.
 - [X] T034 [P] Add skipped regression test (remove skip immediately before implementation) for configuration-root override isolation in `tests/regression/test_config_root_override.py`.
 - [X] T035 [P] Add skipped regression test (remove skip immediately before implementation) for artifact cleanup guarantees in `tests/regression/test_artifact_cleanup.py`.
+- [ ] T035a [P] Add skipped tooling test (remove skip immediately before implementation) ensuring Black formatting compliance enforcement in `tests/scripts/test_black_formatting.py`.
+- [ ] T035b [P] Add skipped tooling test (remove skip immediately before implementation) validating isort import ordering gate in `tests/scripts/test_isort_ordering.py`.
+- [ ] T035c [P] Add skipped tooling test (remove skip immediately before implementation) covering lint gate aggregation for flake8/pylint in `tests/scripts/test_lint_suite.py`.
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 *Before beginning any task in this phase, remove the related skip markers introduced in Phase 3.2, confirm the tests fail, and use that failure as the Red→Green starting point (FR-012).* 
@@ -52,7 +55,7 @@
 - [X] T037 Implement plan parser mirroring Sqitch semantics in `sqlitch/plan/parser.py`.
 - [X] T038 Implement plan formatter and checksum utilities in `sqlitch/plan/formatter.py`.
 - [X] T039 Implement configuration loader with layered scopes in `sqlitch/config/loader.py`.
-- [ ] T040 Implement configuration resolver & overrideable root handling in `sqlitch/config/resolver.py`.
+- [X] T040 Implement configuration resolver & overrideable root handling in `sqlitch/config/resolver.py`.
 - [ ] T041 Implement registry state read/write operations in `sqlitch/registry/state.py`.
 - [ ] T042 Implement registry migrations aligned with Sqitch SQL in `sqlitch/registry/migrations.py`.
 - [ ] T043 Implement filesystem utilities for drop-in detection and cleanup in `sqlitch/utils/fs.py`.
@@ -105,6 +108,7 @@
 
 ## Dependencies
 - Phase 3.2 tests must complete (and fail) before starting any Phase 3.3 implementation task.
+- Tooling coverage tasks T035a–T035c must be operational before expanding automation around lint/format enforcement in Phase 3.3.
 - T045 precedes engine-specific tasks T046–T048.
 - Engine adapters must execute in strict sequence: T046 → T081 → T047 → T082 → T048 → T083.
 - T081 must complete (merged) before starting T047; T082 must complete (merged) before starting T048; T083 must complete (merged) before any integration work (Phase 3.4).
