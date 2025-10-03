@@ -12,6 +12,7 @@ from .base import (
     unregister_engine,
     registered_engines,
 )
+from .sqlite import SQLiteEngine, SQLiteEngineError
 
 __all__ = [
     "Engine",
@@ -24,4 +25,6 @@ __all__ = [
     "register_engine",
     "unregister_engine",
     "registered_engines",
+    "SQLiteEngine",
+    "SQLiteEngineError",
 ]
