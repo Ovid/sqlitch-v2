@@ -1,0 +1,192 @@
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from pathlib import Path
+
+import pytest
+
+from sqlitch.plan import model
+
+
+def _make_change(**overrides):
+    defaults: dict[str, object] = {
+        "name": "widgets:add",
+        "script_paths": {
+            "deploy": Path("deploy/widgets.sql"),
+            "revert": Path("revert/widgets.sql"),
+            "verify": Path("verify/widgets.sql"),
+        },
+        "dependencies": ["core:init"],
+        "tags": ["v1.0"],
+        "planner": "alice@example.com",
+        "planned_at": datetime(2025, 10, 3, 12, 34, 56, tzinfo=timezone.utc),
+        "notes": "Add widgets table.",
+    }
+    defaults.update(overrides)
+    return model.Change(**defaults)  # type: ignore[arg-type]
+
+
+def _make_tag(**overrides) -> model.Tag:
+    defaults: dict[str, object] = {
+        "name": "v1.0",
+        "change_ref": "widgets:add",
+        "planner": "alice@example.com",
+        "tagged_at": datetime(2025, 10, 3, 12, 34, 56, tzinfo=timezone.utc),
+    }
+    defaults.update(overrides)
+    return model.Tag(**defaults)  # type: ignore[arg-type]
+
+
+def test_change_requires_deploy_and_revert_scripts():
+    with pytest.raises(ValueError, match="deploy script path is required"):
+        _make_change(script_paths={"revert": Path("revert.sql")})
+
+    with pytest.raises(ValueError, match="revert script path is required"):
+        _make_change(script_paths={"deploy": Path("deploy.sql")})
+
+
+def test_change_accepts_optional_verify_script():
+    change = _make_change(script_paths={"deploy": Path("deploy.sql"), "revert": Path("revert.sql")})
+    assert change.script_paths["verify"] is None
+
+
+def test_change_normalizes_string_script_paths():
+    change = _make_change(
+        script_paths={
+            "deploy": "deploy/widgets.sql",
+            "revert": "revert/widgets.sql",
+            "verify": "verify/widgets.sql",
+        }
+    )
+
+    assert isinstance(change.script_paths["deploy"], Path)
+    assert isinstance(change.script_paths["revert"], Path)
+    assert isinstance(change.script_paths["verify"], Path)
+
+
+def test_change_rejects_duplicate_dependencies():
+    with pytest.raises(ValueError, match="duplicate dependency"):
+        _make_change(dependencies=["core:init", "core:init"])
+
+
+def test_change_rejects_invalid_change_id_type():
+    with pytest.raises(ValueError, match="UUID"):
+        _make_change(change_id="not-a-uuid")
+
+
+def test_plan_rejects_tags_without_change():
+    change = _make_change(name="widgets:add", dependencies=[])
+    orphan_tag = _make_tag(change_ref="unknown")
+
+    with pytest.raises(ValueError, match="references unknown change"):
+        model.Plan(
+            project_name="widgets",
+            file_path=Path("plan"),
+            entries=[change, orphan_tag],
+            checksum="abc123",
+            default_engine="pg",
+        )
+
+
+def test_plan_exposes_changes_and_tags():
+    change = _make_change(name="widgets:add", dependencies=[])
+    tag = _make_tag()
+
+    plan = model.Plan(
+        project_name="widgets",
+        file_path=Path("plan"),
+        entries=[change, tag],
+        checksum="abc123",
+        default_engine="pg",
+    )
+
+    assert plan.changes == (change,)
+    assert plan.tags == (tag,)
+
+
+def test_plan_rejects_duplicate_change_names():
+    change = _make_change(name="widgets:add", dependencies=[])
+    duplicate = _make_change(name="widgets:add", dependencies=[])
+
+    with pytest.raises(ValueError, match="Duplicate change name"):
+        model.Plan(
+            project_name="widgets",
+            file_path=Path("plan"),
+            entries=[change, duplicate],
+            checksum="abc123",
+            default_engine="pg",
+        )
+
+
+def test_plan_rejects_dependency_defined_after_change():
+    first = _make_change(name="widgets:add", dependencies=[])
+    second = _make_change(name="widgets:index", dependencies=["widgets:add"])
+    third = _make_change(name="widgets:cleanup", dependencies=["widgets:index"])
+
+    with pytest.raises(ValueError, match="not defined before"):
+        model.Plan(
+            project_name="widgets",
+            file_path=Path("plan"),
+            entries=[second, first, third],
+            checksum="abc123",
+            default_engine="pg",
+        )
+
+
+def test_change_generates_uuid_when_not_provided():
+    change = _make_change()
+    change2 = _make_change()
+
+    assert change.change_id is not None
+    assert change2.change_id is not None
+    assert change.change_id != change2.change_id
+
+
+def test_change_requires_timezone_aware_timestamp():
+    with pytest.raises(ValueError, match="timezone-aware"):
+        _make_change(planned_at=datetime(2025, 10, 3, 12, 34, 56))
+
+
+def test_tag_requires_timezone_aware_timestamp():
+    with pytest.raises(ValueError, match="timezone-aware"):
+        _make_tag(tagged_at=datetime(2025, 10, 3, 12, 34, 56))
+
+
+def test_plan_lookup_helpers():
+    change = _make_change(name="widgets:add", dependencies=[])
+    tag = _make_tag()
+    plan = model.Plan(
+        project_name="widgets",
+        file_path="plan",
+        entries=[change, tag],
+        checksum="abc123",
+        default_engine="pg",
+    )
+
+    assert plan.get_change("widgets:add") is change
+    assert plan.has_change("widgets:add") is True
+    assert plan.has_change("widgets:missing") is False
+    assert list(plan.iter_changes()) == [change]
+    with pytest.raises(KeyError):
+        plan.get_change("unknown")
+
+
+def test_plan_rejects_non_plan_entries():
+    change = _make_change(name="widgets:add", dependencies=[])
+    with pytest.raises(TypeError, match="Plan entries must"):
+        model.Plan(
+            project_name="widgets",
+            file_path=Path("plan"),
+            entries=[change, object()],
+            checksum="abc123",
+            default_engine="pg",
+        )
+
+
+def test_tag_requires_non_empty_fields():
+    with pytest.raises(ValueError, match="Tag name is required"):
+        _make_tag(name="")
+    with pytest.raises(ValueError, match="change reference"):
+        _make_tag(change_ref="")
+    with pytest.raises(ValueError, match="planner is required"):
+        _make_tag(planner="")
