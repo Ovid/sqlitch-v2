@@ -67,16 +67,16 @@
 - [X] T051 Wire Click group, global options, and command registration in `sqlitch/cli/main.py`, ensuring SQLite workflows operate end-to-end.
 - [X] T052 [P] Implement `sqlitch add` command handler in `sqlitch/cli/commands/add.py` with SQLite parity.
 - [X] T053 [P] Implement `sqlitch bundle` command handler in `sqlitch/cli/commands/bundle.py` with SQLite parity.
-- [ ] T054 [P] Implement `sqlitch checkout` command handler in `sqlitch/cli/commands/checkout.py` with SQLite parity.
+- [X] T054 [P] Implement `sqlitch checkout` command handler in `sqlitch/cli/commands/checkout.py` with SQLite parity.
 - [ ] T055 [P] Implement `sqlitch config` command handler in `sqlitch/cli/commands/config.py` with SQLite parity.
-- [ ] T056 [P] Implement `sqlitch deploy` command handler in `sqlitch/cli/commands/deploy.py` with SQLite parity.
+- [X] T056 [P] Implement `sqlitch deploy` command handler in `sqlitch/cli/commands/deploy.py` with SQLite parity.
 - [ ] T057 [P] Implement `sqlitch engine` command handler in `sqlitch/cli/commands/engine.py` with SQLite parity.
 - [ ] T058 [P] Implement `sqlitch help` command handler in `sqlitch/cli/commands/help.py` with SQLite parity.
 - [X] T059 [P] Implement `sqlitch init` command handler in `sqlitch/cli/commands/init.py` with SQLite parity.
 - [ ] T060 [P] Implement `sqlitch log` command handler in `sqlitch/cli/commands/log.py` with SQLite parity.
 - [X] T061 [P] Implement `sqlitch plan` command handler in `sqlitch/cli/commands/plan.py` with SQLite parity.
 - [ ] T062 [P] Implement `sqlitch rebase` command handler in `sqlitch/cli/commands/rebase.py` with SQLite parity.
-- [ ] T063 [P] Implement `sqlitch revert` command handler in `sqlitch/cli/commands/revert.py` with SQLite parity.
+- [X] T063 [P] Implement `sqlitch revert` command handler in `sqlitch/cli/commands/revert.py` with SQLite parity.
 - [ ] T064 [P] Implement `sqlitch rework` command handler in `sqlitch/cli/commands/rework.py` with SQLite parity.
 - [ ] T065 [P] Implement `sqlitch show` command handler in `sqlitch/cli/commands/show.py` with SQLite parity.
 - [X] T066 [P] Implement `sqlitch status` command handler in `sqlitch/cli/commands/status.py` with SQLite parity.
