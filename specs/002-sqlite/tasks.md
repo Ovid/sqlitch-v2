@@ -68,7 +68,7 @@
 - [X] T052 [P] Implement `sqlitch add` command handler in `sqlitch/cli/commands/add.py` with SQLite parity.
 - [X] T053 [P] Implement `sqlitch bundle` command handler in `sqlitch/cli/commands/bundle.py` with SQLite parity.
 - [X] T054 [P] Implement `sqlitch checkout` command handler in `sqlitch/cli/commands/checkout.py` with SQLite parity.
-- [ ] T055 [P] Implement `sqlitch config` command handler in `sqlitch/cli/commands/config.py` with SQLite parity.
+- [X] T055 [P] Implement `sqlitch config` command handler in `sqlitch/cli/commands/config.py` with SQLite parity.
 - [X] T056 [P] Implement `sqlitch deploy` command handler in `sqlitch/cli/commands/deploy.py` with SQLite parity.
 - [ ] T057 [P] Implement `sqlitch engine` command handler in `sqlitch/cli/commands/engine.py` with SQLite parity.
 - [ ] T058 [P] Implement `sqlitch help` command handler in `sqlitch/cli/commands/help.py` with SQLite parity.
