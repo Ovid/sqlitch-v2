@@ -21,6 +21,9 @@ dependencies = [
   "docker>=7.0,<8",
 ]
 
+[project.scripts]
+sqlitch = "sqlitch.cli.main:main"
+
 [project.optional-dependencies]
 dev = [
   "black>=24.8",

@@ -62,35 +62,35 @@
 - [X] T044 Implement timestamp/zone handling helpers in `sqlitch/utils/time.py`.
 - [ ] T045 Implement engine base interface and connection factory in `sqlitch/engine/base.py`.
 - [ ] T046 [P] Implement SQLite engine adapter in `sqlitch/engine/sqlite.py`.
+- [ ] T050 Create CLI command package scaffolding (`sqlitch/cli/commands/__init__.py`) and shared exceptions (focus on SQLite-ready paths first).
+- [ ] T051 Wire Click group, global options, and command registration in `sqlitch/cli/main.py`, ensuring SQLite workflows operate end-to-end.
+- [ ] T052 [P] Implement `sqlitch add` command handler in `sqlitch/cli/commands/add.py` with SQLite parity.
+- [ ] T053 [P] Implement `sqlitch bundle` command handler in `sqlitch/cli/commands/bundle.py` with SQLite parity.
+- [ ] T054 [P] Implement `sqlitch checkout` command handler in `sqlitch/cli/commands/checkout.py` with SQLite parity.
+- [ ] T055 [P] Implement `sqlitch config` command handler in `sqlitch/cli/commands/config.py` with SQLite parity.
+- [ ] T056 [P] Implement `sqlitch deploy` command handler in `sqlitch/cli/commands/deploy.py` with SQLite parity.
+- [ ] T057 [P] Implement `sqlitch engine` command handler in `sqlitch/cli/commands/engine.py` with SQLite parity.
+- [ ] T058 [P] Implement `sqlitch help` command handler in `sqlitch/cli/commands/help.py` with SQLite parity.
+- [ ] T059 [P] Implement `sqlitch init` command handler in `sqlitch/cli/commands/init.py` with SQLite parity.
+- [ ] T060 [P] Implement `sqlitch log` command handler in `sqlitch/cli/commands/log.py` with SQLite parity.
+- [ ] T061 [P] Implement `sqlitch plan` command handler in `sqlitch/cli/commands/plan.py` with SQLite parity.
+- [ ] T062 [P] Implement `sqlitch rebase` command handler in `sqlitch/cli/commands/rebase.py` with SQLite parity.
+- [ ] T063 [P] Implement `sqlitch revert` command handler in `sqlitch/cli/commands/revert.py` with SQLite parity.
+- [ ] T064 [P] Implement `sqlitch rework` command handler in `sqlitch/cli/commands/rework.py` with SQLite parity.
+- [ ] T065 [P] Implement `sqlitch show` command handler in `sqlitch/cli/commands/show.py` with SQLite parity.
+- [ ] T066 [P] Implement `sqlitch status` command handler in `sqlitch/cli/commands/status.py` with SQLite parity.
+- [ ] T067 [P] Implement `sqlitch tag` command handler in `sqlitch/cli/commands/tag.py` with SQLite parity.
+- [ ] T068 [P] Implement `sqlitch target` command handler in `sqlitch/cli/commands/target.py` with SQLite parity.
+- [ ] T069 [P] Implement `sqlitch upgrade` command handler in `sqlitch/cli/commands/upgrade.py` with SQLite parity.
+- [ ] T070 [P] Implement `sqlitch verify` command handler in `sqlitch/cli/commands/verify.py` with SQLite parity.
 - [ ] T047 [P] Implement MySQL engine adapter in `sqlitch/engine/mysql.py`.
 - [ ] T048 [P] Implement PostgreSQL engine adapter in `sqlitch/engine/postgres.py`.
 - [ ] T049 Implement Docker orchestration helpers and health checks in `sqlitch/engine/docker.py`.
-- [ ] T050 Create CLI command package scaffolding (`sqlitch/cli/commands/__init__.py`) and shared exceptions.
-- [ ] T051 Wire Click group, global options, and command registration in `sqlitch/cli/main.py`.
-- [ ] T052 [P] Implement `sqlitch add` command handler in `sqlitch/cli/commands/add.py`.
-- [ ] T053 [P] Implement `sqlitch bundle` command handler in `sqlitch/cli/commands/bundle.py`.
-- [ ] T054 [P] Implement `sqlitch checkout` command handler in `sqlitch/cli/commands/checkout.py`.
-- [ ] T055 [P] Implement `sqlitch config` command handler in `sqlitch/cli/commands/config.py`.
-- [ ] T056 [P] Implement `sqlitch deploy` command handler in `sqlitch/cli/commands/deploy.py`.
-- [ ] T057 [P] Implement `sqlitch engine` command handler in `sqlitch/cli/commands/engine.py`.
-- [ ] T058 [P] Implement `sqlitch help` command handler in `sqlitch/cli/commands/help.py`.
-- [ ] T059 [P] Implement `sqlitch init` command handler in `sqlitch/cli/commands/init.py`.
-- [ ] T060 [P] Implement `sqlitch log` command handler in `sqlitch/cli/commands/log.py`.
-- [ ] T061 [P] Implement `sqlitch plan` command handler in `sqlitch/cli/commands/plan.py`.
-- [ ] T062 [P] Implement `sqlitch rebase` command handler in `sqlitch/cli/commands/rebase.py`.
-- [ ] T063 [P] Implement `sqlitch revert` command handler in `sqlitch/cli/commands/revert.py`.
-- [ ] T064 [P] Implement `sqlitch rework` command handler in `sqlitch/cli/commands/rework.py`.
-- [ ] T065 [P] Implement `sqlitch show` command handler in `sqlitch/cli/commands/show.py`.
-- [ ] T066 [P] Implement `sqlitch status` command handler in `sqlitch/cli/commands/status.py`.
-- [ ] T067 [P] Implement `sqlitch tag` command handler in `sqlitch/cli/commands/tag.py`.
-- [ ] T068 [P] Implement `sqlitch target` command handler in `sqlitch/cli/commands/target.py`.
-- [ ] T069 [P] Implement `sqlitch upgrade` command handler in `sqlitch/cli/commands/upgrade.py`.
-- [ ] T070 [P] Implement `sqlitch verify` command handler in `sqlitch/cli/commands/verify.py`.
 - [ ] T071 Implement parity smoke-test CLI (`bin/sqlitch-parity`) that diff-checks SQLitch output against repository-managed Sqitch golden fixtures (generated ahead of time) without invoking Sqitch during test execution.
 - [ ] T072 Implement pytest fixtures (`tests/conftest.py`) for Docker lifecycle, config-root isolation, and artifact cleanup.
 
 ### Phase 3.3 Manual Verification Gates (Hard Stops)
-- [ ] T081 Freeze upstream work after T046, run manual SQLite parity verification, document results in `docs/reports/sqlite-gate.md`, and raise a PR for merge before starting T047.
+- [ ] T081 Freeze upstream work after T046–T070, run manual SQLite parity verification (including CLI walkthrough), document results in `docs/reports/sqlite-gate.md`, and raise a PR for merge before starting T047.
 - [ ] T082 Branch from merged main, implement T047, then pause to run manual MySQL parity verification, capture results in `docs/reports/mysql-gate.md`, and raise a PR for merge before starting T048.
 - [ ] T083 Branch from merged main, implement T048, run manual PostgreSQL parity verification, capture results in `docs/reports/postgres-gate.md`, and merge before moving into integration work.
 
@@ -109,8 +109,9 @@
 ## Dependencies
 - Phase 3.2 tests must complete (and fail) before starting any Phase 3.3 implementation task.
 - Tooling coverage tasks T035a–T035c must be operational before expanding automation around lint/format enforcement in Phase 3.3.
-- T045 precedes engine-specific tasks T046–T048.
-- Engine adapters must execute in strict sequence: T046 → T081 → T047 → T082 → T048 → T083.
+- T045 precedes downstream engine and CLI work.
+- Complete T046 followed by T050–T070 before attempting T081.
+- Engine adapters beyond SQLite must execute in strict sequence: T047 → T082 → T048 → T083, each on a fresh branch after the prior gate merges.
 - T081 must complete (merged) before starting T047; T082 must complete (merged) before starting T048; T083 must complete (merged) before any integration work (Phase 3.4).
 - T051 must complete before command handler tasks T052–T070.
 - T008a and T008b must finish before Phase 3.3 work begins to ensure the skip-removal gate is active in tooling and reviews.
@@ -119,7 +120,7 @@
 
 ## Parallel Execution Example
 ```
-# After T046 completes and T081 merges, begin the MySQL adapter on a fresh branch:
+# After T046–T070 complete and T081 merges, begin the MySQL adapter on a fresh branch:
 Task: "T047 Implement MySQL engine adapter in sqlitch/engine/mysql.py" (agent-engine)
 # After T082 merges, begin the PostgreSQL adapter:
 Task: "T048 Implement PostgreSQL engine adapter in sqlitch/engine/postgres.py" (agent-engine)

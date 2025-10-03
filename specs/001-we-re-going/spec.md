@@ -33,6 +33,11 @@
 - Q: When a user targets an engine outside the MVP scope (e.g., Oracle), how should SQLitch respond? → A: Option A (fail immediately with clear error)
 - Q: When Docker isn’t available on a contributor machine or CI runner, how should the test suite behave? → A: Option B (skip Docker-backed tests with warning)
 
+### Delivery Milestones
+- **Milestone M1 (SQLite First)**: Ship a fully working SQLite experience—including engine adapter, CLI command surface, parity smoke tests, and manual walkthrough—before beginning any work on additional database engines. No MySQL/PostgreSQL development may start until the SQLite milestone is verified end-to-end from the shell.
+- **Milestone M2 (MySQL)**: After M1 parity documentation merges, extend the same workflows to MySQL and repeat the manual verification gate.
+- **Milestone M3 (PostgreSQL)**: After M2 merges, broaden coverage to PostgreSQL and complete the corresponding gate prior to integration tasks.
+
 ---
 
 ## User Scenarios & Testing *(mandatory)*

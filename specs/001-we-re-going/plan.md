@@ -159,6 +159,19 @@ specs/[###-feature]/
 ## Phase 3+: Future Implementation
 *These phases are beyond the scope of the /plan command*
 
+### Phase 3.3 Implementation Milestones (SQLite → MySQL → PostgreSQL)
+1. **SQLite Parity Slice (Milestone M1)**
+   - Complete engine abstractions (T045) and the SQLite adapter (T046).
+   - Stand up CLI scaffolding (T050–T051) and the command surface required to walk through the Sqitch tutorial end-to-end (T052–T070, constrained initially to SQLite-backed operations).
+   - Execute T081 with an expanded checklist that now includes manual CLI walkthroughs (`sqlitch init`, `sqlitch plan`, etc.) and update the parity report.
+   - Only after these steps pass may work continue.
+2. **MySQL Parity Slice (Milestone M2)**
+   - Branch from the merged SQLite milestone, implement the MySQL adapter (T047), update CLI handlers where engine branching is required, and complete parity gate T082.
+3. **PostgreSQL Parity Slice (Milestone M3)**
+   - Repeat the flow for PostgreSQL (T048 + T083) before broader integration tasks resume.
+
+This sequencing guarantees a fully functional SQLite experience at the shell before additional engines begin, making manual validation straightforward and reducing regression risk.
+
 **Phase 3**: Task execution (/tasks command creates tasks.md)  
 **Phase 4**: Implementation (execute tasks.md following constitutional principles)  
 **Phase 5**: Validation (run tests, execute quickstart.md, performance validation)

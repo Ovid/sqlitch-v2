@@ -40,12 +40,17 @@ Provisioned services:
 - SQLite uses in-memory driver (no container)
 
 ## 5. Initialize Sample Project
-```bash
-cd examples/basic
-bin/sqlitch init myapp --engine pg
-```
-- Detects existing `sqitch.*` files if copying samples; tool aborts if conflicting `sqlitch.*` detected.
-- Generated plan/scripts mirror Sqitch layout.
+- **Status**: Pending implementation (tasks T051–T056). Commands are not yet wired, so running this today raises `Error: No such command 'init'.`
+- Once the CLI command surface lands, usage will look like:
+
+	```bash
+	cd examples/basic
+	sqlitch init myapp --engine pg
+	```
+
+	- `sqlitch` installs as a console script (plus a compatibility shim in `bin/sqlitch` for direct invocation).
+	- Detects existing `sqitch.*` files if copying samples; tool aborts if conflicting `sqlitch.*` detected.
+	- Generated plan/scripts mirror Sqitch layout.
 
 ## 6. Run Test Suite
 ```bash
