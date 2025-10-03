@@ -49,8 +49,8 @@
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 *Before beginning any task in this phase, remove the related skip markers introduced in Phase 3.2, confirm the tests fail, and use that failure as the Red→Green starting point (FR-012).* 
 - [X] T036 Implement plan domain models (Change, Tag, Plan entries) in `sqlitch/plan/model.py`.
-- [ ] T037 Implement plan parser mirroring Sqitch semantics in `sqlitch/plan/parser.py`.
-- [ ] T038 Implement plan formatter and checksum utilities in `sqlitch/plan/formatter.py`.
+- [X] T037 Implement plan parser mirroring Sqitch semantics in `sqlitch/plan/parser.py`.
+- [X] T038 Implement plan formatter and checksum utilities in `sqlitch/plan/formatter.py`.
 - [ ] T039 Implement configuration loader with layered scopes in `sqlitch/config/loader.py`.
 - [ ] T040 Implement configuration resolver & overrideable root handling in `sqlitch/config/resolver.py`.
 - [ ] T041 Implement registry state read/write operations in `sqlitch/registry/state.py`.
