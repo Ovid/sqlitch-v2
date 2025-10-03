@@ -9,7 +9,7 @@
 - ✅ **Resolved**: Plan parse → format round-trips now preserve missing `change_id` metadata (no more injected UUIDs).
 - ✅ **Resolved**: `Change.script_paths` is now immutable (`MappingProxyType`), keeping change objects frozen after validation.
 - ✅ **Resolved**: `sqlitch/config/loader.py` exports the correct symbols and retains a compatibility alias for `load_configuration`.
-- 🟡 **Ongoing watch**: `Change.__post_init__` still mixes construction and non-trivial validation logic (T090); leave scheduled, but keep in backlog.
+- ✅ **Resolved**: `Change.__post_init__` now delegates to dedicated normalization helpers and offers a `Change.create` factory for pre-validation.
 - ✅ Strengths: Excellent test coverage (94%), clean CLI context assembly, environment immutability (`MappingProxyType`), and consistent docstrings across public APIs.
 
 ## Architecture findings
@@ -33,10 +33,11 @@
 - **Fix**: `__all__` now lists `ConfigProfile` and `load_config`; a `load_configuration` alias maintains any external references.
 - **Result**: Wildcard imports work as documented (FR-015, Principle VIII).
 
-### 4. Large `Change.__post_init__` validation block (Medium, deferred)
+### 4. Change validation extracted into helpers (Resolved)
 
-- **Status**: No regression since last review, but the 40+ line method still conflates validation, normalisation, and UUID assignment.
-- **Action**: Keep task T090 open—extract into clearly named helpers/factory. Doing so will simplify targeted unit tests and reduce constructor complexity.
+- **Fix**: Added `_normalize_change_fields` helper, `_NormalizedChange` data carrier, and a `Change.create` factory. `__post_init__` now delegates to the helper, keeping the method focused on attribute assignment.
+- **Tests**: `tests/plan/test_model.py::test_change_factory_applies_normalization` confirms the factory performs the same normalization as direct instantiation.
+- **Result**: Satisfies FR-019 by making validation independently testable and reusable for future constructors.
 
 ## Positive observations
 
@@ -55,7 +56,8 @@
 - **Sqitch parity preserved?** ✅ (Round-trip parity restored by plan fixes).
 - **Immutability of domain models?** ✅ (`Change.script_paths` now read-only).
 - **Documented public API accurate?** ✅ (`load_config` exported correctly with alias support).
-- **Outstanding refactor (T090)** 🔄 Deferred, still recommended.
+- **Validation logic extracted?** ✅ (`Change.__post_init__` delegates to `_normalize_change_fields`, with factory support).
+- **Validation helpers landed**: Change validation now lives in `_normalize_change_fields`, with a factory for pre-validation (closes T090).
 
 Please prioritise the high-severity parity fix before shipping any plan-related changes. Medium items can be batched into the same maintenance PR.
    - Create `Change.create()` classmethod
@@ -85,7 +87,7 @@ Please prioritise the high-severity parity fix before shipping any plan-related 
 8. **Documented Interfaces (VIII)**: Comprehensive docstrings throughout
 
 ### ⚠️ PARTIAL COMPLIANCE
-1. **FR-019** (Validation Extraction): Complex `__post_init__` validation could be extracted (T090, deferred)
+1. **FR-019** (Validation Extraction): `Change.__post_init__` now delegates to `_normalize_change_fields` and offers a `Change.create` factory (T090, completed)
 
 ---
 
@@ -103,29 +105,22 @@ Please prioritise the high-severity parity fix before shipping any plan-related 
    - ✅ Tests updated and passing
 
 ### Optional Polish (Maintenance Windows)
-1. **T090** (3 hours): Extract validation from `Change.__post_init__` (deferred)
-   - Establishes factory pattern for future domain models
-   - Improves independent testability
-   - **Not blocking**: Current implementation is functional and well-tested
-   
-2. Consider centralizing constants module (currently acceptable as-is)
-3. Add pre-commit hooks for type hint enforcement
-4. Create validation pattern documentation
+1. Consider centralizing constants module (currently acceptable as-is)
+2. Add pre-commit hooks for type hint enforcement
+3. Create validation pattern documentation
 
 ---
 
 ## Conclusion
 
-The SQLitch codebase demonstrates **professional-grade Python development** with strong constitutional adherence following recent quality improvements. The remaining items (T088, T090, T092) are well-defined and non-critical, though T088 should be completed before major scaling occurs.
-
-**Estimated effort to complete remaining quality items**: ~3 hours (T090 only, optional)
+The SQLitch codebase demonstrates **professional-grade Python development** with strong constitutional adherence following recent quality improvements. The remaining follow-up work is minor documentation polish (constants, tooling helpers) with no open quality blockers.
 
 **Current Quality Grade**: **A (Excellent - All critical items resolved)**
 
 **Status**: 
 - ✅ T088 (Registry documentation) - **COMPLETED**
 - ✅ T092 (Error message standardization) - **COMPLETED**
-- ⚠️ T090 (Validation extraction) - **DEFERRED** (optional polish)
+- ✅ T090 (Validation extraction) - **COMPLETED**
 
 **Ready for**: Command handler implementation (T052-T070) can proceed without blockers
 
@@ -167,4 +162,4 @@ bandit -r sqlitch/
 **Report Generated**: 2025-10-03 (Post-Refactoring State)  
 **Review Type**: Current State Assessment  
 **Confidence Level**: High  
-**Next Review**: After T088, T090, T092 completion
+**Next Review**: After additional CLI command work or significant engine milestones

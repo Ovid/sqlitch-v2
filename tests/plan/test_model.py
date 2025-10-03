@@ -64,6 +64,23 @@ def test_change_normalizes_string_script_paths():
     assert isinstance(change.script_paths["verify"], Path)
 
 
+def test_change_factory_applies_normalization():
+    change = model.Change.create(
+        name="widgets:add",
+        script_paths={"deploy": "deploy/widgets.sql", "revert": "revert/widgets.sql"},
+        planner="alice@example.com",
+        planned_at=datetime(2025, 10, 3, 12, 34, 56, tzinfo=timezone.utc),
+        dependencies=["core:init"],
+        tags=["v1.0"],
+    )
+
+    assert isinstance(change, model.Change)
+    assert change.script_paths["deploy"].name == "widgets.sql"
+    assert change.dependencies == ("core:init",)
+    assert change.tags == ("v1.0",)
+    assert change.change_id is None
+
+
 def test_change_rejects_duplicate_dependencies():
     with pytest.raises(ValueError, match=r"dependencies contains duplicates"):
         _make_change(dependencies=["core:init", "core:init"])
