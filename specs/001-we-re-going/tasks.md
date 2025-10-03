@@ -91,7 +91,7 @@
 - [ ] T072 Implement pytest fixtures (`tests/conftest.py`) for Docker lifecycle, config-root isolation, and artifact cleanup.
 
 ### Phase 3.3 Manual Verification Gates (Hard Stops)
-- [ ] T081 Freeze upstream work after T046–T070, run manual SQLite parity verification (including CLI walkthrough), document results in `docs/reports/sqlite-gate.md`, and raise a PR for merge before starting T047.
+- [X] T081 Freeze upstream work after T046–T070, run manual SQLite parity verification (including CLI walkthrough), document results in `docs/reports/sqlite-gate.md`, and raise a PR for merge before starting T047.
 - [ ] T082 Branch from merged main, implement T047, then pause to run manual MySQL parity verification, capture results in `docs/reports/mysql-gate.md`, and raise a PR for merge before starting T048.
 - [ ] T083 Branch from merged main, implement T048, run manual PostgreSQL parity verification, capture results in `docs/reports/postgres-gate.md`, and merge before moving into integration work.
 
@@ -112,11 +112,11 @@
 - [ ] T084 [P] Standardize all type hints to use modern Python 3.9+ built-ins (`dict`, `list`, `tuple`, `type`) instead of typing module equivalents across all files in `sqlitch/` (addresses REPORT.md Issue 1.1, FR-014).
 - [ ] T085 [P] Remove all `Optional` imports and replace with `X | None` union syntax throughout codebase (addresses REPORT.md Issue 1.2, FR-014).
 - [ ] T086 [P] Add `abc.ABC` inheritance and `@abstractmethod` decorators to `Engine` base class in `sqlitch/engine/base.py` (addresses REPORT.md Issue 2.4, FR-017).
-- [ ] T087 [P] Add `__all__` exports to public modules missing them: `sqlitch/registry/state.py`, `sqlitch/plan/model.py`, `sqlitch/config/loader.py` (addresses REPORT.md Issue 3.3, FR-015).
+- [X] T087 [P] Add `__all__` exports to public modules missing them: `sqlitch/registry/state.py`, `sqlitch/plan/model.py`, `sqlitch/config/loader.py` (addresses REPORT.md Issue 3.3, FR-015).
 - [X] T088 Document registry lifecycle for `ENGINE_REGISTRY` and `_COMMAND_REGISTRY`, including initialization phases and test cleanup patterns (addresses REPORT.md Issue 2.1, FR-018).
-- [ ] T089 Refactor `ConfigConflictError` to extend `RuntimeError` instead of `ValueError` for semantic consistency in `sqlitch/config/loader.py` (addresses REPORT.md Issue 2.3, FR-016).
+- [X] T089 Refactor `ConfigConflictError` to extend `RuntimeError` instead of `ValueError` for semantic consistency in `sqlitch/config/loader.py` (addresses REPORT.md Issue 2.3, FR-016).
 - [X] T090 Extract complex validation from `Change.__post_init__` into testable factory method or validator class in `sqlitch/plan/model.py` (addresses REPORT.md Issue 2.5, FR-019).
-- [ ] T091 [P] Fix PEP 8 import grouping (stdlib, third-party, local with blank lines) in `sqlitch/cli/commands/__init__.py` and any other files flagged by review (addresses REPORT.md Issue 1.7).
+- [X] T091 [P] Fix PEP 8 import grouping (stdlib, third-party, local with blank lines) in `sqlitch/cli/commands/__init__.py` and any other files flagged by review (addresses REPORT.md Issue 1.7).
 - [ ] T092 Review and standardize error messages to consistently include field/context information across all validation errors (addresses REPORT.md Issue 3.2).
 
 ## Dependencies
