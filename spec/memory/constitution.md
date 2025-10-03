@@ -1,14 +1,18 @@
 <!--
  Sync Impact Report
-- Version change: 1.3.0 → 1.4.0
+- Version change: 1.4.0 → 1.5.0
 - Added sections:
-  • VIII. Documented Public Interfaces — codifies docstring expectations for public symbols
+  • Additional Constraints — Type Hints, Error Handling, State Management, Abstract Interfaces, Validation Patterns (codifies Python best practices from code review)
 - Modified sections:
-  • Development Workflow & Quality Gates — clarified documentation updates for features
+  • VIII. Documented Public Interfaces — Added __all__ exports requirement
+  • Development Workflow & Quality Gates — Added Code Style Gate with PEP 8 import grouping requirement
 - Removed sections: None
 - Templates requiring updates:
   ✅ Existing templates reviewed (no changes required)
   ⚠  RATIFICATION_DATE left as TODO pending project decision
+- Rationale: Incorporates findings from 2025-10-03 comprehensive code review (REPORT.md)
+  to standardize Python idioms, improve type safety, and ensure consistent code quality
+  before scaling to full command handler implementation.
 -->
 
 # SQLitch Constitution
@@ -91,6 +95,8 @@ and clarity of intent.
   MUST remain accurate when behavior changes.
 - Private helpers MAY omit docstrings when intent is obvious but SHOULD include
   concise inline comments if readability would otherwise suffer.
+- All public modules SHOULD define `__all__` exports to explicitly declare their
+  public API surface and control wildcard import behavior.
 Rationale: Clear documentation protects consumers, reviewers, and future maintainers
 by making behavior discoverable without reverse-engineering the implementation.
 
@@ -108,6 +114,23 @@ by making behavior discoverable without reverse-engineering the implementation.
   documented with an incident record and restoration plan.
 - Configuration: Respect environment variables and config files under
   `$XDG_CONFIG_HOME/sqlitch/` or `~/.config/sqlitch/`.
+- Type Hints: All code MUST use modern Python 3.9+ built-in type annotations
+  (`dict`, `list`, `tuple`, `type`) rather than typing module equivalents
+  (`Dict`, `List`, `Tuple`, `Type`) except where backwards compatibility is
+  explicitly required. Union types MUST use `X | None` syntax rather than
+  `Optional[X]`. All modules SHOULD include `from __future__ import annotations`
+  for forward reference support.
+- Error Handling: Exception hierarchies SHOULD follow semantic consistency:
+  `ValueError` for invalid input data, `RuntimeError` for system/state errors.
+  Domain-specific exceptions SHOULD extend the appropriate base class.
+- State Management: Global mutable state MUST be minimized. Registries and
+  singletons SHOULD be immutable after initialization or provide clear lifecycle
+  documentation. Prefer dependency injection over global lookups where feasible.
+- Abstract Interfaces: Classes designed for subclassing MUST use `abc.ABC` and
+  `@abstractmethod` to declare their contract explicitly.
+- Validation Patterns: Complex validation logic SHOULD be extracted from
+  `__post_init__` methods into separate, testable factory methods or validators
+  to improve clarity and testability.
 
 ## Development Workflow & Quality Gates
 
@@ -124,6 +147,10 @@ by making behavior discoverable without reverse-engineering the implementation.
 - Documentation: Each feature MUST update quickstart and, when applicable,
   contracts and data-model docs, and MUST ensure public docstrings stay in sync
   with observable behavior.
+- Code Style Gate: All code MUST pass formatting (black, isort), linting
+  (flake8, pylint), type checking (mypy), and security scanning (bandit) with
+  zero warnings before merge. Import grouping MUST follow PEP 8 (stdlib,
+  third-party, local with blank lines between groups).
 
 ## Governance
 
@@ -139,4 +166,4 @@ by making behavior discoverable without reverse-engineering the implementation.
 - Compliance: All specs, plans, tasks, and PRs MUST reference and adhere to this
   document. Non-compliance is a change request, not a discretionary choice.
 
-**Version**: 1.4.0 | **Ratified**: TODO(RATIFICATION_DATE): original adoption date unknown | **Last Amended**: 2025-10-03
+**Version**: 1.5.0 | **Ratified**: TODO(RATIFICATION_DATE): original adoption date unknown | **Last Amended**: 2025-10-03

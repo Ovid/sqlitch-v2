@@ -62,7 +62,7 @@ Database release engineers need to execute database change management workflows 
 
 ### Functional Requirements
 - **FR-001**: SQLitch MUST expose the same CLI commands, options, help text, and default behaviors as Sqitch for SQLite, MySQL, and PostgreSQL, yielding identical human-readable and machine-consumable outputs, and MUST fail immediately with a clear error message when invoked against unsupported engines.
-- **FR-002**: The project MUST mirror Sqitch’s directory and test layout so developers can cross-reference files one-to-one between the Perl and Python implementations.
+- **FR-002**: The project MUST mirror Sqitch's directory and test layout so developers can cross-reference files one-to-one between the Perl and Python implementations.
 - **FR-003**: SQLitch MUST pass a comprehensive automated test suite that validates all behaviors covered by Sqitch tests, plus any additional cases needed to maintain ≥90% coverage and highlight behavioral deviations.
 - **FR-004**: Quality gates MUST block merges unless formatting, linting, static type analysis, security scanning, and coverage thresholds all pass with zero warnings.
 - **FR-005**: The CI/CD pipeline MUST execute across Windows, macOS, and Linux, enforcing the same pass criteria before any code is considered releasable.
@@ -74,6 +74,12 @@ Database release engineers need to execute database change management workflows 
 - **FR-011**: SQLitch MUST support existing `sqitch.*` project artifacts as drop-in inputs, while emitting a blocking error if both `sqitch.*` and `sqlitch.*` files are detected in the same scope to prevent ambiguous configuration.
 - **FR-012**: Tests covering unimplemented features MUST be committed with skip markers (e.g., `pytest.mark.skip`) and MUST have those skips removed immediately before the corresponding implementation work starts. Removing the skip, confirming the test failure, running the `scripts/check-skips.py` automation (T008a), and acknowledging the PR checklist item (T008b) are absolute pre-implementation gates that re-establish the Red→Green workflow while keeping CI stable for unstarted features.
 - **FR-013**: All public-facing modules, classes, functions, CLI commands, and configuration surfaces MUST include comprehensive docstrings that outline purpose, parameters, outputs, side effects, and error modes. Private helpers MAY use brief inline comments in lieu of docstrings when appropriate.
+- **FR-014**: All code MUST use modern Python 3.9+ built-in type annotations (`dict`, `list`, `tuple`, `type`) consistently rather than typing module equivalents (`Dict`, `List`, `Tuple`, `Type`). Union types MUST use `X | None` syntax rather than `Optional[X]`. Type hints MUST be consistent across the entire codebase.
+- **FR-015**: Public modules MUST define `__all__` exports to explicitly declare their public API surface and control wildcard import behavior.
+- **FR-016**: Exception hierarchies MUST follow semantic consistency: `ValueError` for invalid input data, `RuntimeError` for system/state errors. Domain-specific exceptions MUST extend the appropriate base class.
+- **FR-017**: Classes designed for subclassing MUST use `abc.ABC` and `@abstractmethod` to declare their contract explicitly.
+- **FR-018**: Global mutable state MUST be minimized and documented. Registries MUST be immutable after initialization or provide clear lifecycle documentation with test cleanup utilities.
+- **FR-019**: Complex validation logic MUST be extracted from `__post_init__` methods into separate, testable factory methods or validators to improve clarity, testability, and maintainability.
 
 ### Key Entities *(include if feature involves data)*
 - **Deployment Plan**: Represents the ordered list of database changes, tags, and dependencies; must remain fully compatible with existing Sqitch plan files.

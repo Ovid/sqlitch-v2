@@ -107,6 +107,18 @@
 - [ ] T079 [P] Update `README.md` and `Changes` with release notes and coverage badge.
 - [ ] T080 [P] Run final tox + coverage, ensure ≥90%, zero warnings, and capture parity report for release checklist.
 
+## Phase 3.6: Code Quality Refinement (Post-Review)
+*Based on comprehensive code review (REPORT.md, 2025-10-03), address identified best practices before scaling to full command implementation.*
+- [ ] T084 [P] Standardize all type hints to use modern Python 3.9+ built-ins (`dict`, `list`, `tuple`, `type`) instead of typing module equivalents across all files in `sqlitch/` (addresses REPORT.md Issue 1.1, FR-014).
+- [ ] T085 [P] Remove all `Optional` imports and replace with `X | None` union syntax throughout codebase (addresses REPORT.md Issue 1.2, FR-014).
+- [ ] T086 [P] Add `abc.ABC` inheritance and `@abstractmethod` decorators to `Engine` base class in `sqlitch/engine/base.py` (addresses REPORT.md Issue 2.4, FR-017).
+- [ ] T087 [P] Add `__all__` exports to public modules missing them: `sqlitch/registry/state.py`, `sqlitch/plan/model.py`, `sqlitch/config/loader.py` (addresses REPORT.md Issue 3.3, FR-015).
+- [ ] T088 Document registry lifecycle for `ENGINE_REGISTRY` and `_COMMAND_REGISTRY`, including initialization phases and test cleanup patterns (addresses REPORT.md Issue 2.1, FR-018).
+- [ ] T089 Refactor `ConfigConflictError` to extend `RuntimeError` instead of `ValueError` for semantic consistency in `sqlitch/config/loader.py` (addresses REPORT.md Issue 2.3, FR-016).
+- [ ] T090 Extract complex validation from `Change.__post_init__` into testable factory method or validator class in `sqlitch/plan/model.py` (addresses REPORT.md Issue 2.5, FR-019).
+- [ ] T091 [P] Fix PEP 8 import grouping (stdlib, third-party, local with blank lines) in `sqlitch/cli/commands/__init__.py` and any other files flagged by review (addresses REPORT.md Issue 1.7).
+- [ ] T092 Review and standardize error messages to consistently include field/context information across all validation errors (addresses REPORT.md Issue 3.2).
+
 ## Dependencies
 - Phase 3.2 tests must complete (and fail) before starting any Phase 3.3 implementation task.
 - Tooling coverage tasks T035a–T035c must be operational before expanding automation around lint/format enforcement in Phase 3.3.
@@ -119,6 +131,7 @@
 - T008a and T008b must finish before Phase 3.3 work begins to ensure the skip-removal gate is active in tooling and reviews.
 - Integration tasks T073–T074 depend on completion of all relevant command and engine tasks.
 - Polish tasks (T077–T080) run only after integration is solid.
+- Code Quality Refinement tasks (T084–T092) SHOULD be completed before starting T052–T070 (command handlers) to ensure consistent patterns across new code. T084–T087 and T091 may be executed in parallel as they touch distinct files.
 
 ## Parallel Execution Example
 ```
@@ -126,9 +139,16 @@
 Task: "T047 Implement MySQL engine adapter in sqlitch/engine/mysql.py" (agent-engine)
 # After T082 merges, begin the PostgreSQL adapter:
 Task: "T048 Implement PostgreSQL engine adapter in sqlitch/engine/postgres.py" (agent-engine)
+# Code quality tasks T084-T087, T091 can run in parallel:
+Task: "T084 Standardize type hints" (agent-quality)
+Task: "T085 Replace Optional with union syntax" (agent-quality)
+Task: "T086 Add ABC to Engine" (agent-quality)
+Task: "T087 Add __all__ exports" (agent-quality)
+Task: "T091 Fix import grouping" (agent-quality)
 ```
 
 ## Notes
 - [P] tasks touch distinct files and may be assigned concurrently once prerequisites finish.
 - Ensure every test created in Phase 3.2 is executed and failing prior to corresponding implementation work.
 - All scripts and tests must clean up Docker containers, temporary directories, and generated plan files to satisfy FR-010.
+- Code Quality Refinement phase addresses systematic issues identified in comprehensive review to maintain constitutional compliance and Python best practices.

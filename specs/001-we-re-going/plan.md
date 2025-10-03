@@ -214,4 +214,5 @@ This sequencing guarantees a fully functional SQLite experience at the shell bef
 - [x] Complexity deviations documented (none)
 
 ---
-*Based on Constitution v1.3.0 - See `.specify/memory/constitution.md`*
+*Based on Constitution v1.5.0 - See `.specify/memory/constitution.md`*
+*Incorporates Python best practices from comprehensive code review (REPORT.md, 2025-10-03)*
