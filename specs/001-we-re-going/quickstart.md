@@ -25,10 +25,9 @@ pip install --upgrade pip
 
 ## 3. Install Dependencies
 ```bash
-pip install -r requirements-dev.txt
-pip install -e .
+pip install ".[dev]"
 ```
-Includes runtime (Click, SQLAlchemy, psycopg[binary], mysqlclient, python-dateutil, pydantic) and tooling (pytest, pytest-cov, hypothesis, tox, black, isort, flake8, pylint, mypy, bandit, docker, rich).
+Includes runtime (Click, SQLAlchemy, psycopg[binary], mysqlclient, python-dateutil, pydantic) and tooling (pytest, pytest-cov, hypothesis, tox, black, isort, flake8, pylint, mypy, bandit, docker, rich). All subsequent commands assume the virtual environment remains activated.
 
 ## 4. Configure Docker Test Harness
 ```bash
