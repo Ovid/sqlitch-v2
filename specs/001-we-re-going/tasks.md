@@ -55,8 +55,8 @@
 - [ ] T044 Implement timestamp/zone handling helpers in `sqlitch/lib/sqlitch/utils/time.py`.
 - [ ] T045 Implement engine base interface and connection factory in `sqlitch/lib/sqlitch/engine/base.py`.
 - [ ] T046 [P] Implement SQLite engine adapter in `sqlitch/lib/sqlitch/engine/sqlite.py`.
-- [ ] T047 [P] Implement PostgreSQL engine adapter in `sqlitch/lib/sqlitch/engine/postgres.py`.
-- [ ] T048 [P] Implement MySQL engine adapter in `sqlitch/lib/sqlitch/engine/mysql.py`.
+- [ ] T047 [P] Implement MySQL engine adapter in `sqlitch/lib/sqlitch/engine/mysql.py`.
+- [ ] T048 [P] Implement PostgreSQL engine adapter in `sqlitch/lib/sqlitch/engine/postgres.py`.
 - [ ] T049 Implement Docker orchestration helpers and health checks in `sqlitch/lib/sqlitch/engine/docker.py`.
 - [ ] T050 Create CLI command package scaffolding (`sqlitch/lib/sqlitch/cli/commands/__init__.py`) and shared exceptions.
 - [ ] T051 Wire Click group, global options, and command registration in `sqlitch/lib/sqlitch/cli/main.py`.
@@ -82,6 +82,11 @@
 - [ ] T071 Implement parity smoke-test CLI (`sqlitch/bin/sqlitch-parity`) that diff-checks SQLitch output against repository-managed Sqitch golden fixtures (generated ahead of time) without invoking Sqitch during test execution.
 - [ ] T072 Implement pytest fixtures (`tests/conftest.py`) for Docker lifecycle, config-root isolation, and artifact cleanup.
 
+### Phase 3.3 Manual Verification Gates (Hard Stops)
+- [ ] T081 Freeze upstream work after T046, run manual SQLite parity verification, document results in `docs/reports/sqlite-gate.md`, and raise a PR for merge before starting T047.
+- [ ] T082 Branch from merged main, implement T047, then pause to run manual MySQL parity verification, capture results in `docs/reports/mysql-gate.md`, and raise a PR for merge before starting T048.
+- [ ] T083 Branch from merged main, implement T048, run manual PostgreSQL parity verification, capture results in `docs/reports/postgres-gate.md`, and merge before moving into integration work.
+
 ## Phase 3.4: Integration
 - [ ] T073 Integrate engine adapters with registry layer and plan execution pipeline in `sqlitch/lib/sqlitch/engine/__init__.py`.
 - [ ] T074 Integrate CLI commands with Docker harness, config loader, and plan/registry modules ensuring deterministic stdout/stderr across platforms.
@@ -97,16 +102,18 @@
 ## Dependencies
 - Phase 3.2 tests must complete (and fail) before starting any Phase 3.3 implementation task.
 - T045 precedes engine-specific tasks T046–T048.
+- Engine adapters must execute in strict sequence: T046 → T081 → T047 → T082 → T048 → T083.
+- T081 must complete (merged) before starting T047; T082 must complete (merged) before starting T048; T083 must complete (merged) before any integration work (Phase 3.4).
 - T051 must complete before command handler tasks T052–T070.
 - Integration tasks T073–T074 depend on completion of all relevant command and engine tasks.
 - Polish tasks (T077–T080) run only after integration is solid.
 
 ## Parallel Execution Example
 ```
-# After T045 completes, run engine adapter implementations in parallel:
-Task: "T046 Implement SQLite engine adapter in sqlitch/lib/sqlitch/engine/sqlite.py" (agent-engine)
-Task: "T047 Implement PostgreSQL engine adapter in sqlitch/lib/sqlitch/engine/postgres.py" (agent-engine)
-Task: "T048 Implement MySQL engine adapter in sqlitch/lib/sqlitch/engine/mysql.py" (agent-engine)
+# After T046 completes and T081 merges, begin the MySQL adapter on a fresh branch:
+Task: "T047 Implement MySQL engine adapter in sqlitch/lib/sqlitch/engine/mysql.py" (agent-engine)
+# After T082 merges, begin the PostgreSQL adapter:
+Task: "T048 Implement PostgreSQL engine adapter in sqlitch/lib/sqlitch/engine/postgres.py" (agent-engine)
 ```
 
 ## Notes

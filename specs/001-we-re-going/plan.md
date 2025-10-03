@@ -165,6 +165,12 @@ sqlitch/
 **Phase 4**: Implementation (execute tasks.md following constitutional principles)  
 **Phase 5**: Validation (run tests, execute quickstart.md, performance validation)
 
+### Engine Implementation Order & Manual Gates
+1. Implement the SQLite engine adapter first. After the adapter and its automated tests land (T046), halt feature work to perform manual parity verification, capture findings, and raise a dedicated PR for review and merge before touching other engines.
+2. Implement the MySQL engine adapter next (from a fresh branch). Repeat the manual verification + PR/merge cycle immediately after T047 completes so downstream changes cannot pile up.
+3. Implement the PostgreSQL engine adapter last (T048) and run the same manual check/merge gate before proceeding to integration tasks.
+4. Resume remaining work only after the relevant manual gate has cleared; downstream tasks must treat these pauses as hard stops.
+
 ## Complexity Tracking
 *Fill ONLY if Constitution Check has violations that must be justified*
 
