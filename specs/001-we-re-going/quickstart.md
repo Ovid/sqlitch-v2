@@ -26,7 +26,7 @@ pip install --upgrade pip
 ## 3. Install Dependencies
 ```bash
 pip install -r requirements-dev.txt
-pip install -e sqlitch
+pip install -e .
 ```
 Includes runtime (Click, SQLAlchemy, psycopg[binary], mysqlclient, python-dateutil, pydantic) and tooling (pytest, pytest-cov, hypothesis, tox, black, isort, flake8, pylint, mypy, bandit, docker, rich).
 
@@ -43,7 +43,7 @@ Provisioned services:
 ## 5. Initialize Sample Project
 ```bash
 cd examples/basic
-sqlitch/bin/sqlitch init myapp --engine pg
+bin/sqlitch init myapp --engine pg
 ```
 - Detects existing `sqitch.*` files if copying samples; tool aborts if conflicting `sqlitch.*` detected.
 - Generated plan/scripts mirror Sqitch layout.
@@ -58,7 +58,7 @@ pytest --maxfail=1 --disable-warnings --cov=sqlitch --cov-report=term-missing
 ## 7. Parity Smoke Test
 ```bash
 # In comparisons/basic fixture
-sqlitch/bin/sqlitch plan --json > sqlitch.json
+bin/sqlitch plan --json > sqlitch.json
 sqitch plan --json > sqitch.json
 diff -u sqitch.json sqlitch.json
 ```

@@ -8,8 +8,8 @@
   - argparse: stdlib but would require extensive manual scaffolding to match Sqitch UX.
 
 ## Decision: Packaging & Layout
-- **Outcome**: Structure a new `sqlitch/` root mirroring Sqitch directories (`bin/`, `lib/`, `etc/`, `t/`, `xt/`) while using `lib/sqlitch` as the Python package root managed via `pyproject.toml`.
-- **Rationale**: Preserves developer muscle memory and makes cross-references between Perl and Python trees straightforward.
+- **Outcome**: Mirror Sqitch directories (`bin/`, `docs/`, `etc/`, `xt/`) directly at the repository root while keeping the Python package rooted at a top-level `sqlitch/` directory.
+- **Rationale**: Preserves developer muscle memory, avoids confusing double-nested paths, and still keeps parity-friendly cross-references between module subdirectories and the Perl codebase.
 - **Alternatives Considered**: Consolidating under `src/sqlitch` (Pythonic default) would diverge from Sqitch layout and complicate parity reviews.
 
 ## Decision: Registry & Engine Connectors

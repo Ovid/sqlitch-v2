@@ -37,8 +37,8 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["lib"]
-include = ["sqlitch*", "sqlitch"]
+where = ["."]
+include = ["sqlitch*"]
 
 [tool.black]
 line-length = 100

@@ -49,7 +49,7 @@ Rebuild Sqitch as a Python-first CLI named SQLitch that delivers drop-in behavio
 
 - **Test-First Development**: Plan mandates pytest-first workflow, contract specs, and dockerized integration suites before implementation → **PASS**
 - **CLI-First, Text I/O Contracts**: Click-based CLI mirrors Sqitch outputs, ensures JSON mode parity, and enforces deterministic stdout/stderr → **PASS**
-- **Library-First Modules**: Core logic resides in importable `lib/sqlitch` modules with thin CLI wrapper; no business logic in entry script → **PASS**
+- **Library-First Modules**: Core logic resides in the importable `sqlitch` package with a thin CLI wrapper; no business logic in entry script → **PASS**
 - **Sqitch Behavioral Parity**: Research and contracts replicate Sqitch command semantics, timestamp formatting, and plan mutation rules → **PASS (tracked via parity reports)**
 - **Simplicity & Non-Duplication**: Reuse shared abstractions for engines; forbid unnecessary features beyond Sqitch scope → **PASS**
 - **AI Enablement**: Internal tooling (agents, CI bots) configured per current automation defaults; no constitution-mandated assistant → **PASS**
@@ -69,40 +69,40 @@ specs/[###-feature]/
 
 ### Source Code (repository root)
 ```
-sqlitch/
 ├── pyproject.toml
 ├── README.md
 ├── Changes
 ├── bin/
 │   └── sqlitch            # Click entry script invoking library CLI shim
-├── lib/
-│   └── sqlitch/
-│       ├── __init__.py
-│       ├── cli/
-│       │   ├── __init__.py
-│       │   ├── main.py     # Click group + command wiring
-│       │   └── options.py
-│       ├── engine/
-│       │   ├── base.py
-│       │   ├── sqlite.py
-│       │   ├── mysql.py
-│       │   └── postgres.py
-│       ├── plan/
-│       │   ├── parser.py
-│       │   └── formatter.py
-│       ├── config/
-│       │   ├── loader.py
-│       │   └── resolver.py
-│       ├── registry/
-│       │   ├── state.py
-│       │   └── migrations.py
-│       └── utils/
-│           ├── fs.py
-│           └── time.py
+├── docs/
 ├── etc/
 │   ├── templates/
 │   └── tools/
-├── docs/
+├── scripts/
+│   └── docker-compose/    # Engine harness definitions
+├── sqlitch/
+│   ├── __init__.py
+│   ├── cli/
+│   │   ├── __init__.py
+│   │   ├── main.py        # Click group + command wiring
+│   │   └── options.py
+│   ├── engine/
+│   │   ├── base.py
+│   │   ├── sqlite.py
+│   │   ├── mysql.py
+│   │   └── postgres.py
+│   ├── plan/
+│   │   ├── parser.py
+│   │   └── formatter.py
+│   ├── config/
+│   │   ├── loader.py
+│   │   └── resolver.py
+│   ├── registry/
+│   │   ├── state.py
+│   │   └── migrations.py
+│   └── utils/
+│       ├── fs.py
+│       └── time.py
 ├── tests/
 │   ├── cli/
 │   ├── engine/
@@ -111,13 +111,11 @@ sqlitch/
 │   ├── support/
 │   ├── unit/
 │   └── fixtures/
-├── xt/
-│   └── nightly/
-└── scripts/
-      └── docker-compose/    # Engine harness definitions
+└── xt/
+   └── nightly/
 ```
 
-**Structure Decision**: Mirror Sqitch’s `bin/`, `lib/`, `etc/`, and `xt/` directories under a new `sqlitch/` root while implementing Python modules inside `lib/sqlitch`. Create a sibling top-level `tests/` directory (next to `sqlitch/`) that mirrors the former Sqitch `t/` layout via subpackages (cli/, engine/, plan/, regression/, support/, unit/, fixtures/). Nightly/extended cases remain in `xt/`. Supporting scripts and packaging metadata live at the root to integrate with Python tooling while honoring the original layout.
+**Structure Decision**: Keep Sqitch’s sibling directories (`bin/`, `docs/`, `etc/`, `scripts/`, `xt/`) at the repository root while housing the Python implementation in a top-level `sqlitch/` package. This layout feels idiomatic to Python developers yet preserves the one-to-one mapping of module subdirectories (engine, plan, registry, etc.) with the Perl codebase for easy cross-reference.
 
 ## Phase 0: Outline & Research
 1. Investigate Sqitch Perl internals for command workflows, plan file semantics, registry schema, and template expansion rules that must be mirrored in Python.
