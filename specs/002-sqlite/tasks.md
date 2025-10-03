@@ -65,21 +65,21 @@
 - [X] T046 [P] Implement SQLite engine adapter in `sqlitch/engine/sqlite.py`.
 - [X] T050 Create CLI command package scaffolding (`sqlitch/cli/commands/__init__.py`) and shared exceptions (focus on SQLite-ready paths first).
 - [X] T051 Wire Click group, global options, and command registration in `sqlitch/cli/main.py`, ensuring SQLite workflows operate end-to-end.
-- [ ] T052 [P] Implement `sqlitch add` command handler in `sqlitch/cli/commands/add.py` with SQLite parity.
+- [X] T052 [P] Implement `sqlitch add` command handler in `sqlitch/cli/commands/add.py` with SQLite parity.
 - [ ] T053 [P] Implement `sqlitch bundle` command handler in `sqlitch/cli/commands/bundle.py` with SQLite parity.
 - [ ] T054 [P] Implement `sqlitch checkout` command handler in `sqlitch/cli/commands/checkout.py` with SQLite parity.
 - [ ] T055 [P] Implement `sqlitch config` command handler in `sqlitch/cli/commands/config.py` with SQLite parity.
 - [ ] T056 [P] Implement `sqlitch deploy` command handler in `sqlitch/cli/commands/deploy.py` with SQLite parity.
 - [ ] T057 [P] Implement `sqlitch engine` command handler in `sqlitch/cli/commands/engine.py` with SQLite parity.
 - [ ] T058 [P] Implement `sqlitch help` command handler in `sqlitch/cli/commands/help.py` with SQLite parity.
-- [ ] T059 [P] Implement `sqlitch init` command handler in `sqlitch/cli/commands/init.py` with SQLite parity.
+- [X] T059 [P] Implement `sqlitch init` command handler in `sqlitch/cli/commands/init.py` with SQLite parity.
 - [ ] T060 [P] Implement `sqlitch log` command handler in `sqlitch/cli/commands/log.py` with SQLite parity.
-- [ ] T061 [P] Implement `sqlitch plan` command handler in `sqlitch/cli/commands/plan.py` with SQLite parity.
+- [X] T061 [P] Implement `sqlitch plan` command handler in `sqlitch/cli/commands/plan.py` with SQLite parity.
 - [ ] T062 [P] Implement `sqlitch rebase` command handler in `sqlitch/cli/commands/rebase.py` with SQLite parity.
 - [ ] T063 [P] Implement `sqlitch revert` command handler in `sqlitch/cli/commands/revert.py` with SQLite parity.
 - [ ] T064 [P] Implement `sqlitch rework` command handler in `sqlitch/cli/commands/rework.py` with SQLite parity.
 - [ ] T065 [P] Implement `sqlitch show` command handler in `sqlitch/cli/commands/show.py` with SQLite parity.
-- [ ] T066 [P] Implement `sqlitch status` command handler in `sqlitch/cli/commands/status.py` with SQLite parity.
+- [X] T066 [P] Implement `sqlitch status` command handler in `sqlitch/cli/commands/status.py` with SQLite parity.
 - [ ] T067 [P] Implement `sqlitch tag` command handler in `sqlitch/cli/commands/tag.py` with SQLite parity.
 - [ ] T068 [P] Implement `sqlitch target` command handler in `sqlitch/cli/commands/target.py` with SQLite parity.
 - [ ] T069 [P] Implement `sqlitch upgrade` command handler in `sqlitch/cli/commands/upgrade.py` with SQLite parity.
@@ -117,7 +117,7 @@
 - [X] T089 Refactor `ConfigConflictError` to extend `RuntimeError` instead of `ValueError` for semantic consistency in `sqlitch/config/loader.py` (addresses REPORT.md Issue 2.3, FR-016).
 - [X] T090 Extract complex validation from `Change.__post_init__` into testable factory method or validator class in `sqlitch/plan/model.py` (addresses REPORT.md Issue 2.5, FR-019).
 - [X] T091 [P] Fix PEP 8 import grouping (stdlib, third-party, local with blank lines) in `sqlitch/cli/commands/__init__.py` and any other files flagged by review (addresses REPORT.md Issue 1.7).
-- [ ] T092 Review and standardize error messages to consistently include field/context information across all validation errors (addresses REPORT.md Issue 3.2).
+- [X] T092 Review and standardize error messages to consistently include field/context information across all validation errors (addresses REPORT.md Issue 3.2).
 
 ## Dependencies
 - Phase 3.2 tests must complete (and fail) before starting any Phase 3.3 implementation task.

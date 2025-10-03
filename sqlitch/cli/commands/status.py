@@ -194,7 +194,7 @@ def _load_registry_rows(engine_target: EngineTarget) -> tuple[RegistryRow, ...]:
     try:
         engine = create_engine(engine_target)
     except UnsupportedEngineError as exc:
-        raise CommandError(str(exc)) from exc
+        raise CommandError(f"Unsupported engine '{engine_target.engine}': {exc}") from exc
 
     try:
         connection = engine.connect_registry()
@@ -238,9 +238,13 @@ def _load_registry_rows(engine_target: EngineTarget) -> tuple[RegistryRow, ...]:
         if isinstance(row, Mapping):
             return row
         if not columns:
-            raise CommandError("Registry query returned no column metadata")
+            raise CommandError(
+                f"Registry query for {engine_target.registry_uri} returned no column metadata"
+            )
         if not isinstance(row, Sequence):
-            raise CommandError("Unexpected registry row format")
+            raise CommandError(
+                f"Registry query for {engine_target.registry_uri} returned unexpected row format"
+            )
         return {columns[index]: row[index] for index in range(min(len(columns), len(row)))}
 
     registry_rows: list[RegistryRow] = []
