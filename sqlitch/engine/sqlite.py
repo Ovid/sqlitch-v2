@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Mapping, Tuple
+from collections.abc import Mapping
+from typing import Any
 
 import sqlite3
 
@@ -39,7 +40,7 @@ class SQLiteEngine(Engine):
         return ConnectArguments(args=(database,), kwargs=kwargs)
 
 
-def _parse_sqlite_uri(uri: str) -> Tuple[str, bool]:
+def _parse_sqlite_uri(uri: str) -> tuple[str, bool]:
     """Return (database, is_uri) parsed from a SQLitch-style SQLite URI."""
     if not uri.startswith(SQLITE_SCHEME_PREFIX):
         raise SQLiteEngineError(f"unexpected sqlite URI format: {uri!r}")

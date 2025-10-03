@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 import hashlib
 import shlex
 from datetime import datetime
 from pathlib import Path
-from typing import List, Sequence
 from uuid import UUID
 
 from .model import Change, Plan, PlanEntry, Tag
@@ -23,7 +23,7 @@ def parse_plan(path: Path | str) -> Plan:
     checksum = hashlib.sha256(content.encode("utf-8")).hexdigest()
 
     headers: dict[str, str] = {}
-    entries: List[PlanEntry] = []
+    entries: list[PlanEntry] = []
 
     for line_no, raw_line in enumerate(content.splitlines(), start=1):
         line = raw_line.strip()

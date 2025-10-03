@@ -2,13 +2,21 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Iterable, Mapping, Sequence, Tuple, TypeAlias
+from typing import TypeAlias
 from uuid import UUID, uuid4
 
 from sqlitch.utils.time import ensure_timezone
+
+__all__ = [
+    "Change",
+    "Tag",
+    "Plan",
+    "PlanEntry",
+]
 
 
 def _ensure_path(value: Path | str) -> Path:
@@ -63,7 +71,7 @@ class Change:
         elif not isinstance(self.change_id, UUID):
             raise ValueError("change_id must be a UUID instance")
 
-        validated_scripts: Dict[str, Path | None] = {}
+        validated_scripts: dict[str, Path | None] = {}
         deploy_path = self.script_paths.get("deploy") if self.script_paths else None
         revert_path = self.script_paths.get("revert") if self.script_paths else None
         if deploy_path is None:
@@ -113,13 +121,13 @@ class Plan:
 
         object.__setattr__(self, "file_path", _ensure_path(self.file_path))
 
-        normalized_entries: Tuple[PlanEntry, ...] = tuple(self.entries or tuple())
+        normalized_entries: tuple[PlanEntry, ...] = tuple(self.entries or tuple())
         for entry in normalized_entries:
             if not isinstance(entry, (Change, Tag)):
                 raise TypeError("Plan entries must be Change or Tag instances")
         object.__setattr__(self, "entries", normalized_entries)
 
-        seen_changes: Dict[str, Change] = {}
+        seen_changes: dict[str, Change] = {}
         for entry in normalized_entries:
             if isinstance(entry, Change):
                 if entry.name in seen_changes:
@@ -139,11 +147,11 @@ class Plan:
                     )
 
     @property
-    def changes(self) -> Tuple[Change, ...]:
+    def changes(self) -> tuple[Change, ...]:
         return tuple(entry for entry in self.entries if isinstance(entry, Change))
 
     @property
-    def tags(self) -> Tuple[Tag, ...]:
+    def tags(self) -> tuple[Tag, ...]:
         return tuple(entry for entry in self.entries if isinstance(entry, Tag))
 
     def get_change(self, name: str) -> Change:

@@ -2,12 +2,19 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import datetime
-from typing import Dict, Iterable, Iterator, List, Mapping, Sequence
 from uuid import UUID
 
 from sqlitch.utils.time import coerce_datetime, coerce_optional_datetime, isoformat_utc
+
+__all__ = [
+    "RegistryEntry",
+    "RegistryState",
+    "serialize_registry_entries",
+    "sort_registry_entries_by_deployment",
+]
 
 _VALID_VERIFY_STATUSES = {"success", "failed", "skipped"}
 
@@ -72,8 +79,8 @@ class RegistryState:
     """In-memory view of registry entries to drive stateful operations."""
 
     def __init__(self, entries: Iterable[RegistryEntry] | None = None) -> None:
-        self._records: Dict[UUID, RegistryEntry] = {}
-        self._ordered_ids: List[UUID] = []
+        self._records: dict[UUID, RegistryEntry] = {}
+        self._ordered_ids: list[UUID] = []
         for entry in entries or ():
             self._insert_entry(entry)
 
@@ -139,10 +146,10 @@ def deserialize_registry_rows(rows: Iterable[Mapping[str, object]]) -> Sequence[
     return tuple(sorted(entries, key=lambda entry: entry.deployed_at))
 
 
-def serialize_registry_entries(entries: Iterable[RegistryEntry]) -> List[Dict[str, object]]:
+def serialize_registry_entries(entries: Iterable[RegistryEntry]) -> list[dict[str, object]]:
     """Serialize RegistryEntry instances into plain dictionaries for persistence."""
 
-    serialized: List[Dict[str, object]] = []
+    serialized: list[dict[str, object]] = []
     for entry in entries:
         serialized.append(
             {

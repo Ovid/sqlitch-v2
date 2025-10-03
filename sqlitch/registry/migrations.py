@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Tuple
 
 LATEST_REGISTRY_VERSION = "1.1"
 
@@ -584,7 +583,7 @@ _POSTGRES_UPGRADE_1_1 = (
     "COMMIT;\n"
 )
 
-_ENGINE_ALIASES: Dict[str, str] = {
+_ENGINE_ALIASES: dict[str, str] = {
     "sqlite": "sqlite",
     "mysql": "mysql",
     "pg": "pg",
@@ -592,7 +591,7 @@ _ENGINE_ALIASES: Dict[str, str] = {
     "postgresql": "pg",
 }
 
-_REGISTRY_MIGRATIONS: Dict[str, Tuple[RegistryMigration, ...]] = {
+_REGISTRY_MIGRATIONS: dict[str, tuple[RegistryMigration, ...]] = {
     "sqlite": (
         RegistryMigration(
             target_version=LATEST_REGISTRY_VERSION,
@@ -657,14 +656,14 @@ def _normalize_engine(engine: str) -> str:
     return _ENGINE_ALIASES[normalized]
 
 
-def get_registry_migrations(engine: str) -> Tuple[RegistryMigration, ...]:
+def get_registry_migrations(engine: str) -> tuple[RegistryMigration, ...]:
     """Return the ordered registry migrations for the given engine."""
 
     key = _normalize_engine(engine)
     return _REGISTRY_MIGRATIONS[key]
 
 
-def list_registry_engines() -> Tuple[str, ...]:
+def list_registry_engines() -> tuple[str, ...]:
     """Return the canonical list of engines with registry migrations."""
 
     return tuple(sorted(_REGISTRY_MIGRATIONS))
