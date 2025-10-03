@@ -136,6 +136,7 @@ COMMAND_MODULES: tuple[str, ...] = (
     "log",
     "help",
     "plan",
+    "rebase",
     "revert",
     "status",
 )
