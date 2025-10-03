@@ -51,7 +51,7 @@
 - [X] T036 Implement plan domain models (Change, Tag, Plan entries) in `sqlitch/plan/model.py`.
 - [X] T037 Implement plan parser mirroring Sqitch semantics in `sqlitch/plan/parser.py`.
 - [X] T038 Implement plan formatter and checksum utilities in `sqlitch/plan/formatter.py`.
-- [ ] T039 Implement configuration loader with layered scopes in `sqlitch/config/loader.py`.
+- [X] T039 Implement configuration loader with layered scopes in `sqlitch/config/loader.py`.
 - [ ] T040 Implement configuration resolver & overrideable root handling in `sqlitch/config/resolver.py`.
 - [ ] T041 Implement registry state read/write operations in `sqlitch/registry/state.py`.
 - [ ] T042 Implement registry migrations aligned with Sqitch SQL in `sqlitch/registry/migrations.py`.
