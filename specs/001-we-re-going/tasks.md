@@ -61,9 +61,9 @@
 - [X] T042 Implement registry migrations aligned with Sqitch SQL in `sqlitch/registry/migrations.py`.
 - [X] T043 Implement filesystem utilities for drop-in detection and cleanup in `sqlitch/utils/fs.py`.
 - [X] T044 Implement timestamp/zone handling helpers in `sqlitch/utils/time.py`.
-- [ ] T045 Implement engine base interface and connection factory in `sqlitch/engine/base.py`.
-- [ ] T046 [P] Implement SQLite engine adapter in `sqlitch/engine/sqlite.py`.
-- [ ] T050 Create CLI command package scaffolding (`sqlitch/cli/commands/__init__.py`) and shared exceptions (focus on SQLite-ready paths first).
+- [X] T045 Implement engine base interface and connection factory in `sqlitch/engine/base.py`.
+- [X] T046 [P] Implement SQLite engine adapter in `sqlitch/engine/sqlite.py`.
+- [X] T050 Create CLI command package scaffolding (`sqlitch/cli/commands/__init__.py`) and shared exceptions (focus on SQLite-ready paths first).
 - [ ] T051 Wire Click group, global options, and command registration in `sqlitch/cli/main.py`, ensuring SQLite workflows operate end-to-end.
 - [ ] T052 [P] Implement `sqlitch add` command handler in `sqlitch/cli/commands/add.py` with SQLite parity.
 - [ ] T053 [P] Implement `sqlitch bundle` command handler in `sqlitch/cli/commands/bundle.py` with SQLite parity.
