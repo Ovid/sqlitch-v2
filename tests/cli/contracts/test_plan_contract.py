@@ -1,12 +1,130 @@
-"""Contract parity scaffold for sqlitch plan."""
+"""Contract parity tests for ``sqlitch plan``."""
 
 from __future__ import annotations
 
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+
+from click.testing import CliRunner
 import pytest
 
-pytestmark = pytest.mark.skip(reason="Pending T018: enforce sqlitch plan contract parity")
+from sqlitch.cli.main import main
+from sqlitch.plan.formatter import format_plan, write_plan
+from sqlitch.plan.model import Change
 
 
-def test_plan_contract_parity() -> None:
-    """Placeholder contract test to be implemented when T018 begins."""
-    ...
+@pytest.fixture()
+def runner() -> CliRunner:
+    """Return a Click CLI runner configured for filesystem isolation."""
+
+    return CliRunner()
+
+
+def _seed_plan(plan_path: Path) -> tuple[Change, Change]:
+    change_one = Change.create(
+        name="core:init",
+        script_paths={
+            "deploy": Path("deploy") / "20250101000000_core_init.sql",
+            "revert": Path("revert") / "20250101000000_core_init.sql",
+            "verify": Path("verify") / "20250101000000_core_init.sql",
+        },
+        planner="Ada Lovelace",
+        planned_at=datetime(2025, 1, 1, 0, 0, tzinfo=timezone.utc),
+        notes="Initialises core schema",
+    )
+
+    change_two = Change.create(
+        name="widgets:add",
+        script_paths={
+            "deploy": Path("deploy") / "20250102000000_widgets_add.sql",
+            "revert": Path("revert") / "20250102000000_widgets_add.sql",
+            "verify": Path("verify") / "20250102000000_widgets_add.sql",
+        },
+        planner="Ada Lovelace",
+        planned_at=datetime(2025, 1, 2, 0, 0, tzinfo=timezone.utc),
+        notes="Adds widgets table",
+        dependencies=("core:init",),
+        tags=("v1.0",),
+    )
+
+    write_plan(
+        project_name="widgets",
+        default_engine="sqlite",
+        entries=(change_one, change_two),
+        plan_path=plan_path,
+    )
+
+    return change_one, change_two
+
+
+def test_plan_outputs_plan_file_by_default(runner: CliRunner) -> None:
+    """sqlitch plan should emit the plan file verbatim when no filters apply."""
+
+    with runner.isolated_filesystem():
+        plan_path = Path("sqlitch.plan")
+        _seed_plan(plan_path)
+
+        result = runner.invoke(main, ["plan"])
+
+        assert result.exit_code == 0, result.output
+        expected = plan_path.read_text(encoding="utf-8")
+        assert result.output == expected
+
+
+def test_plan_supports_change_filter_and_no_header(runner: CliRunner) -> None:
+    """Change filtering and header suppression should mirror Sqitch ergonomics."""
+
+    with runner.isolated_filesystem():
+        plan_path = Path("sqlitch.plan")
+        change_one, change_two = _seed_plan(plan_path)
+
+        result = runner.invoke(main, ["plan", "--change", change_two.name, "--no-header"])
+
+        assert result.exit_code == 0, result.output
+
+        rendered = format_plan(
+            project_name="widgets",
+            default_engine="sqlite",
+            entries=(change_two,),
+            base_path=plan_path.parent,
+        )
+        expected_lines = [line for line in rendered.splitlines() if not line.startswith("%")]
+        expected = "\n".join(expected_lines) + "\n"
+        assert result.output == expected
+
+
+def test_plan_supports_json_format(runner: CliRunner) -> None:
+    """The JSON format should expose structured plan metadata."""
+
+    with runner.isolated_filesystem():
+        plan_path = Path("sqlitch.plan")
+        change_one, change_two = _seed_plan(plan_path)
+
+        result = runner.invoke(main, ["plan", "--format", "json"])
+
+        assert result.exit_code == 0, result.output
+        payload = json.loads(result.output)
+        assert payload["project"] == "widgets"
+        assert payload["default_engine"] == "sqlite"
+        assert payload["plan_path"].endswith("sqlitch.plan")
+
+        entries = payload["entries"]
+        assert len(entries) == 2
+
+        first, second = entries
+        assert first["name"] == change_one.name
+        assert first["type"] == "change"
+        assert first["scripts"]["deploy"].endswith("20250101000000_core_init.sql")
+        assert second["dependencies"] == ["core:init"]
+        assert second["tags"] == ["v1.0"]
+
+
+def test_plan_reports_missing_plan_file(runner: CliRunner) -> None:
+    """Invoking sqlitch plan without a plan file should raise a command error."""
+
+    with runner.isolated_filesystem():
+        result = runner.invoke(main, ["plan"])
+
+        assert result.exit_code != 0
+        assert "No plan file found" in result.output
