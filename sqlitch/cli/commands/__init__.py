@@ -127,6 +127,7 @@ def _clear_registry() -> None:
 
 COMMAND_MODULES: tuple[str, ...] = (
     "add",
+    "init",
 )
 """Default set of command modules imported by :func:`load_commands`."""
 
