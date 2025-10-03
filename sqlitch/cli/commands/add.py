@@ -15,6 +15,7 @@ from sqlitch.plan.parser import PlanParseError, parse_plan
 from sqlitch.utils.fs import ArtifactConflictError, resolve_plan_file
 
 from . import CommandError, register_command
+from ._context import environment_from, plan_override_from, project_root_from, quiet_mode_enabled
 
 __all__ = ["add_command"]
 
@@ -74,24 +75,6 @@ def _format_display_path(path: Path, project_root: Path) -> str:
         return os.path.relpath(path, project_root).replace(os.sep, "/")
 
 
-def _extract_cli_context(ctx: click.Context) -> tuple[Path, Path | None, Mapping[str, str], bool]:
-    obj = ctx.obj
-    if obj is None:
-        raise CommandError("CLI context is not initialised")
-
-    project_root = getattr(obj, "project_root", None)
-    if project_root is None:
-        raise CommandError("CLI context is missing project root")
-
-    plan_file = getattr(obj, "plan_file", None)
-    resolved_plan = Path(plan_file) if plan_file is not None else None
-
-    env = getattr(obj, "env", os.environ)
-    quiet = bool(getattr(obj, "quiet", False))
-
-    return Path(project_root), resolved_plan, env, quiet
-
-
 @click.command("add")
 @click.argument("change_name")
 @click.option("--requires", "requires", multiple=True, help="Declare change dependencies.")
@@ -135,7 +118,10 @@ def add_command(
     if template_name is not None:
         raise CommandError("--template is not supported yet")
 
-    project_root, plan_override, environment, quiet = _extract_cli_context(ctx)
+    project_root = project_root_from(ctx)
+    plan_override = plan_override_from(ctx)
+    environment = environment_from(ctx)
+    quiet = quiet_mode_enabled(ctx)
 
     if plan_override is not None:
         plan_path = plan_override
