@@ -1,0 +1,4 @@
+Verifying flipr_test
+  * users .. ok
+  * flips .. ok
+Verify successful
