@@ -50,7 +50,7 @@ line_length = 100
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-addopts = "-ra --strict-markers --strict-config --cov=sqlitch --cov-report=term-missing --randomly-seed=1337"
+addopts = "-ra --strict-markers --strict-config --cov=sqlitch --cov-report=term-missing --cov-report=xml --randomly-seed=1337"
 testpaths = ["tests"]
 
 [tool.mypy]
