@@ -17,34 +17,34 @@
 
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
 *All tests in this phase ship with skip markers and have those skips removed immediately before the corresponding implementation tasks start (FR-012).* 
-- [ ] T009 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch add` parity in `tests/cli/contracts/test_add_contract.py`.
-- [ ] T010 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch bundle` parity in `tests/cli/contracts/test_bundle_contract.py`.
-- [ ] T011 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch checkout` parity in `tests/cli/contracts/test_checkout_contract.py`.
-- [ ] T012 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch config` parity in `tests/cli/contracts/test_config_contract.py`.
-- [ ] T013 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch deploy` parity in `tests/cli/contracts/test_deploy_contract.py`.
-- [ ] T014 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch engine` parity in `tests/cli/contracts/test_engine_contract.py`.
-- [ ] T015 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch help` parity in `tests/cli/contracts/test_help_contract.py`.
-- [ ] T016 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch init` parity in `tests/cli/contracts/test_init_contract.py`.
-- [ ] T017 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch log` parity in `tests/cli/contracts/test_log_contract.py`.
-- [ ] T018 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch plan` parity in `tests/cli/contracts/test_plan_contract.py`.
-- [ ] T019 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch rebase` parity in `tests/cli/contracts/test_rebase_contract.py`.
-- [ ] T020 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch revert` parity in `tests/cli/contracts/test_revert_contract.py`.
-- [ ] T021 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch rework` parity in `tests/cli/contracts/test_rework_contract.py`.
-- [ ] T022 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch show` parity in `tests/cli/contracts/test_show_contract.py`.
-- [ ] T023 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch status` parity in `tests/cli/contracts/test_status_contract.py`.
-- [ ] T024 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch tag` parity in `tests/cli/contracts/test_tag_contract.py`.
-- [ ] T025 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch target` parity in `tests/cli/contracts/test_target_contract.py`.
-- [ ] T026 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch upgrade` parity in `tests/cli/contracts/test_upgrade_contract.py`.
-- [ ] T027 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch verify` parity in `tests/cli/contracts/test_verify_contract.py`.
-- [ ] T028 [P] Add skipped integration test (remove skip immediately before implementation) covering parity against existing Sqitch projects in `tests/regression/test_sqitch_parity.py`.
-- [ ] T029 [P] Add skipped integration test (remove skip immediately before implementation) for contributor onboarding workflow (quickstart) in `tests/regression/test_onboarding_workflow.py`.
-- [ ] T030 [P] Add skipped integration test (remove skip immediately before implementation) for drop-in support of `sqitch.*` artifacts without conflicts in `tests/regression/test_sqitch_dropin.py`.
-- [ ] T030a [P] Add skipped regression test (remove skip immediately before implementation) enforcing the blocking error when both `sqitch.*` and `sqlitch.*` artifacts are present in `tests/regression/test_sqitch_conflicts.py`.
-- [ ] T031 [P] Add skipped regression test (remove skip immediately before implementation) for immediate failure on unsupported engines in `tests/regression/test_unsupported_engine.py`.
-- [ ] T032 [P] Add skipped regression test (remove skip immediately before implementation) for timestamp/timezone parity across engines in `tests/regression/test_timestamp_parity.py`.
-- [ ] T033 [P] Add skipped regression test (remove skip immediately before implementation) for Docker-unavailable skip behavior in `tests/regression/test_docker_skip.py`.
-- [ ] T034 [P] Add skipped regression test (remove skip immediately before implementation) for configuration-root override isolation in `tests/regression/test_config_root_override.py`.
-- [ ] T035 [P] Add skipped regression test (remove skip immediately before implementation) for artifact cleanup guarantees in `tests/regression/test_artifact_cleanup.py`.
+- [X] T009 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch add` parity in `tests/cli/contracts/test_add_contract.py`.
+- [X] T010 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch bundle` parity in `tests/cli/contracts/test_bundle_contract.py`.
+- [X] T011 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch checkout` parity in `tests/cli/contracts/test_checkout_contract.py`.
+- [X] T012 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch config` parity in `tests/cli/contracts/test_config_contract.py`.
+- [X] T013 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch deploy` parity in `tests/cli/contracts/test_deploy_contract.py`.
+- [X] T014 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch engine` parity in `tests/cli/contracts/test_engine_contract.py`.
+- [X] T015 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch help` parity in `tests/cli/contracts/test_help_contract.py`.
+- [X] T016 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch init` parity in `tests/cli/contracts/test_init_contract.py`.
+- [X] T017 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch log` parity in `tests/cli/contracts/test_log_contract.py`.
+- [X] T018 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch plan` parity in `tests/cli/contracts/test_plan_contract.py`.
+- [X] T019 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch rebase` parity in `tests/cli/contracts/test_rebase_contract.py`.
+- [X] T020 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch revert` parity in `tests/cli/contracts/test_revert_contract.py`.
+- [X] T021 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch rework` parity in `tests/cli/contracts/test_rework_contract.py`.
+- [X] T022 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch show` parity in `tests/cli/contracts/test_show_contract.py`.
+- [X] T023 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch status` parity in `tests/cli/contracts/test_status_contract.py`.
+- [X] T024 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch tag` parity in `tests/cli/contracts/test_tag_contract.py`.
+- [X] T025 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch target` parity in `tests/cli/contracts/test_target_contract.py`.
+- [X] T026 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch upgrade` parity in `tests/cli/contracts/test_upgrade_contract.py`.
+- [X] T027 [P] Add skipped contract test (remove skip immediately before implementation) for `sqlitch verify` parity in `tests/cli/contracts/test_verify_contract.py`.
+- [X] T028 [P] Add skipped integration test (remove skip immediately before implementation) covering parity against existing Sqitch projects in `tests/regression/test_sqitch_parity.py`.
+- [X] T029 [P] Add skipped integration test (remove skip immediately before implementation) for contributor onboarding workflow (quickstart) in `tests/regression/test_onboarding_workflow.py`.
+- [X] T030 [P] Add skipped integration test (remove skip immediately before implementation) for drop-in support of `sqitch.*` artifacts without conflicts in `tests/regression/test_sqitch_dropin.py`.
+- [X] T030a [P] Add skipped regression test (remove skip immediately before implementation) enforcing the blocking error when both `sqitch.*` and `sqlitch.*` artifacts are present in `tests/regression/test_sqitch_conflicts.py`.
+- [X] T031 [P] Add skipped regression test (remove skip immediately before implementation) for immediate failure on unsupported engines in `tests/regression/test_unsupported_engine.py`.
+- [X] T032 [P] Add skipped regression test (remove skip immediately before implementation) for timestamp/timezone parity across engines in `tests/regression/test_timestamp_parity.py`.
+- [X] T033 [P] Add skipped regression test (remove skip immediately before implementation) for Docker-unavailable skip behavior in `tests/regression/test_docker_skip.py`.
+- [X] T034 [P] Add skipped regression test (remove skip immediately before implementation) for configuration-root override isolation in `tests/regression/test_config_root_override.py`.
+- [X] T035 [P] Add skipped regression test (remove skip immediately before implementation) for artifact cleanup guarantees in `tests/regression/test_artifact_cleanup.py`.
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 *Before beginning any task in this phase, remove the related skip markers introduced in Phase 3.2, confirm the tests fail, and use that failure as the Red→Green starting point (FR-012).* 
