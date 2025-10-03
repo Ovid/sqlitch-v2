@@ -4,12 +4,12 @@
 **Prerequisites**: plan.md (required), research.md, data-model.md, contracts/, quickstart.md
 
 ## Phase 3.1: Setup
-- [ ] T001 Create SQLitch project skeleton (`sqlitch/` root, `bin/`, `lib/`, `etc/`, `tests/`, `xt/`, `scripts/`) with `tests/` as a top-level sibling to `sqlitch/`, mirroring Sqitch’s layout without the legacy `t/` root.
-- [ ] T002 Author `sqlitch/pyproject.toml` with runtime dependencies (Click, Rich, SQLAlchemy Core, sqlite3, `psycopg[binary]`, `mysqlclient`, python-dateutil, tomli, pydantic, docker SDK) and dev tool configurations (black, isort, flake8, pylint, mypy, bandit, pytest, pytest-cov, hypothesis, tox).
-- [ ] T003 Configure linting and type checking (`.flake8`, `.pylintrc`, `mypy.ini`, black/isort sections in `pyproject.toml`) ensuring zero-warning gates per FR-004.
-- [ ] T004 Create `pytest.ini` and `tests/__init__.py` enforcing ≥90% coverage, deterministic seed configuration, and Rich output capture.
-- [ ] T005 Add `tox.ini` matrix (py311 + OS overrides) running lint, type, security, and coverage suites with failure on warnings.
-- [ ] T006 Define Docker Compose harness in `sqlitch/scripts/docker-compose/compose.yaml` plus helper scripts (`up`, `down`, `wait`) for MySQL 8 and PostgreSQL 15 containers.
+- [X] T001 Create SQLitch project skeleton (`sqlitch/` root, `bin/`, `lib/`, `etc/`, `tests/`, `xt/`, `scripts/`) with `tests/` as a top-level sibling to `sqlitch/`, mirroring Sqitch’s layout without the legacy `t/` root.
+- [X] T002 Author `sqlitch/pyproject.toml` with runtime dependencies (Click, Rich, SQLAlchemy Core, sqlite3, `psycopg[binary]`, `mysqlclient`, python-dateutil, tomli, pydantic, docker SDK) and dev tool configurations (black, isort, flake8, pylint, mypy, bandit, pytest, pytest-cov, hypothesis, tox).
+- [X] T003 Configure linting and type checking (`.flake8`, `.pylintrc`, `mypy.ini`, black/isort sections in `pyproject.toml`) ensuring zero-warning gates per FR-004.
+- [X] T004 Create `pytest.ini` and `tests/__init__.py` enforcing ≥90% coverage, deterministic seed configuration, and Rich output capture.
+- [X] T005 Add `tox.ini` matrix (py311 + OS overrides) running lint, type, security, and coverage suites with failure on warnings.
+- [X] T006 Define Docker Compose harness in `sqlitch/scripts/docker-compose/compose.yaml` plus helper scripts (`up`, `down`, `wait`) for MySQL 8 and PostgreSQL 15 containers.
 - [ ] T007 Seed Sqitch parity fixtures under `tests/support/` (plan files, registry snapshots) for regression comparisons.
 - [ ] T008 Create `.github/workflows/ci.yml` enforcing macOS/Linux/Windows matrices, docker setup, and coverage/quality gates.
 - [ ] T008a Build `scripts/check-skips.py` (invoked by the tox lint stage/CI) that fails when skip markers remain on tests whose implementation tasks are in progress, ensuring the skip-removal gate is automated.
