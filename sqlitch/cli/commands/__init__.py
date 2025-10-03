@@ -127,6 +127,7 @@ def _clear_registry() -> None:
 
 COMMAND_MODULES: tuple[str, ...] = (
     "add",
+    "bundle",
     "init",
     "plan",
     "status",

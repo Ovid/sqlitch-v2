@@ -66,7 +66,7 @@
 - [X] T050 Create CLI command package scaffolding (`sqlitch/cli/commands/__init__.py`) and shared exceptions (focus on SQLite-ready paths first).
 - [X] T051 Wire Click group, global options, and command registration in `sqlitch/cli/main.py`, ensuring SQLite workflows operate end-to-end.
 - [X] T052 [P] Implement `sqlitch add` command handler in `sqlitch/cli/commands/add.py` with SQLite parity.
-- [ ] T053 [P] Implement `sqlitch bundle` command handler in `sqlitch/cli/commands/bundle.py` with SQLite parity.
+- [X] T053 [P] Implement `sqlitch bundle` command handler in `sqlitch/cli/commands/bundle.py` with SQLite parity.
 - [ ] T054 [P] Implement `sqlitch checkout` command handler in `sqlitch/cli/commands/checkout.py` with SQLite parity.
 - [ ] T055 [P] Implement `sqlitch config` command handler in `sqlitch/cli/commands/config.py` with SQLite parity.
 - [ ] T056 [P] Implement `sqlitch deploy` command handler in `sqlitch/cli/commands/deploy.py` with SQLite parity.
