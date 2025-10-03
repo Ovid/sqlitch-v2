@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from types import MappingProxyType
-from typing import Mapping, Sequence
 
 from .loader import ConfigProfile, ConfigScope, load_config
 
