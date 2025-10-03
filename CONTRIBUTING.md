@@ -83,7 +83,7 @@ Every PR must check the boxes in `.github/pull_request_template.md`, which cover
 ## 6. Troubleshooting Tips
 
 - **Coverage failures:** The project enforces `fail_under = 90`. Add targeted tests or expand existing ones to raise coverage before rerunning `pytest`.
-- **`mysqlclient` build errors:** The optional dev install (`pip install ".[dev]"`) pulls in database adapters. On macOS you may need Xcode CLT and `pkg-config` (e.g., `brew install pkg-config mysql-client`) before installing `mysqlclient`.
+- **PyMySQL import errors:** The optional dev install (`pip install ".[dev]"`) bundles the pure-Python adapter. If `ModuleNotFoundError: pymysql` appears, ensure your virtual environment is active and rerun `pip install --upgrade --force-reinstall pymysql`.
 - **Skip removal noise in lint:** If lint fails due to skip markers for tasks you’re *not* working on, double-check that `SQLITCH_ACTIVE_TASKS` only lists your active task IDs.
 
 ## 7. Need Help?

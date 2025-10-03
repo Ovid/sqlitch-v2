@@ -27,7 +27,7 @@ pip install --upgrade pip
 ```bash
 pip install ".[dev]"
 ```
-Includes runtime (Click, SQLAlchemy, psycopg[binary], mysqlclient, python-dateutil, pydantic) and tooling (pytest, pytest-cov, hypothesis, tox, black, isort, flake8, pylint, mypy, bandit, docker, rich). All subsequent commands assume the virtual environment remains activated.
+Includes runtime (Click, SQLAlchemy, psycopg[binary], PyMySQL, python-dateutil, pydantic) and tooling (pytest, pytest-cov, hypothesis, tox, black, isort, flake8, pylint, mypy, bandit, docker, rich). All subsequent commands assume the virtual environment remains activated.
 
 ## 4. Configure Docker Test Harness
 ```bash
@@ -71,7 +71,7 @@ scripts/docker-compose/down
 
 ## Troubleshooting
 - **Docker not available**: Tests print `WARNING: Skipping dockerized engine tests (Docker unavailable)`.
-- **mysqlclient build errors**: Install MySQL client libraries (`brew install mysql-client`, `apt-get install libmysqlclient-dev`).
+- **PyMySQL import errors**: Ensure the virtual environment is activated; PyMySQL is pure Python, so reinstall with `pip install --force-reinstall pymysql` if the package appears missing.
 - **psycopg binary dependency**: ensure `libpq` present (`brew install libpq`), add to `PATH` as needed.
 
 ## Next Steps

@@ -5,7 +5,7 @@
 
 ## Phase 3.1: Setup
 - [X] T001 Create SQLitch project skeleton (top-level `bin/`, `docs/`, `etc/`, `scripts/`, `sqlitch/`, `tests/`, `xt/`) mirroring Sqitch’s layout without the legacy `t/` root.
-- [X] T002 Author `pyproject.toml` with runtime dependencies (Click, Rich, SQLAlchemy Core, sqlite3, `psycopg[binary]`, `mysqlclient`, python-dateutil, tomli, pydantic, docker SDK) and dev tool configurations (black, isort, flake8, pylint, mypy, bandit, pytest, pytest-cov, hypothesis, tox).
+- [X] T002 Author `pyproject.toml` with runtime dependencies (Click, Rich, SQLAlchemy Core, sqlite3, `psycopg[binary]`, `PyMySQL`, python-dateutil, tomli, pydantic, docker SDK) and dev tool configurations (black, isort, flake8, pylint, mypy, bandit, pytest, pytest-cov, hypothesis, tox).
 - [X] T003 Configure linting and type checking (`.flake8`, `.pylintrc`, `mypy.ini`, black/isort sections in `pyproject.toml`) ensuring zero-warning gates per FR-004.
 - [X] T004 Create `pytest.ini` and `tests/__init__.py` enforcing ≥90% coverage, deterministic seed configuration, and Rich output capture.
 - [X] T005 Add `tox.ini` matrix (py311 + OS overrides) running lint, type, security, and coverage suites with failure on warnings.

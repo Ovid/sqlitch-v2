@@ -35,7 +35,7 @@ Rebuild Sqitch as a Python-first CLI named SQLitch that delivers drop-in behavio
 
 ## Technical Context
 **Language/Version**: Python 3.11 (CPython)  
-**Primary Dependencies**: Click (CLI), Rich (structured console output), SQLAlchemy core for plan parsing, sqlite3 stdlib, `psycopg[binary]`, `mysqlclient`, `python-dateutil`, `tomli`, `pydantic` for config validation, packaging extras for Docker orchestration (`docker` SDK)  
+**Primary Dependencies**: Click (CLI), Rich (structured console output), SQLAlchemy core for plan parsing, sqlite3 stdlib, `psycopg[binary]`, `PyMySQL`, `python-dateutil`, `tomli`, `pydantic` for config validation, packaging extras for Docker orchestration (`docker` SDK)  
 **Storage**: SQLite (stdlib driver), MySQL (Docker: mysql:8), PostgreSQL (Docker: postgres:15); Sqitch registry stored via same engines  
 **Testing**: pytest + pytest-cov, hypothesis (property coverage for plan semantics), tox for matrix, Docker Compose harness for engines  
 **Target Platform**: Cross-platform CLI (macOS, Linux, Windows) running in terminals with optional container runtime  
@@ -119,7 +119,7 @@ specs/[###-feature]/
 
 ## Phase 0: Outline & Research
 1. Investigate Sqitch Perl internals for command workflows, plan file semantics, registry schema, and template expansion rules that must be mirrored in Python.
-2. Validate Python ecosystem choices: compare `psycopg[binary]` vs `asyncpg`, `mysqlclient` vs `PyMySQL`, and confirm Click patterns for nested command trees that match Sqitch help text.
+2. Validate Python ecosystem choices: compare `psycopg[binary]` vs `asyncpg`, confirm `PyMySQL` meets parity and installation goals for MySQL connectivity, and confirm Click patterns for nested command trees that match Sqitch help text.
 3. Prototype Docker orchestration scripts to spin up SQLite (in-memory), MySQL, and PostgreSQL containers with deterministic seed data and timestamp controls.
 4. Document findings in `research.md` (decision, rationale, alternatives) with links back to Sqitch source references.
 

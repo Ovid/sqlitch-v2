@@ -99,7 +99,7 @@ ENGINE_DRIVERS: Mapping[str, Tuple[str, str]] = MappingProxyType(
     {
         "sqlite": ("sqlite3", "connect"),
         "pg": ("psycopg", "connect"),
-        "mysql": ("MySQLdb", "connect"),
+        "mysql": ("pymysql", "connect"),
     }
 )
 

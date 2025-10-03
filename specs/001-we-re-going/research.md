@@ -13,11 +13,11 @@
 - **Alternatives Considered**: Consolidating under `src/sqlitch` (Pythonic default) would diverge from Sqitch layout and complicate parity reviews.
 
 ## Decision: Registry & Engine Connectors
-- **Outcome**: Use stdlib `sqlite3`, `psycopg[binary]` for PostgreSQL, and `mysqlclient` for MySQL with SQLAlchemy Core for SQL generation/parity.
-- **Rationale**: These drivers are widely supported, synchronous (matching Sqitch flow), and integrate cleanly with Docker-hosted databases.
+- **Outcome**: Use stdlib `sqlite3`, `psycopg[binary]` for PostgreSQL, and `PyMySQL` for MySQL with SQLAlchemy Core for SQL generation/parity.
+- **Rationale**: These drivers are synchronous (matching Sqitch flow), work with Docker-hosted databases, and—critically for contributor onboarding—`PyMySQL` installs without native client libraries on macOS/Linux CI.
 - **Alternatives Considered**:
   - asyncpg / aiomysql: async models misalign with Sqitch synchronous execution.
-  - PyMySQL: pure Python but slower; mysqlclient provides libmysql compatibility similar to Sqitch expectations.
+  - mysqlclient: libmysql-backed and faster, but rejected after install failures on clean macOS machines due to missing headers; deemed too high-friction for collaborators.
 
 ## Decision: Configuration Management
 - **Outcome**: Represent configuration via Pydantic models loading from `sqlitch.conf`, `sqitch.conf`, or environment variables with overrideable root directory support.
@@ -36,4 +36,4 @@
 
 ## Open Follow-Ups
 - Document official PyPI publishing strategy post-MVP (out of current scope).
-- Confirm licensing compatibility when packaging dependencies (to handle `mysqlclient` GPL linking requirements if static builds are involved).
+- Track potential performance regression tests for `PyMySQL` vs `mysqlclient`; initial manual parity shows acceptable latency, but integration benchmarks are still pending.
