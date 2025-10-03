@@ -45,9 +45,9 @@
 - [X] T033 [P] Add skipped regression test (remove skip immediately before implementation) for Docker-unavailable skip behavior in `tests/regression/test_docker_skip.py`.
 - [X] T034 [P] Add skipped regression test (remove skip immediately before implementation) for configuration-root override isolation in `tests/regression/test_config_root_override.py`.
 - [X] T035 [P] Add skipped regression test (remove skip immediately before implementation) for artifact cleanup guarantees in `tests/regression/test_artifact_cleanup.py`.
-- [ ] T035a [P] Add skipped tooling test (remove skip immediately before implementation) ensuring Black formatting compliance enforcement in `tests/scripts/test_black_formatting.py`.
-- [ ] T035b [P] Add skipped tooling test (remove skip immediately before implementation) validating isort import ordering gate in `tests/scripts/test_isort_ordering.py`.
-- [ ] T035c [P] Add skipped tooling test (remove skip immediately before implementation) covering lint gate aggregation for flake8/pylint in `tests/scripts/test_lint_suite.py`.
+- [X] T035a [P] Add skipped tooling test (remove skip immediately before implementation) ensuring Black formatting compliance enforcement in `tests/scripts/test_black_formatting.py`.
+- [X] T035b [P] Add skipped tooling test (remove skip immediately before implementation) validating isort import ordering gate in `tests/scripts/test_isort_ordering.py`.
+- [X] T035c [P] Add skipped tooling test (remove skip immediately before implementation) covering lint gate aggregation for flake8/pylint in `tests/scripts/test_lint_suite.py`.
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 *Before beginning any task in this phase, remove the related skip markers introduced in Phase 3.2, confirm the tests fail, and use that failure as the Red→Green starting point (FR-012).* 
