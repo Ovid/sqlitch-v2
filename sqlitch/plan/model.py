@@ -3,22 +3,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, Iterable, Mapping, Sequence, Tuple, TypeAlias
 from uuid import UUID, uuid4
+
+from sqlitch.utils.time import ensure_timezone
 
 
 def _ensure_path(value: Path | str) -> Path:
     if isinstance(value, Path):
         return value
     return Path(value)
-
-
-def _ensure_timezone(value: datetime, label: str) -> datetime:
-    if value.tzinfo is None or value.tzinfo.utcoffset(value) is None:
-        raise ValueError(f"{label} must be timezone-aware")
-    return value.astimezone(timezone.utc)
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,7 +33,7 @@ class Tag:
             raise ValueError("Tag change reference is required")
         if not self.planner:
             raise ValueError("Tag planner is required")
-        normalized = _ensure_timezone(self.tagged_at, "Tag tagged_at")
+        normalized = ensure_timezone(self.tagged_at, "Tag tagged_at")
         object.__setattr__(self, "tagged_at", normalized)
 
 
@@ -59,7 +55,7 @@ class Change:
             raise ValueError("Change name is required")
         if not self.planner:
             raise ValueError("Change planner is required")
-        normalized_planned_at = _ensure_timezone(self.planned_at, "Change planned_at")
+        normalized_planned_at = ensure_timezone(self.planned_at, "Change planned_at")
         object.__setattr__(self, "planned_at", normalized_planned_at)
 
         if self.change_id is None:

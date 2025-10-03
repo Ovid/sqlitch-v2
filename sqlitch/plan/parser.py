@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import hashlib
 import shlex
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import List, Sequence
 from uuid import UUID
 
 from .model import Change, Plan, PlanEntry, Tag
+from sqlitch.utils.time import parse_iso_datetime
 
 
 class PlanParseError(ValueError):
@@ -147,16 +148,10 @@ def _split_csv(value: str | None) -> Sequence[str]:
 def _parse_timestamp(value: str | None, line_no: int, field: str) -> datetime:
     if not value:
         raise PlanParseError(f"Entry on line {line_no} requires {field} metadata")
-    normalized = value.strip()
-    if normalized.endswith("Z"):
-        normalized = normalized[:-1] + "+00:00"
     try:
-        parsed = datetime.fromisoformat(normalized)
+        return parse_iso_datetime(value.strip(), label=field, assume_utc_if_naive=True)
     except ValueError as exc:  # pragma: no cover - invalid value reported to caller
         raise PlanParseError(f"Invalid {field} timestamp on line {line_no}") from exc
-    if parsed.tzinfo is None or parsed.tzinfo.utcoffset(parsed) is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
-    return parsed.astimezone(timezone.utc)
 
 
 def _parse_uuid(value: str, line_no: int) -> UUID:

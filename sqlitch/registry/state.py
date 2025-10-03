@@ -3,33 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Dict, Iterable, Iterator, List, Mapping, Sequence
 from uuid import UUID
 
+from sqlitch.utils.time import coerce_datetime, coerce_optional_datetime, isoformat_utc
+
 _VALID_VERIFY_STATUSES = {"success", "failed", "skipped"}
-
-
-def _ensure_timezone(value: datetime, label: str) -> datetime:
-    if value.tzinfo is None or value.tzinfo.utcoffset(value) is None:
-        raise ValueError(f"{label} must be timezone-aware")
-    return value.astimezone(timezone.utc)
-
-
-def _coerce_datetime(value: datetime | str, label: str) -> datetime:
-    if isinstance(value, datetime):
-        candidate = value
-    elif isinstance(value, str):
-        candidate = datetime.fromisoformat(value)
-    else:  # pragma: no cover - defensive
-        raise TypeError(f"{label} must be datetime or ISO string")
-    return _ensure_timezone(candidate, label)
-
-
-def _coerce_optional_datetime(value: datetime | str | None, label: str) -> datetime | None:
-    if value is None:
-        return None
-    return _coerce_datetime(value, label)
 
 
 def _coerce_uuid(value: UUID | str) -> UUID:
@@ -70,8 +50,8 @@ class RegistryEntry:
             raise ValueError("planner is required")
 
         normalized_id = _coerce_uuid(self.change_id)
-        normalized_deployed_at = _coerce_datetime(self.deployed_at, "RegistryEntry deployed_at")
-        normalized_reverted_at = _coerce_optional_datetime(self.reverted_at, "RegistryEntry reverted_at")
+        normalized_deployed_at = coerce_datetime(self.deployed_at, "RegistryEntry deployed_at")
+        normalized_reverted_at = coerce_optional_datetime(self.reverted_at, "RegistryEntry reverted_at")
         normalized_status = _normalize_verify_status(self.verify_status)
 
         object.__setattr__(self, "change_id", normalized_id)
@@ -84,7 +64,7 @@ class RegistryEntry:
         return replace(self, verify_status=normalized)
 
     def with_reverted_at(self, reverted_at: datetime | str | None) -> "RegistryEntry":
-        normalized = _coerce_optional_datetime(reverted_at, "reverted_at")
+        normalized = coerce_optional_datetime(reverted_at, "reverted_at")
         return replace(self, reverted_at=normalized)
 
 
@@ -169,10 +149,10 @@ def serialize_registry_entries(entries: Iterable[RegistryEntry]) -> List[Dict[st
                 "engine_target": entry.engine_target,
                 "change_id": str(entry.change_id),
                 "change_name": entry.change_name,
-                "deployed_at": entry.deployed_at.isoformat(),
+                "deployed_at": isoformat_utc(entry.deployed_at),
                 "planner": entry.planner,
                 "verify_status": entry.verify_status,
-                "reverted_at": entry.reverted_at.isoformat() if entry.reverted_at else None,
+                "reverted_at": isoformat_utc(entry.reverted_at) if entry.reverted_at else None,
             }
         )
     return serialized

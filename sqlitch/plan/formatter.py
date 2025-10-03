@@ -5,11 +5,12 @@ from __future__ import annotations
 import hashlib
 import os
 import shlex
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Sequence
 
 from .model import Change, Plan, PlanEntry, Tag
+from sqlitch.utils.time import isoformat_utc
 
 _SHELL_SAFE_CHARS = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._:@+-/,:")
 
@@ -113,9 +114,7 @@ def _format_tag(tag: Tag) -> str:
 
 
 def _format_timestamp(value: datetime) -> str:
-    normalized = value.astimezone(timezone.utc).replace(microsecond=0)
-    iso = normalized.isoformat()
-    return iso.replace("+00:00", "Z")
+    return isoformat_utc(value, drop_microseconds=True, use_z_suffix=True)
 
 
 def _format_script_path(value: Path | None, base_path: Path) -> str:
