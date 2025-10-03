@@ -12,6 +12,7 @@ from sqlitch.cli.commands import add as add_module
 from sqlitch.cli.main import main
 from sqlitch.plan.model import Change
 from sqlitch.plan.formatter import write_plan
+from sqlitch.utils.templates import default_template_body, render_template
 
 
 def _write_plan(path: Path, entries: tuple[Change, ...] = ()) -> None:
@@ -88,18 +89,23 @@ def test_add_appends_change_and_creates_scripts(monkeypatch: pytest.MonkeyPatch)
         assert deploy_path.exists()
         assert revert_path.exists()
         assert verify_path.exists()
-        assert (
-            deploy_path.read_text(encoding="utf-8")
-            == "-- SQLitch generated deploy script for widgets\n"
-        )
-        assert (
-            revert_path.read_text(encoding="utf-8")
-            == "-- SQLitch generated revert script for widgets\n"
-        )
-        assert (
-            verify_path.read_text(encoding="utf-8")
-            == "-- SQLitch generated verify script for widgets\n"
-        )
+
+        context = {
+            "project": "demo",
+            "change": "widgets",
+            "engine": "sqlite",
+            "requires": ["roles", "users"],
+            "conflicts": [],
+            "tags": ["feature"],
+        }
+
+        expected_deploy = render_template(default_template_body("deploy"), context)
+        expected_revert = render_template(default_template_body("revert"), context)
+        expected_verify = render_template(default_template_body("verify"), context)
+
+        assert deploy_path.read_text(encoding="utf-8") == expected_deploy
+        assert revert_path.read_text(encoding="utf-8") == expected_revert
+        assert verify_path.read_text(encoding="utf-8") == expected_verify
 
         plan_content = plan_path.read_text(encoding="utf-8")
         assert "change widgets" in plan_content
@@ -163,3 +169,69 @@ def test_add_uses_explicit_plan_override(monkeypatch: pytest.MonkeyPatch) -> Non
         assert "change reports" in plan_content
         assert "deploy/20250708091011_reports.sql" in plan_content
         assert "verify/20250708091011_reports.sql" in plan_content
+
+
+def test_add_honours_project_templates(monkeypatch: pytest.MonkeyPatch) -> None:
+    runner = CliRunner()
+    timestamp = datetime(2025, 9, 10, 11, 12, 13, tzinfo=timezone.utc)
+    monkeypatch.setattr(add_module, "_utcnow", lambda: timestamp)
+    monkeypatch.setenv("SQLITCH_USER_NAME", "Custom User")
+
+    with runner.isolated_filesystem():
+        plan_path = Path("sqlitch.plan")
+        _write_plan(plan_path)
+
+        templates_root = Path("etc/templates")
+        (templates_root / "deploy").mkdir(parents=True)
+        (templates_root / "revert").mkdir(parents=True)
+        (templates_root / "verify").mkdir(parents=True)
+
+        (templates_root / "deploy" / "sqlite.tmpl").write_text(
+            "-- Custom deploy [% change %] for [% project %]\n",
+            encoding="utf-8",
+        )
+        (templates_root / "revert" / "sqlite.tmpl").write_text(
+            "-- Custom revert [% change %]\n",
+            encoding="utf-8",
+        )
+        (templates_root / "verify" / "sqlite.tmpl").write_text(
+            "-- Custom verify [% change %]\n",
+            encoding="utf-8",
+        )
+
+        result = runner.invoke(main, ["add", "widgets"])
+
+        assert result.exit_code == 0, result.output
+        deploy_content = Path("deploy/20250910111213_widgets.sql").read_text(encoding="utf-8")
+        revert_content = Path("revert/20250910111213_widgets.sql").read_text(encoding="utf-8")
+        verify_content = Path("verify/20250910111213_widgets.sql").read_text(encoding="utf-8")
+
+        assert deploy_content == "-- Custom deploy widgets for demo\n"
+        assert revert_content == "-- Custom revert widgets\n"
+        assert verify_content == "-- Custom verify widgets\n"
+
+
+def test_add_template_override_by_name(monkeypatch: pytest.MonkeyPatch) -> None:
+    runner = CliRunner()
+    timestamp = datetime(2025, 11, 1, 2, 3, 4, tzinfo=timezone.utc)
+    monkeypatch.setattr(add_module, "_utcnow", lambda: timestamp)
+
+    with runner.isolated_filesystem():
+        plan_path = Path("sqlitch.plan")
+        _write_plan(plan_path)
+
+        templates_root = Path("etc/templates")
+        (templates_root / "deploy").mkdir(parents=True)
+        (templates_root / "revert").mkdir(parents=True)
+        (templates_root / "verify").mkdir(parents=True)
+
+        (templates_root / "deploy" / "custom.tmpl").write_text("deploy [% change %]\n", encoding="utf-8")
+        (templates_root / "revert" / "custom.tmpl").write_text("revert [% change %]\n", encoding="utf-8")
+        (templates_root / "verify" / "custom.tmpl").write_text("verify [% change %]\n", encoding="utf-8")
+
+        result = runner.invoke(main, ["add", "widgets", "--template", "custom"])
+
+        assert result.exit_code == 0, result.output
+        assert Path("deploy/20251101020304_widgets.sql").read_text(encoding="utf-8") == "deploy widgets\n"
+        assert Path("revert/20251101020304_widgets.sql").read_text(encoding="utf-8") == "revert widgets\n"
+        assert Path("verify/20251101020304_widgets.sql").read_text(encoding="utf-8") == "verify widgets\n"

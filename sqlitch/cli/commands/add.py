@@ -9,13 +9,15 @@ from pathlib import Path
 
 import click
 
+from sqlitch.engine.base import UnsupportedEngineError, canonicalize_engine_name
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change
 from sqlitch.plan.parser import PlanParseError, parse_plan
-from sqlitch.utils.fs import ArtifactConflictError, resolve_plan_file
+from sqlitch.utils.templates import default_template_body, render_template, resolve_template_path
 
 from . import CommandError, register_command
-from ._context import environment_from, plan_override_from, project_root_from, quiet_mode_enabled
+from ._context import require_cli_context
+from ._plan_utils import resolve_plan_path
 
 __all__ = ["add_command"]
 
@@ -60,19 +62,66 @@ def _ensure_script_path(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
 
 
-def _write_placeholder(path: Path, change_name: str, kind: str) -> None:
-    content = (
-        "-- SQLitch generated {kind} script for {change}\n".format(kind=kind, change=change_name)
-    )
-    path.write_text(content, encoding="utf-8")
-
-
 def _format_display_path(path: Path, project_root: Path) -> str:
     try:
         relative = path.relative_to(project_root)
         return relative.as_posix()
     except ValueError:
         return os.path.relpath(path, project_root).replace(os.sep, "/")
+
+
+def _discover_template_directories(project_root: Path, config_root: Path | None) -> tuple[Path, ...]:
+    directories: list[Path] = [project_root, project_root / "sqitch"]
+
+    if config_root is not None:
+        directories.append(config_root)
+        directories.append(config_root / "sqitch")
+
+    directories.append(Path("/etc/sqlitch"))
+    directories.append(Path("/etc/sqitch"))
+
+    ordered: list[Path] = []
+    seen: set[Path] = set()
+    for directory in directories:
+        if directory in seen:
+            continue
+        seen.add(directory)
+        ordered.append(directory)
+    return tuple(ordered)
+
+
+def _resolve_template_content(
+    *,
+    kind: str,
+    engine: str,
+    template_dirs: Sequence[Path],
+    template_name: str | None,
+) -> str:
+    absolute_override: Path | None = None
+    if template_name:
+        candidate = Path(template_name)
+        if candidate.is_absolute():
+            absolute_override = candidate
+
+    if absolute_override is not None:
+        if not absolute_override.exists():
+            raise CommandError(f"Template '{absolute_override}' does not exist")
+        return absolute_override.read_text(encoding="utf-8")
+
+    template_path = resolve_template_path(
+        kind=kind,
+        engine=engine,
+        directories=template_dirs,
+        template_name=template_name,
+    )
+
+    if template_name and template_path is None:
+        raise CommandError(f"Template '{template_name}' could not be located for {kind}")
+
+    if template_path is not None:
+        return template_path.read_text(encoding="utf-8")
+
+    return default_template_body(kind)
 
 
 @click.command("add")
@@ -83,7 +132,7 @@ def _format_display_path(path: Path, project_root: Path) -> str:
 @click.option("--deploy", "deploy_path", help="Explicit deploy script path.")
 @click.option("--revert", "revert_path", help="Explicit revert script path.")
 @click.option("--verify", "verify_path", help="Explicit verify script path.")
-@click.option("--template", "template_name", help="Template name (not yet supported).")
+@click.option("--template", "template_name", help="Template name to apply when generating scripts.")
 @click.pass_context
 def add_command(
     ctx: click.Context,
@@ -107,35 +156,24 @@ def add_command(
         deploy_path: Optional explicit path for the deploy script template.
         revert_path: Optional explicit path for the revert script template.
         verify_path: Optional explicit path for the verify script template.
-        template_name: Name of a script template to apply (currently unsupported).
+        template_name: Name or path of a script template to apply for all script kinds.
 
     Raises:
-        CommandError: If templates are requested, plan discovery fails, plan parsing
+        CommandError: If template discovery fails, plan discovery fails, plan parsing
             fails, scripts already exist, or the change name has already been
             recorded in the plan.
     """
 
-    if template_name is not None:
-        raise CommandError("--template is not supported yet")
-
-    project_root = project_root_from(ctx)
-    plan_override = plan_override_from(ctx)
-    environment = environment_from(ctx)
-    quiet = quiet_mode_enabled(ctx)
-
-    if plan_override is not None:
-        plan_path = plan_override
-        if not plan_path.exists():
-            raise CommandError(f"Plan file {plan_path} is missing")
-    else:
-        try:
-            resolution = resolve_plan_file(project_root)
-        except ArtifactConflictError as exc:  # pragma: no cover - exercised via integration tests
-            raise CommandError(str(exc)) from exc
-
-        plan_path = resolution.path
-        if plan_path is None:
-            raise CommandError("No plan file found. Run `sqlitch init` before adding changes.")
+    cli_context = require_cli_context(ctx)
+    project_root = cli_context.project_root
+    environment = cli_context.env
+    plan_path = resolve_plan_path(
+        project_root=project_root,
+        override=cli_context.plan_file,
+        env=environment,
+        missing_plan_message="No plan file found. Run `sqlitch init` before adding changes.",
+    )
+    quiet = bool(cli_context.quiet)
 
     try:
         plan = parse_plan(plan_path)
@@ -148,6 +186,14 @@ def add_command(
 
     if plan.has_change(change_name):
         raise CommandError(f'Change "{change_name}" already exists in plan')
+
+    engine_hint = cli_context.engine or plan.default_engine
+    try:
+        engine_name = canonicalize_engine_name(engine_hint)
+    except UnsupportedEngineError as exc:
+        raise CommandError(f"Unsupported engine '{engine_hint}'") from exc
+
+    template_dirs = _discover_template_directories(project_root, cli_context.config_root)
 
     timestamp = _utcnow()
     token = timestamp.strftime("%Y%m%d%H%M%S")
@@ -165,15 +211,30 @@ def add_command(
     _ensure_script_path(revert_target)
     _ensure_script_path(verify_target)
 
-    _write_placeholder(deploy_target, change_name, "deploy")
-    _write_placeholder(revert_target, change_name, "revert")
-    _write_placeholder(verify_target, change_name, "verify")
-
     script_map: dict[str, Path] = {
         "deploy": deploy_target,
         "revert": revert_target,
         "verify": verify_target,
     }
+
+    template_context: dict[str, object] = {
+        "project": plan.project_name,
+        "change": change_name,
+        "engine": engine_name,
+        "requires": list(requires),
+        "conflicts": [],
+        "tags": list(tags),
+    }
+
+    for kind, target in script_map.items():
+        template_body = _resolve_template_content(
+            kind=kind,
+            engine=engine_name,
+            template_dirs=template_dirs,
+            template_name=template_name,
+        )
+        rendered = render_template(template_body, template_context)
+        target.write_text(rendered, encoding="utf-8")
 
     change = Change.create(
         name=change_name,

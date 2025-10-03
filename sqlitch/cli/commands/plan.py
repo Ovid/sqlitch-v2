@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from dataclasses import replace
 from pathlib import Path
 
@@ -15,6 +15,7 @@ from sqlitch.plan.parser import PlanParseError, parse_plan
 from sqlitch.utils.fs import ArtifactConflictError, resolve_plan_file
 
 from . import CommandError, register_command
+from ._plan_utils import resolve_plan_path
 from ._context import environment_from, plan_override_from, project_root_from
 
 __all__ = ["plan_command"]
@@ -71,7 +72,12 @@ def plan_command(
     plan_override = plan_override_from(ctx)
     environment = environment_from(ctx)
 
-    plan_path = _resolve_plan_path(project_root, override=plan_override, env=environment)
+    plan_path = resolve_plan_path(
+        project_root=project_root,
+        override=plan_override,
+        env=environment,
+        missing_plan_message="No plan file found. Run `sqlitch init` before inspecting the plan.",
+    )
     raw_content = _read_plan_text(plan_path)
 
     normalized_format = output_format.lower()
@@ -117,35 +123,6 @@ def _register_plan(group: click.Group) -> None:
     """Attach the plan command to the root Click group."""
 
     group.add_command(plan_command)
-
-
-def _resolve_plan_path(
-    project_root: Path,
-    *,
-    override: Path | None,
-    env: Mapping[str, str],
-) -> Path:
-    if override is not None:
-        if not override.exists():
-            raise CommandError(f"Plan file {override} is missing")
-        return override
-
-    env_value = env.get("SQITCH_PLAN_FILE") or env.get("SQLITCH_PLAN_FILE")
-    if env_value:
-        env_path = Path(env_value)
-        resolved = env_path if env_path.is_absolute() else project_root / env_path
-        if not resolved.exists():
-            raise CommandError(f"Plan file {resolved} is missing")
-        return resolved
-
-    try:
-        resolution = resolve_plan_file(project_root)
-    except ArtifactConflictError as exc:
-        raise CommandError(str(exc)) from exc
-
-    if resolution.path is None:
-        raise CommandError("No plan file found. Run `sqlitch init` before inspecting the plan.")
-    return resolution.path
 
 
 def _read_plan_text(plan_path: Path) -> str:

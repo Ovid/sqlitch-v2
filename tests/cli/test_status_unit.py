@@ -207,14 +207,14 @@ def test_resolve_registry_target_rejects_empty_sqlite_uri(tmp_path: Path) -> Non
     """SQLite URIs without a payload should fail fast."""
 
     with pytest.raises(CommandError, match="explicit database path"):
-        _resolve_registry_target("db:sqlite:", tmp_path)
+        _resolve_registry_target("db:sqlite:", tmp_path, "sqlite")
 
 
 def test_resolve_registry_target_rejects_memory_uri(tmp_path: Path) -> None:
     """In-memory SQLite URIs are not supported by status."""
 
     with pytest.raises(CommandError, match="not supported"):
-        _resolve_registry_target("db:sqlite::memory:", tmp_path)
+        _resolve_registry_target("db:sqlite::memory:", tmp_path, "sqlite")
 
 
 def test_determine_status_handles_ahead_state() -> None:
@@ -399,7 +399,7 @@ def test_resolve_plan_path_prefers_override(tmp_path: Path) -> None:
     plan_path = tmp_path / "override.plan"
     plan_path.write_text("%project=widgets\n%default_engine=sqlite\n", encoding="utf-8")
 
-    result = _resolve_plan_path(tmp_path, override=plan_path, env={})
+    result = _resolve_plan_path(project_root=tmp_path, override=plan_path, env={})
 
     assert result == plan_path
 
@@ -409,7 +409,7 @@ def test_resolve_plan_path_raises_when_override_missing(tmp_path: Path) -> None:
 
     override = tmp_path / "missing.plan"
     with pytest.raises(CommandError, match="missing"):
-        _resolve_plan_path(tmp_path, override=override, env={})
+        _resolve_plan_path(project_root=tmp_path, override=override, env={})
 
 
 def test_resolve_plan_path_respects_env_variable(tmp_path: Path) -> None:
@@ -418,7 +418,11 @@ def test_resolve_plan_path_respects_env_variable(tmp_path: Path) -> None:
     env_plan = tmp_path / "env.plan"
     env_plan.write_text("%project=env\n%default_engine=sqlite\n", encoding="utf-8")
 
-    result = _resolve_plan_path(tmp_path, override=None, env={"SQLITCH_PLAN_FILE": env_plan.name})
+    result = _resolve_plan_path(
+        project_root=tmp_path,
+        override=None,
+        env={"SQLITCH_PLAN_FILE": env_plan.name},
+    )
 
     assert result == env_plan
 
@@ -427,7 +431,11 @@ def test_resolve_plan_path_env_missing_file(tmp_path: Path) -> None:
     """Missing files referenced by environment variables should raise errors."""
 
     with pytest.raises(CommandError, match="missing"):
-        _resolve_plan_path(tmp_path, override=None, env={"SQLITCH_PLAN_FILE": "missing.plan"})
+        _resolve_plan_path(
+            project_root=tmp_path,
+            override=None,
+            env={"SQLITCH_PLAN_FILE": "missing.plan"},
+        )
 
 
 def test_resolve_plan_path_no_plan_found(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -436,10 +444,10 @@ def test_resolve_plan_path_no_plan_found(monkeypatch: pytest.MonkeyPatch, tmp_pa
     def fake_resolver(_: Path) -> ArtifactResolution:
         return ArtifactResolution(path=None, is_drop_in=False, source_name=None)
 
-    monkeypatch.setattr("sqlitch.cli.commands.status.resolve_plan_file", fake_resolver)
+    monkeypatch.setattr("sqlitch.cli.commands._plan_utils.resolve_plan_file", fake_resolver)
 
     with pytest.raises(CommandError, match="No plan file found"):
-        _resolve_plan_path(tmp_path, override=None, env={})
+        _resolve_plan_path(project_root=tmp_path, override=None, env={})
 
 
 def test_resolve_plan_path_handles_conflicts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -448,10 +456,10 @@ def test_resolve_plan_path_handles_conflicts(monkeypatch: pytest.MonkeyPatch, tm
     def fake_resolver(_: Path) -> ArtifactResolution:
         raise ArtifactConflictError("conflict detected")
 
-    monkeypatch.setattr("sqlitch.cli.commands.status.resolve_plan_file", fake_resolver)
+    monkeypatch.setattr("sqlitch.cli.commands._plan_utils.resolve_plan_file", fake_resolver)
 
     with pytest.raises(CommandError, match="conflict detected"):
-        _resolve_plan_path(tmp_path, override=None, env={})
+        _resolve_plan_path(project_root=tmp_path, override=None, env={})
 
 
 def test_load_plan_wraps_parser_errors(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -472,17 +480,26 @@ def test_load_plan_wraps_parser_errors(monkeypatch: pytest.MonkeyPatch, tmp_path
 def test_resolve_registry_target_normalizes_relative_path(tmp_path: Path) -> None:
     """Non-prefixed targets should resolve relative to the project root."""
 
-    db_path, target = _resolve_registry_target("registry.sqlite", tmp_path)
+    registry_file = tmp_path / "registry.sqlite"
+    registry_file.touch()
 
-    assert db_path == tmp_path / "registry.sqlite"
-    assert target == "registry.sqlite"
+    engine_target, display_target = _resolve_registry_target(
+        "registry.sqlite",
+        tmp_path,
+        "sqlite",
+    )
+
+    expected_uri = f"db:sqlite:{registry_file.as_posix()}"
+    assert engine_target.registry_uri == expected_uri
+    assert engine_target.name == "registry.sqlite"
+    assert display_target == "registry.sqlite"
 
 
 def test_load_registry_rows_missing_database(tmp_path: Path) -> None:
     """Missing registry databases should surface as CommandError instances."""
 
     with pytest.raises(CommandError, match="Registry database"):
-        _load_registry_rows(tmp_path / "missing.db")
+        _resolve_registry_target("missing.db", tmp_path, "sqlite")
 
 
 def test_determine_status_handles_not_deployed() -> None:

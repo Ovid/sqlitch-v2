@@ -3,23 +3,22 @@
 from __future__ import annotations
 
 import json
-import sqlite3
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Mapping, Sequence
 
 import click
 
+from sqlitch.engine import EngineTarget, canonicalize_engine_name, create_engine
+from sqlitch.engine.base import UnsupportedEngineError
 from sqlitch.plan.model import Plan
 from sqlitch.plan.parser import PlanParseError, parse_plan
-from sqlitch.utils.fs import ArtifactConflictError, resolve_plan_file
 
 from . import CommandError, register_command
-from ._context import environment_from, plan_override_from, project_root_from, require_cli_context
+from ._context import require_cli_context
+from ._plan_utils import resolve_plan_path
 
 __all__ = ["status_command"]
-
-_SQLITE_PREFIX = "db:sqlite:"
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,15 +56,14 @@ def status_command(
     """Report the current deployment status for the requested target."""
 
     cli_context = require_cli_context(ctx)
-    project_root = project_root_from(ctx)
-    environment = environment_from(ctx)
-    plan_override = plan_override_from(ctx)
+    project_root = cli_context.project_root
+    environment = cli_context.env
 
     target_value = target_option or cli_context.target
     if not target_value:
         raise CommandError("A target must be provided via --target or configuration.")
 
-    plan_path = _resolve_plan_path(project_root, override=plan_override, env=environment)
+    plan_path = _resolve_plan_path(project_root, cli_context.plan_file, environment)
     plan = _load_plan(plan_path)
 
     resolved_project = plan.project_name
@@ -74,8 +72,10 @@ def status_command(
             f"Plan project '{resolved_project}' does not match requested project '{project_filter}'"
         )
 
-    db_path, display_target = _resolve_registry_target(target_value, project_root)
-    registry_rows = _load_registry_rows(db_path)
+    engine_target, display_target = _resolve_registry_target(
+        target_value, project_root, plan.default_engine
+    )
+    registry_rows = _load_registry_rows(engine_target)
 
     if registry_rows:
         registry_project = registry_rows[-1].project
@@ -128,33 +128,17 @@ def _register_status(group: click.Group) -> None:
 
 def _resolve_plan_path(
     project_root: Path,
-    *,
     override: Path | None,
     env: Mapping[str, str],
 ) -> Path:
-    if override is not None:
-        if not override.exists():
-            raise CommandError(f"Plan file {override} is missing")
-        return override
+    """Resolve the plan file path for status helpers."""
 
-    env_value = env.get("SQITCH_PLAN_FILE") or env.get("SQLITCH_PLAN_FILE")
-    if env_value:
-        env_path = Path(env_value)
-        resolved = env_path if env_path.is_absolute() else project_root / env_path
-        if not resolved.exists():
-            raise CommandError(f"Plan file {resolved} is missing")
-        return resolved
-
-    try:
-        resolution = resolve_plan_file(project_root)
-    except ArtifactConflictError as exc:
-        raise CommandError(str(exc)) from exc
-
-    if resolution.path is None:
-        raise CommandError("No plan file found. Run `sqlitch init` before inspecting the plan.")
-    return resolution.path
-
-
+    return resolve_plan_path(
+        project_root=project_root,
+        override=override,
+        env=env,
+        missing_plan_message="No plan file found. Run `sqlitch init` before inspecting the plan.",
+    )
 def _load_plan(plan_path: Path) -> Plan:
     try:
         return parse_plan(plan_path)
@@ -164,55 +148,118 @@ def _load_plan(plan_path: Path) -> Plan:
         raise CommandError(f"Unable to read plan file {plan_path}: {exc}") from exc
 
 
-def _resolve_registry_target(target: str, project_root: Path) -> tuple[Path, str]:
-    if target.startswith(_SQLITE_PREFIX):
-        payload = target[len(_SQLITE_PREFIX) :]
-        if not payload:
-            raise CommandError("SQLite targets require an explicit database path")
-        if payload == ":memory:":
-            raise CommandError("In-memory SQLite targets are not supported")
-        db_path = Path(payload)
+def _resolve_registry_target(
+    target: str,
+    project_root: Path,
+    default_engine: str,
+) -> tuple[EngineTarget, str]:
+    display_target = target
+
+    if target.startswith("db:" ):
+        remainder = target[3:]
+        engine_token, separator, payload = remainder.partition(":")
+        if not separator:
+            raise CommandError(f"Malformed target URI: {target}")
+        candidate_engine = engine_token or default_engine
+        payload_value = payload
     else:
-        db_path = Path(target)
+        candidate_engine = default_engine
+        payload_value = target
 
-    if not db_path.is_absolute():
-        db_path = project_root / db_path
-
-    return db_path, target
-
-
-def _load_registry_rows(db_path: Path) -> tuple[RegistryRow, ...]:
-    if not db_path.exists():
-        raise CommandError(f"Registry database {db_path} is missing")
-
-    connection = sqlite3.connect(db_path)
-    connection.row_factory = sqlite3.Row
     try:
-        cursor = connection.execute(
+        engine_name = canonicalize_engine_name(candidate_engine)
+    except UnsupportedEngineError as exc:
+        raise CommandError(f"Unsupported engine '{candidate_engine}'") from exc
+
+    if engine_name == "sqlite":
+        if not payload_value:
+            raise CommandError("SQLite targets require an explicit database path")
+        if payload_value == ":memory:":
+            raise CommandError("In-memory SQLite targets are not supported")
+
+        db_path = Path(payload_value)
+        if not db_path.is_absolute():
+            db_path = project_root / db_path
+        if not db_path.exists():
+            raise CommandError(f"Registry database {db_path} is missing")
+        registry_uri = f"db:{engine_name}:{db_path.as_posix()}"
+    else:
+        registry_uri = target if target.startswith("db:") else f"db:{engine_name}:{payload_value}"
+
+    engine_target = EngineTarget(name=display_target, engine=engine_name, uri=registry_uri)
+    return engine_target, display_target
+
+
+def _load_registry_rows(engine_target: EngineTarget) -> tuple[RegistryRow, ...]:
+    try:
+        engine = create_engine(engine_target)
+    except UnsupportedEngineError as exc:
+        raise CommandError(str(exc)) from exc
+
+    try:
+        connection = engine.connect_registry()
+    except Exception as exc:  # pragma: no cover - connection failures propagated
+        raise CommandError(
+            f"Failed to connect to registry target {engine_target.registry_uri}: {exc}"
+        ) from exc
+
+    cursor = None
+    try:
+        cursor = connection.cursor()
+        cursor.execute(
             """
             SELECT project, change_id, change_name, deployed_at, deployer_name, deployer_email, tag
             FROM registry
-            ORDER BY rowid
+            ORDER BY deployed_at, change_name, change_id
             """
         )
         rows = cursor.fetchall()
-    except sqlite3.Error as exc:  # pragma: no cover - error propagation
-        raise CommandError(f"Failed to read registry database {db_path}: {exc}") from exc
+        description = getattr(cursor, "description", None)
+        columns = [column[0] for column in description] if description else []
+    except Exception as exc:  # pragma: no cover - query failures propagated
+        raise CommandError(
+            f"Failed to read registry database {engine_target.registry_uri}: {exc}"
+        ) from exc
     finally:
-        connection.close()
+        if cursor is not None:
+            try:
+                cursor.close()
+            except Exception:  # pragma: no cover - best effort cleanup
+                pass
+        try:
+            connection.close()
+        except Exception:  # pragma: no cover - best effort cleanup
+            pass
 
-    return tuple(
-        RegistryRow(
-            project=row["project"],
-            change_id=row["change_id"],
-            change_name=row["change_name"],
-            deployed_at=row["deployed_at"],
-            deployer_name=row["deployer_name"],
-            deployer_email=row["deployer_email"],
-            tag=row["tag"],
+    if not rows:
+        return ()
+
+    def _row_mapping(row: object) -> Mapping[str, object]:
+        if isinstance(row, Mapping):
+            return row
+        if not columns:
+            raise CommandError("Registry query returned no column metadata")
+        if not isinstance(row, Sequence):
+            raise CommandError("Unexpected registry row format")
+        return {columns[index]: row[index] for index in range(min(len(columns), len(row)))}
+
+    registry_rows: list[RegistryRow] = []
+    for raw in rows:
+        mapping = _row_mapping(raw)
+        tag_value = mapping.get("tag")
+        registry_rows.append(
+            RegistryRow(
+                project=str(mapping.get("project", "")),
+                change_id=str(mapping.get("change_id", "")),
+                change_name=str(mapping.get("change_name", "")),
+                deployed_at=str(mapping.get("deployed_at", "")),
+                deployer_name=str(mapping.get("deployer_name", "")),
+                deployer_email=str(mapping.get("deployer_email", "")),
+                tag=str(tag_value) if tag_value is not None else None,
+            )
         )
-        for row in rows
-    )
+
+    return tuple(registry_rows)
 
 
 def _determine_status(plan_changes: Sequence[str], deployed_changes: Sequence[str]) -> str:

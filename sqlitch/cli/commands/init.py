@@ -10,6 +10,7 @@ import click
 
 from sqlitch.plan.formatter import write_plan
 from sqlitch.utils.fs import ArtifactConflictError, resolve_config_file, resolve_plan_file
+from sqlitch.utils.templates import write_default_templates
 
 from . import CommandError, register_command
 from ._context import require_cli_context
@@ -26,34 +27,6 @@ _ENGINE_DEFAULTS: dict[str, dict[str, str]] = {
     "pg": {"target": "db:pg:", "registry": "sqlitch", "client": "psql"},
     "mysql": {"target": "db:mysql:", "registry": "sqlitch", "client": "mysql"},
 }
-
-_TEMPLATE_CONTENT: dict[str, str] = {
-    "deploy": (
-        "-- Deploy [% project %]:[% change %] to [% engine %]\n"
-        "[% FOREACH item IN requires -%]\n"
-        "-- requires: [% item %]\n"
-        "[% END -%]\n"
-        "[% FOREACH item IN conflicts -%]\n"
-        "-- conflicts: [% item %]\n"
-        "[% END -%]\n\n"
-        "BEGIN;\n\n"
-        "-- XXX Add DDLs here.\n\n"
-        "COMMIT;\n"
-    ),
-    "revert": (
-        "-- Revert [% project %]:[% change %] from [% engine %]\n\n"
-        "BEGIN;\n\n"
-        "-- XXX Add DDLs here.\n\n"
-        "COMMIT;\n"
-    ),
-    "verify": (
-        "-- Verify [% project %]:[% change %] on [% engine %]\n\n"
-        "BEGIN;\n\n"
-        "-- XXX Add verifications here.\n\n"
-        "ROLLBACK;\n"
-    ),
-}
-
 
 @click.command("init")
 @click.argument("project_name", required=False)
@@ -118,7 +91,7 @@ def init_command(
     for directory in (deploy_dir, revert_dir, verify_dir):
         directory.mkdir(parents=True, exist_ok=False)
 
-    template_paths = _create_templates(templates_root, engine)
+    template_paths = write_default_templates(templates_root, engine)
 
     write_plan(
         project_name=project,
@@ -252,19 +225,6 @@ def _validate_directory_absent(path: Path) -> None:
 def _validate_templates_absent(templates_root: Path) -> None:
     if templates_root.exists():
         raise CommandError(f"Templates directory {templates_root} already exists")
-
-
-def _create_templates(templates_root: Path, engine: str) -> tuple[Path, ...]:
-    templates_root.mkdir(parents=True, exist_ok=False)
-
-    created: list[Path] = []
-    for kind, content in _TEMPLATE_CONTENT.items():
-        target_dir = templates_root / kind
-        target_dir.mkdir(exist_ok=False)
-        template_path = target_dir / f"{engine}.tmpl"
-        template_path.write_text(content, encoding="utf-8")
-        created.append(template_path)
-    return tuple(created)
 
 
 def _render_config(

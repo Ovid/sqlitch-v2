@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Mapping
 
 import click
 
@@ -41,6 +41,12 @@ def plan_override_from(ctx: click.Context) -> Path | None:
     """Return the explicit plan file override if one was provided."""
 
     return require_cli_context(ctx).plan_file
+
+
+def config_root_from(ctx: click.Context) -> Path:
+    """Return the configuration root directory associated with ``ctx``."""
+
+    return require_cli_context(ctx).config_root
 
 
 def quiet_mode_enabled(ctx: click.Context) -> bool:
