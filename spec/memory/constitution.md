@@ -1,9 +1,10 @@
 <!--
  Sync Impact Report
-- Version change: 1.2.0 → 1.3.0
-- Added sections: None
+- Version change: 1.3.0 → 1.4.0
+- Added sections:
+  • VIII. Documented Public Interfaces — codifies docstring expectations for public symbols
 - Modified sections:
-  • Additional Constraints — mandated Claude Sonnet 4 availability for all clients
+  • Development Workflow & Quality Gates — clarified documentation updates for features
 - Removed sections: None
 - Templates requiring updates:
   ✅ Existing templates reviewed (no changes required)
@@ -82,6 +83,17 @@ user familiarity while reducing ambiguity.
 Rationale: Simplicity reduces risk and maintenance cost while preserving parity
 and clarity of intent.
 
+### VIII. Documented Public Interfaces
+- Every publicly exposed module, class, function, CLI command, configuration surface,
+  or environment variable MUST include a docstring that captures purpose, inputs,
+  outputs, side effects, and error modes.
+- Public docstrings SHOULD follow a consistent style (Google/Numpy acceptable) and
+  MUST remain accurate when behavior changes.
+- Private helpers MAY omit docstrings when intent is obvious but SHOULD include
+  concise inline comments if readability would otherwise suffer.
+Rationale: Clear documentation protects consumers, reviewers, and future maintainers
+by making behavior discoverable without reverse-engineering the implementation.
+
 ## Additional Constraints
 
 - Security: Never log secrets or PII; redact by default and require `--allow-secrets`
@@ -110,7 +122,8 @@ and clarity of intent.
 - Simplicity Gate: Implementation MUST be minimal, avoid duplication, and add no
   capability beyond Sqitch unless explicitly justified and approved.
 - Documentation: Each feature MUST update quickstart and, when applicable,
-  contracts and data-model docs.
+  contracts and data-model docs, and MUST ensure public docstrings stay in sync
+  with observable behavior.
 
 ## Governance
 
@@ -126,4 +139,4 @@ and clarity of intent.
 - Compliance: All specs, plans, tasks, and PRs MUST reference and adhere to this
   document. Non-compliance is a change request, not a discretionary choice.
 
-**Version**: 1.3.0 | **Ratified**: TODO(RATIFICATION_DATE): original adoption date unknown | **Last Amended**: 2025-10-03
+**Version**: 1.4.0 | **Ratified**: TODO(RATIFICATION_DATE): original adoption date unknown | **Last Amended**: 2025-10-03

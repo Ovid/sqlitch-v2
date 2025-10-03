@@ -41,7 +41,7 @@ Rebuild Sqitch as a Python-first CLI named SQLitch that delivers drop-in behavio
 **Target Platform**: Cross-platform CLI (macOS, Linux, Windows) running in terminals with optional container runtime  
 **Project Type**: Single CLI/service package with mirrored Sqitch layout  
 **Performance Goals**: CLI invocations complete <200ms for non-deploy commands; deployments stream progress; parity with Sqitch output  
-**Constraints**: 90%+ coverage, zero lint/type/security warnings (black, isort, flake8, pylint, mypy, bandit), deterministic outputs matching Sqitch, Docker tests skip-with-warning if unavailable  
+**Constraints**: 90%+ coverage, zero lint/type/security warnings (black, isort, flake8, pylint, mypy, bandit), deterministic outputs matching Sqitch, Docker tests skip-with-warning if unavailable, public APIs documented with rich docstrings (private helpers may use comments)  
 **Scale/Scope**: MVP limited to SQLite, MySQL, PostgreSQL; feature parity with Sqitch core command set; ready for multi-platform CI matrix
 
 ## Constitution Check
@@ -133,6 +133,7 @@ specs/[###-feature]/
 3. Outline pytest skeleton suites under the repository-level `tests/` directory (mirroring the legacy `t/` subdirectories) with Docker-based fixtures; mark each new test as skipped until the corresponding implementation task is ready to start, then—immediately before beginning that implementation—remove the skip so the test fails per FR-012.
 4. Produce `quickstart.md` guiding contributors through `python -m venv`, dependency installation, Docker prerequisites, and parity verification steps with references to the `tests/` hierarchy.
 5. Update Copilot agent context by running `.specify/scripts/bash/update-agent-context.sh copilot`, appending new tech choices (Click, docker SDK, connectors) while keeping the file concise.
+6. Establish documentation standards: enumerate which modules/classes/functions are considered public, and capture docstring formatting rules (follow numpy/google style?) to ensure consistency once implementation begins.
 
 **Output**: `data-model.md`, `/contracts/*`, `quickstart.md`, docker-aware pytest scaffolds (documented), and refreshed Copilot agent file.
 
@@ -163,7 +164,7 @@ specs/[###-feature]/
 1. **SQLite Parity Slice (Milestone M1)**
    - Complete engine abstractions (T045) and the SQLite adapter (T046).
    - Stand up CLI scaffolding (T050–T051) and the command surface required to walk through the Sqitch tutorial end-to-end (T052–T070, constrained initially to SQLite-backed operations).
-   - Execute T081 with an expanded checklist that now includes manual CLI walkthroughs (`sqlitch init`, `sqlitch plan`, etc.) and update the parity report.
+   - Execute T081 with an expanded checklist that now includes manual CLI walkthroughs (`sqlitch init`, `sqlitch plan`, etc.), validation that all touched public code paths carry docstrings, and update the parity report.
    - Only after these steps pass may work continue.
 2. **MySQL Parity Slice (Milestone M2)**
    - Branch from the merged SQLite milestone, implement the MySQL adapter (T047), update CLI handlers where engine branching is required, and complete parity gate T082.

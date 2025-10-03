@@ -51,6 +51,7 @@
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 *Before beginning any task in this phase, remove the related skip markers introduced in Phase 3.2, confirm the tests fail, and use that failure as the Red→Green starting point (FR-012).* 
+*All public modules/classes/functions touched during implementation MUST be updated (or created) with comprehensive docstrings covering purpose, parameters, returns, side effects, and error modes. Private helpers MAY rely on succinct inline comments instead.*
 - [X] T036 Implement plan domain models (Change, Tag, Plan entries) in `sqlitch/plan/model.py`.
 - [X] T037 Implement plan parser mirroring Sqitch semantics in `sqlitch/plan/parser.py`.
 - [X] T038 Implement plan formatter and checksum utilities in `sqlitch/plan/formatter.py`.
@@ -113,6 +114,7 @@
 - Complete T046 followed by T050–T070 before attempting T081.
 - Engine adapters beyond SQLite must execute in strict sequence: T047 → T082 → T048 → T083, each on a fresh branch after the prior gate merges.
 - T081 must complete (merged) before starting T047; T082 must complete (merged) before starting T048; T083 must complete (merged) before any integration work (Phase 3.4).
+- Any PR exiting Phase 3.3 MUST include docstrings for all newly- or publicly-exposed symbols; reviewers should block merges otherwise.
 - T051 must complete before command handler tasks T052–T070.
 - T008a and T008b must finish before Phase 3.3 work begins to ensure the skip-removal gate is active in tooling and reviews.
 - Integration tasks T073–T074 depend on completion of all relevant command and engine tasks.

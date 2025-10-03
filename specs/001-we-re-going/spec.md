@@ -23,6 +23,7 @@
 - Emphasize maintainability: clear documentation, mirrored directory/test layout, and enforceable quality gates are non-negotiable.
 - Highlight any intentional deviations from Sqitch behavior so stakeholders can approve them explicitly.
 - Commit contract and regression tests in a skipped state until immediately before their corresponding implementation begins; immediately prior to starting the feature, remove the skip so the test fails, run the `scripts/check-skips.py` gate, and tick the PR checklist item before writing code (enforced via tasks T008a/T008b).
+- Public modules, classes, and functions MUST ship with clear docstrings that describe behavior, inputs, outputs, and error modes; private helpers MAY rely on concise inline comments when necessary.
 
 ---
 
@@ -72,6 +73,7 @@ Database release engineers need to execute database change management workflows 
 - **FR-010**: All automated tests MUST clean up any files, databases, containers, or other artifacts they create, ensuring repeated runs leave no residual state.
 - **FR-011**: SQLitch MUST support existing `sqitch.*` project artifacts as drop-in inputs, while emitting a blocking error if both `sqitch.*` and `sqlitch.*` files are detected in the same scope to prevent ambiguous configuration.
 - **FR-012**: Tests covering unimplemented features MUST be committed with skip markers (e.g., `pytest.mark.skip`) and MUST have those skips removed immediately before the corresponding implementation work starts. Removing the skip, confirming the test failure, running the `scripts/check-skips.py` automation (T008a), and acknowledging the PR checklist item (T008b) are absolute pre-implementation gates that re-establish the Red→Green workflow while keeping CI stable for unstarted features.
+- **FR-013**: All public-facing modules, classes, functions, CLI commands, and configuration surfaces MUST include comprehensive docstrings that outline purpose, parameters, outputs, side effects, and error modes. Private helpers MAY use brief inline comments in lieu of docstrings when appropriate.
 
 ### Key Entities *(include if feature involves data)*
 - **Deployment Plan**: Represents the ordered list of database changes, tags, and dependencies; must remain fully compatible with existing Sqitch plan files.
