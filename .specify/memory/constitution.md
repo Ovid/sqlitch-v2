@@ -79,6 +79,9 @@
 	running operations MUST stream progress or provide `--no-progress` for CI.
 - Configuration: Respect environment variables and config files under
 	`$XDG_CONFIG_HOME/sqlitch/` or `~/.config/sqlitch/`.
+- Advisory Clarity: When recommending an approach, explicitly call out any
+	potential risks, uncertainties, or reasons it might be a bad idea, and explain
+	the rationale so reviewers can evaluate the trade-offs.
 
 ## Development Workflow & Quality Gates
 
@@ -109,4 +112,4 @@
 - Compliance: All specs, plans, tasks, and PRs MUST reference and adhere to this
 	document. Non-compliance is a change request, not a discretionary choice.
 
-**Version**: 1.2.0 | **Ratified**: TODO(RATIFICATION_DATE): original adoption date unknown | **Last Amended**: 2025-10-01
+**Version**: 1.3.0 | **Ratified**: TODO(RATIFICATION_DATE): original adoption date unknown | **Last Amended**: 2025-10-03
