@@ -1,6 +1,8 @@
 """Top-level package for SQLitch."""
 
-from importlib.metadata import version, PackageNotFoundError
+from __future__ import annotations
+
+from importlib.metadata import PackageNotFoundError, version
 
 try:  # pragma: no cover - handled by ensuring package metadata is present
     __version__ = version("sqlitch")

@@ -1,5 +1,7 @@
 """Engine adapters and factories for SQLitch."""
 
+from __future__ import annotations
+
 from .base import (
     Engine,
     EngineError,
