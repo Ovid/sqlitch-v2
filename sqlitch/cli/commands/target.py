@@ -187,16 +187,22 @@ def target_list(ctx: click.Context) -> None:
 def _resolve_config_path(project_root: Path, config_root: Path | None) -> Path:
     """Resolve the config file path for targets."""
 
-    # For simplicity, use local config
-    try:
-        resolution = resolve_config_file(project_root)
-    except ArtifactConflictError as exc:  # pragma: no cover - defensive guard
-        raise CommandError(str(exc)) from exc
+    search_roots: list[Path] = []
+    if config_root is not None:
+        search_roots.append(config_root)
+    search_roots.append(project_root)
 
-    if resolution.path is not None:
-        return resolution.path
+    for root in search_roots:
+        try:
+            resolution = resolve_config_file(root)
+        except ArtifactConflictError as exc:  # pragma: no cover - defensive guard
+            raise CommandError(str(exc)) from exc
 
-    return project_root / "sqitch.conf"
+        if resolution.path is not None:
+            return resolution.path
+
+    preferred_root = search_roots[0]
+    return preferred_root / "sqitch.conf"
 
 
 @register_command("target")
