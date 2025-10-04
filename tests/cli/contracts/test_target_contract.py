@@ -38,7 +38,16 @@ def test_target_add_and_list(runner: CliRunner) -> None:
 
         result = runner.invoke(
             main,
-            ["target", "add", "prod", "db:sqlite:prod.db", "--engine", "sqlite", "--registry", "db:sqlite:registry.db"],
+            [
+                "target",
+                "add",
+                "prod",
+                "db:sqlite:prod.db",
+                "--engine",
+                "sqlite",
+                "--registry",
+                "db:sqlite:registry.db",
+            ],
         )
         assert result.exit_code == 0
 
@@ -103,12 +112,23 @@ def test_target_alter_updates_existing_target(runner: CliRunner) -> None:
         result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
         assert result.exit_code == 0
 
-        result = runner.invoke(main, ["target", "add", "prod", "db:sqlite:prod.db", "--engine", "sqlite"])
+        result = runner.invoke(
+            main, ["target", "add", "prod", "db:sqlite:prod.db", "--engine", "sqlite"]
+        )
         assert result.exit_code == 0
 
         result = runner.invoke(
             main,
-            ["target", "alter", "prod", "db:sqlite:new.db", "--engine", "pg", "--registry", "db:sqlite:registry.db"],
+            [
+                "target",
+                "alter",
+                "prod",
+                "db:sqlite:new.db",
+                "--engine",
+                "pg",
+                "--registry",
+                "db:sqlite:registry.db",
+            ],
         )
         assert result.exit_code == 0
 
@@ -141,7 +161,7 @@ def test_target_remove_unknown_error(runner: CliRunner) -> None:
         result = runner.invoke(main, ["target", "remove", "ghost"])
 
     assert result.exit_code != 0
-    assert "Unknown target \"ghost\"" in result.output
+    assert 'Unknown target "ghost"' in result.output
 
 
 def test_target_honours_config_root_override(runner: CliRunner) -> None:

@@ -82,7 +82,9 @@ def test_select_changes_missing_tag_raises() -> None:
         deploy_module._select_changes(plan=plan, to_change=None, to_tag="v1.0")
 
 
-def test_render_log_only_deploy_respects_quiet(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_render_log_only_deploy_respects_quiet(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     captured: list[str] = []
     monkeypatch.setattr(click, "echo", lambda message: captured.append(message))
 
@@ -104,7 +106,9 @@ def test_render_log_only_deploy_respects_quiet(monkeypatch: pytest.MonkeyPatch, 
     assert captured == []
 
 
-def test_render_log_only_deploy_outputs_messages(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_render_log_only_deploy_outputs_messages(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     captured: list[str] = []
     monkeypatch.setattr(click, "echo", lambda message: captured.append(message))
 
@@ -138,4 +142,3 @@ def test_build_emitter_obeys_quiet_flag(monkeypatch: pytest.MonkeyPatch) -> None
     quiet("ignored")
 
     assert captured == ["hello"]
-

@@ -83,9 +83,9 @@ def test_resolve_config_uses_environment_overrides(tmp_path: Path) -> None:
 
     assert profile.root_dir == project_dir
     assert profile.files == (
-    system_dir / "sqitch.conf",
-    override_root / "sqitch.conf",
-    project_dir / "sqitch.conf",
+        system_dir / "sqitch.conf",
+        override_root / "sqitch.conf",
+        project_dir / "sqitch.conf",
     )
     assert profile.settings["core"]["engine"] == "sqlite"
     assert profile.active_engine == "sqlite"

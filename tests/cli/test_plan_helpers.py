@@ -45,7 +45,9 @@ def test_read_plan_text_missing_file(tmp_path: Path) -> None:
         plan_module._read_plan_text(target)
 
 
-def test_parse_plan_model_wraps_parser_errors(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_parse_plan_model_wraps_parser_errors(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     plan_path = tmp_path / "sqlitch.plan"
     plan_path.write_text("%project=widgets\n", encoding="utf-8")
 
@@ -128,7 +130,9 @@ def test_emit_missing_dependency_warnings(monkeypatch: pytest.MonkeyPatch) -> No
 
     plan_module._emit_missing_dependency_warnings(plan)
 
-    assert captured == ["Warning: change 'one' references dependency 'users' before it appears in the plan."]
+    assert captured == [
+        "Warning: change 'one' references dependency 'users' before it appears in the plan."
+    ]
 
 
 def test_entry_to_json_formats_relative_paths(tmp_path: Path) -> None:
@@ -142,5 +146,6 @@ def test_entry_to_json_formats_relative_paths(tmp_path: Path) -> None:
 def test_prepare_human_output_preserves_trailing_newline() -> None:
     content = "line\n"
 
-    assert plan_module._prepare_human_output(content, strip_headers=False, short=False).endswith("\n")
-
+    assert plan_module._prepare_human_output(content, strip_headers=False, short=False).endswith(
+        "\n"
+    )

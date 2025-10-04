@@ -48,7 +48,9 @@ def test_structured_logger_respects_log_level_threshold() -> None:
 def test_structured_logger_emits_json_when_requested() -> None:
     stream = io.StringIO()
     log_config = LogConfiguration(run_identifier="run-3", verbosity=0, quiet=False, json_mode=True)
-    logger = StructuredLogger(log_config, console=Console(width=120, color_system=None), json_stream=stream, clock=_clock)
+    logger = StructuredLogger(
+        log_config, console=Console(width=120, color_system=None), json_stream=stream, clock=_clock
+    )
 
     logger.warning("command.warn", "Warning", payload={"code": 42})
 

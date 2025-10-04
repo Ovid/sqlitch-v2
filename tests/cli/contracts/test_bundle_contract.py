@@ -33,9 +33,7 @@ def test_bundle_creates_default_bundle_directory() -> None:
 
         bundle_root = Path("bundle")
         assert (
-            (bundle_root / "sqitch.plan")
-            .read_text(encoding="utf-8")
-            .startswith("%project=widgets")
+            (bundle_root / "sqitch.plan").read_text(encoding="utf-8").startswith("%project=widgets")
         )
         for directory in ("deploy", "revert", "verify"):
             copied = bundle_root / directory / "widgets.sql"

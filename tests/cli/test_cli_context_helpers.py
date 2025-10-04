@@ -68,10 +68,12 @@ def test_context_from_obj_rejects_incomplete_namespace(tmp_path: Path) -> None:
 def test_is_cli_context_like_requires_all_attributes(dummy_cli_context: SimpleNamespace) -> None:
     assert context_module._is_cli_context_like(dummy_cli_context)
 
-    missing_attr = SimpleNamespace(**{
-        key: getattr(dummy_cli_context, key)
-        for key in ("project_root", "config_root", "env", "quiet")
-    })
+    missing_attr = SimpleNamespace(
+        **{
+            key: getattr(dummy_cli_context, key)
+            for key in ("project_root", "config_root", "env", "quiet")
+        }
+    )
 
     assert context_module._is_cli_context_like(missing_attr) is False
 
@@ -85,4 +87,3 @@ def test_attribute_helpers_proxy_requirements(dummy_cli_context: SimpleNamespace
     assert context_module.plan_override_from(ctx) is None
     assert context_module.config_root_from(ctx) == dummy_cli_context.config_root
     assert context_module.quiet_mode_enabled(ctx) is False
-

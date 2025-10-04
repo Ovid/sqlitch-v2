@@ -87,4 +87,3 @@ def test_build_emitter_suppresses_output_when_quiet(monkeypatch: pytest.MonkeyPa
     quiet_emitter("two")
 
     assert captured == ["one"]
-

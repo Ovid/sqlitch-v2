@@ -83,7 +83,9 @@ def test_replace_change_updates_matching_entry(tmp_path: Path) -> None:
     entries = (original,)
     replacement = _make_change("widgets")
 
-    updated = rework_module._replace_change(entries=entries, name="widgets", replacement=replacement)
+    updated = rework_module._replace_change(
+        entries=entries, name="widgets", replacement=replacement
+    )
 
     assert updated == (replacement,)
 
@@ -94,4 +96,3 @@ def test_replace_change_missing_raises(tmp_path: Path) -> None:
 
     with pytest.raises(CommandError, match='Unknown change "reports"'):
         rework_module._replace_change(entries=entries, name="reports", replacement=replacement)
-

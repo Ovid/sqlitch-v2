@@ -110,7 +110,9 @@ def test_resolve_template_content_absolute_missing(tmp_path: Path) -> None:
         )
 
 
-def test_resolve_template_content_raises_when_named_template_not_found(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_resolve_template_content_raises_when_named_template_not_found(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     monkeypatch.setattr(add_module, "resolve_template_path", lambda **_: None)
 
     with pytest.raises(CommandError, match="could not be located"):
@@ -122,7 +124,9 @@ def test_resolve_template_content_raises_when_named_template_not_found(monkeypat
         )
 
 
-def test_resolve_template_content_uses_discovered_template(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_resolve_template_content_uses_discovered_template(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     template = tmp_path / "custom.tmpl"
     template.write_text("-- template", encoding="utf-8")
 
@@ -138,7 +142,9 @@ def test_resolve_template_content_uses_discovered_template(monkeypatch: pytest.M
     assert content == "-- template"
 
 
-def test_resolve_template_content_falls_back_to_default(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_resolve_template_content_falls_back_to_default(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     monkeypatch.setattr(add_module, "resolve_template_path", lambda **_: None)
 
     content = add_module._resolve_template_content(
@@ -149,4 +155,3 @@ def test_resolve_template_content_falls_back_to_default(monkeypatch: pytest.Monk
     )
 
     assert content == default_template_body("deploy")
-

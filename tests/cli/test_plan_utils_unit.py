@@ -22,7 +22,9 @@ def empty_profile(tmp_path: Path) -> ConfigProfile:
     )
 
 
-def test_resolve_default_engine_prefers_override(tmp_path: Path, empty_profile: ConfigProfile, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_resolve_default_engine_prefers_override(
+    tmp_path: Path, empty_profile: ConfigProfile, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(plan_utils.config_resolver, "resolve_config", lambda **_: empty_profile)
 
     engine = plan_utils.resolve_default_engine(
@@ -35,7 +37,9 @@ def test_resolve_default_engine_prefers_override(tmp_path: Path, empty_profile: 
     assert engine == "pg"
 
 
-def test_resolve_default_engine_uses_config_profile(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_resolve_default_engine_uses_config_profile(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     profile = ConfigProfile(
         root_dir=tmp_path,
         files=(),
@@ -54,7 +58,9 @@ def test_resolve_default_engine_uses_config_profile(tmp_path: Path, monkeypatch:
     assert engine == "mysql"
 
 
-def test_resolve_default_engine_reads_plan_header(tmp_path: Path, empty_profile: ConfigProfile, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_resolve_default_engine_reads_plan_header(
+    tmp_path: Path, empty_profile: ConfigProfile, monkeypatch: pytest.MonkeyPatch
+) -> None:
     plan_path = tmp_path / "sqlitch.plan"
     plan_path.write_text("%project=widgets\n%default_engine=sqlite\n", encoding="utf-8")
 
@@ -126,4 +132,3 @@ def test_read_plan_default_engine_missing_file(tmp_path: Path) -> None:
     plan_path = tmp_path / "missing.plan"
 
     assert plan_utils._read_plan_default_engine(plan_path) is None
-

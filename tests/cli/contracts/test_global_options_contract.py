@@ -25,9 +25,7 @@ def restore_main_commands() -> Iterator[None]:
         cli_main.main.commands = original_commands
 
 
-def _invoke_with_capture(
-    args: list[str], *, env: dict[str, str] | None = None
-):
+def _invoke_with_capture(args: list[str], *, env: dict[str, str] | None = None):
     runner = CliRunner()
     captured: dict[str, object] = {}
 
