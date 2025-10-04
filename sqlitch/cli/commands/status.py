@@ -82,7 +82,7 @@ def status_command(
     engine_target, display_target = _resolve_registry_target(
         target_value, project_root, plan.default_engine
     )
-    registry_rows = _load_registry_rows(engine_target)
+    registry_rows = _load_registry_rows(engine_target, resolved_project)
 
     if registry_rows:
         registry_project = registry_rows[-1].project
@@ -202,7 +202,10 @@ def _resolve_registry_target(
     return engine_target, display_target
 
 
-def _load_registry_rows(engine_target: EngineTarget) -> tuple[RegistryRow, ...]:
+def _load_registry_rows(
+    engine_target: EngineTarget,
+    expected_project: str,
+) -> tuple[RegistryRow, ...]:
     try:
         engine = create_engine(engine_target)
     except UnsupportedEngineError as exc:
@@ -219,11 +222,37 @@ def _load_registry_rows(engine_target: EngineTarget) -> tuple[RegistryRow, ...]:
     try:
         cursor = connection.cursor()
         cursor.execute(
+            "SELECT project FROM changes GROUP BY project"
+        )
+        projects = {str(row[0]) for row in cursor.fetchall() if row and row[0] is not None}
+        if projects and expected_project not in projects:
+            mismatched = ", ".join(sorted(projects))
+            raise CommandError(
+                f"Registry project '{mismatched}' does not match plan project '{expected_project}'"
+            )
+
+        cursor.execute(
             """
-            SELECT project, change_id, change_name, deployed_at, deployer_name, deployer_email, tag
-            FROM registry
-            ORDER BY deployed_at, change_name, change_id
-            """
+            SELECT
+                c.project,
+                c.change_id,
+                c."change" AS change_name,
+                c.committed_at,
+                c.committer_name,
+                c.committer_email,
+                (
+                    SELECT tag
+                    FROM tags
+                    WHERE tags.change_id = c.change_id
+                      AND tags.project = c.project
+                    ORDER BY tags.committed_at DESC, tags.tag_id DESC
+                    LIMIT 1
+                ) AS latest_tag
+            FROM changes AS c
+            WHERE c.project = ?
+            ORDER BY c.committed_at ASC, c.change_id ASC
+            """,
+            (expected_project,),
         )
         rows = cursor.fetchall()
         description = getattr(cursor, "description", None)
@@ -257,20 +286,23 @@ def _load_registry_rows(engine_target: EngineTarget) -> tuple[RegistryRow, ...]:
             raise CommandError(
                 f"Registry query for {engine_target.registry_uri} returned unexpected row format"
             )
-        return {columns[index]: row[index] for index in range(min(len(columns), len(row)))}
+        return {
+            columns[index]: row[index]
+            for index in range(min(len(columns), len(row)))
+        }
 
     registry_rows: list[RegistryRow] = []
     for raw in rows:
         mapping = _row_mapping(raw)
-        tag_value = mapping.get("tag")
+        tag_value = mapping.get("latest_tag")
         registry_rows.append(
             RegistryRow(
                 project=str(mapping.get("project", "")),
                 change_id=str(mapping.get("change_id", "")),
                 change_name=str(mapping.get("change_name", "")),
-                deployed_at=str(mapping.get("deployed_at", "")),
-                deployer_name=str(mapping.get("deployer_name", "")),
-                deployer_email=str(mapping.get("deployer_email", "")),
+                deployed_at=str(mapping.get("committed_at", mapping.get("deployed_at", ""))),
+                deployer_name=str(mapping.get("committer_name", mapping.get("deployer_name", ""))),
+                deployer_email=str(mapping.get("committer_email", mapping.get("deployer_email", ""))),
                 tag=str(tag_value) if tag_value is not None else None,
             )
         )

@@ -39,17 +39,39 @@ def runner() -> CliRunner:
 def _create_registry(db_path: Path) -> None:
     connection = sqlite3.connect(db_path)
     try:
-        connection.execute(
+        connection.executescript(
             """
-            CREATE TABLE registry (
-                project TEXT,
-                change_id TEXT,
-                change_name TEXT,
-                deployed_at TEXT,
-                deployer_name TEXT,
-                deployer_email TEXT,
-                tag TEXT
-            )
+            CREATE TABLE projects (
+                project TEXT PRIMARY KEY
+            );
+
+            CREATE TABLE changes (
+                change_id TEXT PRIMARY KEY,
+                script_hash TEXT,
+                "change" TEXT NOT NULL,
+                project TEXT NOT NULL,
+                note TEXT NOT NULL DEFAULT '',
+                committed_at TEXT NOT NULL,
+                committer_name TEXT NOT NULL,
+                committer_email TEXT NOT NULL,
+                planned_at TEXT NOT NULL,
+                planner_name TEXT NOT NULL,
+                planner_email TEXT NOT NULL
+            );
+
+            CREATE TABLE tags (
+                tag_id TEXT PRIMARY KEY,
+                tag TEXT NOT NULL,
+                project TEXT NOT NULL,
+                change_id TEXT NOT NULL,
+                note TEXT NOT NULL DEFAULT '',
+                committed_at TEXT NOT NULL,
+                committer_name TEXT NOT NULL,
+                committer_email TEXT NOT NULL,
+                planned_at TEXT NOT NULL,
+                planner_name TEXT NOT NULL,
+                planner_email TEXT NOT NULL
+            );
             """
         )
         connection.commit()
@@ -109,26 +131,43 @@ def test_status_rejects_registry_project_mismatch(runner: CliRunner, tmp_path: P
     write_plan(project_name="widgets", default_engine="sqlite", entries=(), plan_path=plan_path)
 
     db_path = tmp_path / "registry.db"
+    _create_registry(db_path)
     connection = sqlite3.connect(db_path)
-    connection.execute(
-        """
-        CREATE TABLE registry (
-            project TEXT,
-            change_id TEXT,
-            change_name TEXT,
-            deployed_at TEXT,
-            deployer_name TEXT,
-            deployer_email TEXT,
-            tag TEXT
+    try:
+        connection.execute("INSERT INTO projects (project) VALUES (?)", ("other",))
+        connection.execute(
+            """
+            INSERT INTO changes (
+                change_id,
+                script_hash,
+                "change",
+                project,
+                note,
+                committed_at,
+                committer_name,
+                committer_email,
+                planned_at,
+                planner_name,
+                planner_email
+            )
+            VALUES (?, ?, ?, ?, '', ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "abc",
+                None,
+                "users",
+                "other",
+                "2025-01-01T00:00:00Z",
+                "Ada",
+                "ada@example.com",
+                "2025-01-01T00:00:00Z",
+                "Ada",
+                "ada@example.com",
+            ),
         )
-        """
-    )
-    connection.execute(
-        "INSERT INTO registry VALUES (?, ?, ?, ?, ?, ?, ?)",
-        ("other", "abc", "users", "2025-01-01T00:00:00Z", "Ada", "ada@example.com", None),
-    )
-    connection.commit()
-    connection.close()
+        connection.commit()
+    finally:
+        connection.close()
 
     with runner.isolated_filesystem() as sandbox:
         sandbox_path = Path(sandbox)

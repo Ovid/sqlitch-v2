@@ -97,44 +97,119 @@ def _seed_registry(db_path: Path, rows: Iterable[RegistryFixtureRow]) -> None:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(db_path)
     try:
-        connection.execute(
+        cursor = connection.cursor()
+        cursor.executescript(
             """
-            CREATE TABLE registry (
-                project TEXT NOT NULL,
-                change_id TEXT NOT NULL,
-                change_name TEXT NOT NULL,
-                deployed_at TEXT NOT NULL,
-                deployer_name TEXT NOT NULL,
-                deployer_email TEXT NOT NULL,
-                tag TEXT
-            )
+            CREATE TABLE projects (
+                project         TEXT PRIMARY KEY,
+                uri             TEXT,
+                created_at      TEXT NOT NULL,
+                creator_name    TEXT NOT NULL,
+                creator_email   TEXT NOT NULL
+            );
+
+            CREATE TABLE changes (
+                change_id       TEXT PRIMARY KEY,
+                script_hash     TEXT,
+                "change"        TEXT NOT NULL,
+                project         TEXT NOT NULL,
+                note            TEXT NOT NULL,
+                committed_at    TEXT NOT NULL,
+                committer_name  TEXT NOT NULL,
+                committer_email TEXT NOT NULL,
+                planned_at      TEXT NOT NULL,
+                planner_name    TEXT NOT NULL,
+                planner_email   TEXT NOT NULL
+            );
+
+            CREATE TABLE tags (
+                tag_id          TEXT PRIMARY KEY,
+                tag             TEXT NOT NULL,
+                project         TEXT NOT NULL,
+                change_id       TEXT NOT NULL,
+                note            TEXT NOT NULL,
+                committed_at    TEXT NOT NULL,
+                committer_name  TEXT NOT NULL,
+                committer_email TEXT NOT NULL,
+                planned_at      TEXT NOT NULL,
+                planner_name    TEXT NOT NULL,
+                planner_email   TEXT NOT NULL
+            );
             """
         )
-        connection.executemany(
+
+        cursor.execute(
             """
-            INSERT INTO registry (
-                project,
-                change_id,
-                change_name,
-                deployed_at,
-                deployer_name,
-                deployer_email,
-                tag
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO projects (project, uri, created_at, creator_name, creator_email)
+            VALUES (?, NULL, ?, ?, ?)
             """,
-            [
+            (PROJECT, "2013-12-31 00:00:00Z", PLANNER, PLANNER_EMAIL),
+        )
+
+        tag_index = 0
+        for row in rows:
+            cursor.execute(
+                """
+                INSERT INTO changes (
+                    change_id,
+                    script_hash,
+                    "change",
+                    project,
+                    note,
+                    committed_at,
+                    committer_name,
+                    committer_email,
+                    planned_at,
+                    planner_name,
+                    planner_email
+                ) VALUES (?, ?, ?, ?, '', ?, ?, ?, ?, ?, ?)
+                """,
                 (
-                    PROJECT,
+                    row.change_id,
                     row.change_id,
                     row.change_name,
+                    PROJECT,
                     row.deployed_at,
                     row.deployer_name,
                     row.deployer_email,
-                    row.tag,
+                    row.deployed_at,
+                    PLANNER,
+                    PLANNER_EMAIL,
+                ),
+            )
+
+            if row.tag is not None:
+                tag_index += 1
+                cursor.execute(
+                    """
+                    INSERT INTO tags (
+                        tag_id,
+                        tag,
+                        project,
+                        change_id,
+                        note,
+                        committed_at,
+                        committer_name,
+                        committer_email,
+                        planned_at,
+                        planner_name,
+                        planner_email
+                    ) VALUES (?, ?, ?, ?, '', ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        f"tag-{tag_index}",
+                        row.tag,
+                        PROJECT,
+                        row.change_id,
+                        row.deployed_at,
+                        row.deployer_name,
+                        row.deployer_email,
+                        row.deployed_at,
+                        PLANNER,
+                        PLANNER_EMAIL,
+                    ),
                 )
-                for row in rows
-            ],
-        )
+
         connection.commit()
     finally:
         connection.close()
