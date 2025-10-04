@@ -147,10 +147,8 @@ by making behavior discoverable without reverse-engineering the implementation.
 - Documentation: Each feature MUST update quickstart and, when applicable,
   contracts and data-model docs, and MUST ensure public docstrings stay in sync
   with observable behavior.
-- Diff Review Gate: Before staging or committing code, contributors MUST review
-  the full working tree (`git status`) and diff (`git diff`), fix any remaining
-  issues surfaced by that review, and re-run targeted checks as needed. Commits
-  MUST NOT be created until this final review passes cleanly.
+- Do not commit code when you finish. Give the user a brief summary of changes
+  and allow them to review and commit on their own.
 - Code Style Gate: All code MUST pass formatting (black, isort), linting
   (flake8, pylint), type checking (mypy), and security scanning (bandit) with
   zero warnings before merge. Import grouping MUST follow PEP 8 (stdlib,
