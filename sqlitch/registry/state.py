@@ -131,6 +131,27 @@ class RegistryState:
         return self._records[change_id]
 
 
+def sort_registry_entries_by_deployment(
+    entries: Iterable[RegistryEntry],
+    *,
+    reverse: bool = False,
+) -> tuple[RegistryEntry, ...]:
+    """Return registry entries ordered by deployment timestamp.
+
+    Entries are sorted by ``deployed_at`` in ascending order by default. When
+    multiple entries share the same deployment timestamp, they are further
+    ordered by ``change_name`` and ``change_id`` to keep the ordering
+    deterministic. Set ``reverse=True`` to obtain the reverse ordering.
+    """
+
+    ordered = sorted(
+        entries,
+        key=lambda entry: (entry.deployed_at, entry.change_name, entry.change_id),
+        reverse=reverse,
+    )
+    return tuple(ordered)
+
+
 def deserialize_registry_rows(rows: Iterable[Mapping[str, object]]) -> Sequence[RegistryEntry]:
     """Convert raw registry rows (e.g., DB results) into RegistryEntry instances."""
 
@@ -146,7 +167,7 @@ def deserialize_registry_rows(rows: Iterable[Mapping[str, object]]) -> Sequence[
         )
         for row in rows
     ]
-    return tuple(sorted(entries, key=lambda entry: entry.deployed_at))
+    return sort_registry_entries_by_deployment(entries)
 
 
 def serialize_registry_entries(entries: Iterable[RegistryEntry]) -> list[dict[str, object]]:

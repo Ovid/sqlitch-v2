@@ -9,6 +9,7 @@ from sqlitch.registry.state import (
     RegistryEntry,
     RegistryState,
     deserialize_registry_rows,
+    sort_registry_entries_by_deployment,
     serialize_registry_entries,
 )
 
@@ -157,3 +158,40 @@ def test_registry_state_forbids_unknown_verify_status() -> None:
 
     with pytest.raises(ValueError, match=r"RegistryEntry\.verify_status"):
         state.record_verify(entry.change_id, "flaky")
+
+
+def test_sort_registry_entries_by_deployment_orders_deterministically() -> None:
+    timestamps = [
+        _aware(datetime(2025, 6, 1, 9, 0)),
+        _aware(datetime(2025, 6, 1, 10, 0)),
+        _aware(datetime(2025, 6, 1, 9, 0)),
+    ]
+    entries = [
+        RegistryEntry(
+            engine_target="db:sqlite",
+            change_id=uuid4(),
+            change_name="bravo",
+            deployed_at=timestamps[1],
+            planner="brynn",
+        ),
+        RegistryEntry(
+            engine_target="db:sqlite",
+            change_id=uuid4(),
+            change_name="alpha",
+            deployed_at=timestamps[0],
+            planner="alex",
+        ),
+        RegistryEntry(
+            engine_target="db:sqlite",
+            change_id=uuid4(),
+            change_name="charlie",
+            deployed_at=timestamps[2],
+            planner="casey",
+        ),
+    ]
+
+    ordered = sort_registry_entries_by_deployment(entries)
+    assert [entry.change_name for entry in ordered] == ["alpha", "charlie", "bravo"]
+
+    reversed_order = sort_registry_entries_by_deployment(entries, reverse=True)
+    assert [entry.change_name for entry in reversed_order] == ["bravo", "charlie", "alpha"]
