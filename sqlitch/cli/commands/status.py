@@ -256,6 +256,10 @@ def _load_registry_rows(
         description = getattr(cursor, "description", None)
         columns = [column[0] for column in description] if description else []
     except Exception as exc:  # pragma: no cover - query failures propagated
+        if _registry_schema_missing(exc):
+            raise CommandError(
+                f"Database {engine_target.registry_uri} has not been initialized for Sqitch"
+            ) from exc
         raise CommandError(
             f"Failed to read registry database {engine_target.registry_uri}: {exc}"
         ) from exc
@@ -305,6 +309,20 @@ def _load_registry_rows(
         )
 
     return tuple(registry_rows)
+
+
+def _registry_schema_missing(error: Exception) -> bool:
+    message = str(error).lower()
+    missing_indicators = (
+        "no such table: changes",
+        'relation "changes" does not exist',
+        'table \"changes\" does not exist',
+        'missing from-clause entry for table "changes"',
+        "no such table: tags",
+        'relation "tags" does not exist',
+        'table \"tags\" does not exist',
+    )
+    return any(indicator in message for indicator in missing_indicators)
 
 
 def _determine_status(plan_changes: Sequence[str], deployed_changes: Sequence[str]) -> str:
