@@ -90,21 +90,33 @@ def plan_command(
         or short_output
     )
 
+    engine_error: CommandError | None = None
+    try:
+        default_engine = resolve_default_engine(
+            project_root=project_root,
+            config_root=cli_context.config_root,
+            env=environment,
+            engine_override=cli_context.engine,
+        )
+    except CommandError as exc:
+        engine_error = exc
+        default_engine = None
+
+    try:
+        plan = _parse_plan_model(plan_path, default_engine)
+    except CommandError:
+        if default_engine is None and engine_error is not None:
+            raise engine_error
+        raise
+
+    _emit_missing_dependency_warnings(plan)
+
     if normalized_format == "human" and not requires_model:
         text = _prepare_human_output(
             raw_content, strip_headers=suppress_headers, short=short_output
         )
         click.echo(text, nl=False)
         return
-
-    default_engine = resolve_default_engine(
-        project_root=project_root,
-        config_root=cli_context.config_root,
-        env=environment,
-        engine_override=cli_context.engine,
-    )
-
-    plan = _parse_plan_model(plan_path, default_engine)
 
     if project_filter and project_filter != plan.project_name:
         raise CommandError(
@@ -150,7 +162,7 @@ def _read_plan_text(plan_path: Path) -> str:
         raise CommandError(f"Unable to read plan file {plan_path}: {exc}") from exc
 
 
-def _parse_plan_model(plan_path: Path, default_engine: str) -> Plan:
+def _parse_plan_model(plan_path: Path, default_engine: str | None) -> Plan:
     try:
         return parse_plan(plan_path, default_engine=default_engine)
     except (PlanParseError, ValueError) as exc:
@@ -228,6 +240,7 @@ def _build_json_payload(plan: Plan, entries: Sequence[PlanEntry]) -> dict[str, o
         "syntax_version": plan.syntax_version,
         "uri": plan.uri,
         "plan_path": str(plan.file_path.resolve()),
+        "missing_dependencies": list(plan.missing_dependencies),
         "entries": [_entry_to_json(entry, base_dir) for entry in entries],
     }
 
@@ -275,3 +288,16 @@ def _strip_notes_from_entries(entries: Sequence[PlanEntry]) -> tuple[PlanEntry, 
         else:
             sanitized.append(entry)
     return tuple(sanitized)
+
+
+def _emit_missing_dependency_warnings(plan: Plan) -> None:
+    if not plan.missing_dependencies:
+        return
+
+    for spec in plan.missing_dependencies:
+        change, dependency = spec.split("->", 1)
+        click.secho(
+            f"Warning: change '{change}' references dependency '{dependency}' before it appears in the plan.",
+            err=True,
+            fg="yellow",
+        )

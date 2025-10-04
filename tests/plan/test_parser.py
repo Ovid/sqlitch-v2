@@ -32,6 +32,7 @@ def test_parse_plan_with_changes_and_tags(tmp_path: Path) -> None:
     assert plan.default_engine == "pg"
     assert plan.file_path == plan_path
     assert plan.checksum
+    assert plan.missing_dependencies == ()
 
     core_change = plan.get_change("core:init")
     assert core_change.dependencies == ()
@@ -206,3 +207,4 @@ def test_parse_plan_accepts_compact_sqitch_style(tmp_path: Path) -> None:
     assert tag.name == "v1.0"
     assert tag.change_ref == "widgets:add"
     assert tag.planner == "ada@example.com"
+    assert plan.missing_dependencies == ("widgets:add->core:init",)

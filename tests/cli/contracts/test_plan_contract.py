@@ -115,6 +115,7 @@ def test_plan_supports_json_format(runner: CliRunner) -> None:
         assert payload["project"] == "widgets"
         assert payload["default_engine"] == "sqlite"
         assert payload["plan_path"].endswith("sqlitch.plan")
+        assert payload["missing_dependencies"] == []
 
         entries = payload["entries"]
         assert len(entries) == 3
@@ -136,7 +137,7 @@ def test_plan_reports_missing_plan_file(runner: CliRunner) -> None:
         result = runner.invoke(main, ["plan"])
 
         assert result.exit_code != 0
-        assert "No plan file found" in result.output
+    assert "No plan file found" in result.stderr
 
 
 def test_plan_tag_filter_outputs_tag_entry(runner: CliRunner) -> None:
@@ -184,7 +185,7 @@ def test_plan_reports_missing_change_filter(runner: CliRunner) -> None:
         result = runner.invoke(main, ["plan", "--change", "missing"])
 
         assert result.exit_code != 0
-        assert "Change filter matched no entries: missing" in result.output
+    assert "Change filter matched no entries: missing" in result.stderr
 
 
 def test_plan_reports_missing_tag_filter(runner: CliRunner) -> None:
@@ -197,7 +198,7 @@ def test_plan_reports_missing_tag_filter(runner: CliRunner) -> None:
         result = runner.invoke(main, ["plan", "--tag", "v9.9"])
 
         assert result.exit_code != 0
-        assert "Tag filter matched no entries: v9.9" in result.output
+    assert "Tag filter matched no entries: v9.9" in result.stderr
 
 
 def test_plan_project_mismatch_errors(runner: CliRunner) -> None:
@@ -210,4 +211,37 @@ def test_plan_project_mismatch_errors(runner: CliRunner) -> None:
         result = runner.invoke(main, ["plan", "--project", "other"])
 
         assert result.exit_code != 0
-        assert "does not match requested project 'other'" in result.output
+    assert "does not match requested project 'other'" in result.stderr
+
+
+def test_plan_warns_for_forward_dependencies(runner: CliRunner) -> None:
+    """Forward-referenced dependencies should emit warnings without failing."""
+
+    with runner.isolated_filesystem():
+        plan_path = Path("sqlitch.plan")
+        change = Change.create(
+            name="widgets:add",
+            script_paths={
+                "deploy": Path("deploy") / "widgets_add.sql",
+                "revert": Path("revert") / "widgets_add.sql",
+                "verify": Path("verify") / "widgets_add.sql",
+            },
+            planner="Ada Lovelace",
+            planned_at=datetime(2025, 1, 2, 0, 0, tzinfo=timezone.utc),
+            notes="Adds widgets table",
+            dependencies=("core:init",),
+        )
+
+        write_plan(
+            project_name="widgets",
+            default_engine="sqlite",
+            entries=(change,),
+            plan_path=plan_path,
+        )
+
+        result = runner.invoke(main, ["plan"])
+
+        assert result.exit_code == 0, result.output
+    assert "widgets:add" in result.output
+    assert "Warning" in result.stderr
+    assert "core:init" in result.stderr
