@@ -47,8 +47,10 @@ def test_init_creates_project_layout(runner: CliRunner) -> None:
         assert not template_root.exists()
 
         plan_content = plan_path.read_text(encoding="utf-8")
-        assert plan_content.startswith("%project=flipr\n")
-        assert "%default_engine=sqlite\n" in plan_content
+        lines = plan_content.splitlines()
+        assert lines[0] == "%syntax-version=1.0.0"
+        assert lines[1] == "%project=flipr"
+        assert lines[2] == "%default_engine=sqlite"
 
         config_content = config_path.read_text(encoding="utf-8")
         assert "[core]" in config_content

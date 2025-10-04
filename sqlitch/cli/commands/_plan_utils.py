@@ -51,6 +51,7 @@ def resolve_default_engine(
     config_root: Path,
     env: Mapping[str, str],
     engine_override: str | None,
+    plan_path: Path | None = None,
 ) -> str:
     """Determine the effective default engine for plan operations."""
 
@@ -66,6 +67,40 @@ def resolve_default_engine(
     if profile.active_engine:
         return profile.active_engine
 
+    if plan_path is not None:
+        header_engine = _read_plan_default_engine(plan_path)
+        if header_engine:
+            return header_engine
+
+        try:
+            from sqlitch.plan.parser import PlanParseError, parse_plan
+
+            parse_plan(plan_path)
+        except (PlanParseError, ValueError) as exc:
+            raise CommandError(str(exc)) from exc
+        except OSError:
+            # IOErrors will be surfaced during the actual command operation.
+            pass
+
     raise CommandError(
         "No default engine configured. Specify an engine via --engine or configure [core].engine."
     )
+
+
+def _read_plan_default_engine(plan_path: Path) -> str | None:
+    try:
+        with plan_path.open(encoding="utf-8") as handle:
+            for raw in handle:
+                line = raw.strip()
+                if not line or not line.startswith("%"):
+                    break
+                if "=" not in line:
+                    continue
+                key, value = line[1:].split("=", 1)
+                if key.strip() == "default_engine":
+                    return value.strip()
+    except FileNotFoundError:
+        return None
+    except OSError:  # pragma: no cover - IO failures ignored
+        return None
+    return None

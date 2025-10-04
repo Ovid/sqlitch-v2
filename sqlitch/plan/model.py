@@ -151,17 +151,22 @@ class Plan:
         object.__setattr__(self, "entries", normalized_entries)
 
         seen_changes: dict[str, Change] = {}
+        satisfied_changes: set[str] = set()
         missing_dependencies: list[str] = []
         for entry in normalized_entries:
             if isinstance(entry, Change):
                 if entry.name in seen_changes:
                     raise ValueError(f"Plan contains duplicate change name: {entry.name}")
+                change_missing = False
                 for dependency in entry.dependencies:
                     if dependency == entry.name:
                         raise ValueError(f"Change '{entry.name}' cannot depend on itself")
-                    if dependency not in seen_changes:
+                    if dependency not in seen_changes or dependency not in satisfied_changes:
                         missing_dependencies.append(f"{entry.name}->{dependency}")
+                        change_missing = True
                 seen_changes[entry.name] = entry
+                if not change_missing:
+                    satisfied_changes.add(entry.name)
             else:
                 if entry.change_ref not in seen_changes:
                     raise ValueError(

@@ -106,6 +106,7 @@ def init_command(
         project_root=project_root,
         top_dir_display=top_dir_display,
         target=target,
+        uri=uri_option,
     )
     config_path.parent.mkdir(parents=True, exist_ok=True)
     config_path.write_text(config_content, encoding="utf-8")
@@ -225,6 +226,7 @@ def _render_config(
     project_root: Path,
     top_dir_display: str,
     target: str,
+    uri: str | None,
 ) -> str:
     defaults = _ENGINE_DEFAULTS.get(engine, {})
     registry = defaults.get("registry", "sqlitch")
@@ -235,6 +237,8 @@ def _render_config(
     indent = "\t"
 
     lines = ["[core]", f"{indent}engine = {engine}"]
+    if uri:
+        lines.append(f"{indent}uri = {uri}")
     lines.append(f"{indent}# plan_file = {plan_display}")
     lines.append(f"{indent}# top_dir = {top_dir_display}")
 

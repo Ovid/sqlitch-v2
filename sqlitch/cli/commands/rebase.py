@@ -72,11 +72,16 @@ def rebase_command(
     env = environment_from(ctx)
     plan_override = plan_override_from(ctx)
 
+    plan_path_for_engine = _resolve_plan_path(
+        project_root=project_root, override=plan_override, env=env
+    )
+
     default_engine = resolve_default_engine(
         project_root=project_root,
         config_root=cli_context.config_root,
         env=env,
         engine_override=cli_context.engine,
+        plan_path=plan_path_for_engine,
     )
 
     target = _resolve_target(target_option, cli_context.target)
@@ -162,7 +167,7 @@ def _resolve_plan_path(
     )
 
 
-def _load_plan(plan_path: Path, default_engine: str) -> Plan:
+def _load_plan(plan_path: Path, default_engine: str | None) -> Plan:
     try:
         return parse_plan(plan_path, default_engine=default_engine)
     except (PlanParseError, ValueError) as exc:  # pragma: no cover - delegated to parser tests

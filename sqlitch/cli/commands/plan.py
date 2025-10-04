@@ -97,6 +97,7 @@ def plan_command(
             config_root=cli_context.config_root,
             env=environment,
             engine_override=cli_context.engine,
+            plan_path=plan_path,
         )
     except CommandError as exc:
         engine_error = exc

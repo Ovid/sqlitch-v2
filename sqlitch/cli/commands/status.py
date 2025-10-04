@@ -69,6 +69,7 @@ def status_command(
         config_root=cli_context.config_root,
         env=environment,
         engine_override=cli_context.engine,
+        plan_path=plan_path,
     )
     plan = _load_plan(plan_path, default_engine)
 
@@ -147,9 +148,12 @@ def _resolve_plan_path(
     )
 
 
-def _load_plan(plan_path: Path, default_engine: str) -> Plan:
+def _load_plan(plan_path: Path, default_engine: str | None = None) -> Plan:
     try:
-        return parse_plan(plan_path, default_engine=default_engine)
+        kwargs: dict[str, object] = {}
+        if default_engine is not None:
+            kwargs["default_engine"] = default_engine
+        return parse_plan(plan_path, **kwargs)
     except (PlanParseError, ValueError) as exc:
         raise CommandError(str(exc)) from exc
     except OSError as exc:  # pragma: no cover - IO failures propagated to the user

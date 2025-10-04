@@ -177,6 +177,7 @@ def add_command(
         config_root=cli_context.config_root,
         env=environment,
         engine_override=cli_context.engine,
+        plan_path=plan_path,
     )
 
     try:
@@ -202,9 +203,11 @@ def add_command(
     timestamp = _utcnow()
     slug = slugify_change_name(change_name)
 
-    default_deploy = Path("deploy") / f"{slug}.sql"
-    default_revert = Path("revert") / f"{slug}.sql"
-    default_verify = Path("verify") / f"{slug}.sql"
+    timestamp_token = timestamp.strftime("%Y%m%d%H%M%S")
+
+    default_deploy = Path("deploy") / f"{timestamp_token}_{slug}.sql"
+    default_revert = Path("revert") / f"{timestamp_token}_{slug}.sql"
+    default_verify = Path("verify") / f"{timestamp_token}_{slug}.sql"
 
     deploy_target = _resolve_script_path(project_root, deploy_path, default_deploy)
     revert_target = _resolve_script_path(project_root, revert_path, default_revert)
@@ -264,10 +267,10 @@ def add_command(
         if not quiet:
             click.echo(message)
 
-    _echo(f"Created {_format_display_path(deploy_target, project_root)}")
-    _echo(f"Created {_format_display_path(revert_target, project_root)}")
-    _echo(f"Created {_format_display_path(verify_target, project_root)}")
-    _echo(f'Added "{change_name}" to sqitch.plan')
+    _echo(f"Created deploy script {_format_display_path(deploy_target, project_root)}")
+    _echo(f"Created revert script {_format_display_path(revert_target, project_root)}")
+    _echo(f"Created verify script {_format_display_path(verify_target, project_root)}")
+    _echo(f"Added {change_name} to sqitch.plan")
 
 
 @register_command("add")

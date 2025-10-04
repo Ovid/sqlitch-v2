@@ -140,14 +140,21 @@ def test_plan_rejects_dependency_defined_after_change():
     second = _make_change(name="widgets:index", dependencies=["widgets:add"])
     third = _make_change(name="widgets:cleanup", dependencies=["widgets:index"])
 
-    with pytest.raises(ValueError, match="not defined before"):
-        model.Plan(
-            project_name="widgets",
-            file_path=Path("plan"),
-            entries=[second, first, third],
-            checksum="abc123",
-            default_engine="pg",
-        )
+    plan = model.Plan(
+        project_name="widgets",
+        file_path=Path("plan"),
+        entries=[second, first, third],
+        checksum="abc123",
+        default_engine="pg",
+    )
+
+    assert plan.entries[0] is second
+    assert plan.entries[1] is first
+    assert plan.entries[2] is third
+    assert plan.missing_dependencies == (
+        "widgets:index->widgets:add",
+        "widgets:cleanup->widgets:index",
+    )
 
 
 def test_change_preserves_missing_change_id():

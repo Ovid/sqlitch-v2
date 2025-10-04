@@ -193,7 +193,7 @@ def _parse_compact_entry(
     except PlanParseError as exc:
         message = str(exc)
         if message.startswith("Invalid change entry"):
-            raise ValueError(f"Unknown plan entry on line {line_no}: {entry}") from None
+            raise ValueError(f"Unknown plan entry '{entry}'") from None
         raise
 
 

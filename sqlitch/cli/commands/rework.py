@@ -108,6 +108,7 @@ def rework_command(
         config_root=cli_context.config_root,
         env=env,
         engine_override=cli_context.engine,
+        plan_path=plan_path,
     )
 
     try:

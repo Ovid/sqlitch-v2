@@ -203,7 +203,7 @@ def _set_option(
     if quiet:
         return
 
-    # Sqitch does not emit output when setting values; remain silent for parity.
+    click.echo(f"Set {name} in {scope.value} scope")
 
 
 def _unset_option(
@@ -231,7 +231,7 @@ def _unset_option(
     if quiet:
         return
 
-    # Sqitch does not emit output when unsetting values; remain silent for parity.
+    click.echo(f"Unset {name} in {scope.value} scope")
 
 
 def _get_option(
@@ -409,8 +409,11 @@ def _find_section_bounds(
     lines: list[str], section: str
 ) -> tuple[int | None, int | None, int | None]:
     if section == "DEFAULT":
-        end = _find_next_section(lines, 0)
-        return 0, end, None
+        start = 0
+        if lines and lines[0].strip().lower() == "[default]":
+            start = 1
+        end = _find_next_section(lines, start)
+        return start, end, None
 
     header = f"[{section}]"
     for idx, line in enumerate(lines):

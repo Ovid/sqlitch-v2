@@ -86,6 +86,7 @@ def _list_tags(ctx: click.Context) -> None:
         config_root=cli_context.config_root,
         env=environment,
         engine_override=cli_context.engine,
+        plan_path=plan_path,
     )
 
     try:
@@ -124,6 +125,7 @@ def _add_tag(
         config_root=cli_context.config_root,
         env=environment,
         engine_override=cli_context.engine,
+        plan_path=plan_path,
     )
 
     try:

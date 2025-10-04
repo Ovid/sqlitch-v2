@@ -73,6 +73,7 @@ def show_command(
         config_root=cli_context.config_root,
         env=env,
         engine_override=cli_context.engine,
+        plan_path=plan_path,
     )
 
     plan = _load_plan(plan_path, default_engine)
@@ -98,7 +99,7 @@ def show_command(
     click.echo("\n".join(lines))
 
 
-def _load_plan(plan_path: Path, default_engine: str) -> Plan:
+def _load_plan(plan_path: Path, default_engine: str | None) -> Plan:
     try:
         return parse_plan(plan_path, default_engine=default_engine)
     except FileNotFoundError as exc:  # pragma: no cover - defensive guard
