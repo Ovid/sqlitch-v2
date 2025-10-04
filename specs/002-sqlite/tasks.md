@@ -48,8 +48,8 @@
 - [X] T035a [P] Add skipped tooling test (remove skip immediately before implementation) ensuring Black formatting compliance enforcement in `tests/scripts/test_black_formatting.py`.
 - [X] T035b [P] Add skipped tooling test (remove skip immediately before implementation) validating isort import ordering gate in `tests/scripts/test_isort_ordering.py`.
 - [X] T035c [P] Add skipped tooling test (remove skip immediately before implementation) covering lint gate aggregation for flake8/pylint in `tests/scripts/test_lint_suite.py`.
-- [ ] T035d [P] Add skipped regression test (remove skip immediately before implementation) validating structured logging output and run identifier emission across verbosity modes in `tests/regression/test_observability_logging.py`.
-- [ ] T035e [P] Add skipped contract test (remove skip immediately before implementation) for global verbosity flags (`--verbose`, `--quiet`, `--json`) in `tests/cli/contracts/test_global_options_contract.py`.
+- [X] T035d [P] Add skipped regression test (remove skip immediately before implementation) validating structured logging output and run identifier emission across verbosity modes in `tests/regression/test_observability_logging.py`.
+- [X] T035e [P] Add skipped contract test (remove skip immediately before implementation) for global verbosity flags (`--verbose`, `--quiet`, `--json`) in `tests/cli/contracts/test_global_options_contract.py`.
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 *Before beginning any task in this phase, remove the related skip markers introduced in Phase 3.2, confirm the tests fail, and use that failure as the Red→Green starting point (FR-012).* 
