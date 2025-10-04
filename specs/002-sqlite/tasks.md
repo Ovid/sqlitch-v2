@@ -68,7 +68,7 @@
 - [X] T050 Create CLI command package scaffolding (`sqlitch/cli/commands/__init__.py`) and shared exceptions (focus on SQLite-ready paths first).
 - [X] T051 Wire Click group, global options, and command registration in `sqlitch/cli/main.py`, ensuring SQLite workflows operate end-to-end.
 - [X] T093 [P] Implement shared CLI options module in `sqlitch/cli/options.py`, defining global verbosity flags, default log configuration, and run identifier injection for command contexts.
-- [ ] T094 Implement structured logging sink and adapters in `sqlitch/utils/logging.py`, ensuring Rich/Click output parity while capturing run metadata.
+- [X] T094 Implement structured logging sink and adapters in `sqlitch/utils/logging.py`, ensuring Rich/Click output parity while capturing run metadata.
 - [ ] T095 Update CLI command harnesses to emit structured logs, honor verbosity toggles, and surface run identifiers in user-facing output/tests.
 - [X] T052 [P] Implement `sqlitch add` command handler in `sqlitch/cli/commands/add.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-add.md`)*
 - [X] T053 [P] Implement `sqlitch bundle` command handler in `sqlitch/cli/commands/bundle.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-bundle.md`)*

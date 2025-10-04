@@ -1,5 +1,5 @@
 """Utility helpers for SQLitch."""
 
-from . import fs, time
+from . import fs, logging, time
 
-__all__ = ["fs", "time"]
+__all__ = ["fs", "logging", "time"]
