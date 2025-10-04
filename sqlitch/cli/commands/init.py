@@ -10,7 +10,6 @@ import click
 
 from sqlitch.plan.formatter import write_plan
 from sqlitch.utils.fs import ArtifactConflictError, resolve_config_file, resolve_plan_file
-from sqlitch.utils.templates import write_default_templates
 
 from . import CommandError, register_command
 from ._context import require_cli_context
@@ -89,14 +88,9 @@ def init_command(
     for directory in (deploy_dir, revert_dir, verify_dir):
         _validate_directory_absent(directory)
 
-    templates_root = project_root / "etc" / "templates"
-    _validate_templates_absent(templates_root)
-
     top_dir_path.mkdir(parents=True, exist_ok=True)
     for directory in (deploy_dir, revert_dir, verify_dir):
         directory.mkdir(parents=True, exist_ok=False)
-
-    template_paths = write_default_templates(templates_root, engine)
 
     write_plan(
         project_name=project,
@@ -123,10 +117,6 @@ def init_command(
         f"Created revert directory {_format_display_path(revert_dir, project_root)}",
         f"Created verify directory {_format_display_path(verify_dir, project_root)}",
     ]
-    if template_paths:
-        messages.append(
-            f"Created templates under {_format_display_path(templates_root, project_root)}"
-        )
 
     if not quiet:
         for message in messages:
@@ -226,11 +216,6 @@ def _validate_absent(path: Path, label: str) -> None:
 def _validate_directory_absent(path: Path) -> None:
     if path.exists():
         raise CommandError(f"Directory {path} already exists")
-
-
-def _validate_templates_absent(templates_root: Path) -> None:
-    if templates_root.exists():
-        raise CommandError(f"Templates directory {templates_root} already exists")
 
 
 def _render_config(

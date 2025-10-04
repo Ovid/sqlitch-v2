@@ -36,3 +36,6 @@ def test_init_command_accepts_uri_option(tmp_path: Path) -> None:
         assert f"uri = {uri}" in contents
         plan_path = Path("sqlitch.plan")
         assert plan_path.exists()
+        templates_dir = Path("etc") / "templates"
+        assert not templates_dir.exists()
+        assert not templates_dir.exists()

@@ -130,11 +130,6 @@ def test_validation_helpers_raise_when_artifacts_exist(tmp_path: Path) -> None:
     with pytest.raises(CommandError):
         init_module._validate_directory_absent(dir_path)
 
-    templates_root = tmp_path / "etc" / "templates"
-    templates_root.mkdir(parents=True)
-    with pytest.raises(CommandError):
-        init_module._validate_templates_absent(templates_root)
-
 
 def test_render_config_and_format_display(tmp_path: Path) -> None:
     project_root = tmp_path

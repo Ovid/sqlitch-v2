@@ -15,6 +15,8 @@ from sqlitch.config import resolver as config_resolver
 from .commands import CommandError, iter_command_registrars, load_commands
 from .options import LogConfiguration, build_log_configuration, global_output_options
 
+_CLI_CONTEXT_META_KEY = "sqlitch_cli_context"
+
 
 @dataclass(slots=True)
 class CLIContext:
@@ -146,7 +148,7 @@ def main(
     command handlers can consume via :func:`click.get_current_context`.
     """
 
-    ctx.obj = _build_cli_context(
+    cli_context = _build_cli_context(
         config_root=config_root,
         engine=engine,
         target=target,
@@ -156,6 +158,8 @@ def main(
         quiet=quiet,
         json_mode=json_mode,
     )
+    ctx.obj = cli_context
+    ctx.meta[_CLI_CONTEXT_META_KEY] = cli_context
 
 
 load_commands()
