@@ -19,10 +19,10 @@ def require_cli_context(ctx: click.Context) -> CLIContext:
             top-level command group.
     """
 
-    obj = ctx.obj
-    if not isinstance(obj, CLIContext):
+    context = ctx.find_object(CLIContext)
+    if context is None:
         raise CommandError("CLI context is not initialised")
-    return obj
+    return context
 
 
 def project_root_from(ctx: click.Context) -> Path:

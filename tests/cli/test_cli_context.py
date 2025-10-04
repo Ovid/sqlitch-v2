@@ -12,6 +12,7 @@ import pytest
 
 from sqlitch.cli import CLIContext
 from sqlitch.cli.commands import CommandError
+from sqlitch.cli.commands._context import require_cli_context
 
 cli_main = importlib.import_module("sqlitch.cli.main")
 
@@ -128,3 +129,27 @@ def test_main_rejects_conflicting_quiet_and_verbose(restore_main_commands) -> No
 
     assert result.exit_code != 0
     assert "--quiet cannot be combined" in result.output
+
+
+def test_require_cli_context_falls_back_to_parent_obj(restore_main_commands) -> None:
+    runner = CliRunner()
+    captured: dict[str, CLIContext | None] = {"ctx": None, "parent": None}
+
+    @click.command("inspect")
+    @click.pass_context
+    def inspect(ctx: click.Context) -> None:
+        assert ctx.parent is not None
+        parent_obj = ctx.parent.obj
+        assert isinstance(parent_obj, CLIContext)
+        ctx.obj = None
+        captured["parent"] = parent_obj
+        captured["ctx"] = require_cli_context(ctx)
+        click.echo("ok")
+
+    cli_main.main.add_command(inspect)
+
+    result = runner.invoke(cli_main.main, ["inspect"])
+
+    assert result.exit_code == 0
+    assert isinstance(captured["ctx"], CLIContext)
+    assert captured["ctx"] is captured["parent"]
