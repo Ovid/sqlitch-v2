@@ -44,8 +44,8 @@ def test_target_add_and_list(runner: CliRunner) -> None:
 
         result = runner.invoke(main, ["target", "list"])
         assert result.exit_code == 0
-        assert "Name\tEngine\tRegistry" in result.output
-        assert "prod\tsqlite\tdb:sqlite:registry.db" in result.output
+    assert "Name\tURI\tEngine\tRegistry" in result.output
+    assert "prod\tdb:sqlite:prod.db\tsqlite\tdb:sqlite:registry.db" in result.output
 
 
 def test_target_add_rejects_duplicates(runner: CliRunner) -> None:

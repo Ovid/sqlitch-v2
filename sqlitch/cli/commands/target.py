@@ -173,12 +173,12 @@ def target_list(ctx: click.Context) -> None:
             uri = config.get(section, "uri", fallback="")
             engine = config.get(section, "engine", fallback="")
             registry = config.get(section, "registry", fallback="")
-            targets.append((name, engine, registry))
+            targets.append((name, uri, engine, registry))
 
     if targets:
-        click.echo("Name\tEngine\tRegistry")
-        for name, engine, registry in targets:
-            click.echo(f"{name}\t{engine}\t{registry}")
+        click.echo("Name\tURI\tEngine\tRegistry")
+        for name, uri, engine, registry in targets:
+            click.echo(f"{name}\t{uri}\t{engine}\t{registry}")
     else:
         click.echo("No targets configured.")
 
