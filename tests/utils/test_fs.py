@@ -33,7 +33,7 @@ def test_resolve_plan_file_conflict(tmp_path: Path) -> None:
     (tmp_path / "sqlitch.plan").write_text("sqlitch\n", encoding="utf-8")
     (tmp_path / "sqitch.plan").write_text("sqitch\n", encoding="utf-8")
 
-    with pytest.raises(fs.ArtifactConflictError, match="sqlitch.plan" ):
+    with pytest.raises(fs.ArtifactConflictError, match="sqlitch.plan"):
         fs.resolve_plan_file(tmp_path)
 
 

@@ -55,7 +55,9 @@ def test_engine_target_requires_known_engine() -> None:
         base.EngineTarget(name="db:oracle", engine="oracle", uri="db:oracle://example")
 
 
-def test_connection_factory_imports_driver_and_invokes_connect(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_connection_factory_imports_driver_and_invokes_connect(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     factory = base.connection_factory_for_engine("sqlite")
     args = base.ConnectArguments(args=(":memory:",), kwargs={"timeout": 10})
 
@@ -71,7 +73,7 @@ def test_connection_factory_imports_driver_and_invokes_connect(monkeypatch: pyte
     connection = factory.connect(args)
 
     assert connection == "connection"
-    assert calls == [((':memory:',), {'timeout': 10})]
+    assert calls == [((":memory:",), {"timeout": 10})]
 
 
 def test_connection_factory_rejects_unknown_engine() -> None:

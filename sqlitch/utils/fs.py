@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Sequence, Tuple
 
 import shutil
 
@@ -34,7 +34,7 @@ def resolve_config_file(root: Path) -> ArtifactResolution:
     return _resolve_artifact(root, "sqlitch.conf", "sqitch.conf")
 
 
-def cleanup_artifacts(root: Path, names: Sequence[str]) -> Tuple[Path, ...]:
+def cleanup_artifacts(root: Path, names: Sequence[str]) -> tuple[Path, ...]:
     """Remove the given artifacts from ``root``.
 
     Returns the set of paths that were actually removed. Missing paths are ignored.

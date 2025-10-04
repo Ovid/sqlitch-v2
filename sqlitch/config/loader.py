@@ -3,10 +3,18 @@
 from __future__ import annotations
 
 import configparser
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Mapping, Sequence
+
+__all__ = [
+    "ConfigScope",
+    "ConfigConflictError",
+    "ConfigProfile",
+    "load_config",
+    "load_configuration",
+]
 
 
 class ConfigScope(str, Enum):
@@ -27,7 +35,7 @@ class ConfigProfile:
     active_engine: str | None
 
 
-class ConfigConflictError(ValueError):
+class ConfigConflictError(RuntimeError):
     """Raised when conflicting config files are discovered within the same scope."""
 
 
@@ -103,3 +111,6 @@ def load_config(
         settings=frozen_settings,
         active_engine=active_engine,
     )
+
+
+load_configuration = load_config

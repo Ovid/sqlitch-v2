@@ -6,7 +6,7 @@ from uuid import UUID
 
 import pytest
 
-from sqlitch.plan import formatter
+from sqlitch.plan import formatter, parser
 from sqlitch.plan.model import Change, Tag
 
 
@@ -104,3 +104,19 @@ def test_write_plan_persists_content_and_returns_plan(tmp_path: Path) -> None:
 )
 def test_compute_checksum_matches_sha256(value: str, expected: str) -> None:
     assert formatter.compute_checksum(value) == expected
+
+
+def test_format_plan_preserves_missing_change_id(tmp_path: Path) -> None:
+    original = "%project=widgets\n%default_engine=pg\nchange core:init deploy/core.sql revert/core.sql planner=alice@example.com planned_at=2025-10-03T12:30:00Z\n"
+    plan_path = tmp_path / "plan"
+    plan_path.write_text(original, encoding="utf-8")
+
+    plan = parser.parse_plan(plan_path)
+    rendered = formatter.format_plan(
+        project_name=plan.project_name,
+        default_engine=plan.default_engine,
+        entries=plan.entries,
+        base_path=plan_path.parent,
+    )
+
+    assert rendered == original

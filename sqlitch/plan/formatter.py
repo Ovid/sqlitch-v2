@@ -5,14 +5,16 @@ from __future__ import annotations
 import hashlib
 import os
 import shlex
+from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Sequence
 
 from .model import Change, Plan, PlanEntry, Tag
 from sqlitch.utils.time import isoformat_utc
 
-_SHELL_SAFE_CHARS = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._:@+-/,:")
+_SHELL_SAFE_CHARS = frozenset(
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._:@+-/,:"
+)
 
 
 def compute_checksum(content: str) -> str:

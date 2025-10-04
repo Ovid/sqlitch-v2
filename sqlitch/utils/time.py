@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Optional
 
 __all__ = [
     "ensure_timezone",
@@ -55,7 +54,7 @@ def coerce_datetime(value: datetime | str, label: str) -> datetime:
     raise TypeError(f"{label} must be datetime or ISO string")
 
 
-def coerce_optional_datetime(value: datetime | str | None, label: str) -> Optional[datetime]:
+def coerce_optional_datetime(value: datetime | str | None, label: str) -> datetime | None:
     """Coerce optional datetime-like values into timezone-aware UTC datetimes."""
 
     if value is None:

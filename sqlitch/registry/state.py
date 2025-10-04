@@ -2,12 +2,19 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import datetime
-from typing import Dict, Iterable, Iterator, List, Mapping, Sequence
 from uuid import UUID
 
 from sqlitch.utils.time import coerce_datetime, coerce_optional_datetime, isoformat_utc
+
+__all__ = [
+    "RegistryEntry",
+    "RegistryState",
+    "serialize_registry_entries",
+    "sort_registry_entries_by_deployment",
+]
 
 _VALID_VERIFY_STATUSES = {"success", "failed", "skipped"}
 
@@ -17,7 +24,7 @@ def _coerce_uuid(value: UUID | str) -> UUID:
         return value
     if isinstance(value, str):
         return UUID(value)
-    raise TypeError("change_id must be a UUID or string")
+    raise TypeError("RegistryEntry.change_id must be a UUID or string")
 
 
 def _normalize_verify_status(value: str | None) -> str:
@@ -25,7 +32,8 @@ def _normalize_verify_status(value: str | None) -> str:
         return "success"
     normalized = value.lower()
     if normalized not in _VALID_VERIFY_STATUSES:
-        raise ValueError(f"Unknown verify status: {value}")
+        choices = ", ".join(sorted(_VALID_VERIFY_STATUSES))
+        raise ValueError(f"RegistryEntry.verify_status must be one of {choices}; got {value!r}")
     return normalized
 
 
@@ -43,15 +51,17 @@ class RegistryEntry:
 
     def __post_init__(self) -> None:
         if not self.engine_target:
-            raise ValueError("engine_target is required")
+            raise ValueError("RegistryEntry.engine_target is required")
         if not self.change_name:
-            raise ValueError("change_name is required")
+            raise ValueError("RegistryEntry.change_name is required")
         if not self.planner:
-            raise ValueError("planner is required")
+            raise ValueError("RegistryEntry.planner is required")
 
         normalized_id = _coerce_uuid(self.change_id)
         normalized_deployed_at = coerce_datetime(self.deployed_at, "RegistryEntry deployed_at")
-        normalized_reverted_at = coerce_optional_datetime(self.reverted_at, "RegistryEntry reverted_at")
+        normalized_reverted_at = coerce_optional_datetime(
+            self.reverted_at, "RegistryEntry reverted_at"
+        )
         normalized_status = _normalize_verify_status(self.verify_status)
 
         object.__setattr__(self, "change_id", normalized_id)
@@ -64,7 +74,7 @@ class RegistryEntry:
         return replace(self, verify_status=normalized)
 
     def with_reverted_at(self, reverted_at: datetime | str | None) -> "RegistryEntry":
-        normalized = coerce_optional_datetime(reverted_at, "reverted_at")
+        normalized = coerce_optional_datetime(reverted_at, "RegistryEntry reverted_at")
         return replace(self, reverted_at=normalized)
 
 
@@ -72,8 +82,8 @@ class RegistryState:
     """In-memory view of registry entries to drive stateful operations."""
 
     def __init__(self, entries: Iterable[RegistryEntry] | None = None) -> None:
-        self._records: Dict[UUID, RegistryEntry] = {}
-        self._ordered_ids: List[UUID] = []
+        self._records: dict[UUID, RegistryEntry] = {}
+        self._ordered_ids: list[UUID] = []
         for entry in entries or ():
             self._insert_entry(entry)
 
@@ -90,7 +100,7 @@ class RegistryState:
     def _insert_entry(self, entry: RegistryEntry) -> None:
         change_id: UUID = entry.change_id
         if change_id in self._records:
-            raise ValueError(f"Registry entry for {change_id} already recorded")
+            raise ValueError(f"RegistryState already contains change_id {change_id}")
         self._records[change_id] = entry
         self._ordered_ids.append(change_id)
         self._ordered_ids.sort(key=lambda cid: self._records[cid].deployed_at)
@@ -139,10 +149,10 @@ def deserialize_registry_rows(rows: Iterable[Mapping[str, object]]) -> Sequence[
     return tuple(sorted(entries, key=lambda entry: entry.deployed_at))
 
 
-def serialize_registry_entries(entries: Iterable[RegistryEntry]) -> List[Dict[str, object]]:
+def serialize_registry_entries(entries: Iterable[RegistryEntry]) -> list[dict[str, object]]:
     """Serialize RegistryEntry instances into plain dictionaries for persistence."""
 
-    serialized: List[Dict[str, object]] = []
+    serialized: list[dict[str, object]] = []
     for entry in entries:
         serialized.append(
             {

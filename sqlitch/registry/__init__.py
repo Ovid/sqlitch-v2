@@ -6,7 +6,12 @@ from .migrations import (
     get_registry_migrations,
     list_registry_engines,
 )
-from .state import RegistryEntry, RegistryState, deserialize_registry_rows, serialize_registry_entries
+from .state import (
+    RegistryEntry,
+    RegistryState,
+    deserialize_registry_rows,
+    serialize_registry_entries,
+)
 
 __all__ = [
     "LATEST_REGISTRY_VERSION",
