@@ -123,3 +123,220 @@ def test_config_list_json_outputs_settings(runner: CliRunner) -> None:
         payload = json.loads(result.stdout)
         assert payload["core.engine"] == "sqlite"
         assert payload["deploy.uri"] == "sqlite.db"
+
+
+def test_config_list_plain_outputs_lines(runner: CliRunner) -> None:
+    """Plain --list should emit key=value pairs sorted alphabetically."""
+
+    with runner.isolated_filesystem():
+        _write_config(Path("sqlitch.conf"), "[DEFAULT]\ncolor = blue\n[core]\nengine = sqlite\n")
+        env = {"SQLITCH_CONFIG_ROOT": str(Path("config-root"))}
+
+        result = runner.invoke(main, ["config", "--list"], env=env)
+
+    assert result.exit_code == 0, result.stderr
+    lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    assert "color=blue" in lines
+    assert "core.engine=sqlite" in lines
+
+
+def test_config_list_rejects_arguments(runner: CliRunner) -> None:
+    """--list must not accept positional arguments or --unset flag."""
+
+    with runner.isolated_filesystem():
+        env = {"SQLITCH_CONFIG_ROOT": str(Path("config-root"))}
+
+        result = runner.invoke(main, ["config", "--list", "core.engine"], env=env)
+
+        assert result.exit_code != 0
+        assert "--list cannot be combined" in result.stderr
+
+
+def test_config_json_without_list_errors(runner: CliRunner) -> None:
+    """--json on its own should raise an informative error."""
+
+    with runner.isolated_filesystem():
+        env = {"SQLITCH_CONFIG_ROOT": str(Path("config-root"))}
+
+        result = runner.invoke(main, ["config", "--json", "core.engine"], env=env)
+
+        assert result.exit_code != 0
+        assert "--json may only be used together with --list" in result.stderr
+
+
+def test_config_unset_missing_file_errors(runner: CliRunner) -> None:
+    """Unsetting a value without a config file should fail fast."""
+
+    with runner.isolated_filesystem():
+        env = {"SQLITCH_CONFIG_ROOT": str(Path("config-root"))}
+
+        result = runner.invoke(main, ["config", "--unset", "core.engine"], env=env)
+
+        assert result.exit_code != 0
+        assert "is not set in local scope" in result.stderr
+
+
+def test_config_requires_section_and_option(runner: CliRunner) -> None:
+    """Configuration names must include a section and option component."""
+
+    with runner.isolated_filesystem():
+        env = {"SQLITCH_CONFIG_ROOT": str(Path("config-root"))}
+
+        result = runner.invoke(main, ["config", "invalid"], env=env)
+
+        assert result.exit_code != 0
+        assert "must use section.option" in result.stderr
+
+
+def test_config_registry_scope_rejected(runner: CliRunner) -> None:
+    """Registry scope is not implemented yet and should raise an error."""
+
+    with runner.isolated_filesystem():
+        env = {"SQLITCH_CONFIG_ROOT": str(Path("config-root"))}
+
+        result = runner.invoke(main, ["config", "--registry", "core.engine"], env=env)
+
+        assert result.exit_code != 0
+        assert "Registry scope operations are not supported" in result.stderr
+
+
+def test_config_explicit_scope_missing_option_errors(runner: CliRunner) -> None:
+    """Explicit scope lookups must report missing options."""
+
+    with runner.isolated_filesystem():
+        user_root = Path("config-root")
+        env = {"SQLITCH_CONFIG_ROOT": str(user_root)}
+
+        result = runner.invoke(main, ["config", "--user", "core.engine"], env=env)
+
+        assert result.exit_code != 0
+        assert "No such option: core.engine" in result.stderr
+
+
+def test_config_set_default_section(runner: CliRunner) -> None:
+    """Setting DEFAULT.section values should persist to the config file."""
+
+    with runner.isolated_filesystem():
+        env = {"SQLITCH_CONFIG_ROOT": str(Path("config-root"))}
+
+        result = runner.invoke(main, ["config", "DEFAULT.color", "blue"], env=env)
+
+        assert result.exit_code == 0, result.stderr
+        assert "Set DEFAULT.color in local scope" in result.stdout
+        content = Path("sqlitch.conf").read_text(encoding="utf-8")
+        assert "color = blue" in content
+
+
+def test_config_get_missing_option_errors(runner: CliRunner) -> None:
+    """Looking up a missing option without an explicit scope should raise an error."""
+
+    with runner.isolated_filesystem():
+        _write_config(Path("sqlitch.conf"), "[core]\nengine = sqlite\n")
+        env = {"SQLITCH_CONFIG_ROOT": str(Path("config-root"))}
+
+        result = runner.invoke(main, ["config", "core.uri"], env=env)
+
+        assert result.exit_code != 0
+        assert "No such option: core.uri" in result.stderr
+
+
+def test_config_requires_name_when_no_arguments(runner: CliRunner) -> None:
+    """Invoking config without positional arguments should error."""
+
+    with runner.isolated_filesystem():
+        env = {"SQLITCH_CONFIG_ROOT": str(Path("config-root"))}
+
+        result = runner.invoke(main, ["config"], env=env)
+
+        assert result.exit_code != 0
+        assert "A configuration name must be provided." in result.stderr
+
+
+def test_config_unset_requires_name(runner: CliRunner) -> None:
+    """--unset requires the name argument to be present."""
+
+    with runner.isolated_filesystem():
+        env = {"SQLITCH_CONFIG_ROOT": str(Path("config-root"))}
+
+        result = runner.invoke(main, ["config", "--unset"], env=env)
+
+        assert result.exit_code != 0
+        assert "must be provided when using --unset" in result.stderr
+
+
+def test_config_unset_rejects_value_argument(runner: CliRunner) -> None:
+    """Providing a value together with --unset should fail."""
+
+    with runner.isolated_filesystem():
+        env = {"SQLITCH_CONFIG_ROOT": str(Path("config-root"))}
+
+        result = runner.invoke(main, ["config", "--unset", "core.engine", "extra"], env=env)
+
+        assert result.exit_code != 0
+        assert "--unset cannot be combined with a value argument" in result.stderr
+
+
+def test_config_set_requires_name_with_value(runner: CliRunner) -> None:
+    """Setting a value without a name should error before writing."""
+
+    with runner.isolated_filesystem():
+        env = {"SQLITCH_CONFIG_ROOT": str(Path("config-root"))}
+
+        result = runner.invoke(main, ["config", "", "postgres"], env=env)
+
+        assert result.exit_code != 0
+        assert "must be provided when setting a value" in result.stderr
+
+
+def test_config_unset_default_section(runner: CliRunner) -> None:
+    """Unsetting a DEFAULT.* key should remove it from the defaults mapping."""
+
+    with runner.isolated_filesystem():
+        _write_config(Path("sqlitch.conf"), "[DEFAULT]\ncolor = blue\n")
+        env = {"SQLITCH_CONFIG_ROOT": str(Path("config-root"))}
+
+        result = runner.invoke(main, ["config", "--unset", "DEFAULT.color"], env=env)
+
+        assert result.exit_code == 0, result.stderr
+        assert "Unset DEFAULT.color in local scope" in result.stdout
+        content = Path("sqlitch.conf").read_text(encoding="utf-8")
+        assert "color" not in content
+
+
+def test_config_gets_default_value(runner: CliRunner) -> None:
+    """DEFAULT section lookups should succeed without explicit scope flags."""
+
+    with runner.isolated_filesystem():
+        _write_config(Path("sqlitch.conf"), "[DEFAULT]\ncolor = blue\n")
+        env = {"SQLITCH_CONFIG_ROOT": str(Path("config-root"))}
+
+        result = runner.invoke(main, ["config", "DEFAULT.color"], env=env)
+
+        assert result.exit_code == 0, result.stderr
+        assert result.stdout.strip() == "blue"
+
+
+def test_config_gets_default_value_from_explicit_scope(runner: CliRunner) -> None:
+    """Explicit scope lookups should read DEFAULT values from that config file."""
+
+    with runner.isolated_filesystem():
+        user_root = Path("config-root")
+        _write_config(user_root / "sqlitch.conf", "[DEFAULT]\ncolor = blue\n")
+        env = {"SQLITCH_CONFIG_ROOT": str(user_root)}
+
+        result = runner.invoke(main, ["config", "--user", "DEFAULT.color"], env=env)
+
+        assert result.exit_code == 0, result.stderr
+        assert result.stdout.strip() == "blue"
+
+
+def test_config_requires_section_and_option_components(runner: CliRunner) -> None:
+    """Partially specified names should raise formatting errors."""
+
+    with runner.isolated_filesystem():
+        env = {"SQLITCH_CONFIG_ROOT": str(Path("config-root"))}
+
+        result = runner.invoke(main, ["config", ".engine"], env=env)
+
+        assert result.exit_code != 0
+        assert "must include both section and option components" in result.stderr
