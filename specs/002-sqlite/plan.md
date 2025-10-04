@@ -1,7 +1,7 @@
 
 # Implementation Plan: SQLitch Python Parity Fork MVP
 
-**Branch**: `[001-we-re-going]` | **Date**: 2025-10-03 | **Spec**: [`specs/001-we-re-going/spec.md`](../../specs/001-we-re-going/spec.md)
+**Branch**: `[002-sqlite]` | **Date**: 2025-10-03 | **Spec**: [`specs/002-sqlite/spec.md`](spec.md)
 **Input**: Feature specification from `/specs/001-we-re-going/spec.md`
 
 ## Execution Flow (/plan command scope)
@@ -31,7 +31,7 @@
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-Rebuild Sqitch as a Python-first CLI named SQLitch that delivers drop-in behavioral parity for SQLite, MySQL, and PostgreSQL projects. The new tool will reuse Sqitch’s directory and testing layout, while implementing the command surface with Click, enforcing 90%+ coverage, and running Docker-backed integration tests whenever containers are available. Parity verification compares SQLitch outputs against repository-managed golden fixtures that were generated from Sqitch ahead of time; the automated test suite itself never invokes Sqitch.
+Rebuild Sqitch as a Python-first CLI named SQLitch that delivers drop-in behavioral parity for SQLite, MySQL, and PostgreSQL projects. The new tool will reuse Sqitch’s directory and testing layout, while implementing the command surface with Click, enforcing 90%+ coverage, and running Docker-backed integration tests whenever containers are available. Observability is treated as a first-class concern: every invocation issues structured logs with run identifiers and honors global verbosity flags (`--verbose`, `--quiet`, `--json`) without breaking parity fixtures. Parity verification compares SQLitch outputs against repository-managed golden fixtures that were generated from Sqitch ahead of time; the automated test suite itself never invokes Sqitch.
 
 ## Technical Context
 **Language/Version**: Python 3.11 (CPython)  
@@ -115,6 +115,8 @@ specs/[###-feature]/
    └── nightly/
 ```
 
+`sqlitch/cli/options.py` centralizes global option declarations (including `--verbose`, `--quiet`, and `--json`) and injects run-aware structured logging primitives used across command handlers.
+
 **Structure Decision**: Keep Sqitch’s sibling directories (`bin/`, `docs/`, `etc/`, `scripts/`, `xt/`) at the repository root while housing the Python implementation in a top-level `sqlitch/` package. This layout feels idiomatic to Python developers yet preserves the one-to-one mapping of module subdirectories (engine, plan, registry, etc.) with the Perl codebase for easy cross-reference.
 
 ## Phase 0: Outline & Research
@@ -164,6 +166,7 @@ specs/[###-feature]/
 1. **SQLite Parity Slice (Milestone M1)**
    - Complete engine abstractions (T045) and the SQLite adapter (T046).
    - Stand up CLI scaffolding (T050–T051) and the command surface required to walk through the Sqitch tutorial end-to-end (T052–T070, constrained initially to SQLite-backed operations).
+   - Land observability instrumentation (T093–T095) so all commands emit structured logs with run identifiers and respect global verbosity toggles before parity validation occurs.
    - Execute T081 with an expanded checklist that now includes manual CLI walkthroughs (`sqlitch init`, `sqlitch plan`, etc.), validation that all touched public code paths carry docstrings, and update the parity report.
    - Only after these steps pass may work continue.
 2. **MySQL Parity Slice (Milestone M2)**

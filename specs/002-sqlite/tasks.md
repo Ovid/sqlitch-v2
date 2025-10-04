@@ -1,6 +1,6 @@
 # Tasks: SQLitch Python Parity Fork MVP
 
-**Input**: Design documents from `/specs/001-we-re-going/`
+**Input**: Design documents from `/specs/002-sqlite/`
 **Prerequisites**: plan.md (required), research.md, data-model.md, contracts/, quickstart.md
 
 ## Phase 3.1: Setup
@@ -48,6 +48,8 @@
 - [X] T035a [P] Add skipped tooling test (remove skip immediately before implementation) ensuring Black formatting compliance enforcement in `tests/scripts/test_black_formatting.py`.
 - [X] T035b [P] Add skipped tooling test (remove skip immediately before implementation) validating isort import ordering gate in `tests/scripts/test_isort_ordering.py`.
 - [X] T035c [P] Add skipped tooling test (remove skip immediately before implementation) covering lint gate aggregation for flake8/pylint in `tests/scripts/test_lint_suite.py`.
+- [ ] T035d [P] Add skipped regression test (remove skip immediately before implementation) validating structured logging output and run identifier emission across verbosity modes in `tests/regression/test_observability_logging.py`.
+- [ ] T035e [P] Add skipped contract test (remove skip immediately before implementation) for global verbosity flags (`--verbose`, `--quiet`, `--json`) in `tests/cli/contracts/test_global_options_contract.py`.
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 *Before beginning any task in this phase, remove the related skip markers introduced in Phase 3.2, confirm the tests fail, and use that failure as the Red→Green starting point (FR-012).* 
@@ -65,6 +67,9 @@
 - [X] T046 [P] Implement SQLite engine adapter in `sqlitch/engine/sqlite.py`.
 - [X] T050 Create CLI command package scaffolding (`sqlitch/cli/commands/__init__.py`) and shared exceptions (focus on SQLite-ready paths first).
 - [X] T051 Wire Click group, global options, and command registration in `sqlitch/cli/main.py`, ensuring SQLite workflows operate end-to-end.
+- [ ] T093 [P] Implement shared CLI options module in `sqlitch/cli/options.py`, defining global verbosity flags, default log configuration, and run identifier injection for command contexts.
+- [ ] T094 Implement structured logging sink and adapters in `sqlitch/utils/logging.py`, ensuring Rich/Click output parity while capturing run metadata.
+- [ ] T095 Update CLI command harnesses to emit structured logs, honor verbosity toggles, and surface run identifiers in user-facing output/tests.
 - [X] T052 [P] Implement `sqlitch add` command handler in `sqlitch/cli/commands/add.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-add.md`)*
 - [X] T053 [P] Implement `sqlitch bundle` command handler in `sqlitch/cli/commands/bundle.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-bundle.md`)*
 - [X] T054 [P] Implement `sqlitch checkout` command handler in `sqlitch/cli/commands/checkout.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-checkout.md`)*
@@ -128,6 +133,8 @@
 - T081 must complete (merged) before starting T047; T082 must complete (merged) before starting T048; T083 must complete (merged) before any integration work (Phase 3.4).
 - Any PR exiting Phase 3.3 MUST include docstrings for all newly- or publicly-exposed symbols; reviewers should block merges otherwise.
 - T051 must complete before command handler tasks T052–T070.
+- T035d and T035e must be unskipped before starting observability implementation tasks T093–T095.
+- T093 completes before T095 updates command harnesses; T094 provides the structured logging sink consumed by T095.
 - T008a and T008b must finish before Phase 3.3 work begins to ensure the skip-removal gate is active in tooling and reviews.
 - Integration tasks T073–T074 depend on completion of all relevant command and engine tasks.
 - Polish tasks (T077–T080) run only after integration is solid.

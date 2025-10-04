@@ -1,6 +1,6 @@
 # Feature Specification: SQLitch Python Parity Fork MVP
 
-**Feature Branch**: `[001-we-re-going]`  
+**Feature Branch**: `[002-sqlite]`  
 **Created**: 2025-10-03  
 **Status**: Draft  
 **Input**: User description: "We need a feature-complete Python-based fork of Sqitch (SQLitch) with identical CLI behavior, strict quality gates, and documented parity with the original tool."
@@ -81,6 +81,9 @@ Database release engineers need to execute database change management workflows 
 - **FR-017**: Classes designed for subclassing MUST use `abc.ABC` and `@abstractmethod` to declare their contract explicitly.
 - **FR-018**: Global mutable state MUST be minimized and documented. Registries MUST be immutable after initialization or provide clear lifecycle documentation with test cleanup utilities.
 - **FR-019**: Complex validation logic MUST be extracted from `__post_init__` methods into separate, testable factory methods or validators to improve clarity, testability, and maintainability.
+
+### Non-Functional Requirements
+- **NFR-001**: SQLitch MUST provide end-to-end observability through structured logging that captures a unique run identifier for every CLI invocation and records command, target, and outcome metadata. CLI entry points MUST expose consistent `--verbose`, `--quiet`, and `--json` modes (with deterministic precedence rules) that govern both log verbosity and emitted console output, ensuring parity-friendly human-readable logs by default and machine-ready JSON when requested. Structured log records MUST be forwarded to Rich/Click output handlers without breaking existing parity fixtures, and automated tests MUST exercise logging toggles to confirm coverage across modes.
 
 ### Key Entities *(include if feature involves data)*
 - **Deployment Plan**: Represents the ordered list of database changes, tags, and dependencies; must remain fully compatible with existing Sqitch plan files.
