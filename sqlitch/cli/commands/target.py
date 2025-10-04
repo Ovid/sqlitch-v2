@@ -10,7 +10,7 @@ import click
 from sqlitch.utils.fs import ArtifactConflictError, resolve_config_file
 
 from . import CommandError, register_command
-from ._context import require_cli_context
+from ._context import quiet_mode_enabled, require_cli_context
 
 __all__ = ["target_command"]
 
@@ -36,7 +36,11 @@ def target_add(
     """Add a new target."""
 
     cli_context = require_cli_context(ctx)
-    config_path = _resolve_config_path(cli_context.project_root, cli_context.config_root)
+    config_path = _resolve_config_path(
+        cli_context.project_root,
+        cli_context.config_root,
+        cli_context.config_root_overridden,
+    )
 
     config = configparser.ConfigParser()
     if config_path.exists():
@@ -59,7 +63,8 @@ def target_add(
     with config_path.open("w", encoding="utf-8") as f:
         config.write(f)
 
-    click.echo(f"Added target {name}")
+    if not quiet_mode_enabled(ctx):
+        click.echo(f"Added target {name}")
 
 
 @target_command.command("alter")
@@ -78,7 +83,11 @@ def target_alter(
     """Update an existing target."""
 
     cli_context = require_cli_context(ctx)
-    config_path = _resolve_config_path(cli_context.project_root, cli_context.config_root)
+    config_path = _resolve_config_path(
+        cli_context.project_root,
+        cli_context.config_root,
+        cli_context.config_root_overridden,
+    )
 
     config = configparser.ConfigParser()
     if config_path.exists():
@@ -97,7 +106,8 @@ def target_alter(
     with config_path.open("w", encoding="utf-8") as f:
         config.write(f)
 
-    click.echo(f"Updated target {name}")
+    if not quiet_mode_enabled(ctx):
+        click.echo(f"Updated target {name}")
 
 
 @target_command.command("show")
@@ -107,7 +117,11 @@ def target_show(ctx: click.Context, name: str) -> None:
     """Show details of a target."""
 
     cli_context = require_cli_context(ctx)
-    config_path = _resolve_config_path(cli_context.project_root, cli_context.config_root)
+    config_path = _resolve_config_path(
+        cli_context.project_root,
+        cli_context.config_root,
+        cli_context.config_root_overridden,
+    )
 
     config = configparser.ConfigParser()
     if config_path.exists():
@@ -136,7 +150,11 @@ def target_remove(ctx: click.Context, name: str) -> None:
     """Remove a target."""
 
     cli_context = require_cli_context(ctx)
-    config_path = _resolve_config_path(cli_context.project_root, cli_context.config_root)
+    config_path = _resolve_config_path(
+        cli_context.project_root,
+        cli_context.config_root,
+        cli_context.config_root_overridden,
+    )
 
     config = configparser.ConfigParser()
     if config_path.exists():
@@ -151,7 +169,8 @@ def target_remove(ctx: click.Context, name: str) -> None:
     with config_path.open("w", encoding="utf-8") as f:
         config.write(f)
 
-    click.echo(f"Removed target {name}")
+    if not quiet_mode_enabled(ctx):
+        click.echo(f"Removed target {name}")
 
 
 @target_command.command("list")
@@ -160,7 +179,11 @@ def target_list(ctx: click.Context) -> None:
     """List all targets."""
 
     cli_context = require_cli_context(ctx)
-    config_path = _resolve_config_path(cli_context.project_root, cli_context.config_root)
+    config_path = _resolve_config_path(
+        cli_context.project_root,
+        cli_context.config_root,
+        cli_context.config_root_overridden,
+    )
 
     config = configparser.ConfigParser()
     if config_path.exists():
@@ -176,19 +199,26 @@ def target_list(ctx: click.Context) -> None:
             targets.append((name, uri, engine, registry))
 
     if targets:
+        if quiet_mode_enabled(ctx):
+            return
         click.echo("Name\tURI\tEngine\tRegistry")
         for name, uri, engine, registry in targets:
             click.echo(f"{name}\t{uri}\t{engine}\t{registry}")
     else:
-        click.echo("No targets configured.")
+        if not quiet_mode_enabled(ctx):
+            click.echo("No targets configured.")
 
 
-def _resolve_config_path(project_root: Path, config_root: Path | None) -> Path:
+def _resolve_config_path(
+    project_root: Path,
+    config_root: Path | None,
+    config_override: bool,
+) -> Path:
     """Resolve the config file path for targets."""
 
     search_roots: list[Path] = [project_root]
-    if config_root is not None and config_root != project_root:
-        search_roots.append(config_root)
+    if config_override and config_root is not None and config_root != project_root:
+        search_roots.insert(0, config_root)
 
     for root in search_roots:
         try:
@@ -199,7 +229,11 @@ def _resolve_config_path(project_root: Path, config_root: Path | None) -> Path:
         if resolution.path is not None:
             return resolution.path
 
-    fallback_root = config_root if config_root is not None else project_root
+    fallback_root = (
+        config_root
+        if (config_override and config_root is not None)
+        else project_root
+    )
     return fallback_root / "sqitch.conf"
 
 

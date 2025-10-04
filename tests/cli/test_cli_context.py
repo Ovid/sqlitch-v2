@@ -58,6 +58,7 @@ def test_build_cli_context_uses_resolver(monkeypatch: pytest.MonkeyPatch, tmp_pa
     assert ctx.run_identifier
     assert ctx.env["EXAMPLE"] == "1"
     assert ctx.project_root == Path.cwd()
+    assert ctx.config_root_overridden is False
 
 
 def test_build_cli_context_respects_explicit_config_root(tmp_path: Path) -> None:
@@ -74,6 +75,7 @@ def test_build_cli_context_respects_explicit_config_root(tmp_path: Path) -> None
     )
 
     assert ctx.config_root == config_root
+    assert ctx.config_root_overridden is True
 
 
 def test_build_cli_context_rejects_quiet_with_verbose() -> None:
@@ -114,6 +116,7 @@ def test_main_populates_context_for_commands(restore_main_commands, tmp_path: Pa
     assert context.quiet is False
     assert context.json_mode is False
     assert context.run_identifier
+    assert context.config_root_overridden is True
 
 
 def test_main_rejects_conflicting_quiet_and_verbose(restore_main_commands) -> None:

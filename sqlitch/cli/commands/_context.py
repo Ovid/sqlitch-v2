@@ -59,6 +59,7 @@ def _is_cli_context_like(obj: object) -> bool:
     required_attributes = (
         "project_root",
         "config_root",
+        "config_root_overridden",
         "env",
         "log_config",
         "quiet",

@@ -17,9 +17,15 @@ def dummy_cli_context(tmp_path: Path) -> SimpleNamespace:
     return SimpleNamespace(
         project_root=tmp_path,
         config_root=tmp_path / "config",
+        config_root_overridden=False,
         env={"EXAMPLE": "1"},
         log_config=SimpleNamespace(level="INFO"),
         quiet=False,
+        engine=None,
+        target=None,
+        registry=None,
+        verbosity=0,
+        json_mode=False,
         plan_file=None,
     )
 

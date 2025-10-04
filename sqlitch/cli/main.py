@@ -25,6 +25,7 @@ class CLIContext:
     Attributes:
         project_root: Root directory of the working SQLitch project.
         config_root: User configuration directory resolved from flags or env.
+        config_root_overridden: Indicates whether config_root was explicitly set via CLI.
         env: Frozen snapshot of the process environment for deterministic usage.
         engine: Default engine identifier supplied via global options or env.
         target: Default deployment target alias.
@@ -38,6 +39,7 @@ class CLIContext:
 
     project_root: Path
     config_root: Path
+    config_root_overridden: bool
     env: Mapping[str, str]
     engine: str | None
     target: str | None
@@ -75,6 +77,7 @@ def _build_cli_context(
         if config_root is not None
         else config_resolver.determine_config_root(env=environment)
     )
+    config_root_overridden = config_root is not None
 
     if quiet and verbosity > 0:
         raise CommandError("--quiet cannot be combined with --verbose flags")
@@ -90,6 +93,7 @@ def _build_cli_context(
     return CLIContext(
         project_root=Path.cwd(),
         config_root=resolved_config_root,
+        config_root_overridden=config_root_overridden,
         env=environment,
         engine=engine,
         target=target,
