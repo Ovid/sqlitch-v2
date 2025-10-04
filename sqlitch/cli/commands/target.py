@@ -7,7 +7,6 @@ from pathlib import Path
 
 import click
 
-from sqlitch.config import resolver as config_resolver
 from sqlitch.utils.fs import ArtifactConflictError, resolve_config_file
 
 from . import CommandError, register_command
@@ -187,10 +186,9 @@ def target_list(ctx: click.Context) -> None:
 def _resolve_config_path(project_root: Path, config_root: Path | None) -> Path:
     """Resolve the config file path for targets."""
 
-    search_roots: list[Path] = []
-    if config_root is not None:
+    search_roots: list[Path] = [project_root]
+    if config_root is not None and config_root != project_root:
         search_roots.append(config_root)
-    search_roots.append(project_root)
 
     for root in search_roots:
         try:
@@ -201,8 +199,8 @@ def _resolve_config_path(project_root: Path, config_root: Path | None) -> Path:
         if resolution.path is not None:
             return resolution.path
 
-    preferred_root = search_roots[0]
-    return preferred_root / "sqitch.conf"
+    fallback_root = config_root if config_root is not None else project_root
+    return fallback_root / "sqitch.conf"
 
 
 @register_command("target")

@@ -1,165 +1,95 @@
-# SQLitch Python Code Review Report – 2025-10-03
-
-**Reviewer**: GitHub Copilot (automated)  
-**Constitution Version**: 1.5.0  
-**Latest Test Run**: `pytest` (111 passed, 31 skipped, coverage 94.64%) on Python 3.13.7
-
-## Executive summary
-
-- ✅ **Resolved**: Plan parse → format round-trips now preserve missing `change_id` metadata (no more injected UUIDs).
-- ✅ **Resolved**: `Change.script_paths` is now immutable (`MappingProxyType`), keeping change objects frozen after validation.
-- ✅ **Resolved**: `sqlitch/config/loader.py` exports the correct symbols and retains a compatibility alias for `load_configuration`.
-- ✅ **Resolved**: `Change.__post_init__` now delegates to dedicated normalization helpers and offers a `Change.create` factory for pre-validation.
-- ✅ Strengths: Excellent test coverage (94%), clean CLI context assembly, environment immutability (`MappingProxyType`), and consistent docstrings across public APIs.
-
-## Architecture findings
-
-### 1. Plan parse → format parity restored (Resolved)
-
-- **Fix**: `Change` no longer auto-assigns UUIDs when metadata omits `change_id`; formatter leaves the field out, matching Sqitch behaviour.
-- **Regression test**: `tests/plan/test_formatter.py::test_format_plan_preserves_missing_change_id` protects the round-trip.
-- **Result**: Plan files remain byte-identical after parse/format when inputs stay unchanged, satisfying Sqitch parity (FR-001, FR-007).
-
-## Maintainability findings
-
-### 2. `Change.script_paths` immutability ensured (Resolved)
-
-- **Fix**: The validated script path mapping is now wrapped in `MappingProxyType`, preventing post-construction mutation.
-- **Regression test**: `tests/plan/test_model.py::test_change_script_paths_are_immutable` verifies mutation raises `TypeError`.
-- **Result**: Domain objects respect immutability guidance (FR-018) and stay safe for caching/hashing.
-
-### 3. `sqlitch.config.loader` exports corrected (Resolved)
-
-- **Fix**: `__all__` now lists `ConfigProfile` and `load_config`; a `load_configuration` alias maintains any external references.
-- **Result**: Wildcard imports work as documented (FR-015, Principle VIII).
-
-### 4. Change validation extracted into helpers (Resolved)
-
-- **Fix**: Added `_normalize_change_fields` helper, `_NormalizedChange` data carrier, and a `Change.create` factory. `__post_init__` now delegates to the helper, keeping the method focused on attribute assignment.
-- **Tests**: `tests/plan/test_model.py::test_change_factory_applies_normalization` confirms the factory performs the same normalization as direct instantiation.
-- **Result**: Satisfies FR-019 by making validation independently testable and reusable for future constructors.
-
-## Positive observations
-
-- CLI context assembly is tidy: environment snapshots are immutable via `MappingProxyType`, and conflicting verbosity flags raise early (`sqlitch/cli/main.py`).
-- Config resolution cleanly layers XDG, SQLitch, and Sqitch fallbacks, with comprehensive tests covering overrides and defaults.
-- Registry state objects protect invariants for UUIDs, timestamps, and verify status normalisation, aligning with Constitution error-handling rules.
-- Utilities in `sqlitch/utils/time.py` and `sqlitch/utils/fs.py` are well-factored, fully type hinted, and exercised by focused tests.
-
-## Quality gates exercised
-
-- ✅ `pytest` (109 passed / 31 skipped) — coverage 94.27% (meets ≥90% gate). No new failures introduced.
-- ⚠️ Static analysis (ruff/black/pylint/mypy/bandit) not re-run in this pass; assume CI backstops, but rerun before merge if changes occur.
-
-## Requirements coverage
-
-- **Sqitch parity preserved?** ✅ (Round-trip parity restored by plan fixes).
-- **Immutability of domain models?** ✅ (`Change.script_paths` now read-only).
-- **Documented public API accurate?** ✅ (`load_config` exported correctly with alias support).
-- **Validation logic extracted?** ✅ (`Change.__post_init__` delegates to `_normalize_change_fields`, with factory support).
-- **Validation helpers landed**: Change validation now lives in `_normalize_change_fields`, with a factory for pre-validation (closes T090).
-
-Please prioritise the high-severity parity fix before shipping any plan-related changes. Medium items can be batched into the same maintenance PR.
-   - Create `Change.create()` classmethod
-   - Extract validation to `_validate_and_normalize()`
-   - Add independent tests for validation logic
-   - **Status**: DEFERRED - Current implementation is functional and well-tested
-   - **Risk**: Medium (behavioral change risk requires extensive testing)
-   - **Recommendation**: Address during major refactoring cycle, not urgent
-
-**Total Remaining Effort**: ~3 hours (optional polish, non-blocking)
-
-### Low Priority (Polish Items)
-- Consider centralizing magic string constants (informational only, current pattern acceptable)
-
----
-
-## Constitutional Compliance Status
-
-### ✅ FULLY COMPLIANT
-1. **Test-First Development (I)**: Evidence throughout test suite
-2. **CLI-First (II)**: CLI layer properly separated
-3. **Library-First (III)**: Core logic in importable libraries
-4. **Semantic Versioning (IV)**: Not yet released, ready for tagging
-5. **Observability (V)**: Logging infrastructure present
-6. **Behavioral Parity (VI)**: Sqitch compatibility maintained
-7. **Simplicity (VII)**: No unnecessary complexity detected
-8. **Documented Interfaces (VIII)**: Comprehensive docstrings throughout
-
-### ⚠️ PARTIAL COMPLIANCE
-1. **FR-019** (Validation Extraction): `Change.__post_init__` now delegates to `_normalize_change_fields` and offers a `Change.create` factory (T090, completed)
-
----
-
-## Recommendations
-
-### ✅ Completed Actions
-1. **✅ T088** (2 hours): Document registry lifecycle - **DONE**
-   - ✅ Added comprehensive lifecycle documentation to both registries
-   - ✅ Thread-safety expectations documented
-   - ✅ Test cleanup patterns explained
-
-2. **✅ T092** (1-2 hours): Standardize error messages - **DONE**
-   - ✅ All error messages now include field context
-   - ✅ Consistent format throughout codebase
-   - ✅ Tests updated and passing
-
-### Optional Polish (Maintenance Windows)
-1. Consider centralizing constants module (currently acceptable as-is)
-2. Add pre-commit hooks for type hint enforcement
-3. Create validation pattern documentation
-
----
-
-## Conclusion
-
-The SQLitch codebase demonstrates **professional-grade Python development** with strong constitutional adherence following recent quality improvements. The remaining follow-up work is minor documentation polish (constants, tooling helpers) with no open quality blockers.
-
-**Current Quality Grade**: **A (Excellent - All critical items resolved)**
-
-**Status**: 
-- ✅ T088 (Registry documentation) - **COMPLETED**
-- ✅ T092 (Error message standardization) - **COMPLETED**
-- ✅ T090 (Validation extraction) - **COMPLETED**
-
-**Ready for**: Command handler implementation (T052-T070) can proceed without blockers
-
----
-
-## Appendix: Verification Commands
-
-```bash
-# Verify type hints (should show only TypeAlias and TypeVar)
-grep -r "from typing import" sqlitch/
-
-# Verify no old-style type annotations
-grep -rE "\b(Dict|List|Tuple|Type|Optional)\[" sqlitch/
-
-# Verify ABC usage
-grep -A5 "class Engine" sqlitch/engine/base.py | grep ABC
-
-# Verify __all__ exports
-grep -l "__all__" sqlitch/**/*.py
-
-# Verify no TODO markers
 grep -r "TODO\|FIXME\|XXX\|HACK" sqlitch/
-
-# Run full test suite
-pytest tests/ -v
-
-# Check coverage
-pytest tests/ --cov=sqlitch --cov-report=term-missing
-
-# Verify lint compliance (should be configured in CI)
-flake8 sqlitch/
 pylint sqlitch/
 mypy sqlitch/
 bandit -r sqlitch/
-```
+# SQLitch Python Code Review Report – 2025-10-04
+
+**Reviewer**: GitHub Copilot (automated)
+
+## Scope and References
+- Constitution v1.5.0 (`spec/memory/constitution.md`)
+- Feature spec & plan (`specs/002-sqlite/spec.md`, `specs/002-sqlite/plan.md`)
+- Contract and unit tests under `tests/`
+- Implementation in `sqlitch/` (focus on CLI commands, registry, utilities)
 
 ---
 
-**Report Generated**: 2025-10-03 (Post-Refactoring State)  
-**Review Type**: Current State Assessment  
-**Confidence Level**: High  
-**Next Review**: After additional CLI command work or significant engine milestones
+## Code Quality & Pythonic Style
+
+### 1. Mixed tab/space indentation breaks linters
+- **Location**: `sqlitch/cli/commands/bundle.py:L110-L115`, `sqlitch/cli/commands/checkout.py:L154-L159`
+- **Issue**: Arguments in `_resolve_plan_path` are indented with a literal tab while surrounding code uses spaces.
+- **Why it matters**: Violates PEP 8/ruff `E101`, causing formatting and lint gates to fail; also complicates future diffs.
+- **Severity**: Medium
+
+### 2. Unused import in target command
+- **Location**: `sqlitch/cli/commands/target.py:L10`
+- **Issue**: `config_resolver` is imported but never used.
+- **Why it matters**: Fails strict lint gates (flake8 F401) mandated by the constitution; signals incomplete refactor.
+- **Severity**: Low
+
+---
+
+## Design & Architecture
+
+### 3. Deployment lifecycle commands are stubs
+- **Location**: `sqlitch/cli/commands/deploy.py:L126-L139`, `revert.py:L125-L138`, `rebase.py:L121-L137`, `checkout.py:L112-L126`
+- **Issue**: Each command logs intentions but raises `CommandError` (or aborts) when run without `--log-only`.
+- **Why it matters**: Violates FR-001 (Sqitch parity); core workflows (`deploy`, `revert`, `rebase`, `checkout`) simply fail instead of executing scripts. Users cannot migrate databases.
+- **Severity**: Critical
+
+### 4. Verify and upgrade silently succeed without doing work
+- **Location**: `sqlitch/cli/commands/verify.py:L33-L38`, `upgrade.py:L22-L37`
+- **Issue**: Both commands print optimistic messages and ignore their arguments instead of touching the registry.
+- **Why it matters**: Misleads operators into thinking verification/upgrades ran; breaks Sqitch parity and observability (FR-001, NFR-001).
+- **Severity**: High
+
+### 5. Target command ignores config root and quiet mode
+- **Location**: `sqlitch/cli/commands/target.py:L39-L184`, `_resolve_config_path` at L187-L199
+- **Issue**: Writes directly under `project_root` regardless of the global `--config-root`/`CLIContext.config_root`; emissions ignore `--quiet`.
+- **Why it matters**: Global configuration overrides mandated by spec FR-009 are dropped, so user-scoped targets never persist. Violates constitution section V (observability toggles) and causes data to land in the wrong config tree.
+- **Severity**: High
+
+### 6. Target list output omits URI column
+- **Location**: `sqlitch/cli/commands/target.py:L170-L183`
+- **Issue**: The list view prints name/engine/registry but drops the actual `uri`, unlike Sqitch.
+- **Why it matters**: Diverges from contract parity (FR-001); users cannot confirm targets without running `show` per target.
+- **Severity**: Medium
+
+---
+
+## Maintainability Issues
+
+### 7. `config_command` mixes four workflows in one 120+ line function
+- **Location**: `sqlitch/cli/commands/config.py:L33-L120`
+- **Issue**: Get/set/unset/list behaviours are interwoven with nested branching.
+- **Why it matters**: Difficult to reason about and extend (e.g., adding registry scope support); increases risk of regressions because shared validation logic is duplicated across branches.
+- **Severity**: Medium
+
+### 8. Registry state insertions sort the list on every write *(Resolved)*
+- **Location**: `sqlitch/registry/state.py`
+- **Resolution**: `_insert_entry` now uses bisect insertion with a cached ordering key to maintain sorted order without re-sorting the full list, keeping inserts `O(log n)`.
+- **Validation**: `python -m pytest tests/registry -k sort -q` *(fails: No module named pytest in current environment)*
+
+---
+
+## AI-Generated Code Smells
+
+### 9. Exported symbol missing implementation *(Resolved)*
+- **Location**: `sqlitch/registry/state.py`
+- **Resolution**: Implemented `sort_registry_entries_by_deployment` with deterministic ordering and refactored `deserialize_registry_rows` plus unit tests covering forward and reverse sorts.
+- **Validation**: `python -m pytest tests/registry -k sort -q` *(fails: No module named pytest in current environment)*
+
+### 10. Target config helper honours CLI config root *(Resolved)*
+- **Location**: `sqlitch/cli/commands/target.py` (`_resolve_config_path`)
+- **Resolution**: Helper now checks the CLI `config_root` override before falling back to the project root, reusing Sqitch-compatible filename precedence without the placeholder comment.
+- **Validation**: `python -m pytest tests/cli -k target -q` *(fails: No module named pytest in current environment)*
+
+---
+
+## Summary
+- **Critical**: Deployment/reversion/rebase/checkout must be implemented to meet FR-001.
+- **High**: Fix verify/upgrade placeholders, honour global config/quiet flags, restore missing exports.
+- **Medium/Low**: Address style violations, refactor large functions, and improve data structure efficiency to keep quality gates green and performance predictable.
+
+Please tackle critical/high items before continuing feature work to stay constitutionally compliant.

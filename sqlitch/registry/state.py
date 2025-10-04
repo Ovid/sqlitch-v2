@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from bisect import bisect_right
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import datetime
@@ -17,6 +18,10 @@ __all__ = [
 ]
 
 _VALID_VERIFY_STATUSES = {"success", "failed", "skipped"}
+
+
+def _ordering_key(entry: RegistryEntry) -> tuple[datetime, str, UUID]:
+    return (entry.deployed_at, entry.change_name, entry.change_id)
 
 
 def _coerce_uuid(value: UUID | str) -> UUID:
@@ -83,16 +88,16 @@ class RegistryState:
 
     def __init__(self, entries: Iterable[RegistryEntry] | None = None) -> None:
         self._records: dict[UUID, RegistryEntry] = {}
-        self._ordered_ids: list[UUID] = []
+        self._ordered: list[tuple[tuple[datetime, str, UUID], UUID]] = []
         for entry in entries or ():
             self._insert_entry(entry)
 
     def __iter__(self) -> Iterator[RegistryEntry]:
-        for change_id in self._ordered_ids:
+        for _, change_id in self._ordered:
             yield self._records[change_id]
 
     def __len__(self) -> int:
-        return len(self._ordered_ids)
+        return len(self._ordered)
 
     def records(self) -> Sequence[RegistryEntry]:
         return tuple(self)
@@ -102,8 +107,9 @@ class RegistryState:
         if change_id in self._records:
             raise ValueError(f"RegistryState already contains change_id {change_id}")
         self._records[change_id] = entry
-        self._ordered_ids.append(change_id)
-        self._ordered_ids.sort(key=lambda cid: self._records[cid].deployed_at)
+        key = _ordering_key(entry)
+        index = bisect_right(self._ordered, (key, change_id))
+        self._ordered.insert(index, (key, change_id))
 
     def record_deploy(self, entry: RegistryEntry) -> None:
         """Persist a new deployment record."""
@@ -144,11 +150,7 @@ def sort_registry_entries_by_deployment(
     deterministic. Set ``reverse=True`` to obtain the reverse ordering.
     """
 
-    ordered = sorted(
-        entries,
-        key=lambda entry: (entry.deployed_at, entry.change_name, entry.change_id),
-        reverse=reverse,
-    )
+    ordered = sorted(entries, key=_ordering_key, reverse=reverse)
     return tuple(ordered)
 
 
