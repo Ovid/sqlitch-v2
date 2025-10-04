@@ -402,9 +402,7 @@ def _write_config_lines(path: Path, lines: list[str]) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-def _set_config_value(
-    lines: list[str], section: str, option: str, value: str
-) -> list[str]:
+def _set_config_value(lines: list[str], section: str, option: str, value: str) -> list[str]:
     new_lines = list(lines)
     start, end, header_index = _find_section_bounds(new_lines, section)
 
@@ -442,9 +440,7 @@ def _set_config_value(
     return new_lines
 
 
-def _remove_config_value(
-    lines: list[str], section: str, option: str
-) -> tuple[list[str], bool]:
+def _remove_config_value(lines: list[str], section: str, option: str) -> tuple[list[str], bool]:
     new_lines = list(lines)
     start, end, header_index = _find_section_bounds(new_lines, section)
     if start is None:

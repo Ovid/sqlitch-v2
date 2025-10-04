@@ -221,9 +221,7 @@ def _load_registry_rows(
     cursor = None
     try:
         cursor = connection.cursor()
-        cursor.execute(
-            "SELECT project FROM changes GROUP BY project"
-        )
+        cursor.execute("SELECT project FROM changes GROUP BY project")
         projects = {str(row[0]) for row in cursor.fetchall() if row and row[0] is not None}
         if projects and expected_project not in projects:
             mismatched = ", ".join(sorted(projects))
@@ -286,10 +284,7 @@ def _load_registry_rows(
             raise CommandError(
                 f"Registry query for {engine_target.registry_uri} returned unexpected row format"
             )
-        return {
-            columns[index]: row[index]
-            for index in range(min(len(columns), len(row)))
-        }
+        return {columns[index]: row[index] for index in range(min(len(columns), len(row)))}
 
     registry_rows: list[RegistryRow] = []
     for raw in rows:
@@ -302,7 +297,9 @@ def _load_registry_rows(
                 change_name=str(mapping.get("change_name", "")),
                 deployed_at=str(mapping.get("committed_at", mapping.get("deployed_at", ""))),
                 deployer_name=str(mapping.get("committer_name", mapping.get("deployer_name", ""))),
-                deployer_email=str(mapping.get("committer_email", mapping.get("deployer_email", ""))),
+                deployer_email=str(
+                    mapping.get("committer_email", mapping.get("deployer_email", ""))
+                ),
                 tag=str(tag_value) if tag_value is not None else None,
             )
         )

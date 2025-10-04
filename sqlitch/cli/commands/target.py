@@ -229,11 +229,7 @@ def _resolve_config_path(
         if resolution.path is not None:
             return resolution.path
 
-    fallback_root = (
-        config_root
-        if (config_override and config_root is not None)
-        else project_root
-    )
+    fallback_root = config_root if (config_override and config_root is not None) else project_root
     return fallback_root / "sqitch.conf"
 
 

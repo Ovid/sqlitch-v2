@@ -91,32 +91,62 @@ class StructuredLogger:
         self._threshold = _LEVEL_ORDER.get(level_name, _LEVEL_ORDER["INFO"])
 
     def trace(
-        self, event: str, message: str | None = None, *, payload: Mapping[str, Any] | None = None, **extra: Any
+        self,
+        event: str,
+        message: str | None = None,
+        *,
+        payload: Mapping[str, Any] | None = None,
+        **extra: Any,
     ) -> StructuredLogRecord | None:
         return self.emit("TRACE", event, message, payload=payload, **extra)
 
     def debug(
-        self, event: str, message: str | None = None, *, payload: Mapping[str, Any] | None = None, **extra: Any
+        self,
+        event: str,
+        message: str | None = None,
+        *,
+        payload: Mapping[str, Any] | None = None,
+        **extra: Any,
     ) -> StructuredLogRecord | None:
         return self.emit("DEBUG", event, message, payload=payload, **extra)
 
     def info(
-        self, event: str, message: str | None = None, *, payload: Mapping[str, Any] | None = None, **extra: Any
+        self,
+        event: str,
+        message: str | None = None,
+        *,
+        payload: Mapping[str, Any] | None = None,
+        **extra: Any,
     ) -> StructuredLogRecord | None:
         return self.emit("INFO", event, message, payload=payload, **extra)
 
     def warning(
-        self, event: str, message: str | None = None, *, payload: Mapping[str, Any] | None = None, **extra: Any
+        self,
+        event: str,
+        message: str | None = None,
+        *,
+        payload: Mapping[str, Any] | None = None,
+        **extra: Any,
     ) -> StructuredLogRecord | None:
         return self.emit("WARNING", event, message, payload=payload, **extra)
 
     def error(
-        self, event: str, message: str | None = None, *, payload: Mapping[str, Any] | None = None, **extra: Any
+        self,
+        event: str,
+        message: str | None = None,
+        *,
+        payload: Mapping[str, Any] | None = None,
+        **extra: Any,
     ) -> StructuredLogRecord | None:
         return self.emit("ERROR", event, message, payload=payload, **extra)
 
     def critical(
-        self, event: str, message: str | None = None, *, payload: Mapping[str, Any] | None = None, **extra: Any
+        self,
+        event: str,
+        message: str | None = None,
+        *,
+        payload: Mapping[str, Any] | None = None,
+        **extra: Any,
     ) -> StructuredLogRecord | None:
         return self.emit("CRITICAL", event, message, payload=payload, **extra)
 
