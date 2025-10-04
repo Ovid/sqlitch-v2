@@ -30,7 +30,7 @@ def test_init_creates_project_layout(runner: CliRunner) -> None:
         assert "Created deploy directory deploy" in output_lines
         assert "Created revert directory revert" in output_lines
         assert "Created verify directory verify" in output_lines
-        assert "Created templates under etc/templates" in output_lines
+        assert "Created templates under etc/templates" not in output_lines
 
         plan_path = Path("sqlitch.plan")
         config_path = Path("sqlitch.conf")
@@ -44,13 +44,7 @@ def test_init_creates_project_layout(runner: CliRunner) -> None:
         assert deploy_dir.is_dir()
         assert revert_dir.is_dir()
         assert verify_dir.is_dir()
-        assert template_root.is_dir()
-        for kind in ("deploy", "revert", "verify"):
-            template_file = template_root / kind / "sqlite.tmpl"
-            assert template_file.is_file()
-            content = template_file.read_text(encoding="utf-8")
-            assert "[% project %]" in content
-            assert "[% change %]" in content
+        assert not template_root.exists()
 
         plan_content = plan_path.read_text(encoding="utf-8")
         assert plan_content.startswith("%project=flipr\n")
@@ -161,8 +155,8 @@ def test_init_respects_top_dir_option(runner: CliRunner) -> None:
         assert "# top_dir = db/sql" in config_content
 
 
-def test_init_rejects_existing_templates_directory(runner: CliRunner) -> None:
-    """Pre-existing template directories must trigger a failure."""
+def test_init_ignores_existing_templates_directory(runner: CliRunner) -> None:
+    """Pre-existing template directories are ignored now that we do not scaffold templates."""
 
     with runner.isolated_filesystem():
         templates_root = Path("etc/templates")
@@ -170,5 +164,7 @@ def test_init_rejects_existing_templates_directory(runner: CliRunner) -> None:
 
         result = runner.invoke(main, ["init"])
 
-    assert result.exit_code != 0
-    assert "Templates directory" in result.output
+        assert result.exit_code == 0, result.output
+        assert "Templates" not in result.output
+
+        assert templates_root.is_dir()
