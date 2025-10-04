@@ -91,10 +91,10 @@
 - [X] T064 [P] Implement `sqlitch rework` command handler in `sqlitch/cli/commands/rework.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-rework.md`)*
 - [X] T065 [P] Implement `sqlitch show` command handler in `sqlitch/cli/commands/show.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-show.md`)*
 - [X] T066 [P] Implement `sqlitch status` command handler in `sqlitch/cli/commands/status.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-status.md`)*
-- [ ] T067 [P] Implement `sqlitch tag` command handler in `sqlitch/cli/commands/tag.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-tag.md`)*
-- [ ] T068 [P] Implement `sqlitch target` command handler in `sqlitch/cli/commands/target.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-target.md`; `specs/002-sqlite/data-model.md` §EngineTarget)*
-- [ ] T069 [P] Implement `sqlitch upgrade` command handler in `sqlitch/cli/commands/upgrade.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-upgrade.md`)*
-- [ ] T070 [P] Implement `sqlitch verify` command handler in `sqlitch/cli/commands/verify.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-verify.md`)*
+- [X] T067 [P] Implement `sqlitch tag` command handler in `sqlitch/cli/commands/tag.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-tag.md`)*
+- [X] T068 [P] Implement `sqlitch target` command handler in `sqlitch/cli/commands/target.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-target.md`; `specs/002-sqlite/data-model.md` §EngineTarget)*
+- [X] T069 [P] Implement `sqlitch upgrade` command handler in `sqlitch/cli/commands/upgrade.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-upgrade.md`)*
+- [X] T070 [P] Implement `sqlitch verify` command handler in `sqlitch/cli/commands/verify.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-verify.md`)*
 - [ ] T047 [P] Implement MySQL engine adapter in `sqlitch/engine/mysql.py`. *(Ref: `specs/002-sqlite/research.md` → Registry & Engine Connectors; `specs/002-sqlite/data-model.md` §RegistryRecord)*
 - [ ] T048 [P] Implement PostgreSQL engine adapter in `sqlitch/engine/postgres.py`. *(Ref: `specs/002-sqlite/research.md` → Registry & Engine Connectors; `specs/002-sqlite/data-model.md` §RegistryRecord)*
 - [ ] T049 Implement Docker orchestration helpers and health checks in `sqlitch/engine/docker.py`. *(Ref: `specs/002-sqlite/research.md` → Docker-Orchestrated Testing; `specs/002-sqlite/quickstart.md` §4)*

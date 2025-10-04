@@ -139,6 +139,10 @@ COMMAND_MODULES: tuple[str, ...] = (
     "revert",
     "show",
     "status",
+    "tag",
+    "target",
+    "upgrade",
+    "verify",
 )
 """Default set of command modules imported by :func:`load_commands`."""
 
