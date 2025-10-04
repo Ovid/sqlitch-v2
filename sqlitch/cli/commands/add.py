@@ -13,6 +13,7 @@ from sqlitch.engine.base import UnsupportedEngineError, canonicalize_engine_name
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change
 from sqlitch.plan.parser import PlanParseError, parse_plan
+from sqlitch.plan.utils import slugify_change_name
 from sqlitch.utils.templates import default_template_body, render_template, resolve_template_path
 
 from . import CommandError, register_command
@@ -29,12 +30,6 @@ def _utcnow() -> datetime:
     """
 
     return datetime.now(timezone.utc)
-
-
-def _slugify(name: str) -> str:
-    """Return a filesystem-friendly slug for ``name``."""
-
-    return "".join(ch if ch.isalnum() or ch in ("-", "_") else "_" for ch in name)
 
 
 def _resolve_planner(env: Mapping[str, str]) -> str:
@@ -130,7 +125,7 @@ def _resolve_template_content(
 @click.argument("change_name")
 @click.option("--requires", "requires", multiple=True, help="Declare change dependencies.")
 @click.option("--tags", "tags", multiple=True, help="Attach tags to the change.")
-@click.option("--note", "note", help="Add a note to the change entry.")
+@click.option("-n", "--note", "note", help="Add a note to the change entry.")
 @click.option("--deploy", "deploy_path", help="Explicit deploy script path.")
 @click.option("--revert", "revert_path", help="Explicit revert script path.")
 @click.option("--verify", "verify_path", help="Explicit verify script path.")
@@ -205,12 +200,11 @@ def add_command(
     template_dirs = _discover_template_directories(project_root, cli_context.config_root)
 
     timestamp = _utcnow()
-    token = timestamp.strftime("%Y%m%d%H%M%S")
-    slug = _slugify(change_name)
+    slug = slugify_change_name(change_name)
 
-    default_deploy = Path("deploy") / f"{token}_{slug}.sql"
-    default_revert = Path("revert") / f"{token}_{slug}.sql"
-    default_verify = Path("verify") / f"{token}_{slug}.sql"
+    default_deploy = Path("deploy") / f"{slug}.sql"
+    default_revert = Path("revert") / f"{slug}.sql"
+    default_verify = Path("verify") / f"{slug}.sql"
 
     deploy_target = _resolve_script_path(project_root, deploy_path, default_deploy)
     revert_target = _resolve_script_path(project_root, revert_path, default_revert)
@@ -270,10 +264,10 @@ def add_command(
         if not quiet:
             click.echo(message)
 
-    _echo(f"Created deploy script {_format_display_path(deploy_target, project_root)}")
-    _echo(f"Created revert script {_format_display_path(revert_target, project_root)}")
-    _echo(f"Created verify script {_format_display_path(verify_target, project_root)}")
-    _echo(f"Added {change_name}")
+    _echo(f"Created {_format_display_path(deploy_target, project_root)}")
+    _echo(f"Created {_format_display_path(revert_target, project_root)}")
+    _echo(f"Created {_format_display_path(verify_target, project_root)}")
+    _echo(f'Added "{change_name}" to sqitch.plan')
 
 
 @register_command("add")

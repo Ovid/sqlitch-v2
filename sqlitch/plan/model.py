@@ -34,6 +34,7 @@ class Tag:
     change_ref: str
     planner: str
     tagged_at: datetime
+    note: str | None = None
 
     def __post_init__(self) -> None:
         if not self.name:

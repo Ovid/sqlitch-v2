@@ -38,6 +38,12 @@ _CONFIG_FILENAME = "sqitch.conf"
     help="Operate on the registry scope (unsupported).",
 )
 @click.option(
+    "--bool",
+    "bool_flag",
+    is_flag=True,
+    help="Interpret values as booleans when getting or setting options.",
+)
+@click.option(
     "--unset", "unset_flag", is_flag=True, help="Remove the specified configuration value."
 )
 @click.option("--list", "list_flag", is_flag=True, help="List all configuration values.")
@@ -52,6 +58,7 @@ def config_command(
     user_scope: bool,
     local_scope: bool,
     registry_scope: bool,
+    bool_flag: bool,
     unset_flag: bool,
     list_flag: bool,
     json_flag: bool,
@@ -67,6 +74,8 @@ def config_command(
 
     if json_flag and not list_flag:
         raise CommandError("--json may only be used together with --list.")
+    if bool_flag and list_flag:
+        raise CommandError("--bool cannot be combined with --list.")
 
     if list_flag:
         if name or value or unset_flag:
@@ -98,9 +107,10 @@ def config_command(
     if value is not None:
         if not name:
             raise CommandError("A configuration name must be provided when setting a value.")
+        coerced_value = _normalize_bool_value(value) if bool_flag else value
         _set_option(
             name=name,
-            value=value,
+            value=coerced_value,
             scope=scope,
             project_root=project_root,
             config_root=cli_context.config_root,
@@ -120,6 +130,8 @@ def config_command(
         scope=scope,
         explicit_scope=explicit_scope,
     )
+    if bool_flag:
+        resolved_value = _normalize_bool_value(resolved_value)
     click.echo(resolved_value)
 
 
@@ -348,9 +360,15 @@ def _set_config_value(
             new_lines[idx] = f"{indent}{option} = {value}"
             return new_lines
 
-    insertion_index = end
-    while insertion_index > start and new_lines[insertion_index - 1].strip() == "":
-        insertion_index -= 1
+    insertion_index = start
+    for idx in range(start, end):
+        stripped = new_lines[idx].strip()
+        if not stripped or stripped.startswith("#") or stripped.startswith(";"):
+            insertion_index = idx
+            break
+        insertion_index = idx + 1
+    else:
+        insertion_index = end
     new_lines.insert(insertion_index, f"{indent}{option} = {value}")
     return new_lines
 
@@ -427,6 +445,17 @@ def _section_has_entries(lines: list[str], header_index: int) -> bool:
         if stripped and not stripped.startswith("#") and not stripped.startswith(";"):
             return True
     return False
+
+
+def _normalize_bool_value(value: str) -> str:
+    truthy = {"1", "true", "yes", "on"}
+    falsy = {"0", "false", "no", "off"}
+    normalized = value.strip().lower()
+    if normalized in truthy:
+        return "true"
+    if normalized in falsy:
+        return "false"
+    raise CommandError(f"Invalid boolean value: {value}")
 
 
 def _flatten_settings(settings: Mapping[str, Mapping[str, str]]) -> dict[str, str]:

@@ -12,16 +12,12 @@ import click
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change, PlanEntry
 from sqlitch.plan.parser import PlanParseError, parse_plan
+from sqlitch.plan.utils import slugify_change_name
 
 from . import CommandError, register_command
 from ._context import require_cli_context
 from ._plan_utils import resolve_default_engine, resolve_plan_path
-from .add import (
-    _ensure_script_path,
-    _format_display_path,
-    _resolve_planner,
-    _slugify,
-)
+from .add import _ensure_script_path, _format_display_path, _resolve_planner
 
 __all__ = ["rework_command"]
 
@@ -130,7 +126,7 @@ def rework_command(
 
     timestamp = _utcnow()
     token = timestamp.strftime("%Y%m%d%H%M%S")
-    slug = _slugify(change_name)
+    slug = slugify_change_name(change_name)
 
     deploy_source = original_change.script_paths.get("deploy")
     revert_source = original_change.script_paths.get("revert")

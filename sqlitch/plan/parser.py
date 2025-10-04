@@ -2,19 +2,44 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
 import hashlib
-import shlex
+import re
+from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
-from uuid import UUID
 
 from .model import Change, Plan, PlanEntry, Tag
+from sqlitch.plan.utils import slugify_change_name
 from sqlitch.utils.time import parse_iso_datetime
 
 
 class PlanParseError(ValueError):
     """Raised when the plan file contains invalid data."""
+
+
+_CHANGE_PATTERN = re.compile(
+    r"""
+    ^
+    (?P<name>[^\s\[]+)
+    (?:\s+\[(?P<deps>[^\]]*)\])?
+    \s+(?P<timestamp>\S+)
+    \s+(?P<planner>.+?)
+    $
+    """,
+    re.VERBOSE,
+)
+
+
+_TAG_PATTERN = re.compile(
+    r"""
+    ^
+    @(?P<name>\S+)
+    \s+(?P<timestamp>\S+)
+    \s+(?P<planner>.+?)
+    $
+    """,
+    re.VERBOSE,
+)
 
 
 def parse_plan(path: Path | str, *, default_engine: str | None = None) -> Plan:
@@ -24,24 +49,29 @@ def parse_plan(path: Path | str, *, default_engine: str | None = None) -> Plan:
 
     headers: dict[str, str] = {}
     entries: list[PlanEntry] = []
+    last_change: Change | None = None
 
     for line_no, raw_line in enumerate(content.splitlines(), start=1):
-        line = raw_line.strip()
-        if not line or line.startswith("#"):
+        stripped = raw_line.strip()
+        if not stripped or stripped.startswith("#"):
             continue
-        if line.startswith("%"):
-            key, value = _parse_header(line, line_no)
+        if stripped.startswith("%"):
+            key, value = _parse_header(stripped, line_no)
             headers[key] = value
             continue
 
-        tokens = shlex.split(line, comments=False, posix=True)
-        entry_type, *rest = tokens
-        if entry_type == "change":
-            entries.append(_parse_change(rest, plan_path.parent, line_no))
-        elif entry_type == "tag":
-            entries.append(_parse_tag(rest, line_no))
-        else:
-            raise PlanParseError(f"Unknown plan entry '{entry_type}' on line {line_no}")
+        body, note = _split_note(raw_line)
+        if not body.strip():
+            continue
+
+        if body.lstrip().startswith("@"):
+            entry = _parse_tag(body.strip(), note, line_no, last_change)
+            entries.append(entry)
+            continue
+
+        entry = _parse_change(body.strip(), note, line_no, plan_path.parent)
+        entries.append(entry)
+        last_change = entry
 
     project = headers.get("project")
     header_engine = headers.get("default_engine")
@@ -71,89 +101,74 @@ def _parse_header(line: str, line_no: int) -> tuple[str, str]:
     return key.strip(), value.strip()
 
 
-def _parse_change(tokens: Sequence[str], base_path: Path, line_no: int) -> Change:
-    if len(tokens) < 4:
-        raise PlanParseError(f"Change entry on line {line_no} is incomplete")
-    name = tokens[0]
-    deploy = tokens[1]
-    revert = tokens[2]
-    remaining = tokens[3:]
+def _parse_change(line: str, note: str | None, line_no: int, base_dir: Path) -> Change:
+    match = _CHANGE_PATTERN.match(line)
+    if not match:
+        raise PlanParseError(f"Invalid change entry on line {line_no}")
 
-    metadata = _parse_metadata(remaining, line_no)
+    name = match.group("name")
+    dependencies = _parse_dependencies(match.group("deps"))
+    planned_at = _parse_timestamp(match.group("timestamp"), line_no, "planned_at")
+    planner = match.group("planner").strip()
 
-    planner = metadata.get("planner")
-    if not planner:
-        raise PlanParseError(f"Change entry on line {line_no} requires planner metadata")
-
-    planned_at_str = metadata.get("planned_at")
-    planned_at = _parse_timestamp(planned_at_str, line_no, "planned_at")
-
-    verify_path = metadata.get("verify")
-    notes = metadata.get("notes")
-    depends = _split_csv(metadata.get("depends"))
-    tags = _split_csv(metadata.get("tags"))
-    change_id = (
-        _parse_uuid(metadata.get("change_id"), line_no) if metadata.get("change_id") else None
-    )
-
-    script_paths: dict[str, str | None] = {
-        "deploy": deploy,
-        "revert": revert,
-    }
-    if verify_path is not None:
-        script_paths["verify"] = verify_path
-
-    resolved_paths = {
-        key: (base_path / value if value is not None else None)
-        for key, value in script_paths.items()
+    slug = slugify_change_name(name)
+    script_paths = {
+        "deploy": base_dir / "deploy" / f"{slug}.sql",
+        "revert": base_dir / "revert" / f"{slug}.sql",
+        "verify": base_dir / "verify" / f"{slug}.sql",
     }
 
-    return Change(
+    return Change.create(
         name=name,
-        script_paths=resolved_paths,
+        script_paths=script_paths,
         planner=planner,
         planned_at=planned_at,
-        notes=notes,
-        change_id=change_id,
-        dependencies=depends,
-        tags=tags,
+        notes=_clean_note(note),
+        dependencies=dependencies,
+        tags=(),
     )
 
 
-def _parse_tag(tokens: Sequence[str], line_no: int) -> Tag:
-    if len(tokens) < 3:
-        raise PlanParseError(f"Tag entry on line {line_no} is incomplete")
-    name = tokens[0]
-    change_ref = tokens[1]
-    metadata = _parse_metadata(tokens[2:], line_no)
+def _parse_tag(line: str, note: str | None, line_no: int, last_change: Change | None) -> Tag:
+    if last_change is None:
+        raise PlanParseError(f"Tag on line {line_no} has no preceding change to reference")
 
-    planner = metadata.get("planner")
-    if not planner:
-        raise PlanParseError(f"Tag entry on line {line_no} requires planner metadata")
-    tagged_at = _parse_timestamp(metadata.get("tagged_at"), line_no, "tagged_at")
+    match = _TAG_PATTERN.match(line)
+    if not match:
+        raise PlanParseError(f"Invalid tag entry on line {line_no}")
+
+    name = match.group("name")
+    tagged_at = _parse_timestamp(match.group("timestamp"), line_no, "tagged_at")
+    planner = match.group("planner").strip()
 
     return Tag(
         name=name,
-        change_ref=change_ref,
+        change_ref=last_change.name,
         planner=planner,
         tagged_at=tagged_at,
+        note=_clean_note(note),
     )
 
 
-def _parse_metadata(tokens: Sequence[str], line_no: int) -> dict[str, str]:
-    metadata: dict[str, str] = {}
-    for token in tokens:
-        if "=" not in token:
-            raise PlanParseError(f"Invalid metadata token '{token}' on line {line_no}")
-        key, value = token.split("=", 1)
-        metadata[key.strip()] = value.strip()
-    return metadata
+def _split_note(raw_line: str) -> tuple[str, str | None]:
+    if "#" not in raw_line:
+        return raw_line.rstrip(), None
+    body, note = raw_line.split("#", 1)
+    return body.rstrip(), note.strip() or None
 
 
-def _split_csv(value: str | None) -> Sequence[str]:
-    if not value:
+def _clean_note(note: str | None) -> str | None:
+    if not note:
+        return None
+    cleaned = note.strip()
+    return cleaned or None
+
+
+def _parse_dependencies(raw: str | None) -> Sequence[str]:
+    if raw is None:
         return ()
-    return tuple(part for part in (piece.strip() for piece in value.split(",")) if part)
+    parts = [value.strip() for value in raw.split() if value.strip()]
+    return tuple(parts)
 
 
 def _parse_timestamp(value: str | None, line_no: int, field: str) -> datetime:
@@ -163,10 +178,3 @@ def _parse_timestamp(value: str | None, line_no: int, field: str) -> datetime:
         return parse_iso_datetime(value.strip(), label=field, assume_utc_if_naive=True)
     except ValueError as exc:  # pragma: no cover - invalid value reported to caller
         raise PlanParseError(f"Invalid {field} timestamp on line {line_no}") from exc
-
-
-def _parse_uuid(value: str, line_no: int) -> UUID:
-    try:
-        return UUID(value)
-    except ValueError as exc:  # pragma: no cover - invalid value reported to caller
-        raise PlanParseError(f"Invalid change_id on line {line_no}") from exc
