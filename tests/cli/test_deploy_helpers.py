@@ -33,13 +33,53 @@ def _make_plan(changes: tuple[Change, ...], tags: tuple[Tag, ...] = ()) -> Plan:
     )
 
 
-def test_resolve_target_prefers_option() -> None:
-    assert deploy_module._resolve_target("cli", "config") == "cli"
+def test_resolve_target_prefers_option_over_config() -> None:
+    assert (
+        deploy_module._resolve_target(
+            option_value="cli",
+            configured_target="config",
+            positional_targets=(),
+        )
+        == "cli"
+    )
+
+
+def test_resolve_target_accepts_positional_target() -> None:
+    assert (
+        deploy_module._resolve_target(
+            option_value=None,
+            configured_target=None,
+            positional_targets=("db:sqlite:demo",),
+        )
+        == "db:sqlite:demo"
+    )
+
+
+def test_resolve_target_rejects_both_option_and_positional() -> None:
+    with pytest.raises(CommandError, match="either --target or a positional"):
+        deploy_module._resolve_target(
+            option_value="cli",
+            configured_target=None,
+            positional_targets=("db:sqlite:demo",),
+        )
+
+
+def test_resolve_target_rejects_multiple_positional_targets() -> None:
+    with pytest.raises(CommandError, match="Multiple positional targets"):
+        deploy_module._resolve_target(
+            option_value=None,
+            configured_target=None,
+            positional_targets=("db:sqlite:one", "db:sqlite:two"),
+        )
 
 
 def test_resolve_target_requires_value() -> None:
     with pytest.raises(CommandError, match="must be provided"):
-        deploy_module._resolve_target(None, None)
+        deploy_module._resolve_target(
+            option_value=None,
+            configured_target=None,
+            positional_targets=(),
+        )
 
 
 def test_select_changes_by_change_filters() -> None:

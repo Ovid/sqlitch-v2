@@ -39,6 +39,7 @@ class _DeployRequest:
 
 
 @click.command("deploy")
+@click.argument("target_args", nargs=-1)
 @click.option("--target", "target_option", help="Deployment target alias or URI.")
 @click.option("--to-change", "to_change", help="Deploy through the specified change (inclusive).")
 @click.option("--to-tag", "to_tag", help="Deploy through the specified tag (inclusive).")
@@ -51,6 +52,7 @@ class _DeployRequest:
 def deploy_command(
     ctx: click.Context,
     *,
+    target_args: tuple[str, ...],
     target_option: str | None,
     to_change: str | None,
     to_tag: str | None,
@@ -75,7 +77,11 @@ def deploy_command(
         plan_path=plan_path_for_engine,
     )
 
-    target = _resolve_target(target_option, cli_context.target)
+    target = _resolve_target(
+        option_value=target_option,
+        configured_target=cli_context.target,
+        positional_targets=target_args,
+    )
 
     request = _build_request(
         project_root=project_root,
@@ -139,10 +145,30 @@ def _execute_deploy(request: _DeployRequest) -> None:
     )
 
 
-def _resolve_target(target_option: str | None, configured_target: str | None) -> str:
-    target = target_option or configured_target
+def _resolve_target(
+    *,
+    option_value: str | None,
+    configured_target: str | None,
+    positional_targets: Sequence[str],
+) -> str:
+    if option_value and positional_targets:
+        raise CommandError("Provide either --target or a positional target, not both.")
+
+    if len(positional_targets) > 1:
+        raise CommandError("Multiple positional targets are not supported yet.")
+
+    if positional_targets:
+        target = positional_targets[0]
+    elif option_value:
+        target = option_value
+    else:
+        target = configured_target
+
     if not target:
-        raise CommandError("A deployment target must be provided via --target or configuration.")
+        raise CommandError(
+            "A deployment target must be provided via --target, positional argument, or configuration."
+        )
+
     return target
 
 
