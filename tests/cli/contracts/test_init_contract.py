@@ -93,3 +93,69 @@ def test_init_respects_env_and_plan_override(
         config_content = Path("sqlitch.conf").read_text(encoding="utf-8")
         assert "# plan_file = plans/custom.plan" in config_content
         assert "# top_dir = db/scripts" in config_content
+
+
+def test_init_rejects_unknown_engine(runner: CliRunner) -> None:
+    """Unrecognized engines must raise a user-facing CommandError."""
+
+    with runner.isolated_filesystem():
+        result = runner.invoke(main, ["init", "--engine", "oracle"])
+
+    assert result.exit_code != 0
+    assert "Unsupported engine 'oracle'" in result.output
+
+
+def test_init_aborts_when_plan_file_exists(runner: CliRunner) -> None:
+    """Existing plan files should prevent accidental overwrites."""
+
+    with runner.isolated_filesystem():
+        plan_path = Path("sqlitch.plan")
+        plan_path.write_text("%project=existing\n", encoding="utf-8")
+
+        result = runner.invoke(main, ["init"])
+
+    assert result.exit_code != 0
+    assert "Plan file" in result.output
+    assert "already exists" in result.output
+
+
+def test_init_engine_alias_applies_defaults(runner: CliRunner) -> None:
+    """Engine aliases like postgres should normalize to canonical defaults."""
+
+    with runner.isolated_filesystem():
+        result = runner.invoke(main, ["init", "flipr", "--engine", "postgres"])
+
+        assert result.exit_code == 0, result.output
+
+        config_content = Path("sqlitch.conf").read_text(encoding="utf-8")
+        assert "engine = pg" in config_content
+        assert "# target = db:pg:" in config_content
+
+
+def test_init_respects_top_dir_option(runner: CliRunner) -> None:
+    """The --top-dir option should drive scaffold placement and config hints."""
+
+    with runner.isolated_filesystem():
+        result = runner.invoke(main, ["init", "--top-dir", "db/sql"])
+
+        assert result.exit_code == 0, result.output
+
+        top_dir = Path("db/sql")
+        for subdir in ("deploy", "revert", "verify"):
+            assert (top_dir / subdir).is_dir()
+
+        config_content = Path("sqlitch.conf").read_text(encoding="utf-8")
+        assert "# top_dir = db/sql" in config_content
+
+
+def test_init_rejects_existing_templates_directory(runner: CliRunner) -> None:
+    """Pre-existing template directories must trigger a failure."""
+
+    with runner.isolated_filesystem():
+        templates_root = Path("etc/templates")
+        templates_root.mkdir(parents=True, exist_ok=True)
+
+        result = runner.invoke(main, ["init"])
+
+    assert result.exit_code != 0
+    assert "Templates directory" in result.output
