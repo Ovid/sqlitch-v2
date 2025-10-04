@@ -22,6 +22,13 @@ def test_verify_no_changes(runner: CliRunner) -> None:
         result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
         assert result.exit_code == 0
 
-        result = runner.invoke(main, ["verify"])
-        assert result.exit_code == 0
-        assert "No changes to verify" in result.output or "ok" in result.output
+    result = runner.invoke(main, ["verify"])
+    assert result.exit_code != 0
+    assert "not implemented" in result.output
+
+
+def test_verify_log_only_reports_unimplemented(runner: CliRunner) -> None:
+    with runner.isolated_filesystem():
+        result = runner.invoke(main, ["verify", "--log-only"])
+        assert result.exit_code != 0
+        assert "not implemented" in result.output

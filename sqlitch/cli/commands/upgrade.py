@@ -27,13 +27,16 @@ def upgrade_command(
 ) -> None:
     """Update the registry schema to the latest version."""
 
-    cli_context = require_cli_context(ctx)
+    require_cli_context(ctx)
 
-    # For now, assume registry is up to date
+    message = (
+        "sqlitch upgrade is not implemented yet; registry migrations pending. "
+        f"Latest supported version is {LATEST_REGISTRY_VERSION}."
+    )
     if log_only:
-        click.echo(f"Registry is at version {LATEST_REGISTRY_VERSION}")
-    else:
-        click.echo(f"Registry is already at version {LATEST_REGISTRY_VERSION}")
+        click.echo(message)
+
+    raise CommandError(message)
 
 
 @register_command("upgrade")

@@ -23,5 +23,12 @@ def test_upgrade_already_up_to_date(runner: CliRunner) -> None:
         assert result.exit_code == 0
 
         result = runner.invoke(main, ["upgrade"])
-        assert result.exit_code == 0
-        assert "already at version" in result.output or "Upgraded" in result.output
+        assert result.exit_code != 0
+        assert "not implemented" in result.output
+
+
+def test_upgrade_log_only_reports_unimplemented(runner: CliRunner) -> None:
+    with runner.isolated_filesystem():
+        result = runner.invoke(main, ["upgrade", "--log-only"])
+        assert result.exit_code != 0
+        assert "not implemented" in result.output

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import click
 
-from . import register_command
+from . import CommandError, register_command
 from ._context import require_cli_context
 
 __all__ = ["verify_command"]
@@ -29,13 +29,13 @@ def verify_command(
 ) -> None:
     """Execute verification scripts against deployed changes."""
 
-    cli_context = require_cli_context(ctx)
+    require_cli_context(ctx)
 
-    # For now, assume no changes to verify
+    message = "sqlitch verify is not implemented yet; Sqitch parity pending"
     if log_only:
-        click.echo("No changes to verify (log-only)")
-    else:
-        click.echo("No changes to verify")
+        click.echo(message)
+
+    raise CommandError(message)
 
 
 @register_command("verify")
