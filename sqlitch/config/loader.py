@@ -39,7 +39,7 @@ class ConfigConflictError(RuntimeError):
     """Raised when conflicting config files are discovered within the same scope."""
 
 
-_CONFIG_FILENAMES: Sequence[str] = ("sqlitch.conf", "sqitch.conf")
+_CONFIG_FILENAMES: Sequence[str] = ("sqitch.conf", "sqlitch.conf")
 
 
 def load_config(
@@ -59,8 +59,8 @@ def load_config(
         Only scopes present in the mapping are considered.
     config_filenames:
         Optional tuple ordering of config filenames to search within each scope.
-        Defaults to ``("sqlitch.conf", "sqitch.conf")`` allowing drop-in usage of
-        legacy Sqitch configuration files.
+    Defaults to ``("sqitch.conf", "sqlitch.conf")`` while retaining support for
+    legacy SQLitch-specific filenames.
     """
 
     search_names: Sequence[str] = config_filenames or _CONFIG_FILENAMES

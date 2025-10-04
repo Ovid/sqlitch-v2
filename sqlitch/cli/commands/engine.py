@@ -10,6 +10,7 @@ from pathlib import Path
 import click
 
 from sqlitch.cli.main import CLIContext
+from sqlitch.utils.fs import ArtifactConflictError, resolve_config_file
 
 from . import CommandError, register_command
 from ._context import quiet_mode_enabled, require_cli_context
@@ -209,7 +210,16 @@ def _mutate_engine_definition(
 
 
 def _engine_config_path(cli_context: CLIContext) -> Path:
-    return cli_context.config_root / "sqlitch.conf"
+    directory = cli_context.config_root
+    try:
+        resolution = resolve_config_file(directory)
+    except ArtifactConflictError as exc:  # pragma: no cover - defensive guard
+        raise CommandError(str(exc)) from exc
+
+    if resolution.path is not None:
+        return resolution.path
+
+    return directory / "sqitch.conf"
 
 
 def _section_name(name: str) -> str:

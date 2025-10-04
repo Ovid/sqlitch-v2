@@ -81,7 +81,7 @@ def test_python_m_sqlitch_cli_main_executes_commands(monkeypatch, tmp_path):
 
     assert result.returncode == 0, f"stdout:\n{result.stdout}\n\nstderr:\n{result.stderr}"
 
-    config_path = tmp_path / "sqlitch.conf"
+    config_path = tmp_path / "sqitch.conf"
     assert config_path.exists()
     contents = config_path.read_text(encoding="utf-8")
     assert "uri = https://example.com" in contents

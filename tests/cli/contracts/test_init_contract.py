@@ -25,15 +25,15 @@ def test_init_creates_project_layout(runner: CliRunner) -> None:
 
         assert result.exit_code == 0, result.output
         output_lines = result.output.splitlines()
-        assert "Created sqlitch.conf" in output_lines
-        assert "Created sqlitch.plan" in output_lines
+        assert "Created sqitch.conf" in output_lines
+        assert "Created sqitch.plan" in output_lines
         assert "Created deploy/" in output_lines
         assert "Created revert/" in output_lines
         assert "Created verify/" in output_lines
         assert "Created templates under etc/templates" not in output_lines
 
-        plan_path = Path("sqlitch.plan")
-        config_path = Path("sqlitch.conf")
+        plan_path = Path("sqitch.plan")
+        config_path = Path("sqitch.conf")
         deploy_dir = Path("deploy")
         revert_dir = Path("revert")
         verify_dir = Path("verify")
@@ -53,7 +53,7 @@ def test_init_creates_project_layout(runner: CliRunner) -> None:
         config_content = config_path.read_text(encoding="utf-8")
         assert "[core]" in config_content
         assert "engine = sqlite" in config_content
-        assert "# plan_file = sqlitch.plan" in config_content
+        assert "# plan_file = sqitch.plan" in config_content
         assert "# top_dir = ." in config_content
         assert "# target = db:sqlite:" in config_content
 
@@ -77,14 +77,14 @@ def test_init_respects_env_and_plan_override(
         assert "Created plans/custom.plan" in output_lines
 
         assert plan_override.is_file()
-        assert not Path("sqlitch.plan").exists()
+        assert not Path("sqitch.plan").exists()
 
         top_dir = Path("db/scripts")
         assert top_dir.is_dir()
         for subdir in ("deploy", "revert", "verify"):
             assert (top_dir / subdir).is_dir()
 
-        config_content = Path("sqlitch.conf").read_text(encoding="utf-8")
+        config_content = Path("sqitch.conf").read_text(encoding="utf-8")
         assert "# plan_file = plans/custom.plan" in config_content
         assert "# top_dir = db/scripts" in config_content
 
@@ -98,7 +98,7 @@ def test_init_accepts_uri_option(runner: CliRunner) -> None:
 
         assert result.exit_code == 0, result.output
 
-        config_content = Path("sqlitch.conf").read_text(encoding="utf-8")
+        config_content = Path("sqitch.conf").read_text(encoding="utf-8")
         assert f"uri = {uri}" in config_content
 
 
@@ -116,7 +116,7 @@ def test_init_aborts_when_plan_file_exists(runner: CliRunner) -> None:
     """Existing plan files should prevent accidental overwrites."""
 
     with runner.isolated_filesystem():
-        plan_path = Path("sqlitch.plan")
+        plan_path = Path("sqitch.plan")
         plan_path.write_text("%project=existing\n", encoding="utf-8")
 
         result = runner.invoke(main, ["init"])
@@ -134,7 +134,7 @@ def test_init_engine_alias_applies_defaults(runner: CliRunner) -> None:
 
         assert result.exit_code == 0, result.output
 
-        config_content = Path("sqlitch.conf").read_text(encoding="utf-8")
+        config_content = Path("sqitch.conf").read_text(encoding="utf-8")
         assert "engine = pg" in config_content
         assert "# target = db:pg:" in config_content
 
@@ -151,7 +151,7 @@ def test_init_respects_top_dir_option(runner: CliRunner) -> None:
         for subdir in ("deploy", "revert", "verify"):
             assert (top_dir / subdir).is_dir()
 
-        config_content = Path("sqlitch.conf").read_text(encoding="utf-8")
+        config_content = Path("sqitch.conf").read_text(encoding="utf-8")
         assert "# top_dir = db/sql" in config_content
 
 

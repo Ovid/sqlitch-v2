@@ -81,18 +81,28 @@ def test_determine_plan_path_precedence(tmp_path: Path) -> None:
 def test_determine_plan_path_existing_and_conflict(tmp_path: Path) -> None:
     project_root = tmp_path
 
-    existing = project_root / "sqlitch.plan"
-    existing.write_text("", encoding="utf-8")
+    sqitch_plan = project_root / "sqitch.plan"
+    sqitch_plan.write_text("", encoding="utf-8")
     chosen = init_module._determine_plan_path(
         project_root=project_root,
         plan_option=None,
         global_override=None,
         env={},
     )
-    assert chosen == existing
+    assert chosen == sqitch_plan
 
-    # Introduce conflict between sqlitch and sqitch plan files
-    sqitch_plan = project_root / "sqitch.plan"
+    sqitch_plan.unlink()
+    legacy_plan = project_root / "sqlitch.plan"
+    legacy_plan.write_text("", encoding="utf-8")
+    legacy_chosen = init_module._determine_plan_path(
+        project_root=project_root,
+        plan_option=None,
+        global_override=None,
+        env={},
+    )
+    assert legacy_chosen == legacy_plan
+
+    # Introduce conflict between sqitch and sqlitch plan files
     sqitch_plan.write_text("", encoding="utf-8")
     with pytest.raises(CommandError) as exc:
         init_module._determine_plan_path(
@@ -133,7 +143,7 @@ def test_validation_helpers_raise_when_artifacts_exist(tmp_path: Path) -> None:
 
 def test_render_config_and_format_display(tmp_path: Path) -> None:
     project_root = tmp_path
-    plan_path = project_root / "sqlitch.plan"
+    plan_path = project_root / "sqitch.plan"
     plan_path.write_text("", encoding="utf-8")
 
     config = init_module._render_config(
@@ -146,14 +156,14 @@ def test_render_config_and_format_display(tmp_path: Path) -> None:
     )
 
     assert "engine = sqlite" in config
-    assert "# plan_file = sqlitch.plan" in config
+    assert "# plan_file = sqitch.plan" in config
     assert "# top_dir = deployments" in config
     assert "# target = db:sqlite:flipr" in config
-    assert "# registry = sqlitch" in config
+    assert "# registry = sqitch" in config
     assert "# client = sqlite3" in config
 
     internal_display = init_module._format_display_path(plan_path, project_root)
-    assert internal_display == "sqlitch.plan"
+    assert internal_display == "sqitch.plan"
 
     external = project_root.parent / "shared" / "alt.plan"
     external.parent.mkdir(parents=True, exist_ok=True)

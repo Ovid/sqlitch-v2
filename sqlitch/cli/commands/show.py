@@ -65,7 +65,7 @@ def show_command(
         project_root=project_root,
         override=plan_override,
         env=env,
-        missing_plan_message="Cannot read plan file sqlitch.plan",
+        missing_plan_message="Cannot read plan file sqitch.plan",
     )
 
     plan = _load_plan(plan_path)

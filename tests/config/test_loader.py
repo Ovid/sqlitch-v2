@@ -23,12 +23,12 @@ def test_load_config_merges_scopes(tmp_path: Path) -> None:
         system_file,
         """[core]\nengine=pg\n[deploy]\nregistry_only=1\n""",
     )
-    user_file = user_dir / "sqlitch.conf"
+    user_file = user_dir / "sqitch.conf"
     _write_config(
         user_file,
         """[core]\nengine=mysql\n[env]\nPATH=/usr/local/bin\n""",
     )
-    local_file = local_dir / "sqlitch.conf"
+    local_file = local_dir / "sqitch.conf"
     _write_config(
         local_file,
         """[core]\nengine=sqlite\n[deploy]\nregistry_only=0\n""",

@@ -8,6 +8,7 @@ from pathlib import Path
 import click
 
 from sqlitch.config import resolver as config_resolver
+from sqlitch.utils.fs import ArtifactConflictError, resolve_config_file
 
 from . import CommandError, register_command
 from ._context import require_cli_context
@@ -187,7 +188,15 @@ def _resolve_config_path(project_root: Path, config_root: Path | None) -> Path:
     """Resolve the config file path for targets."""
 
     # For simplicity, use local config
-    return project_root / "sqlitch.conf"
+    try:
+        resolution = resolve_config_file(project_root)
+    except ArtifactConflictError as exc:  # pragma: no cover - defensive guard
+        raise CommandError(str(exc)) from exc
+
+    if resolution.path is not None:
+        return resolution.path
+
+    return project_root / "sqitch.conf"
 
 
 @register_command("target")

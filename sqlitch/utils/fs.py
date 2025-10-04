@@ -23,15 +23,15 @@ class ArtifactResolution:
 
 
 def resolve_plan_file(root: Path) -> ArtifactResolution:
-    """Resolve the plan file within ``root`` respecting Sqitch drop-in support."""
+    """Resolve the plan file within ``root`` preferring Sqitch naming."""
 
-    return _resolve_artifact(root, "sqlitch.plan", "sqitch.plan")
+    return _resolve_artifact(root, "sqitch.plan", "sqlitch.plan")
 
 
 def resolve_config_file(root: Path) -> ArtifactResolution:
-    """Resolve the configuration file within ``root`` allowing Sqitch fallback."""
+    """Resolve the configuration file within ``root`` preferring Sqitch naming."""
 
-    return _resolve_artifact(root, "sqlitch.conf", "sqitch.conf")
+    return _resolve_artifact(root, "sqitch.conf", "sqlitch.conf")
 
 
 def cleanup_artifacts(root: Path, names: Sequence[str]) -> tuple[Path, ...]:

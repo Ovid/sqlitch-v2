@@ -12,6 +12,7 @@ import click
 
 from sqlitch.config.loader import ConfigScope
 from sqlitch.config import resolver as config_resolver
+from sqlitch.utils.fs import ArtifactConflictError, resolve_config_file
 
 from . import CommandError, register_command
 from ._context import (
@@ -23,7 +24,7 @@ from ._context import (
 
 __all__ = ["config_command"]
 
-_CONFIG_FILENAME = "sqlitch.conf"
+_CONFIG_FILENAME = "sqitch.conf"
 
 
 @click.command("config")
@@ -290,6 +291,14 @@ def _config_file_path(
         directory = config_root
     else:
         raise CommandError("System scope modifications are not supported yet.")
+
+    try:
+        resolution = resolve_config_file(directory)
+    except ArtifactConflictError as exc:  # pragma: no cover - defensive guard
+        raise CommandError(str(exc)) from exc
+
+    if resolution.path is not None:
+        return resolution.path
 
     return directory / _CONFIG_FILENAME
 

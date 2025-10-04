@@ -22,9 +22,9 @@ _ENGINE_ALIASES: dict[str, str] = {
 }
 
 _ENGINE_DEFAULTS: dict[str, dict[str, str]] = {
-    "sqlite": {"target": "db:sqlite:", "registry": "sqlitch", "client": "sqlite3"},
-    "pg": {"target": "db:pg:", "registry": "sqlitch", "client": "psql"},
-    "mysql": {"target": "db:mysql:", "registry": "sqlitch", "client": "mysql"},
+    "sqlite": {"target": "db:sqlite:", "registry": "sqitch", "client": "sqlite3"},
+    "pg": {"target": "db:pg:", "registry": "sqitch", "client": "psql"},
+    "mysql": {"target": "db:mysql:", "registry": "sqitch", "client": "mysql"},
 }
 
 
@@ -193,7 +193,7 @@ def _determine_plan_path(
     if resolution.path is not None:
         return resolution.path
 
-    return project_root / "sqlitch.plan"
+    return project_root / "sqitch.plan"
 
 
 def _determine_config_path(project_root: Path) -> Path:
@@ -205,7 +205,7 @@ def _determine_config_path(project_root: Path) -> Path:
     if resolution.path is not None:
         return resolution.path
 
-    return project_root / "sqlitch.conf"
+    return project_root / "sqitch.conf"
 
 
 def _validate_absent(path: Path, label: str) -> None:

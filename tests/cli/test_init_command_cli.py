@@ -30,11 +30,11 @@ def test_init_command_accepts_uri_option(tmp_path: Path) -> None:
         )
 
         assert result.exit_code == 0, result.output
-        config_path = Path("sqlitch.conf")
+        config_path = Path("sqitch.conf")
         assert config_path.exists()
         contents = config_path.read_text(encoding="utf-8")
         assert f"uri = {uri}" in contents
-        plan_path = Path("sqlitch.plan")
+        plan_path = Path("sqitch.plan")
         assert plan_path.exists()
         templates_dir = Path("etc") / "templates"
         assert not templates_dir.exists()
