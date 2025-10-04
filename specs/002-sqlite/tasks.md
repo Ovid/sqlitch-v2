@@ -70,12 +70,12 @@
 - [X] T093 [P] Implement shared CLI options module in `sqlitch/cli/options.py`, defining global verbosity flags, default log configuration, and run identifier injection for command contexts.
 - [X] T094 Implement structured logging sink and adapters in `sqlitch/utils/logging.py`, ensuring Rich/Click output parity while capturing run metadata.
 - [ ] T095 Update CLI command harnesses to emit structured logs, honor verbosity toggles, and surface run identifiers in user-facing output/tests.
-	- [ ] T095a Align `tests/cli/contracts/test_help_contract.py` assertions with stdout/stderr separation introduced by structured logging.
-	- [ ] T095b Apply the same stdout/stderr expectations to `tests/cli/contracts/test_config_contract.py`.
-	- [ ] T095c Update `tests/cli/contracts/test_log_contract.py` to parse human and JSON output from stdout while checking errors on stderr.
-	- [ ] T095d Refine `tests/cli/contracts/test_show_contract.py` (all nested contexts) to use the new output channels.
-	- [ ] T095e Bring `tests/cli/contracts/test_add_contract.py` in line with the stdout/stderr contract conventions.
-	- [ ] T095f Run the contract suite (`pytest tests/cli/contracts`) to confirm the harness/test updates hold before moving to further logging work.
+	- [X] T095a Align `tests/cli/contracts/test_help_contract.py` assertions with stdout/stderr separation introduced by structured logging.
+	- [X] T095b Apply the same stdout/stderr expectations to `tests/cli/contracts/test_config_contract.py`.
+	- [X] T095c Update `tests/cli/contracts/test_log_contract.py` to parse human and JSON output from stdout while checking errors on stderr.
+	- [X] T095d Refine `tests/cli/contracts/test_show_contract.py` (all nested contexts) to use the new output channels.
+	- [X] T095e Bring `tests/cli/contracts/test_add_contract.py` in line with the stdout/stderr contract conventions.
+	- [X] T095f Run the contract suite (`pytest tests/cli/contracts`) to confirm the harness/test updates hold before moving to further logging work.
 - [X] T052 [P] Implement `sqlitch add` command handler in `sqlitch/cli/commands/add.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-add.md`)*
 - [X] T053 [P] Implement `sqlitch bundle` command handler in `sqlitch/cli/commands/bundle.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-bundle.md`)*
 - [X] T054 [P] Implement `sqlitch checkout` command handler in `sqlitch/cli/commands/checkout.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-checkout.md`)*

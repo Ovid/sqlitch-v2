@@ -73,15 +73,15 @@ def test_add_appends_change_and_creates_scripts(monkeypatch: pytest.MonkeyPatch)
             ],
         )
 
-        assert result.exit_code == 0, result.output
+        assert result.exit_code == 0, result.stderr
         deploy_name = "deploy/20250102030405_widgets.sql"
         revert_name = "revert/20250102030405_widgets.sql"
         verify_name = "verify/20250102030405_widgets.sql"
 
-        assert f"Created deploy script {deploy_name}" in result.output
-        assert f"Created revert script {revert_name}" in result.output
-        assert f"Created verify script {verify_name}" in result.output
-        assert "Added widgets" in result.output
+        assert f"Created deploy script {deploy_name}" in result.stdout
+        assert f"Created revert script {revert_name}" in result.stdout
+        assert f"Created verify script {verify_name}" in result.stdout
+        assert "Added widgets" in result.stdout
 
         deploy_path = Path(deploy_name)
         revert_path = Path(revert_name)
@@ -143,7 +143,7 @@ def test_add_rejects_duplicate_change(monkeypatch: pytest.MonkeyPatch) -> None:
         result = runner.invoke(main, ["add", "widgets"])
 
         assert result.exit_code != 0
-        assert 'Change "widgets" already exists in plan' in result.output
+        assert 'Change "widgets" already exists in plan' in result.stderr
         assert plan_path.read_text(encoding="utf-8") == original_content
 
         expected_deploy = Path("deploy/20240506070809_widgets.sql")
@@ -162,7 +162,7 @@ def test_add_uses_explicit_plan_override(monkeypatch: pytest.MonkeyPatch) -> Non
 
         result = runner.invoke(main, ["--plan-file", str(override_plan), "add", "reports"])
 
-        assert result.exit_code == 0, result.output
+        assert result.exit_code == 0, result.stderr
         assert not Path("sqlitch.plan").exists()
 
         plan_content = override_plan.read_text(encoding="utf-8")
@@ -201,7 +201,7 @@ def test_add_honours_project_templates(monkeypatch: pytest.MonkeyPatch) -> None:
 
         result = runner.invoke(main, ["add", "widgets"])
 
-        assert result.exit_code == 0, result.output
+        assert result.exit_code == 0, result.stderr
         deploy_content = Path("deploy/20250910111213_widgets.sql").read_text(encoding="utf-8")
         revert_content = Path("revert/20250910111213_widgets.sql").read_text(encoding="utf-8")
         verify_content = Path("verify/20250910111213_widgets.sql").read_text(encoding="utf-8")
@@ -237,7 +237,7 @@ def test_add_template_override_by_name(monkeypatch: pytest.MonkeyPatch) -> None:
 
         result = runner.invoke(main, ["add", "widgets", "--template", "custom"])
 
-        assert result.exit_code == 0, result.output
+        assert result.exit_code == 0, result.stderr
         assert (
             Path("deploy/20251101020304_widgets.sql").read_text(encoding="utf-8")
             == "deploy widgets\n"

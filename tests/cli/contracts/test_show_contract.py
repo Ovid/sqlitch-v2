@@ -129,16 +129,16 @@ def test_show_human_format_displays_change_metadata(runner: CliRunner) -> None:
 
         result = runner.invoke(main, ["show", change.name])
 
-        assert result.exit_code == 0, result.output
-        assert f"Change: {change.name}" in result.output
-        assert "Planner: Grace Hopper" in result.output
-        assert "Planned At: 2024-01-02T00:00:00Z" in result.output
-        assert "Dependencies: core:init" in result.output
-        assert "Tags: release, v1.0" in result.output
-        assert "Notes: Adds widgets" in result.output
-        assert "Deploy Script: deploy/20240102000000_widgets_add.sql" in result.output
-        assert "Revert Script: revert/20240102000000_widgets_add.sql" in result.output
-        assert "Verify Script: verify/20240102000000_widgets_add.sql" in result.output
+        assert result.exit_code == 0, result.stderr
+        assert f"Change: {change.name}" in result.stdout
+        assert "Planner: Grace Hopper" in result.stdout
+        assert "Planned At: 2024-01-02T00:00:00Z" in result.stdout
+        assert "Dependencies: core:init" in result.stdout
+        assert "Tags: release, v1.0" in result.stdout
+        assert "Notes: Adds widgets" in result.stdout
+        assert "Deploy Script: deploy/20240102000000_widgets_add.sql" in result.stdout
+        assert "Revert Script: revert/20240102000000_widgets_add.sql" in result.stdout
+        assert "Verify Script: verify/20240102000000_widgets_add.sql" in result.stdout
 
 
 def test_show_json_format_returns_structured_payload(runner: CliRunner) -> None:
@@ -150,8 +150,8 @@ def test_show_json_format_returns_structured_payload(runner: CliRunner) -> None:
 
         result = runner.invoke(main, ["show", change.name, "--format", "json"])
 
-        assert result.exit_code == 0, result.output
-        payload = json.loads(result.output)
+        assert result.exit_code == 0, result.stderr
+        payload = json.loads(result.stdout)
         assert payload["change"] == change.name
         assert payload["planner"] == "Grace Hopper"
         assert payload["planned_at"] == "2024-01-02T00:00:00Z"
@@ -174,8 +174,8 @@ def test_show_script_option_outputs_script_contents(runner: CliRunner) -> None:
 
         result = runner.invoke(main, ["show", change.name, "--script", "deploy"])
 
-        assert result.exit_code == 0, result.output
-        assert result.output == "/* deploy widgets */\n"
+        assert result.exit_code == 0, result.stderr
+        assert result.stdout == "/* deploy widgets */\n"
 
 
 def test_show_accepts_tag_reference(runner: CliRunner) -> None:
@@ -187,8 +187,8 @@ def test_show_accepts_tag_reference(runner: CliRunner) -> None:
 
         result = runner.invoke(main, ["show", "v1.0"])
 
-        assert result.exit_code == 0, result.output
-        assert f"Change: {change.name}" in result.output
+        assert result.exit_code == 0, result.stderr
+        assert f"Change: {change.name}" in result.stdout
 
 
 def test_show_project_filter_mismatch_errors(runner: CliRunner) -> None:
@@ -201,7 +201,7 @@ def test_show_project_filter_mismatch_errors(runner: CliRunner) -> None:
         result = runner.invoke(main, ["show", change.name, "--project", "gadgets"])
 
         assert result.exit_code != 0
-        assert "Plan project 'widgets' does not match requested project 'gadgets'." in result.output
+        assert "Plan project 'widgets' does not match requested project 'gadgets'." in result.stderr
 
 
 def test_show_outputs_defaults_when_metadata_missing(runner: CliRunner) -> None:
@@ -212,16 +212,16 @@ def test_show_outputs_defaults_when_metadata_missing(runner: CliRunner) -> None:
         _, change = _seed_minimal_project(project_root)
 
         human = runner.invoke(main, ["show", change.name])
-        assert human.exit_code == 0, human.output
-        assert "Dependencies: (none)" in human.output
-        assert "Tags: (none)" in human.output
-        assert "Notes: (none)" in human.output
-        assert "Deploy Script: deploy/minimal_change.sql" in human.output
-        assert "Verify Script" not in human.output
+        assert human.exit_code == 0, human.stderr
+        assert "Dependencies: (none)" in human.stdout
+        assert "Tags: (none)" in human.stdout
+        assert "Notes: (none)" in human.stdout
+        assert "Deploy Script: deploy/minimal_change.sql" in human.stdout
+        assert "Verify Script" not in human.stdout
 
         json_result = runner.invoke(main, ["show", change.name, "--format", "json"])
-        assert json_result.exit_code == 0, json_result.output
-        payload = json.loads(json_result.output)
+        assert json_result.exit_code == 0, json_result.stderr
+        payload = json.loads(json_result.stdout)
         assert payload["dependencies"] == []
         assert payload["tags"] == []
         assert payload["notes"] is None
@@ -239,18 +239,18 @@ def test_show_script_option_reports_missing_files(runner: CliRunner) -> None:
         _, change = _seed_minimal_project(project_root)
 
         deploy_result = runner.invoke(main, ["show", change.name, "--script", "deploy"])
-        assert deploy_result.exit_code == 0, deploy_result.output
-        assert deploy_result.output == "/* minimal deploy */\n"
+        assert deploy_result.exit_code == 0, deploy_result.stderr
+        assert deploy_result.stdout == "/* minimal deploy */\n"
 
         (project_root / "revert/minimal_change.sql").unlink()
 
         missing_file = runner.invoke(main, ["show", change.name, "--script", "revert"])
         assert missing_file.exit_code != 0
-        assert "Cannot find revert script for minimal:change" in missing_file.output
+        assert "Cannot find revert script for minimal:change" in missing_file.stderr
 
         missing_kind = runner.invoke(main, ["show", change.name, "--script", "verify"])
         assert missing_kind.exit_code != 0
-        assert "Cannot find verify script for minimal:change" in missing_kind.output
+        assert "Cannot find verify script for minimal:change" in missing_kind.stderr
 
 
 def test_show_reports_plan_parse_errors(runner: CliRunner) -> None:
@@ -264,7 +264,7 @@ def test_show_reports_plan_parse_errors(runner: CliRunner) -> None:
         result = runner.invoke(main, ["show", change.name])
 
         assert result.exit_code != 0
-        assert "Unknown plan entry 'invalid-entry'" in result.output
+        assert "Unknown plan entry 'invalid-entry'" in result.stderr
 
 
 def test_show_deduplicates_plan_and_change_tags(runner: CliRunner) -> None:
@@ -308,9 +308,9 @@ def test_show_deduplicates_plan_and_change_tags(runner: CliRunner) -> None:
 
         result = runner.invoke(main, ["show", duplicate_change.name])
 
-        assert result.exit_code == 0, result.output
-        assert result.output.count("duplicate") == 4  # change line, tag line, planner, script paths
-        assert "Tags: duplicate" in result.output
+        assert result.exit_code == 0, result.stderr
+        assert result.stdout.count("duplicate") == 4  # change line, tag line, planner, script paths
+        assert "Tags: duplicate" in result.stdout
 
 
 def test_show_unknown_change_errors(runner: CliRunner) -> None:
@@ -324,4 +324,4 @@ def test_show_unknown_change_errors(runner: CliRunner) -> None:
         result = runner.invoke(main, ["show", "unknown:change"])
 
         assert result.exit_code != 0
-        assert 'Unknown change "unknown:change"' in result.output
+        assert 'Unknown change "unknown:change"' in result.stderr

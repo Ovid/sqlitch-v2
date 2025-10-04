@@ -96,10 +96,10 @@ def test_log_reports_human_history() -> None:
             ],
         )
 
-    result = runner.invoke(main, ["log", "--target", "db:sqlite:flipr_test.db"])
+        result = runner.invoke(main, ["log", "--target", "db:sqlite:flipr_test.db"])
 
-    assert result.exit_code == 0, result.stderr
-    assert result.stdout == expected
+        assert result.exit_code == 0, result.stderr
+        assert result.stdout == expected
 
 
 def test_log_supports_json_format() -> None:
@@ -232,10 +232,10 @@ def test_log_requires_explicit_target_when_missing() -> None:
 
     runner = _runner()
     with runner.isolated_filesystem():
-    result = runner.invoke(main, ["log"], catch_exceptions=False)
+        result = runner.invoke(main, ["log"], catch_exceptions=False)
 
-    assert result.exit_code != 0
-    assert "A target must be provided" in result.stderr
+        assert result.exit_code != 0
+        assert "A target must be provided" in result.stderr
 
 
 def test_log_supports_filters_and_pagination() -> None:
