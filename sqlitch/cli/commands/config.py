@@ -5,6 +5,8 @@ from __future__ import annotations
 import configparser
 import json
 from collections.abc import Mapping
+from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import Callable
 
@@ -71,68 +73,135 @@ def config_command(
     project_root = project_root_from(ctx)
     env = environment_from(ctx)
     scope, explicit_scope = _resolve_scope(global_scope, user_scope, local_scope, registry_scope)
+    request = _parse_config_request(
+        name=name,
+        value=value,
+        list_flag=list_flag,
+        unset_flag=unset_flag,
+        bool_flag=bool_flag,
+        json_flag=json_flag,
+    )
 
-    if json_flag and not list_flag:
-        raise CommandError("--json may only be used together with --list.")
-    if bool_flag and list_flag:
-        raise CommandError("--bool cannot be combined with --list.")
+    quiet = quiet_mode_enabled(ctx)
 
-    if list_flag:
-        if name or value or unset_flag:
-            raise CommandError("--list cannot be combined with positional arguments or --unset.")
+    if request.operation is ConfigOperation.LIST:
         _handle_list(
             project_root=project_root,
             config_root=cli_context.config_root,
             env=env,
-            json_output=json_flag,
-            quiet=quiet_mode_enabled(ctx),
+            json_output=request.json_output,
+            quiet=quiet,
         )
         return
 
-    if unset_flag:
-        if not name:
-            raise CommandError("A configuration name must be provided when using --unset.")
-        if value is not None:
-            raise CommandError("--unset cannot be combined with a value argument.")
+    if request.operation is ConfigOperation.UNSET:
         _unset_option(
-            name=name,
+            name=_require_name(request.name),
             scope=scope,
             project_root=project_root,
             config_root=cli_context.config_root,
             env=env,
-            quiet=quiet_mode_enabled(ctx),
+            quiet=quiet,
         )
         return
 
-    if value is not None:
-        if not name:
-            raise CommandError("A configuration name must be provided when setting a value.")
-        coerced_value = _normalize_bool_value(value) if bool_flag else value
+    if request.operation is ConfigOperation.SET:
+        value_to_store = (
+            _normalize_bool_value(_require_value(request.value))
+            if request.bool_mode
+            else _require_value(request.value)
+        )
         _set_option(
-            name=name,
-            value=coerced_value,
+            name=_require_name(request.name),
+            value=value_to_store,
             scope=scope,
             project_root=project_root,
             config_root=cli_context.config_root,
             env=env,
-            quiet=quiet_mode_enabled(ctx),
+            quiet=quiet,
         )
         return
-
-    if not name:
-        raise CommandError("A configuration name must be provided.")
 
     resolved_value = _get_option(
-        name=name,
+        name=_require_name(request.name),
         project_root=project_root,
         config_root=cli_context.config_root,
         env=env,
         scope=scope,
         explicit_scope=explicit_scope,
     )
-    if bool_flag:
-        resolved_value = _normalize_bool_value(resolved_value)
-    click.echo(resolved_value)
+    output_value = _normalize_bool_value(resolved_value) if request.bool_mode else resolved_value
+    click.echo(output_value)
+
+
+class ConfigOperation(Enum):
+    LIST = "list"
+    SET = "set"
+    UNSET = "unset"
+    GET = "get"
+
+
+@dataclass(frozen=True)
+class ConfigRequest:
+    operation: ConfigOperation
+    name: str | None = None
+    value: str | None = None
+    bool_mode: bool = False
+    json_output: bool = False
+
+
+def _parse_config_request(
+    *,
+    name: str | None,
+    value: str | None,
+    list_flag: bool,
+    unset_flag: bool,
+    bool_flag: bool,
+    json_flag: bool,
+) -> ConfigRequest:
+    if json_flag and not list_flag:
+        raise CommandError("--json may only be used together with --list.")
+
+    if list_flag:
+        if bool_flag:
+            raise CommandError("--bool cannot be combined with --list.")
+        if name or value or unset_flag:
+            raise CommandError("--list cannot be combined with positional arguments or --unset.")
+        return ConfigRequest(operation=ConfigOperation.LIST, json_output=json_flag)
+
+    if unset_flag:
+        if not name:
+            raise CommandError("A configuration name must be provided when using --unset.")
+        if value is not None:
+            raise CommandError("--unset cannot be combined with a value argument.")
+        return ConfigRequest(operation=ConfigOperation.UNSET, name=name)
+
+    if value is not None:
+        if not name:
+            raise CommandError("A configuration name must be provided when setting a value.")
+        return ConfigRequest(
+            operation=ConfigOperation.SET,
+            name=name,
+            value=value,
+            bool_mode=bool_flag,
+        )
+
+    if not name:
+        raise CommandError("A configuration name must be provided.")
+
+    return ConfigRequest(operation=ConfigOperation.GET, name=name, bool_mode=bool_flag)
+
+
+def _require_name(name: str | None) -> str:
+    if name is None:
+        raise CommandError("Configuration name is required.")
+    return name
+
+
+def _require_value(value: str | None) -> str:
+    if value is None:
+        raise CommandError("Configuration value is required.")
+    return value
 
 
 def _resolve_scope(
