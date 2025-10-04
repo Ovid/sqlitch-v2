@@ -52,7 +52,7 @@ def test_engine_add_writes_definition(tmp_path: Path) -> None:
 
         assert result.exit_code == 0, result.output
 
-        config_path = config_root / "sqlitch.conf"
+        config_path = config_root / "sqitch.conf"
         contents = _read_engine_section(config_path, "widgets")
         assert contents["uri"] == "db:sqlite:widgets.db"
         assert "registry" not in contents
@@ -87,7 +87,7 @@ def test_engine_update_overwrites_existing_values(tmp_path: Path) -> None:
 
     runner = _runner()
     config_root = tmp_path / "config-root"
-    config_path = config_root / "sqlitch.conf"
+    config_path = config_root / "sqitch.conf"
     _write_engine_section(config_path, "widgets", uri="db:sqlite:widgets.db")
 
     with runner.isolated_filesystem():
@@ -122,7 +122,7 @@ def test_engine_remove_deletes_definition(tmp_path: Path) -> None:
 
     runner = _runner()
     config_root = tmp_path / "config-root"
-    config_path = config_root / "sqlitch.conf"
+    config_path = config_root / "sqitch.conf"
     _write_engine_section(config_path, "widgets", uri="db:sqlite:widgets.db")
 
     with runner.isolated_filesystem():
@@ -146,7 +146,7 @@ def test_engine_list_outputs_table(tmp_path: Path) -> None:
 
     runner = _runner()
     config_root = tmp_path / "config-root"
-    config_path = config_root / "sqlitch.conf"
+    config_path = config_root / "sqitch.conf"
     _write_engine_section(config_path, "widgets", uri="db:sqlite:widgets.db")
     _write_engine_section(
         config_path,
