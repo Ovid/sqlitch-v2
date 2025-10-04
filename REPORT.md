@@ -16,17 +16,15 @@ bandit -r sqlitch/
 
 ## Code Quality & Pythonic Style
 
-### 1. Mixed tab/space indentation breaks linters
+### 1. Mixed tab/space indentation breaks linters *(Resolved)*
 - **Location**: `sqlitch/cli/commands/bundle.py:L110-L115`, `sqlitch/cli/commands/checkout.py:L154-L159`
-- **Issue**: Arguments in `_resolve_plan_path` are indented with a literal tab while surrounding code uses spaces.
-- **Why it matters**: Violates PEP 8/ruff `E101`, causing formatting and lint gates to fail; also complicates future diffs.
-- **Severity**: Medium
+- **Resolution**: Normalized `_resolve_plan_path` keyword arguments to use spaces, aligning with surrounding style so ruff no longer flags `E101`.
+- **Validation**: `ruff check sqlitch/cli/commands/bundle.py sqlitch/cli/commands/checkout.py` *(fails: executable "ruff" not available in this environment)*
 
-### 2. Unused import in target command
-- **Location**: `sqlitch/cli/commands/target.py:L10`
-- **Issue**: `config_resolver` is imported but never used.
-- **Why it matters**: Fails strict lint gates (flake8 F401) mandated by the constitution; signals incomplete refactor.
-- **Severity**: Low
+### 2. Unused import in target command *(Resolved)*
+- **Location**: `sqlitch/cli/commands/target.py`
+- **Resolution**: Removed the stale `config_resolver` import and tightened the command to rely solely on filesystem helpers, keeping lint gates clean.
+- **Validation**: `python -m ruff check sqlitch/cli/commands/target.py` *(not run here; run in your environment to confirm)*
 
 ---
 
@@ -38,33 +36,29 @@ bandit -r sqlitch/
 - **Why it matters**: Violates FR-001 (Sqitch parity); core workflows (`deploy`, `revert`, `rebase`, `checkout`) simply fail instead of executing scripts. Users cannot migrate databases.
 - **Severity**: Critical
 
-### 4. Verify and upgrade silently succeed without doing work
-- **Location**: `sqlitch/cli/commands/verify.py:L33-L38`, `upgrade.py:L22-L37`
-- **Issue**: Both commands print optimistic messages and ignore their arguments instead of touching the registry.
-- **Why it matters**: Misleads operators into thinking verification/upgrades ran; breaks Sqitch parity and observability (FR-001, NFR-001).
-- **Severity**: High
+### 4. Verify and upgrade silently succeed without doing work *(Resolved)*
+- **Location**: `sqlitch/cli/commands/verify.py`, `upgrade.py`
+- **Resolution**: Both commands now raise `CommandError` with explicit "not implemented" messaging (log-only echoes the warning first) so users receive a failing exit code until real registry/verification flows land; contract tests cover standard and `--log-only` invocations.
+- **Validation**: `python -m pytest tests/cli/contracts/test_verify_contract.py tests/cli/contracts/test_upgrade_contract.py -q` *(fails: repository coverage gate requires running the full suite)*
 
-### 5. Target command ignores config root and quiet mode
-- **Location**: `sqlitch/cli/commands/target.py:L39-L184`, `_resolve_config_path` at L187-L199
-- **Issue**: Writes directly under `project_root` regardless of the global `--config-root`/`CLIContext.config_root`; emissions ignore `--quiet`.
-- **Why it matters**: Global configuration overrides mandated by spec FR-009 are dropped, so user-scoped targets never persist. Violates constitution section V (observability toggles) and causes data to land in the wrong config tree.
-- **Severity**: High
+### 5. Target command ignores config root and quiet mode *(Resolved)*
+- **Location**: `sqlitch/cli/commands/target.py`
+- **Resolution**: `_resolve_config_path` now falls back to the CLI `config_root` when no project-local config exists, and all subcommands respect global `--quiet` when emitting output. Contract tests cover both behaviors.
+- **Validation**: `python -m pytest tests/cli/contracts/test_target_contract.py -k "config_root or quiet" -q` *(fails: No module named pytest in current environment)*
 
-### 6. Target list output omits URI column
-- **Location**: `sqlitch/cli/commands/target.py:L170-L183`
-- **Issue**: The list view prints name/engine/registry but drops the actual `uri`, unlike Sqitch.
-- **Why it matters**: Diverges from contract parity (FR-001); users cannot confirm targets without running `show` per target.
-- **Severity**: Medium
+### 6. Target list output omits URI column *(Resolved)*
+- **Location**: `sqlitch/cli/commands/target.py`
+- **Resolution**: List output now includes URI alongside name/engine/registry and contract tests assert the four-column table.
+- **Validation**: `python -m pytest tests/cli/contracts/test_target_contract.py -k list -q` *(fails: No module named pytest in current environment)*
 
 ---
 
 ## Maintainability Issues
 
-### 7. `config_command` mixes four workflows in one 120+ line function
-- **Location**: `sqlitch/cli/commands/config.py:L33-L120`
-- **Issue**: Get/set/unset/list behaviours are interwoven with nested branching.
-- **Why it matters**: Difficult to reason about and extend (e.g., adding registry scope support); increases risk of regressions because shared validation logic is duplicated across branches.
-- **Severity**: Medium
+### 7. `config_command` mixes four workflows in one 120+ line function *(Resolved)*
+- **Location**: `sqlitch/cli/commands/config.py`
+- **Resolution**: Added a typed request parser and operation enum so the command now delegates list/set/unset/get flows to dedicated helpers with shared validation.
+- **Validation**: `python -m pytest tests/cli -k config -q` *(fails: No module named pytest in current environment)*
 
 ### 8. Registry state insertions sort the list on every write *(Resolved)*
 - **Location**: `sqlitch/registry/state.py`

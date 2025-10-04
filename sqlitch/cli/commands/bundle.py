@@ -111,7 +111,7 @@ def _resolve_plan_path(
         project_root=project_root,
         override=override,
         env=env,
-        	missing_plan_message="Cannot read plan file sqitch.plan",
+        missing_plan_message="Cannot read plan file sqitch.plan",
     )
 
 
