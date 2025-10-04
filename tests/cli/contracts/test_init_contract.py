@@ -95,6 +95,19 @@ def test_init_respects_env_and_plan_override(
         assert "# top_dir = db/scripts" in config_content
 
 
+def test_init_accepts_uri_option(runner: CliRunner) -> None:
+    """--uri should be recorded in the generated config file."""
+
+    with runner.isolated_filesystem():
+        uri = "https://github.com/example/project"
+        result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite", "--uri", uri])
+
+        assert result.exit_code == 0, result.output
+
+        config_content = Path("sqlitch.conf").read_text(encoding="utf-8")
+        assert f"uri = {uri}" in config_content
+
+
 def test_init_rejects_unknown_engine(runner: CliRunner) -> None:
     """Unrecognized engines must raise a user-facing CommandError."""
 

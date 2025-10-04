@@ -147,6 +147,7 @@ def test_render_config_and_format_display(tmp_path: Path) -> None:
         project_root=project_root,
         top_dir_display="deployments",
         target="db:sqlite:flipr",
+        uri=None,
     )
 
     assert "engine = sqlite" in config

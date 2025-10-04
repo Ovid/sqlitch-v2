@@ -47,6 +47,7 @@ _ENGINE_DEFAULTS: dict[str, dict[str, str]] = {
 @click.option(
     "--target", "target_option", help="Default deployment target alias recorded in config."
 )
+@click.option("--uri", "uri_option", help="Project repository URI recorded in config.")
 @click.pass_context
 def init_command(
     ctx: click.Context,
@@ -55,6 +56,7 @@ def init_command(
     top_dir_option: Path | None,
     plan_file_option: Path | None,
     target_option: str | None,
+    uri_option: str | None,
 ) -> None:
     """Initialize a new SQLitch project mirroring Sqitch scaffolding."""
 
@@ -109,6 +111,7 @@ def init_command(
         project_root=project_root,
         top_dir_display=top_dir_display,
         target=target,
+        uri=uri_option,
     )
     config_path.parent.mkdir(parents=True, exist_ok=True)
     config_path.write_text(config_content, encoding="utf-8")
@@ -237,6 +240,7 @@ def _render_config(
     project_root: Path,
     top_dir_display: str,
     target: str,
+    uri: str | None,
 ) -> str:
     defaults = _ENGINE_DEFAULTS.get(engine, {})
     registry = defaults.get("registry", "sqlitch")
@@ -244,7 +248,10 @@ def _render_config(
 
     plan_display = _format_display_path(plan_path, project_root)
 
-    lines = ["[core]", f"    engine = {engine}", f"    # plan_file = {plan_display}"]
+    lines = ["[core]", f"    engine = {engine}"]
+    if uri:
+        lines.append(f"    uri = {uri}")
+    lines.append(f"    # plan_file = {plan_display}")
     lines.append(f"    # top_dir = {top_dir_display}")
 
     engine_section_header = f'# [engine "{engine}"]'
