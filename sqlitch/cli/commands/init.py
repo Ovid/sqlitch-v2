@@ -111,11 +111,11 @@ def init_command(
     config_path.write_text(config_content, encoding="utf-8")
 
     messages = [
-        f"Created config file {_format_display_path(config_path, project_root)}",
-        f"Created plan file {_format_display_path(plan_path, project_root)}",
-        f"Created deploy directory {_format_display_path(deploy_dir, project_root)}",
-        f"Created revert directory {_format_display_path(revert_dir, project_root)}",
-        f"Created verify directory {_format_display_path(verify_dir, project_root)}",
+        f"Created {_format_display_path(config_path, project_root)}",
+        f"Created {_format_display_path(plan_path, project_root)}",
+        f"Created {_format_directory_display(deploy_dir, project_root)}",
+        f"Created {_format_directory_display(revert_dir, project_root)}",
+        f"Created {_format_directory_display(verify_dir, project_root)}",
     ]
 
     if not quiet:
@@ -255,3 +255,10 @@ def _format_display_path(path: Path, project_root: Path) -> str:
         return path.relative_to(project_root).as_posix()
     except ValueError:
         return os.path.relpath(path, project_root).replace(os.sep, "/")
+
+
+def _format_directory_display(path: Path, project_root: Path) -> str:
+    display = _format_display_path(path, project_root)
+    if not display.endswith("/"):
+        display = f"{display}/"
+    return display

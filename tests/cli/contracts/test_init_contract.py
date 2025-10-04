@@ -25,11 +25,11 @@ def test_init_creates_project_layout(runner: CliRunner) -> None:
 
         assert result.exit_code == 0, result.output
         output_lines = result.output.splitlines()
-        assert "Created config file sqlitch.conf" in output_lines
-        assert "Created plan file sqlitch.plan" in output_lines
-        assert "Created deploy directory deploy" in output_lines
-        assert "Created revert directory revert" in output_lines
-        assert "Created verify directory verify" in output_lines
+        assert "Created sqlitch.conf" in output_lines
+        assert "Created sqlitch.plan" in output_lines
+        assert "Created deploy/" in output_lines
+        assert "Created revert/" in output_lines
+        assert "Created verify/" in output_lines
         assert "Created templates under etc/templates" not in output_lines
 
         plan_path = Path("sqlitch.plan")
@@ -74,7 +74,7 @@ def test_init_respects_env_and_plan_override(
 
         assert result.exit_code == 0, result.output
         output_lines = result.output.splitlines()
-        assert "Created plan file plans/custom.plan" in output_lines
+        assert "Created plans/custom.plan" in output_lines
 
         assert plan_override.is_file()
         assert not Path("sqlitch.plan").exists()
