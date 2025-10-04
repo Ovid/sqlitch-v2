@@ -17,10 +17,10 @@ def test_help_lists_available_commands() -> None:
     runner = _runner()
     result = runner.invoke(main, ["help"])
 
-    assert result.exit_code == 0, result.output
-    assert "Usage: sqlitch" in result.output
+    assert result.exit_code == 0, result.stderr
+    assert "Usage: sqlitch" in result.stdout
     for command in ("add", "config", "engine", "status"):
-        assert command in result.output
+        assert command in result.stdout
 
 
 def test_help_topic_outputs_command_help() -> None:
@@ -29,9 +29,9 @@ def test_help_topic_outputs_command_help() -> None:
     runner = _runner()
     result = runner.invoke(main, ["help", "config"])
 
-    assert result.exit_code == 0, result.output
-    assert "Usage: sqlitch config" in result.output
-    assert "--list" in result.output
+    assert result.exit_code == 0, result.stderr
+    assert "Usage: sqlitch config" in result.stdout
+    assert "--list" in result.stdout
 
 
 def test_help_usage_flag_outputs_single_line_summary() -> None:
@@ -40,8 +40,8 @@ def test_help_usage_flag_outputs_single_line_summary() -> None:
     runner = _runner()
     result = runner.invoke(main, ["help", "--usage", "config"])
 
-    assert result.exit_code == 0, result.output
-    lines = [line for line in result.output.splitlines() if line.strip()]
+    assert result.exit_code == 0, result.stderr
+    lines = [line for line in result.stdout.splitlines() if line.strip()]
     assert len(lines) == 1
     assert lines[0].startswith("Usage: sqlitch config")
 
@@ -53,4 +53,4 @@ def test_help_unknown_topic_errors() -> None:
     result = runner.invoke(main, ["help", "unknown"], catch_exceptions=False)
 
     assert result.exit_code != 0
-    assert 'No help for "unknown"' in result.output
+    assert 'No help for "unknown"' in result.stderr

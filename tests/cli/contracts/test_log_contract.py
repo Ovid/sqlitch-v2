@@ -96,10 +96,10 @@ def test_log_reports_human_history() -> None:
             ],
         )
 
-        result = runner.invoke(main, ["log", "--target", "db:sqlite:flipr_test.db"])
+    result = runner.invoke(main, ["log", "--target", "db:sqlite:flipr_test.db"])
 
-        assert result.exit_code == 0, result.output
-        assert result.output == expected
+    assert result.exit_code == 0, result.stderr
+    assert result.stdout == expected
 
 
 def test_log_supports_json_format() -> None:
@@ -138,15 +138,15 @@ def test_log_supports_json_format() -> None:
             ],
         )
 
-        assert result.exit_code == 0, result.output
-        payload = json.loads(result.output)
-        assert isinstance(payload, list)
-        assert len(payload) == 1
-        event = payload[0]
-        assert event["event"] == "deploy"
-        assert event["change"] == "users"
-        assert event["project"] == "flipr"
-        assert event["committer"]["name"] == "Marge N. O’Vera"
+    assert result.exit_code == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert isinstance(payload, list)
+    assert len(payload) == 1
+    event = payload[0]
+    assert event["event"] == "deploy"
+    assert event["change"] == "users"
+    assert event["project"] == "flipr"
+    assert event["committer"]["name"] == "Marge N. O’Vera"
 
 
 def test_log_rejects_unknown_format() -> None:
@@ -185,7 +185,7 @@ def test_log_rejects_unknown_format() -> None:
         )
 
         assert result.exit_code != 0
-        assert "Unknown format" in result.output
+        assert "Unknown format" in result.stderr
 
 
 def test_log_rejects_negative_limit() -> None:
@@ -224,7 +224,7 @@ def test_log_rejects_negative_limit() -> None:
         )
 
         assert result.exit_code != 0
-        assert "--limit must be" in result.output
+        assert "--limit must be" in result.stderr
 
 
 def test_log_requires_explicit_target_when_missing() -> None:
@@ -232,10 +232,10 @@ def test_log_requires_explicit_target_when_missing() -> None:
 
     runner = _runner()
     with runner.isolated_filesystem():
-        result = runner.invoke(main, ["log"], catch_exceptions=False)
+    result = runner.invoke(main, ["log"], catch_exceptions=False)
 
-        assert result.exit_code != 0
-        assert "A target must be provided" in result.output
+    assert result.exit_code != 0
+    assert "A target must be provided" in result.stderr
 
 
 def test_log_supports_filters_and_pagination() -> None:
@@ -303,13 +303,13 @@ def test_log_supports_filters_and_pagination() -> None:
             ],
         )
 
-        assert result.exit_code == 0, result.output
-        payload = json.loads(result.output)
+        assert result.exit_code == 0, result.stderr
+        payload = json.loads(result.stdout)
         assert len(payload) == 1
         event = payload[0]
         assert event["change"] == "widgets"
         assert event["committed_at"].startswith("2013-12-31")
-    assert event["tags"] == ["@v1.0.1"]
+        assert event["tags"] == ["@v1.0.1"]
 
 
 def test_log_reports_no_events_message() -> None:
@@ -346,8 +346,8 @@ def test_log_reports_no_events_message() -> None:
             ],
         )
 
-        assert result.exit_code == 0, result.output
-        assert "No events found." in result.output
+        assert result.exit_code == 0, result.stderr
+        assert "No events found." in result.stdout
 
 
 def test_log_skip_without_limit() -> None:
@@ -397,7 +397,7 @@ def test_log_skip_without_limit() -> None:
             ],
         )
 
-        assert result.exit_code == 0, result.output
-        payload = json.loads(result.output)
+        assert result.exit_code == 0, result.stderr
+        payload = json.loads(result.stdout)
         assert len(payload) == 1
-    assert payload[0]["change_id"] == "aaa111"
+        assert payload[0]["change_id"] == "aaa111"

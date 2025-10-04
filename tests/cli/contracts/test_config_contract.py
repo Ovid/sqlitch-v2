@@ -32,8 +32,8 @@ def test_config_gets_value_from_local_scope(runner: CliRunner) -> None:
         env = {"SQLITCH_CONFIG_ROOT": str(Path("config-root"))}
         result = runner.invoke(main, ["config", "core.engine"], env=env)
 
-        assert result.exit_code == 0, result.output
-        assert result.output.strip() == "sqlite"
+        assert result.exit_code == 0, result.stderr
+        assert result.stdout.strip() == "sqlite"
 
 
 def test_config_user_scope_override(runner: CliRunner) -> None:
@@ -47,12 +47,12 @@ def test_config_user_scope_override(runner: CliRunner) -> None:
         env = {"SQLITCH_CONFIG_ROOT": str(user_root)}
 
         default_result = runner.invoke(main, ["config", "core.engine"], env=env)
-        assert default_result.exit_code == 0, default_result.output
-        assert default_result.output.strip() == "sqlite"
+        assert default_result.exit_code == 0, default_result.stderr
+        assert default_result.stdout.strip() == "sqlite"
 
         user_result = runner.invoke(main, ["config", "--user", "core.engine"], env=env)
-        assert user_result.exit_code == 0, user_result.output
-        assert user_result.output.strip() == "postgres"
+        assert user_result.exit_code == 0, user_result.stderr
+        assert user_result.stdout.strip() == "postgres"
 
 
 def test_config_set_local_updates_file(runner: CliRunner) -> None:
@@ -67,8 +67,8 @@ def test_config_set_local_updates_file(runner: CliRunner) -> None:
             env=env,
         )
 
-        assert result.exit_code == 0, result.output
-        assert "Set core.engine in local scope" in result.output
+        assert result.exit_code == 0, result.stderr
+        assert "Set core.engine in local scope" in result.stdout
         content = Path("sqlitch.conf").read_text(encoding="utf-8")
         assert "engine = sqlite" in content
 
@@ -86,8 +86,8 @@ def test_config_unset_removes_value(runner: CliRunner) -> None:
             env=env,
         )
 
-        assert result.exit_code == 0, result.output
-        assert "Unset core.engine in local scope" in result.output
+        assert result.exit_code == 0, result.stderr
+        assert "Unset core.engine in local scope" in result.stdout
         content = Path("sqlitch.conf").read_text(encoding="utf-8")
         assert "engine" not in content
 
@@ -105,7 +105,7 @@ def test_config_conflicting_scopes_error(runner: CliRunner) -> None:
         )
 
         assert result.exit_code != 0
-        assert "Only one scope option may be specified" in result.output
+        assert "Only one scope option may be specified" in result.stderr
 
 
 def test_config_list_json_outputs_settings(runner: CliRunner) -> None:
@@ -119,7 +119,7 @@ def test_config_list_json_outputs_settings(runner: CliRunner) -> None:
         env = {"SQLITCH_CONFIG_ROOT": str(user_root)}
         result = runner.invoke(main, ["config", "--list", "--json"], env=env)
 
-        assert result.exit_code == 0, result.output
-        payload = json.loads(result.output)
+        assert result.exit_code == 0, result.stderr
+        payload = json.loads(result.stdout)
         assert payload["core.engine"] == "sqlite"
         assert payload["deploy.uri"] == "sqlite.db"
