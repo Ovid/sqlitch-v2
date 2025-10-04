@@ -206,9 +206,12 @@ def _prepare_human_output(content: str, *, strip_headers: bool, short: bool) -> 
         stripped = line.lstrip()
         if strip_headers and stripped.startswith("%"):
             continue
-        if short and "notes=" in line:
-            tokens = [token for token in line.split() if not token.startswith("notes=")]
-            line = " ".join(tokens)
+        if short:
+            if "notes=" in line:
+                tokens = [token for token in line.split() if not token.startswith("notes=")]
+                line = " ".join(tokens)
+            if "#" in line:
+                line = line.split("#", 1)[0].rstrip()
         processed.append(line)
 
     text = "\n".join(processed)

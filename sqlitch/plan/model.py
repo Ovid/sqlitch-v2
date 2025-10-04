@@ -128,6 +128,7 @@ class Plan:
     default_engine: str
     syntax_version: str = "1.0.0"
     uri: str | None = None
+    missing_dependencies: tuple[str, ...] = field(default_factory=tuple, init=False)
 
     def __post_init__(self) -> None:
         if not self.project_name:
@@ -150,6 +151,7 @@ class Plan:
         object.__setattr__(self, "entries", normalized_entries)
 
         seen_changes: dict[str, Change] = {}
+        missing_dependencies: list[str] = []
         for entry in normalized_entries:
             if isinstance(entry, Change):
                 if entry.name in seen_changes:
@@ -158,15 +160,15 @@ class Plan:
                     if dependency == entry.name:
                         raise ValueError(f"Change '{entry.name}' cannot depend on itself")
                     if dependency not in seen_changes:
-                        raise ValueError(
-                            f"Change '{entry.name}' depends on '{dependency}' which is not defined before it"
-                        )
+                        missing_dependencies.append(f"{entry.name}->{dependency}")
                 seen_changes[entry.name] = entry
             else:
                 if entry.change_ref not in seen_changes:
                     raise ValueError(
                         f"Tag '{entry.name}' references unknown change '{entry.change_ref}'"
                     )
+
+        object.__setattr__(self, "missing_dependencies", tuple(missing_dependencies))
 
     @property
     def changes(self) -> tuple[Change, ...]:

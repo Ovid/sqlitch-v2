@@ -33,3 +33,5 @@ That avoids the issue where we have a sqitch.conf, sqitch.plan, deploy/, verify/
 all dumped in your top-level directory. Instead, you'll just have a
 `sqlicth/conf` and a `sqlitch/` directory, the latter of which contains all of
 your files.
+
+# SQLITCH. env variables need to be fixed

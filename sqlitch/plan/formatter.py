@@ -3,12 +3,18 @@
 from __future__ import annotations
 
 import hashlib
+import os
+import shlex
 from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
 
 from .model import Change, Plan, PlanEntry, Tag
 from sqlitch.utils.time import isoformat_utc
+
+_SHELL_SAFE_CHARS = frozenset(
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._:@+-/,:"
+)
 
 
 def compute_checksum(content: str) -> str:
@@ -29,14 +35,16 @@ def format_plan(
 ) -> str:
     """Render a plan file as text without writing it to disk."""
 
+    base_dir = Path(base_path)
     header_lines = [f"%syntax-version={syntax_version}", f"%project={project_name}"]
+    header_lines.append(f"%default_engine={default_engine}")
     if uri:
         header_lines.append(f"%uri={uri}")
 
     lines: list[str] = [*header_lines, ""]
     for entry in entries:
         if isinstance(entry, Change):
-            lines.append(_format_change(entry))
+            lines.append(_format_change(entry, base_dir))
         elif isinstance(entry, Tag):
             lines.append(_format_tag(entry))
         else:  # pragma: no cover - defensive, Plan enforces entry types
@@ -82,25 +90,67 @@ def write_plan(
     )
 
 
-def _format_change(change: Change) -> str:
-    parts = [change.name]
-    if change.dependencies:
-        parts.append(f"[{ ' '.join(change.dependencies) }]")
-    parts.append(_format_timestamp(change.planned_at))
-    parts.append(change.planner)
-    line = " ".join(parts)
+def _format_change(change: Change, base_path: Path) -> str:
+    tokens = [
+        "change",
+        change.name,
+        _format_script_path(change.script_paths["deploy"], base_path),
+        _format_script_path(change.script_paths["revert"], base_path),
+    ]
+
+    verify_path = change.script_paths.get("verify")
+    metadata: list[str] = []
+    if verify_path is not None:
+        metadata.append(_metadata("verify", _format_script_path(verify_path, base_path)))
+    metadata.append(_metadata("planner", change.planner))
+    metadata.append(_metadata("planned_at", _format_timestamp(change.planned_at)))
     if change.notes:
-        line = f"{line} # {change.notes}"
-    return line
+        metadata.append(_metadata("notes", change.notes))
+    if change.dependencies:
+        metadata.append(_metadata("depends", ",".join(change.dependencies)))
+    if change.tags:
+        metadata.append(_metadata("tags", ",".join(change.tags)))
+    if change.change_id is not None:
+        metadata.append(_metadata("change_id", str(change.change_id)))
+
+    tokens.extend(metadata)
+    return " ".join(tokens)
 
 
 def _format_tag(tag: Tag) -> str:
-    parts = [f"@{tag.name}", _format_timestamp(tag.tagged_at), tag.planner]
-    line = " ".join(parts)
-    if tag.note:
-        line = f"{line} # {tag.note}"
-    return line
+    tokens = [
+        "tag",
+        tag.name,
+        tag.change_ref,
+        _metadata("planner", tag.planner),
+        _metadata("tagged_at", _format_timestamp(tag.tagged_at)),
+    ]
+    return " ".join(tokens)
 
 
 def _format_timestamp(value: datetime) -> str:
     return isoformat_utc(value, drop_microseconds=True, use_z_suffix=True)
+
+
+def _format_script_path(value: Path | None, base_path: Path) -> str:
+    if value is None:
+        return ""
+    path = Path(value)
+    if path.is_absolute():
+        try:
+            return path.relative_to(base_path).as_posix()
+        except ValueError:
+            return os.path.relpath(path, base_path).replace(os.sep, "/")
+    return path.as_posix()
+
+
+def _metadata(key: str, value: str) -> str:
+    return f"{key}={_quote_value(value)}"
+
+
+def _quote_value(value: str) -> str:
+    if not value:
+        return value
+    if set(value).issubset(_SHELL_SAFE_CHARS):
+        return value
+    return shlex.quote(value)

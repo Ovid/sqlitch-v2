@@ -187,3 +187,22 @@ def test_parse_plan_ignores_comments_and_blank_lines(tmp_path: Path) -> None:
     plan = parser.parse_plan(plan_path)
     assert plan.entries
     assert plan.get_change("widgets:add").planner == "alice@example.com"
+
+
+def test_parse_plan_accepts_compact_sqitch_style(tmp_path: Path) -> None:
+    content = "%syntax-version=1.0.0\n%project=widgets\n\nwidgets:add [core:init] 2025-10-03T12:34:56Z ada@example.com # Adds widgets\n@v1.0 2025-10-03T12:35:30Z ada@example.com\n"
+    plan_path = _write_plan(tmp_path, content)
+
+    plan = parser.parse_plan(plan_path, default_engine="pg")
+
+    change = plan.get_change("widgets:add")
+    assert change.planner == "ada@example.com"
+    assert change.notes == "Adds widgets"
+    assert change.dependencies == ("core:init",)
+    deploy_path = change.script_paths["deploy"]
+    assert deploy_path.name == "widgets_add.sql"
+
+    tag = plan.tags[0]
+    assert tag.name == "v1.0"
+    assert tag.change_ref == "widgets:add"
+    assert tag.planner == "ada@example.com"
