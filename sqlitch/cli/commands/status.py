@@ -16,7 +16,7 @@ from sqlitch.plan.parser import PlanParseError, parse_plan
 
 from . import CommandError, register_command
 from ._context import require_cli_context
-from ._plan_utils import resolve_plan_path
+from ._plan_utils import resolve_default_engine, resolve_plan_path
 
 __all__ = ["status_command"]
 
@@ -64,7 +64,13 @@ def status_command(
         raise CommandError("A target must be provided via --target or configuration.")
 
     plan_path = _resolve_plan_path(project_root, cli_context.plan_file, environment)
-    plan = _load_plan(plan_path)
+    default_engine = resolve_default_engine(
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=environment,
+        engine_override=cli_context.engine,
+    )
+    plan = _load_plan(plan_path, default_engine)
 
     resolved_project = plan.project_name
     if project_filter and project_filter != resolved_project:
@@ -141,9 +147,9 @@ def _resolve_plan_path(
     )
 
 
-def _load_plan(plan_path: Path) -> Plan:
+def _load_plan(plan_path: Path, default_engine: str) -> Plan:
     try:
-        return parse_plan(plan_path)
+        return parse_plan(plan_path, default_engine=default_engine)
     except (PlanParseError, ValueError) as exc:
         raise CommandError(str(exc)) from exc
     except OSError as exc:  # pragma: no cover - IO failures propagated to the user

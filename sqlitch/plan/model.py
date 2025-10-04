@@ -125,6 +125,8 @@ class Plan:
     entries: Sequence[PlanEntry]
     checksum: str
     default_engine: str
+    syntax_version: str = "1.0.0"
+    uri: str | None = None
 
     def __post_init__(self) -> None:
         if not self.project_name:
@@ -133,6 +135,8 @@ class Plan:
             raise ValueError("Plan.checksum is required")
         if not self.default_engine:
             raise ValueError("Plan.default_engine is required")
+        if not self.syntax_version:
+            raise ValueError("Plan.syntax_version is required")
 
         object.__setattr__(self, "file_path", _ensure_path(self.file_path))
 

@@ -15,7 +15,7 @@ from sqlitch.plan.parser import PlanParseError, parse_plan
 
 from . import CommandError, register_command
 from ._context import require_cli_context
-from ._plan_utils import resolve_plan_path
+from ._plan_utils import resolve_default_engine, resolve_plan_path
 from .add import (
     _ensure_script_path,
     _format_display_path,
@@ -107,8 +107,15 @@ def rework_command(
         missing_plan_message="No plan file found. Run `sqlitch init` before reworking changes.",
     )
 
+    default_engine = resolve_default_engine(
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=env,
+        engine_override=cli_context.engine,
+    )
+
     try:
-        plan = parse_plan(plan_path)
+        plan = parse_plan(plan_path, default_engine=default_engine)
     except FileNotFoundError as exc:  # pragma: no cover - defensive
         raise CommandError(f"Plan file {plan_path} is missing") from exc
     except OSError as exc:  # pragma: no cover - IO propagated as command error
@@ -185,6 +192,8 @@ def rework_command(
         default_engine=plan.default_engine,
         entries=updated_entries,
         plan_path=plan.file_path,
+        syntax_version=plan.syntax_version,
+        uri=plan.uri,
     )
 
     quiet = bool(cli_context.quiet)

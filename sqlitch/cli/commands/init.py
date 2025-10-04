@@ -97,6 +97,7 @@ def init_command(
         default_engine=engine,
         entries=(),
         plan_path=plan_path,
+        uri=uri_option,
     )
 
     config_content = _render_config(
@@ -105,7 +106,6 @@ def init_command(
         project_root=project_root,
         top_dir_display=top_dir_display,
         target=target,
-        uri=uri_option,
     )
     config_path.parent.mkdir(parents=True, exist_ok=True)
     config_path.write_text(config_content, encoding="utf-8")
@@ -225,7 +225,6 @@ def _render_config(
     project_root: Path,
     top_dir_display: str,
     target: str,
-    uri: str | None,
 ) -> str:
     defaults = _ENGINE_DEFAULTS.get(engine, {})
     registry = defaults.get("registry", "sqlitch")
@@ -233,20 +232,19 @@ def _render_config(
 
     plan_display = _format_display_path(plan_path, project_root)
 
-    lines = ["[core]", f"    engine = {engine}"]
-    if uri:
-        lines.append(f"    uri = {uri}")
-    lines.append(f"    # plan_file = {plan_display}")
-    lines.append(f"    # top_dir = {top_dir_display}")
+    indent = "\t"
+
+    lines = ["[core]", f"{indent}engine = {engine}"]
+    lines.append(f"{indent}# plan_file = {plan_display}")
+    lines.append(f"{indent}# top_dir = {top_dir_display}")
 
     engine_section_header = f'# [engine "{engine}"]'
-    lines.extend(
-        ["", engine_section_header, f"    # target = {target}", f"    # registry = {registry}"]
-    )
+    lines.append(engine_section_header)
+    lines.append(f"{indent}# target = {target}")
+    lines.append(f"{indent}# registry = {registry}")
     if client:
-        lines.append(f"    # client = {client}")
+        lines.append(f"{indent}# client = {client}")
 
-    lines.extend(["", "# [user]", "    # name = ", "    # email = "])
     return "\n".join(lines) + "\n"
 
 

@@ -20,7 +20,7 @@ from ._context import (
     quiet_mode_enabled,
     require_cli_context,
 )
-from ._plan_utils import resolve_plan_path
+from ._plan_utils import resolve_default_engine, resolve_plan_path
 
 __all__ = ["revert_command"]
 
@@ -63,6 +63,13 @@ def revert_command(
     env = environment_from(ctx)
     plan_override = plan_override_from(ctx)
 
+    default_engine = resolve_default_engine(
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=env,
+        engine_override=cli_context.engine,
+    )
+
     target = _resolve_target(target_option, cli_context.target)
 
     request = _build_request(
@@ -74,6 +81,7 @@ def revert_command(
         target=target,
         log_only=log_only,
         quiet=quiet_mode_enabled(ctx),
+        default_engine=default_engine,
     )
 
     _execute_revert(request)
@@ -89,12 +97,13 @@ def _build_request(
     target: str,
     log_only: bool,
     quiet: bool,
+    default_engine: str,
 ) -> _RevertRequest:
     if to_change and to_tag:
         raise CommandError("Cannot combine --to-change and --to-tag filters.")
 
     plan_path = _resolve_plan_path(project_root=project_root, override=plan_override, env=env)
-    plan = _load_plan(plan_path)
+    plan = _load_plan(plan_path, default_engine)
 
     return _RevertRequest(
         project_root=project_root,
@@ -144,9 +153,9 @@ def _resolve_plan_path(
     )
 
 
-def _load_plan(plan_path: Path) -> Plan:
+def _load_plan(plan_path: Path, default_engine: str) -> Plan:
     try:
-        return parse_plan(plan_path)
+        return parse_plan(plan_path, default_engine=default_engine)
     except (PlanParseError, ValueError) as exc:  # pragma: no cover - delegated to parser tests
         raise CommandError(str(exc)) from exc
     except OSError as exc:  # pragma: no cover - IO failures surfaced to the CLI user

@@ -15,8 +15,8 @@ from sqlitch.plan.parser import PlanParseError, parse_plan
 from sqlitch.utils.fs import ArtifactConflictError, resolve_plan_file
 
 from . import CommandError, register_command
-from ._plan_utils import resolve_plan_path
-from ._context import environment_from, plan_override_from, project_root_from
+from ._plan_utils import resolve_default_engine, resolve_plan_path
+from ._context import environment_from, plan_override_from, project_root_from, require_cli_context
 
 __all__ = ["plan_command"]
 
@@ -68,6 +68,7 @@ def plan_command(
 ) -> None:
     """Render the deployment plan content using Sqitch-compatible ergonomics."""
 
+    cli_context = require_cli_context(ctx)
     project_root = project_root_from(ctx)
     plan_override = plan_override_from(ctx)
     environment = environment_from(ctx)
@@ -96,7 +97,14 @@ def plan_command(
         click.echo(text, nl=False)
         return
 
-    plan = _parse_plan_model(plan_path)
+    default_engine = resolve_default_engine(
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=environment,
+        engine_override=cli_context.engine,
+    )
+
+    plan = _parse_plan_model(plan_path, default_engine)
 
     if project_filter and project_filter != plan.project_name:
         raise CommandError(
@@ -119,6 +127,8 @@ def plan_command(
         default_engine=plan.default_engine,
         entries=entries_to_render,
         base_path=plan.file_path.parent,
+        syntax_version=plan.syntax_version,
+        uri=plan.uri,
     )
     text = _prepare_human_output(rendered, strip_headers=suppress_headers, short=False)
     click.echo(text, nl=False)
@@ -140,9 +150,9 @@ def _read_plan_text(plan_path: Path) -> str:
         raise CommandError(f"Unable to read plan file {plan_path}: {exc}") from exc
 
 
-def _parse_plan_model(plan_path: Path) -> Plan:
+def _parse_plan_model(plan_path: Path, default_engine: str) -> Plan:
     try:
-        return parse_plan(plan_path)
+        return parse_plan(plan_path, default_engine=default_engine)
     except (PlanParseError, ValueError) as exc:
         raise CommandError(str(exc)) from exc
     except OSError as exc:  # pragma: no cover - IO failures propagated to the user
@@ -212,6 +222,8 @@ def _build_json_payload(plan: Plan, entries: Sequence[PlanEntry]) -> dict[str, o
     return {
         "project": plan.project_name,
         "default_engine": plan.default_engine,
+        "syntax_version": plan.syntax_version,
+        "uri": plan.uri,
         "plan_path": str(plan.file_path.resolve()),
         "entries": [_entry_to_json(entry, base_dir) for entry in entries],
     }

@@ -19,7 +19,7 @@ from ._context import (
     project_root_from,
     require_cli_context,
 )
-from ._plan_utils import resolve_plan_path
+from ._plan_utils import resolve_default_engine, resolve_plan_path
 from .add import _format_display_path
 
 __all__ = ["show_command"]
@@ -56,7 +56,7 @@ def show_command(
 ) -> None:
     """Display plan metadata or scripts for ``target`` change or tag."""
 
-    _ = require_cli_context(ctx)
+    cli_context = require_cli_context(ctx)
     project_root = project_root_from(ctx)
     env = environment_from(ctx)
     plan_override = plan_override_from(ctx)
@@ -68,7 +68,14 @@ def show_command(
         missing_plan_message="Cannot read plan file sqitch.plan",
     )
 
-    plan = _load_plan(plan_path)
+    default_engine = resolve_default_engine(
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=env,
+        engine_override=cli_context.engine,
+    )
+
+    plan = _load_plan(plan_path, default_engine)
 
     if project_filter and project_filter != plan.project_name:
         raise CommandError(
@@ -91,9 +98,9 @@ def show_command(
     click.echo("\n".join(lines))
 
 
-def _load_plan(plan_path: Path) -> Plan:
+def _load_plan(plan_path: Path, default_engine: str) -> Plan:
     try:
-        return parse_plan(plan_path)
+        return parse_plan(plan_path, default_engine=default_engine)
     except FileNotFoundError as exc:  # pragma: no cover - defensive guard
         raise CommandError(f"Plan file {plan_path} is missing") from exc
     except OSError as exc:  # pragma: no cover - surfaced to user

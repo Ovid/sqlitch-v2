@@ -184,20 +184,14 @@ def _set_option(
     section, option = _split_key(name)
     config_path = _config_file_path(scope, project_root, config_root, env)
 
-    parser = _load_parser(config_path)
-    if section == "DEFAULT":
-        parser["DEFAULT"][option] = value
-    else:
-        if not parser.has_section(section):
-            parser.add_section(section)
-        parser.set(section, option, value)
+    existing_lines = _read_config_lines(config_path)
+    updated_lines = _set_config_value(existing_lines, section, option, value)
+    _write_config_lines(config_path, updated_lines)
 
-    config_path.parent.mkdir(parents=True, exist_ok=True)
-    with config_path.open("w", encoding="utf-8") as handle:
-        parser.write(handle)
+    if quiet:
+        return
 
-    emitter = _build_emitter(quiet)
-    emitter(f"Set {section}.{option} in {scope.value} scope")
+    # Sqitch does not emit output when setting values; remain silent for parity.
 
 
 def _unset_option(
@@ -215,27 +209,17 @@ def _unset_option(
     if not config_path.exists():
         raise CommandError(f"Configuration option {name} is not set in {scope.value} scope.")
 
-    parser = _load_parser(config_path)
-    removed = False
-
-    if section == "DEFAULT":
-        defaults = parser.defaults()
-        removed = option in defaults
-        defaults.pop(option, None)
-    else:
-        if parser.has_section(section) and parser.remove_option(section, option):
-            removed = True
-        if parser.has_section(section) and not parser.items(section):
-            parser.remove_section(section)
-
+    existing_lines = _read_config_lines(config_path)
+    updated_lines, removed = _remove_config_value(existing_lines, section, option)
     if not removed:
         raise CommandError(f"Configuration option {name} is not set in {scope.value} scope.")
 
-    with config_path.open("w", encoding="utf-8") as handle:
-        parser.write(handle)
+    _write_config_lines(config_path, updated_lines)
 
-    emitter = _build_emitter(quiet)
-    emitter(f"Unset {section}.{option} in {scope.value} scope")
+    if quiet:
+        return
+
+    # Sqitch does not emit output when unsetting values; remain silent for parity.
 
 
 def _get_option(
@@ -318,6 +302,131 @@ def _load_parser(path: Path) -> configparser.ConfigParser:
     if path.exists():
         parser.read(path, encoding="utf-8")
     return parser
+
+
+def _read_config_lines(path: Path) -> list[str]:
+    if not path.exists():
+        return []
+    content = path.read_text(encoding="utf-8")
+    return content.splitlines()
+
+
+def _write_config_lines(path: Path, lines: list[str]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    content = "\n".join(lines)
+    if content and not content.endswith("\n"):
+        content += "\n"
+    elif not content:
+        content = ""
+    path.write_text(content, encoding="utf-8")
+
+
+def _set_config_value(
+    lines: list[str], section: str, option: str, value: str
+) -> list[str]:
+    new_lines = list(lines)
+    start, end, header_index = _find_section_bounds(new_lines, section)
+
+    if start is None:
+        if section != "DEFAULT":
+            new_lines.append(f"[{section}]")
+            indent = "\t"
+            new_lines.append(f"{indent}{option} = {value}")
+        else:
+            new_lines.append(f"{option} = {value}")
+        return new_lines
+
+    indent_default = "" if section == "DEFAULT" else "\t"
+    indent = _detect_indent(new_lines[start:end], indent_default)
+
+    for idx in range(start, end):
+        stripped = new_lines[idx].strip()
+        if not stripped or stripped.startswith("#") or stripped.startswith(";"):
+            continue
+        key, sep, _ = stripped.partition("=")
+        if sep and key.strip() == option:
+            new_lines[idx] = f"{indent}{option} = {value}"
+            return new_lines
+
+    insertion_index = end
+    while insertion_index > start and new_lines[insertion_index - 1].strip() == "":
+        insertion_index -= 1
+    new_lines.insert(insertion_index, f"{indent}{option} = {value}")
+    return new_lines
+
+
+def _remove_config_value(
+    lines: list[str], section: str, option: str
+) -> tuple[list[str], bool]:
+    new_lines = list(lines)
+    start, end, header_index = _find_section_bounds(new_lines, section)
+    if start is None:
+        return new_lines, False
+
+    target_index = None
+    for idx in range(start, end):
+        stripped = new_lines[idx].strip()
+        if not stripped or stripped.startswith("#") or stripped.startswith(";"):
+            continue
+        key, sep, _ = stripped.partition("=")
+        if sep and key.strip() == option:
+            target_index = idx
+            break
+
+    if target_index is None:
+        return new_lines, False
+
+    del new_lines[target_index]
+
+    if section != "DEFAULT" and header_index is not None:
+        section_has_entries = _section_has_entries(new_lines, header_index)
+        if not section_has_entries:
+            end_index = _find_next_section(new_lines, header_index + 1)
+            del new_lines[header_index:end_index]
+
+    return new_lines, True
+
+
+def _find_section_bounds(
+    lines: list[str], section: str
+) -> tuple[int | None, int | None, int | None]:
+    if section == "DEFAULT":
+        end = _find_next_section(lines, 0)
+        return 0, end, None
+
+    header = f"[{section}]"
+    for idx, line in enumerate(lines):
+        if line.strip() == header:
+            end = _find_next_section(lines, idx + 1)
+            return idx + 1, end, idx
+    return None, None, None
+
+
+def _find_next_section(lines: list[str], start: int) -> int:
+    for idx in range(start, len(lines)):
+        stripped = lines[idx].strip()
+        if stripped.startswith("[") and stripped.endswith("]") and not stripped.startswith("#"):
+            return idx
+    return len(lines)
+
+
+def _detect_indent(lines: list[str], default: str) -> str:
+    for line in lines:
+        stripped = line.lstrip("\t ")
+        if not stripped or stripped.startswith("#") or stripped.startswith(";"):
+            continue
+        return line[: len(line) - len(stripped)]
+    return default
+
+
+def _section_has_entries(lines: list[str], header_index: int) -> bool:
+    start = header_index + 1
+    end = _find_next_section(lines, start)
+    for idx in range(start, end):
+        stripped = lines[idx].strip()
+        if stripped and not stripped.startswith("#") and not stripped.startswith(";"):
+            return True
+    return False
 
 
 def _flatten_settings(settings: Mapping[str, Mapping[str, str]]) -> dict[str, str]:

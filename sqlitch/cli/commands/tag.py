@@ -13,7 +13,7 @@ from sqlitch.plan.parser import PlanParseError, parse_plan
 
 from . import CommandError, register_command
 from ._context import require_cli_context
-from ._plan_utils import resolve_plan_path
+from ._plan_utils import resolve_default_engine, resolve_plan_path
 
 __all__ = ["tag_command"]
 
@@ -81,8 +81,15 @@ def _list_tags(ctx: click.Context) -> None:
         missing_plan_message="No plan file found. Run `sqlitch init` before tagging.",
     )
 
+    default_engine = resolve_default_engine(
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=environment,
+        engine_override=cli_context.engine,
+    )
+
     try:
-        plan = parse_plan(plan_path)
+        plan = parse_plan(plan_path, default_engine=default_engine)
     except FileNotFoundError as exc:
         raise CommandError(f"Plan file {plan_path} is missing") from exc
     except OSError as exc:
@@ -112,8 +119,15 @@ def _add_tag(
         missing_plan_message="No plan file found. Run `sqlitch init` before tagging.",
     )
 
+    default_engine = resolve_default_engine(
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=environment,
+        engine_override=cli_context.engine,
+    )
+
     try:
-        plan = parse_plan(plan_path)
+        plan = parse_plan(plan_path, default_engine=default_engine)
     except FileNotFoundError as exc:
         raise CommandError(f"Plan file {plan_path} is missing") from exc
     except OSError as exc:
@@ -153,6 +167,8 @@ def _add_tag(
         default_engine=plan.default_engine,
         entries=entries,
         plan_path=plan.file_path,
+        syntax_version=plan.syntax_version,
+        uri=plan.uri,
     )
 
     click.echo(f"Tagged {target_change} with @{tag_name}")

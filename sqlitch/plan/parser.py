@@ -17,7 +17,7 @@ class PlanParseError(ValueError):
     """Raised when the plan file contains invalid data."""
 
 
-def parse_plan(path: Path | str) -> Plan:
+def parse_plan(path: Path | str, *, default_engine: str | None = None) -> Plan:
     plan_path = Path(path)
     content = plan_path.read_text(encoding="utf-8")
     checksum = hashlib.sha256(content.encode("utf-8")).hexdigest()
@@ -44,8 +44,12 @@ def parse_plan(path: Path | str) -> Plan:
             raise PlanParseError(f"Unknown plan entry '{entry_type}' on line {line_no}")
 
     project = headers.get("project")
-    default_engine = headers.get("default_engine")
-    if not project or not default_engine:
+    header_engine = headers.get("default_engine")
+    syntax_version = headers.get("syntax-version", "1.0.0")
+    uri = headers.get("uri")
+
+    resolved_engine = header_engine or default_engine
+    if not project or not resolved_engine:
         raise PlanParseError("plan file is missing project header or default engine header")
 
     return Plan(
@@ -53,7 +57,9 @@ def parse_plan(path: Path | str) -> Plan:
         file_path=plan_path,
         entries=entries,
         checksum=checksum,
-        default_engine=default_engine,
+        default_engine=resolved_engine,
+        syntax_version=syntax_version,
+        uri=uri,
     )
 
 
