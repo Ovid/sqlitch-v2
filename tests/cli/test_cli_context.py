@@ -41,6 +41,7 @@ def test_build_cli_context_uses_resolver(monkeypatch: pytest.MonkeyPatch, tmp_pa
         plan_file=tmp_path / "plan.sqlitch",
         verbosity=2,
         quiet=False,
+        json_mode=False,
         env={"EXAMPLE": "1"},
     )
 
@@ -51,6 +52,9 @@ def test_build_cli_context_uses_resolver(monkeypatch: pytest.MonkeyPatch, tmp_pa
     assert ctx.plan_file == (tmp_path / "plan.sqlitch").resolve()
     assert ctx.verbosity == 2
     assert ctx.quiet is False
+    assert ctx.json_mode is False
+    assert ctx.log_config.level == "TRACE"
+    assert ctx.run_identifier
     assert ctx.env["EXAMPLE"] == "1"
     assert ctx.project_root == Path.cwd()
 
@@ -65,6 +69,7 @@ def test_build_cli_context_respects_explicit_config_root(tmp_path: Path) -> None
         plan_file=None,
         verbosity=0,
         quiet=False,
+        json_mode=False,
     )
 
     assert ctx.config_root == config_root
@@ -80,6 +85,7 @@ def test_build_cli_context_rejects_quiet_with_verbose() -> None:
             plan_file=None,
             verbosity=1,
             quiet=True,
+            json_mode=False,
         )
 
 
@@ -105,6 +111,8 @@ def test_main_populates_context_for_commands(restore_main_commands, tmp_path: Pa
     assert context.engine == "sqlite"
     assert context.config_root == tmp_path
     assert context.quiet is False
+    assert context.json_mode is False
+    assert context.run_identifier
 
 
 def test_main_rejects_conflicting_quiet_and_verbose(restore_main_commands) -> None:

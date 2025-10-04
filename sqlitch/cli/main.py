@@ -13,6 +13,7 @@ import click
 from sqlitch.config import resolver as config_resolver
 
 from .commands import CommandError, iter_command_registrars, load_commands
+from .options import LogConfiguration, build_log_configuration, global_output_options
 
 
 @dataclass(slots=True)
@@ -29,6 +30,8 @@ class CLIContext:
         plan_file: Explicit plan file path, if overridden from the default.
         verbosity: Verbosity level where larger values indicate more detail.
         quiet: Indicates whether non-essential output should be suppressed.
+        json_mode: Indicates whether structured JSON output has been requested.
+        log_config: Default logging configuration for the invocation.
     """
 
     project_root: Path
@@ -40,6 +43,14 @@ class CLIContext:
     plan_file: Path | None
     verbosity: int
     quiet: bool
+    json_mode: bool
+    log_config: LogConfiguration
+
+    @property
+    def run_identifier(self) -> str:
+        """Return the unique run identifier assigned to this invocation."""
+
+        return self.log_config.run_identifier
 
 
 def _build_cli_context(
@@ -51,6 +62,7 @@ def _build_cli_context(
     plan_file: Path | None,
     verbosity: int,
     quiet: bool,
+    json_mode: bool,
     env: Mapping[str, str] | None = None,
 ) -> CLIContext:
     """Return a :class:`CLIContext` assembled from CLI arguments and env vars."""
@@ -66,6 +78,12 @@ def _build_cli_context(
         raise CommandError("--quiet cannot be combined with --verbose flags")
 
     normalized_plan_file = plan_file.resolve() if plan_file is not None else None
+    log_config = build_log_configuration(
+        verbosity=verbosity,
+        quiet=quiet,
+        json_mode=json_mode,
+        env=environment,
+    )
 
     return CLIContext(
         project_root=Path.cwd(),
@@ -77,6 +95,8 @@ def _build_cli_context(
         plan_file=normalized_plan_file,
         verbosity=verbosity,
         quiet=quiet,
+        json_mode=json_mode,
+        log_config=log_config,
     )
 
 
@@ -106,18 +126,7 @@ def _build_cli_context(
     type=click.Path(dir_okay=False, path_type=Path),
     help="Use an alternate plan file instead of the default discovery rules.",
 )
-@click.option(
-    "-v",
-    "--verbose",
-    count=True,
-    help="Increase output verbosity. May be specified multiple times.",
-)
-@click.option(
-    "-q",
-    "--quiet",
-    is_flag=True,
-    help="Suppress non-error output for scripts and automation use.",
-)
+@global_output_options
 @click.pass_context
 def main(
     ctx: click.Context,
@@ -127,6 +136,7 @@ def main(
     target: str | None,
     registry: str | None,
     plan_file: Path | None,
+    json_mode: bool,
     verbose: int,
     quiet: bool,
 ) -> None:
@@ -144,6 +154,7 @@ def main(
         plan_file=plan_file,
         verbosity=verbose,
         quiet=quiet,
+        json_mode=json_mode,
     )
 
 
