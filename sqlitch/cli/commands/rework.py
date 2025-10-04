@@ -176,7 +176,9 @@ def rework_command(
         tags=original_change.tags,
     )
 
-    updated_entries = _replace_change(entries=plan.entries, name=change_name, replacement=replacement)
+    updated_entries = _replace_change(
+        entries=plan.entries, name=change_name, replacement=replacement
+    )
 
     write_plan(
         project_name=plan.project_name,
@@ -197,9 +199,7 @@ def rework_command(
         ("verify", verify_target),
     ):
         if target is not None:
-            _emit(
-                f"Created rework {kind} script {_format_display_path(target, project_root)}"
-            )
+            _emit(f"Created rework {kind} script {_format_display_path(target, project_root)}")
 
     _emit(f"Reworked {change_name}")
 

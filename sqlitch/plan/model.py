@@ -139,7 +139,9 @@ class Plan:
         normalized_entries: tuple[PlanEntry, ...] = tuple(self.entries or tuple())
         for entry in normalized_entries:
             if not isinstance(entry, (Change, Tag)):
-                raise TypeError(f"Plan.entries must contain Change or Tag instances, got: {type(entry).__name__}")
+                raise TypeError(
+                    f"Plan.entries must contain Change or Tag instances, got: {type(entry).__name__}"
+                )
         object.__setattr__(self, "entries", normalized_entries)
 
         seen_changes: dict[str, Change] = {}
@@ -171,7 +173,9 @@ class Plan:
 
     def get_change(self, name: str) -> Change:
         try:
-            return next(entry for entry in self.entries if isinstance(entry, Change) and entry.name == name)
+            return next(
+                entry for entry in self.entries if isinstance(entry, Change) and entry.name == name
+            )
         except StopIteration as exc:  # pragma: no cover - defensive API
             raise KeyError(name) from exc
 
@@ -231,7 +235,9 @@ def _normalize_change_id(value: UUID | None) -> UUID | None:
     raise ValueError(f"Change.change_id must be a UUID instance, got: {type(value).__name__}")
 
 
-def _normalize_script_paths(script_paths: Mapping[str, Path | str | None] | None) -> dict[str, Path | None]:
+def _normalize_script_paths(
+    script_paths: Mapping[str, Path | str | None] | None,
+) -> dict[str, Path | None]:
     provided = dict(script_paths or {})
 
     deploy_path = provided.get("deploy")

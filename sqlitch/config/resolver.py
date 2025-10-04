@@ -64,7 +64,11 @@ def resolve_config(
     env_map = _normalize_env(env)
     project_root = Path(root_dir)
 
-    user_root = Path(config_root) if config_root is not None else determine_config_root(env=env_map, home=home)
+    user_root = (
+        Path(config_root)
+        if config_root is not None
+        else determine_config_root(env=env_map, home=home)
+    )
     system_root = _determine_system_root(env=env_map, system_path=system_path)
 
     scope_dirs = {
@@ -80,9 +84,7 @@ def resolve_config(
     )
 
 
-def _determine_system_root(
-    *, env: Mapping[str, str], system_path: Path | str | None
-) -> Path:
+def _determine_system_root(*, env: Mapping[str, str], system_path: Path | str | None) -> Path:
     if system_path is not None:
         return Path(system_path)
 

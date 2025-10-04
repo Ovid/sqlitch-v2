@@ -12,7 +12,9 @@ __all__ = ["help_command"]
 
 @click.command("help")
 @click.option("--usage", "usage_only", is_flag=True, help="Show usage information only.")
-@click.option("--man", "man_flag", is_flag=True, help="Display the full manual page (falls back to stdout).")
+@click.option(
+    "--man", "man_flag", is_flag=True, help="Display the full manual page (falls back to stdout)."
+)
 @click.argument("topic", required=False)
 @click.pass_context
 def help_command(

@@ -32,7 +32,11 @@ def test_bundle_creates_default_bundle_directory() -> None:
         assert "Bundled project to bundle" in result.output
 
         bundle_root = Path("bundle")
-        assert (bundle_root / "sqlitch.plan").read_text(encoding="utf-8").startswith("%project=widgets")
+        assert (
+            (bundle_root / "sqlitch.plan")
+            .read_text(encoding="utf-8")
+            .startswith("%project=widgets")
+        )
         for directory in ("deploy", "revert", "verify"):
             copied = bundle_root / directory / "widgets.sql"
             assert copied.read_text(encoding="utf-8") == f"-- {directory} script\n"

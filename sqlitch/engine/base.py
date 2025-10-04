@@ -179,7 +179,9 @@ Outside of controlled registration helpers, code MUST NOT mutate it directly.
 """
 
 
-def register_engine(name: str, engine_cls: type[EngineType], *, replace: bool = False) -> type[Engine] | None:
+def register_engine(
+    name: str, engine_cls: type[EngineType], *, replace: bool = False
+) -> type[Engine] | None:
     """Register an :class:`Engine` implementation under ``name``.
 
     Args:
@@ -236,4 +238,3 @@ def registered_engines() -> tuple[str, ...]:
 
 def _import_module(module_name: str) -> ModuleType:
     return importlib.import_module(module_name)
-

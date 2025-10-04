@@ -70,7 +70,9 @@ def _format_display_path(path: Path, project_root: Path) -> str:
         return os.path.relpath(path, project_root).replace(os.sep, "/")
 
 
-def _discover_template_directories(project_root: Path, config_root: Path | None) -> tuple[Path, ...]:
+def _discover_template_directories(
+    project_root: Path, config_root: Path | None
+) -> tuple[Path, ...]:
     directories: list[Path] = [project_root, project_root / "sqitch"]
 
     if config_root is not None:

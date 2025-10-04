@@ -211,4 +211,3 @@ def test_determine_system_root_returns_default_when_no_paths_exist(
 
     result = resolver._determine_system_root(env={}, system_path=None)
     assert result == default_dir
-

@@ -64,7 +64,9 @@ def test_init_creates_project_layout(runner: CliRunner) -> None:
         assert "# target = db:sqlite:" in config_content
 
 
-def test_init_respects_env_and_plan_override(runner: CliRunner, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_init_respects_env_and_plan_override(
+    runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Environment variables and overrides should influence init scaffolding."""
 
     monkeypatch.setenv("SQLITCH_TOP_DIR", "db/scripts")
@@ -91,4 +93,3 @@ def test_init_respects_env_and_plan_override(runner: CliRunner, monkeypatch: pyt
         config_content = Path("sqlitch.conf").read_text(encoding="utf-8")
         assert "# plan_file = plans/custom.plan" in config_content
         assert "# top_dir = db/scripts" in config_content
-

@@ -45,7 +45,9 @@ class _CheckoutRequest:
     help="Checkout mode (latest, tag:<tag>, change:<change>).",
 )
 @click.option("--to-change", "to_change", help="Checkout through the specified change (inclusive).")
-@click.option("--log-only", is_flag=True, help="Describe the checkout pipeline without executing it.")
+@click.option(
+    "--log-only", is_flag=True, help="Describe the checkout pipeline without executing it."
+)
 @click.pass_context
 def checkout_command(
     ctx: click.Context,
@@ -121,9 +123,7 @@ def _execute_checkout(request: _CheckoutRequest) -> None:
         emitter("Log-only run; no database changes were applied.")
         return
 
-    raise CommandError(
-        "Checkout execution is not yet implemented; rerun with --log-only for now."
-    )
+    raise CommandError("Checkout execution is not yet implemented; rerun with --log-only for now.")
 
 
 def _resolve_target(target_option: str | None, configured_target: str | None) -> str:

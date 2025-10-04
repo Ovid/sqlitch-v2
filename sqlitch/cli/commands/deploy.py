@@ -120,7 +120,9 @@ def _execute_deploy(request: _DeployRequest) -> None:
         _render_log_only_deploy(request, changes)
         return
 
-    raise CommandError("Deployment execution is not yet implemented; rerun with --log-only for now.")
+    raise CommandError(
+        "Deployment execution is not yet implemented; rerun with --log-only for now."
+    )
 
 
 def _resolve_target(target_option: str | None, configured_target: str | None) -> str:

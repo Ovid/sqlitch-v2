@@ -139,6 +139,8 @@ def _resolve_plan_path(
         env=env,
         missing_plan_message="No plan file found. Run `sqlitch init` before inspecting the plan.",
     )
+
+
 def _load_plan(plan_path: Path) -> Plan:
     try:
         return parse_plan(plan_path)
@@ -155,7 +157,7 @@ def _resolve_registry_target(
 ) -> tuple[EngineTarget, str]:
     display_target = target
 
-    if target.startswith("db:" ):
+    if target.startswith("db:"):
         remainder = target[3:]
         engine_token, separator, payload = remainder.partition(":")
         if not separator:
@@ -282,7 +284,9 @@ def _determine_status(plan_changes: Sequence[str], deployed_changes: Sequence[st
     return "in_sync"
 
 
-def _calculate_pending(plan_changes: Sequence[str], deployed_changes: Sequence[str]) -> tuple[str, ...]:
+def _calculate_pending(
+    plan_changes: Sequence[str], deployed_changes: Sequence[str]
+) -> tuple[str, ...]:
     if not plan_changes:
         return ()
 
@@ -383,4 +387,3 @@ def _build_json_payload(
         "change": change_payload,
         "pending_changes": list(pending_changes),
     }
-

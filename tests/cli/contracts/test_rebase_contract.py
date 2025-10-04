@@ -95,7 +95,9 @@ def test_rebase_log_only_shows_revert_and_deploy_sequences(runner: CliRunner) ->
         )
 
         assert result.exit_code == 0, result.output
-        assert "Rebasing plan 'widgets' on target 'db:sqlite:rebase.db' (log-only)." in result.output
+        assert (
+            "Rebasing plan 'widgets' on target 'db:sqlite:rebase.db' (log-only)." in result.output
+        )
         first_revert = result.output.index(f"Would revert change {change_two.name}")
         second_revert = result.output.index(f"Would revert change {change_one.name}")
         assert first_revert < second_revert

@@ -65,28 +65,28 @@
 - [X] T046 [P] Implement SQLite engine adapter in `sqlitch/engine/sqlite.py`.
 - [X] T050 Create CLI command package scaffolding (`sqlitch/cli/commands/__init__.py`) and shared exceptions (focus on SQLite-ready paths first).
 - [X] T051 Wire Click group, global options, and command registration in `sqlitch/cli/main.py`, ensuring SQLite workflows operate end-to-end.
-- [X] T052 [P] Implement `sqlitch add` command handler in `sqlitch/cli/commands/add.py` with SQLite parity.
-- [X] T053 [P] Implement `sqlitch bundle` command handler in `sqlitch/cli/commands/bundle.py` with SQLite parity.
-- [X] T054 [P] Implement `sqlitch checkout` command handler in `sqlitch/cli/commands/checkout.py` with SQLite parity.
-- [X] T055 [P] Implement `sqlitch config` command handler in `sqlitch/cli/commands/config.py` with SQLite parity.
-- [X] T056 [P] Implement `sqlitch deploy` command handler in `sqlitch/cli/commands/deploy.py` with SQLite parity.
-- [X] T057 [P] Implement `sqlitch engine` command handler in `sqlitch/cli/commands/engine.py` with SQLite parity.
-- [X] T058 [P] Implement `sqlitch help` command handler in `sqlitch/cli/commands/help.py` with SQLite parity.
-- [X] T059 [P] Implement `sqlitch init` command handler in `sqlitch/cli/commands/init.py` with SQLite parity.
-- [X] T060 [P] Implement `sqlitch log` command handler in `sqlitch/cli/commands/log.py` with SQLite parity.
-- [X] T061 [P] Implement `sqlitch plan` command handler in `sqlitch/cli/commands/plan.py` with SQLite parity.
-- [X] T062 [P] Implement `sqlitch rebase` command handler in `sqlitch/cli/commands/rebase.py` with SQLite parity.
-- [X] T063 [P] Implement `sqlitch revert` command handler in `sqlitch/cli/commands/revert.py` with SQLite parity.
-- [X] T064 [P] Implement `sqlitch rework` command handler in `sqlitch/cli/commands/rework.py` with SQLite parity.
-- [ ] T065 [P] Implement `sqlitch show` command handler in `sqlitch/cli/commands/show.py` with SQLite parity.
-- [X] T066 [P] Implement `sqlitch status` command handler in `sqlitch/cli/commands/status.py` with SQLite parity.
-- [ ] T067 [P] Implement `sqlitch tag` command handler in `sqlitch/cli/commands/tag.py` with SQLite parity.
-- [ ] T068 [P] Implement `sqlitch target` command handler in `sqlitch/cli/commands/target.py` with SQLite parity.
-- [ ] T069 [P] Implement `sqlitch upgrade` command handler in `sqlitch/cli/commands/upgrade.py` with SQLite parity.
-- [ ] T070 [P] Implement `sqlitch verify` command handler in `sqlitch/cli/commands/verify.py` with SQLite parity.
-- [ ] T047 [P] Implement MySQL engine adapter in `sqlitch/engine/mysql.py`.
-- [ ] T048 [P] Implement PostgreSQL engine adapter in `sqlitch/engine/postgres.py`.
-- [ ] T049 Implement Docker orchestration helpers and health checks in `sqlitch/engine/docker.py`.
+- [X] T052 [P] Implement `sqlitch add` command handler in `sqlitch/cli/commands/add.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-add.md`)*
+- [X] T053 [P] Implement `sqlitch bundle` command handler in `sqlitch/cli/commands/bundle.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-bundle.md`)*
+- [X] T054 [P] Implement `sqlitch checkout` command handler in `sqlitch/cli/commands/checkout.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-checkout.md`)*
+- [X] T055 [P] Implement `sqlitch config` command handler in `sqlitch/cli/commands/config.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-config.md`)*
+- [X] T056 [P] Implement `sqlitch deploy` command handler in `sqlitch/cli/commands/deploy.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-deploy.md`; `specs/002-sqlite/data-model.md` §Change)*
+- [X] T057 [P] Implement `sqlitch engine` command handler in `sqlitch/cli/commands/engine.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-engine.md`; `specs/002-sqlite/research.md` → Registry & Engine Connectors)*
+- [X] T058 [P] Implement `sqlitch help` command handler in `sqlitch/cli/commands/help.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-help.md`)*
+- [X] T059 [P] Implement `sqlitch init` command handler in `sqlitch/cli/commands/init.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-init.md`; `specs/002-sqlite/data-model.md` §Plan)*
+- [X] T060 [P] Implement `sqlitch log` command handler in `sqlitch/cli/commands/log.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-log.md`)*
+- [X] T061 [P] Implement `sqlitch plan` command handler in `sqlitch/cli/commands/plan.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-plan.md`; `specs/002-sqlite/data-model.md` §Plan)*
+- [X] T062 [P] Implement `sqlitch rebase` command handler in `sqlitch/cli/commands/rebase.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-rebase.md`)*
+- [X] T063 [P] Implement `sqlitch revert` command handler in `sqlitch/cli/commands/revert.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-revert.md`)*
+- [X] T064 [P] Implement `sqlitch rework` command handler in `sqlitch/cli/commands/rework.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-rework.md`)*
+- [X] T065 [P] Implement `sqlitch show` command handler in `sqlitch/cli/commands/show.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-show.md`)*
+- [X] T066 [P] Implement `sqlitch status` command handler in `sqlitch/cli/commands/status.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-status.md`)*
+- [ ] T067 [P] Implement `sqlitch tag` command handler in `sqlitch/cli/commands/tag.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-tag.md`)*
+- [ ] T068 [P] Implement `sqlitch target` command handler in `sqlitch/cli/commands/target.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-target.md`; `specs/002-sqlite/data-model.md` §EngineTarget)*
+- [ ] T069 [P] Implement `sqlitch upgrade` command handler in `sqlitch/cli/commands/upgrade.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-upgrade.md`)*
+- [ ] T070 [P] Implement `sqlitch verify` command handler in `sqlitch/cli/commands/verify.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-verify.md`)*
+- [ ] T047 [P] Implement MySQL engine adapter in `sqlitch/engine/mysql.py`. *(Ref: `specs/002-sqlite/research.md` → Registry & Engine Connectors; `specs/002-sqlite/data-model.md` §RegistryRecord)*
+- [ ] T048 [P] Implement PostgreSQL engine adapter in `sqlitch/engine/postgres.py`. *(Ref: `specs/002-sqlite/research.md` → Registry & Engine Connectors; `specs/002-sqlite/data-model.md` §RegistryRecord)*
+- [ ] T049 Implement Docker orchestration helpers and health checks in `sqlitch/engine/docker.py`. *(Ref: `specs/002-sqlite/research.md` → Docker-Orchestrated Testing; `specs/002-sqlite/quickstart.md` §4)*
 - [ ] T071 Implement parity smoke-test CLI (`bin/sqlitch-parity`) that diff-checks SQLitch output against repository-managed Sqitch golden fixtures (generated ahead of time) without invoking Sqitch during test execution.
 - [ ] T072 Implement pytest fixtures (`tests/conftest.py`) for Docker lifecycle, config-root isolation, and artifact cleanup.
 

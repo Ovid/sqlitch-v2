@@ -13,9 +13,7 @@ from click.testing import CliRunner
 from sqlitch.cli.main import main
 
 
-GOLDEN_ROOT = (
-    Path(__file__).resolve().parents[2] / "support" / "golden" / "registry" / "sqlite"
-)
+GOLDEN_ROOT = Path(__file__).resolve().parents[2] / "support" / "golden" / "registry" / "sqlite"
 
 
 def _runner() -> CliRunner:

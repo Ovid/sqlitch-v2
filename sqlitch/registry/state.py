@@ -33,9 +33,7 @@ def _normalize_verify_status(value: str | None) -> str:
     normalized = value.lower()
     if normalized not in _VALID_VERIFY_STATUSES:
         choices = ", ".join(sorted(_VALID_VERIFY_STATUSES))
-        raise ValueError(
-            f"RegistryEntry.verify_status must be one of {choices}; got {value!r}"
-        )
+        raise ValueError(f"RegistryEntry.verify_status must be one of {choices}; got {value!r}")
     return normalized
 
 
@@ -76,9 +74,7 @@ class RegistryEntry:
         return replace(self, verify_status=normalized)
 
     def with_reverted_at(self, reverted_at: datetime | str | None) -> "RegistryEntry":
-        normalized = coerce_optional_datetime(
-            reverted_at, "RegistryEntry reverted_at"
-        )
+        normalized = coerce_optional_datetime(reverted_at, "RegistryEntry reverted_at")
         return replace(self, reverted_at=normalized)
 
 

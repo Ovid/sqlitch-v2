@@ -28,6 +28,7 @@ _ENGINE_DEFAULTS: dict[str, dict[str, str]] = {
     "mysql": {"target": "db:mysql:", "registry": "sqlitch", "client": "mysql"},
 }
 
+
 @click.command("init")
 @click.argument("project_name", required=False)
 @click.option("-e", "--engine", "engine_option", help="Set the default engine for the project.")
@@ -43,7 +44,9 @@ _ENGINE_DEFAULTS: dict[str, dict[str, str]] = {
     type=click.Path(dir_okay=False, path_type=Path),
     help="Override the plan file path for the project.",
 )
-@click.option("--target", "target_option", help="Default deployment target alias recorded in config.")
+@click.option(
+    "--target", "target_option", help="Default deployment target alias recorded in config."
+)
 @click.pass_context
 def init_command(
     ctx: click.Context,
@@ -244,8 +247,10 @@ def _render_config(
     lines = ["[core]", f"    engine = {engine}", f"    # plan_file = {plan_display}"]
     lines.append(f"    # top_dir = {top_dir_display}")
 
-    engine_section_header = f"# [engine \"{engine}\"]"
-    lines.extend(["", engine_section_header, f"    # target = {target}", f"    # registry = {registry}"])
+    engine_section_header = f'# [engine "{engine}"]'
+    lines.extend(
+        ["", engine_section_header, f"    # target = {target}", f"    # registry = {registry}"]
+    )
     if client:
         lines.append(f"    # client = {client}")
 

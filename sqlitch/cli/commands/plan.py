@@ -82,11 +82,17 @@ def plan_command(
 
     normalized_format = output_format.lower()
     requires_model = bool(
-        project_filter or change_filters or tag_filters or normalized_format == "json" or short_output
+        project_filter
+        or change_filters
+        or tag_filters
+        or normalized_format == "json"
+        or short_output
     )
 
     if normalized_format == "human" and not requires_model:
-        text = _prepare_human_output(raw_content, strip_headers=suppress_headers, short=short_output)
+        text = _prepare_human_output(
+            raw_content, strip_headers=suppress_headers, short=short_output
+        )
         click.echo(text, nl=False)
         return
 

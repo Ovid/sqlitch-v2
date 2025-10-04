@@ -450,7 +450,9 @@ def test_resolve_plan_path_no_plan_found(monkeypatch: pytest.MonkeyPatch, tmp_pa
         _resolve_plan_path(project_root=tmp_path, override=None, env={})
 
 
-def test_resolve_plan_path_handles_conflicts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_resolve_plan_path_handles_conflicts(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     """Artifact conflicts should be re-raised as CommandError instances."""
 
     def fake_resolver(_: Path) -> ArtifactResolution:

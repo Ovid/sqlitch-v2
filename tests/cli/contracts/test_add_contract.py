@@ -225,13 +225,28 @@ def test_add_template_override_by_name(monkeypatch: pytest.MonkeyPatch) -> None:
         (templates_root / "revert").mkdir(parents=True)
         (templates_root / "verify").mkdir(parents=True)
 
-        (templates_root / "deploy" / "custom.tmpl").write_text("deploy [% change %]\n", encoding="utf-8")
-        (templates_root / "revert" / "custom.tmpl").write_text("revert [% change %]\n", encoding="utf-8")
-        (templates_root / "verify" / "custom.tmpl").write_text("verify [% change %]\n", encoding="utf-8")
+        (templates_root / "deploy" / "custom.tmpl").write_text(
+            "deploy [% change %]\n", encoding="utf-8"
+        )
+        (templates_root / "revert" / "custom.tmpl").write_text(
+            "revert [% change %]\n", encoding="utf-8"
+        )
+        (templates_root / "verify" / "custom.tmpl").write_text(
+            "verify [% change %]\n", encoding="utf-8"
+        )
 
         result = runner.invoke(main, ["add", "widgets", "--template", "custom"])
 
         assert result.exit_code == 0, result.output
-        assert Path("deploy/20251101020304_widgets.sql").read_text(encoding="utf-8") == "deploy widgets\n"
-        assert Path("revert/20251101020304_widgets.sql").read_text(encoding="utf-8") == "revert widgets\n"
-        assert Path("verify/20251101020304_widgets.sql").read_text(encoding="utf-8") == "verify widgets\n"
+        assert (
+            Path("deploy/20251101020304_widgets.sql").read_text(encoding="utf-8")
+            == "deploy widgets\n"
+        )
+        assert (
+            Path("revert/20251101020304_widgets.sql").read_text(encoding="utf-8")
+            == "revert widgets\n"
+        )
+        assert (
+            Path("verify/20251101020304_widgets.sql").read_text(encoding="utf-8")
+            == "verify widgets\n"
+        )

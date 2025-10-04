@@ -577,8 +577,8 @@ COMMIT;
 _POSTGRES_UPGRADE_1_1 = (
     "BEGIN;\n\n"
     "SET client_min_messages = warning;\n"
-    "ALTER TABLE :\"registry\".changes DROP CONSTRAINT changes_script_hash_key;\n"
-    "ALTER TABLE :\"registry\".changes ADD UNIQUE (project, script_hash);\n"
+    'ALTER TABLE :"registry".changes DROP CONSTRAINT changes_script_hash_key;\n'
+    'ALTER TABLE :"registry".changes ADD UNIQUE (project, script_hash);\n'
     "COMMENT ON SCHEMA :\"registry\" IS 'Sqitch database deployment metadata v1.1.';\n"
     "COMMIT;\n"
 )

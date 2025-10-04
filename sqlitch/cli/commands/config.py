@@ -30,8 +30,15 @@ _CONFIG_FILENAME = "sqlitch.conf"
 @click.option("--global", "global_scope", is_flag=True, help="Operate on the user (global) scope.")
 @click.option("--user", "user_scope", is_flag=True, help="Operate on the user scope.")
 @click.option("--local", "local_scope", is_flag=True, help="Operate on the project-local scope.")
-@click.option("--registry", "registry_scope", is_flag=True, help="Operate on the registry scope (unsupported).")
-@click.option("--unset", "unset_flag", is_flag=True, help="Remove the specified configuration value.")
+@click.option(
+    "--registry",
+    "registry_scope",
+    is_flag=True,
+    help="Operate on the registry scope (unsupported).",
+)
+@click.option(
+    "--unset", "unset_flag", is_flag=True, help="Remove the specified configuration value."
+)
 @click.option("--list", "list_flag", is_flag=True, help="List all configuration values.")
 @click.option("--json", "json_flag", is_flag=True, help="Render --list output as JSON.")
 @click.argument("name", required=False)

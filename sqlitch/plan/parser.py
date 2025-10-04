@@ -86,7 +86,9 @@ def _parse_change(tokens: Sequence[str], base_path: Path, line_no: int) -> Chang
     notes = metadata.get("notes")
     depends = _split_csv(metadata.get("depends"))
     tags = _split_csv(metadata.get("tags"))
-    change_id = _parse_uuid(metadata.get("change_id"), line_no) if metadata.get("change_id") else None
+    change_id = (
+        _parse_uuid(metadata.get("change_id"), line_no) if metadata.get("change_id") else None
+    )
 
     script_paths: dict[str, str | None] = {
         "deploy": deploy,
@@ -95,7 +97,10 @@ def _parse_change(tokens: Sequence[str], base_path: Path, line_no: int) -> Chang
     if verify_path is not None:
         script_paths["verify"] = verify_path
 
-    resolved_paths = {key: (base_path / value if value is not None else None) for key, value in script_paths.items()}
+    resolved_paths = {
+        key: (base_path / value if value is not None else None)
+        for key, value in script_paths.items()
+    }
 
     return Change(
         name=name,

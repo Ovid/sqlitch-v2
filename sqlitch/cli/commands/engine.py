@@ -49,7 +49,12 @@ def engine_group(ctx: click.Context) -> None:
 @click.option("--registry", help="Registry URI override to associate with the engine.")
 @click.option("--client", help="Client executable path used for shelling out to the engine.")
 @click.option("--plan", "plan_file", help="Plan file override tied to this engine definition.")
-@click.option("--verify/--no-verify", "verify_flag", default=None, help="Enable or disable post-deploy verification.")
+@click.option(
+    "--verify/--no-verify",
+    "verify_flag",
+    default=None,
+    help="Enable or disable post-deploy verification.",
+)
 @click.pass_context
 def add_engine(
     ctx: click.Context,
@@ -86,7 +91,12 @@ def add_engine(
 @click.option("--registry", help="Registry URI override to associate with the engine.")
 @click.option("--client", help="Client executable path used for shelling out to the engine.")
 @click.option("--plan", "plan_file", help="Plan file override tied to this engine definition.")
-@click.option("--verify/--no-verify", "verify_flag", default=None, help="Enable or disable post-deploy verification.")
+@click.option(
+    "--verify/--no-verify",
+    "verify_flag",
+    default=None,
+    help="Enable or disable post-deploy verification.",
+)
 @click.pass_context
 def update_engine(
     ctx: click.Context,
@@ -203,7 +213,7 @@ def _engine_config_path(cli_context: CLIContext) -> Path:
 
 
 def _section_name(name: str) -> str:
-    return f"engine \"{name}\""
+    return f'engine "{name}"'
 
 
 def _load_parser(path: Path) -> configparser.ConfigParser:
@@ -223,9 +233,9 @@ def _write_parser(path: Path, parser: configparser.ConfigParser) -> None:
 def _load_engines(path: Path) -> Iterable[EngineDefinition]:
     parser = _load_parser(path)
     for section in parser.sections():
-        if not section.startswith("engine \"") or not section.endswith("\""):
+        if not section.startswith('engine "') or not section.endswith('"'):
             continue
-        name = section[len("engine \"") : -1]
+        name = section[len('engine "') : -1]
         data = parser[section]
         yield EngineDefinition(
             name=name,
@@ -239,7 +249,14 @@ def _load_engines(path: Path) -> Iterable[EngineDefinition]:
 
 def _format_engine_table(entries: Iterable[EngineDefinition]) -> list[str]:
     rows = [
-        (entry.name, entry.uri, entry.registry or "", entry.client or "", entry.verify or "", entry.plan or "")
+        (
+            entry.name,
+            entry.uri,
+            entry.registry or "",
+            entry.client or "",
+            entry.verify or "",
+            entry.plan or "",
+        )
         for entry in entries
     ]
     header = ("NAME", "URI", "REGISTRY", "CLIENT", "VERIFY", "PLAN")

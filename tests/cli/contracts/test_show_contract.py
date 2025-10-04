@@ -59,9 +59,7 @@ def _seed_project(project_root: Path) -> tuple[Path, Change]:
         planner="Grace Hopper",
         planned_at=target_timestamp,
         notes="Adds widgets",
-        dependencies=(
-            "core:init",
-        ),
+        dependencies=("core:init",),
         tags=("release",),
     )
 

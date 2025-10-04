@@ -210,9 +210,7 @@ def _render_log_only_rebase(
 ) -> None:
     emitter = _build_emitter(request.quiet)
 
-    emitter(
-        f"Rebasing plan '{request.plan.project_name}' on target '{request.target}' (log-only)."
-    )
+    emitter(f"Rebasing plan '{request.plan.project_name}' on target '{request.target}' (log-only).")
 
     if not reverts and not redeploys:
         emitter("No changes require rebase.")

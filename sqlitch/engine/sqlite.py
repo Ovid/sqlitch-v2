@@ -20,7 +20,9 @@ class SQLiteEngineError(EngineError):
 class SQLiteEngine(Engine):
     """Engine adapter for sqlite3 targets."""
 
-    def __init__(self, target: EngineTarget, *, connect_kwargs: Mapping[str, Any] | None = None) -> None:
+    def __init__(
+        self, target: EngineTarget, *, connect_kwargs: Mapping[str, Any] | None = None
+    ) -> None:
         super().__init__(target)
         self._connect_kwargs = dict(connect_kwargs or {})
 

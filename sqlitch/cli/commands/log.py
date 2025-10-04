@@ -36,10 +36,16 @@ class LogEvent:
 @click.command("log")
 @click.option("--target", "target_option", help="Deployment target URI or database path.")
 @click.option("--limit", type=int, default=None, help="Limit the number of events returned.")
-@click.option("--skip", type=int, default=0, help="Skip the first N events before rendering output.")
-@click.option("--reverse", is_flag=True, help="Return events in chronological order (oldest first).")
+@click.option(
+    "--skip", type=int, default=0, help="Skip the first N events before rendering output."
+)
+@click.option(
+    "--reverse", is_flag=True, help="Return events in chronological order (oldest first)."
+)
 @click.option("--project", "project_filter", help="Filter events to the specified project name.")
-@click.option("--format", "output_format", default="human", help="Select output format: human or json.")
+@click.option(
+    "--format", "output_format", default="human", help="Select output format: human or json."
+)
 @click.option("--change", "change_filter", help="Filter events by change name.")
 @click.option(
     "--event",
@@ -195,9 +201,7 @@ def _load_log_events(
                 f"Registry query for {engine_target.registry_uri} returned no column metadata"
             )
         if isinstance(row, Sequence):
-            return {
-                columns[index]: row[index] for index in range(min(len(columns), len(row)))
-            }
+            return {columns[index]: row[index] for index in range(min(len(columns), len(row)))}
         raise CommandError(
             f"Registry query for {engine_target.registry_uri} returned unexpected row format"
         )
@@ -295,9 +299,7 @@ def _format_human(target: str, events: Sequence[LogEvent]) -> str:
     for index, event in enumerate(events):
         lines.append(f"{event.event.capitalize()} {event.change_id}")
         lines.append(f"Name:      {event.change}")
-        lines.append(
-            f"Committer: {event.committer_name} <{event.committer_email}>"
-        )
+        lines.append(f"Committer: {event.committer_name} <{event.committer_email}>")
         lines.append(f"Date:      {event.committed_at}")
         lines.append("")
         note_lines = event.note.splitlines() or [""]

@@ -53,6 +53,7 @@ def test_register_command_prevents_duplicate_names() -> None:
         pass
 
     with pytest.raises(CommandRegistrationError):
+
         @register_command("example")
         def _(_: click.Group) -> None:  # pragma: no cover - registry only
             pass

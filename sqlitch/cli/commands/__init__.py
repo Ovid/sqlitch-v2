@@ -78,9 +78,7 @@ def register_command(name: str | None = None) -> t.Callable[[CommandRegistrar], 
     def decorator(func: CommandRegistrar) -> CommandRegistrar:
         command_name = name or func.__name__
         if command_name in _COMMAND_REGISTRY:
-            raise CommandRegistrationError(
-                f"Command '{command_name}' is already registered."
-            )
+            raise CommandRegistrationError(f"Command '{command_name}' is already registered.")
         _COMMAND_REGISTRY[command_name] = func
         return func
 
