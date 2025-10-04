@@ -2,15 +2,22 @@
 
 from __future__ import annotations
 
+import hashlib
+import sqlite3
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
 import click
 
+from sqlitch.engine import EngineTarget, canonicalize_engine_name, create_engine
+from sqlitch.engine.base import UnsupportedEngineError
 from sqlitch.plan.model import Change, Plan
 from sqlitch.plan.parser import PlanParseError, parse_plan
+from sqlitch.registry import LATEST_REGISTRY_VERSION, get_registry_migrations
+from sqlitch.utils.time import isoformat_utc
 
 from . import CommandError, register_command
 from ._context import (
@@ -140,9 +147,62 @@ def _execute_deploy(request: _DeployRequest) -> None:
         _render_log_only_deploy(request, changes)
         return
 
-    raise CommandError(
-        "Deployment execution is not yet implemented; rerun with --log-only for now."
+    emitter = _build_emitter(request.quiet)
+
+    engine_target, display_target = _resolve_engine_target(
+        target=request.target,
+        project_root=request.project_root,
+        default_engine=request.plan.default_engine,
+        plan_path=request.plan_path,
     )
+
+    emitter(f"Deploying plan '{request.plan.project_name}' to target '{display_target}'.")
+
+    if not changes:
+        emitter("Nothing to deploy (up-to-date).")
+        return
+
+    committer_name, committer_email = _resolve_committer_identity(request.env)
+
+    connection = _create_engine_connection(engine_target)
+
+    try:
+        _ensure_registry_ready(
+            connection=connection,
+            project=request.plan.project_name,
+            plan=request.plan,
+            committer_name=committer_name,
+            committer_email=committer_email,
+        )
+
+        deployed = _load_deployed_state(connection, request.plan.project_name)
+        pending = [change for change in changes if change.name not in deployed]
+
+        if not pending:
+            emitter("Nothing to deploy (up-to-date).")
+            return
+
+        applied = 0
+        for change in pending:
+            _apply_change(
+                connection=connection,
+                project=request.plan.project_name,
+                plan_root=request.plan_path.parent,
+                change=change,
+                env=request.env,
+                committer_name=committer_name,
+                committer_email=committer_email,
+                deployed=deployed,
+            )
+            emitter(f"  + {change.name}")
+            applied += 1
+
+        emitter(f"Deployment complete. Applied {applied} change(s).")
+    finally:
+        try:
+            connection.close()
+        except Exception:  # pragma: no cover - best effort cleanup
+            pass
 
 
 def _resolve_target(
@@ -220,6 +280,549 @@ def _select_changes(
         return _select_changes(plan=plan, to_change=tag_entry.change_ref, to_tag=None)
 
     return changes
+
+
+def _resolve_engine_target(
+    *,
+    target: str,
+    project_root: Path,
+    default_engine: str,
+    plan_path: Path,
+) -> tuple[EngineTarget, str]:
+    """Return an :class:`EngineTarget` for the requested deployment target."""
+
+    display_target = target
+    if target.startswith("db:"):
+        remainder = target[3:]
+        engine_token, separator, payload = remainder.partition(":")
+        if not separator:
+            raise CommandError(f"Malformed target URI: {target}")
+        engine_hint = engine_token or default_engine
+        payload_value = payload
+    else:
+        engine_hint = default_engine
+        payload_value = target
+
+    try:
+        engine_name = canonicalize_engine_name(engine_hint)
+    except UnsupportedEngineError as exc:
+        raise CommandError(f"Unsupported engine '{engine_hint}'") from exc
+
+    if engine_name != "sqlite":
+        raise CommandError(f"Engine '{engine_name}' deployment is not supported yet.")
+
+    if payload_value == ":memory:":
+        raise CommandError("In-memory SQLite targets are not supported")
+
+    if payload_value and payload_value.startswith("file:"):
+        registry_uri = f"db:{engine_name}:{payload_value}"
+    else:
+        if payload_value:
+            candidate = Path(payload_value)
+        else:
+            candidate = plan_path.with_suffix(".db")
+
+        database_path = candidate if candidate.is_absolute() else project_root / candidate
+        registry_uri = f"db:{engine_name}:{database_path.as_posix()}"
+
+    engine_target = EngineTarget(name=display_target, engine=engine_name, uri=registry_uri)
+    return engine_target, registry_uri
+
+
+def _create_engine_connection(engine_target: EngineTarget) -> sqlite3.Connection:
+    """Instantiate the engine and open a workspace connection."""
+
+    try:
+        engine = create_engine(engine_target)
+    except UnsupportedEngineError as exc:  # pragma: no cover - defensive
+        raise CommandError(f"Unsupported engine '{engine_target.engine}': {exc}") from exc
+
+    if engine_target.engine != "sqlite":
+        raise CommandError(f"Engine '{engine_target.engine}' deployment is not supported yet.")
+
+    _ensure_sqlite_parent_directory(engine_target.uri)
+
+    try:
+        connection = engine.connect_workspace()
+    except Exception as exc:  # pragma: no cover - connection failure propagated
+        raise CommandError(
+            f"Failed to connect to deployment target {engine_target.uri}: {exc}"
+        ) from exc
+
+    return connection
+
+
+def _ensure_sqlite_parent_directory(uri: str) -> None:
+    """Create the parent directory for a SQLite database URI if required."""
+
+    prefix = "db:sqlite:"
+    if not uri.startswith(prefix):
+        return
+
+    payload = uri[len(prefix) :]
+    if payload.startswith("file:"):
+        return
+
+    path = Path(payload)
+    parent = path.parent
+    if parent and not parent.exists():
+        parent.mkdir(parents=True, exist_ok=True)
+
+
+def _ensure_registry_ready(
+    *,
+    connection: sqlite3.Connection,
+    project: str,
+    plan: Plan,
+    committer_name: str,
+    committer_email: str,
+) -> None:
+    """Initialise registry schema and project metadata if required."""
+
+    try:
+        if not _registry_tables_exist(connection):
+            _apply_registry_baseline(connection)
+
+        _ensure_release_entry(
+            connection,
+            committer_name=committer_name,
+            committer_email=committer_email,
+        )
+        _ensure_project_entry(
+            connection,
+            project=project,
+            plan_uri=plan.uri,
+            creator_name=committer_name,
+            creator_email=committer_email,
+        )
+    except sqlite3.Error as exc:  # pragma: no cover - defensive
+        raise CommandError(f"Failed to initialise registry: {exc}") from exc
+
+
+def _registry_tables_exist(connection: sqlite3.Connection) -> bool:
+    """Return ``True`` if essential registry tables are present."""
+
+    cursor = connection.execute(
+        "SELECT name FROM sqlite_master WHERE type = 'table' "
+        "AND name IN ('changes', 'projects', 'events')"
+    )
+    try:
+        names = {str(row[0]) for row in cursor.fetchall()}
+    finally:
+        cursor.close()
+    return {"changes", "projects", "events"}.issubset(names)
+
+
+def _apply_registry_baseline(connection: sqlite3.Connection) -> None:
+    """Create the registry schema using the bundled baseline migration."""
+
+    migrations = get_registry_migrations("sqlite")
+    baseline = next((migration for migration in migrations if migration.is_baseline), None)
+    if baseline is None:  # pragma: no cover - defensive guard
+        raise CommandError("SQLite registry baseline migration is unavailable.")
+
+    connection.executescript(baseline.sql)
+
+
+def _ensure_release_entry(
+    connection: sqlite3.Connection,
+    *,
+    committer_name: str,
+    committer_email: str,
+) -> None:
+    """Ensure the registry release version row exists."""
+
+    cursor = connection.execute(
+        "SELECT 1 FROM releases WHERE version = ?",
+        (LATEST_REGISTRY_VERSION,),
+    )
+    try:
+        exists = cursor.fetchone() is not None
+    finally:
+        cursor.close()
+
+    if not exists:
+        connection.execute(
+            "INSERT INTO releases (version, installer_name, installer_email) VALUES (?, ?, ?)",
+            (LATEST_REGISTRY_VERSION, committer_name, committer_email),
+        )
+
+
+def _ensure_project_entry(
+    connection: sqlite3.Connection,
+    *,
+    project: str,
+    plan_uri: str | None,
+    creator_name: str,
+    creator_email: str,
+) -> None:
+    """Insert the project metadata if it has not already been registered."""
+
+    cursor = connection.execute(
+        "SELECT 1 FROM projects WHERE project = ?",
+        (project,),
+    )
+    try:
+        exists = cursor.fetchone() is not None
+    finally:
+        cursor.close()
+
+    if not exists:
+        connection.execute(
+            "INSERT INTO projects (project, uri, creator_name, creator_email) VALUES (?, ?, ?, ?)",
+            (project, plan_uri, creator_name, creator_email),
+        )
+
+
+def _load_deployed_state(
+    connection: sqlite3.Connection,
+    project: str,
+) -> dict[str, dict[str, str]]:
+    """Return a mapping of deployed change names to registry metadata."""
+
+    cursor = connection.execute(
+        'SELECT "change", change_id, script_hash FROM changes WHERE project = ? '
+        'ORDER BY committed_at ASC, change_id ASC',
+        (project,),
+    )
+    try:
+        rows = cursor.fetchall()
+    finally:
+        cursor.close()
+
+    deployed: dict[str, dict[str, str]] = {}
+    for change_name, change_id, script_hash in rows:
+        deployed[str(change_name)] = {
+            "change_id": str(change_id),
+            "script_hash": str(script_hash) if script_hash is not None else "",
+        }
+    return deployed
+
+
+def _apply_change(
+    *,
+    connection: sqlite3.Connection,
+    project: str,
+    plan_root: Path,
+    change: Change,
+    env: Mapping[str, str],
+    committer_name: str,
+    committer_email: str,
+    deployed: dict[str, dict[str, str]],
+) -> None:
+    """Execute a deploy script and record registry state for ``change``."""
+
+    script_path = _resolve_script_path(plan_root, change, "deploy")
+    if not script_path.exists():
+        raise CommandError(f"Deploy script {script_path} is missing for change '{change.name}'.")
+
+    script_body = script_path.read_text(encoding="utf-8")
+    script_hash = _compute_script_hash(script_body)
+    change_id = str(change.change_id) if change.change_id is not None else script_hash
+
+    dependency_lookup = {name: data["change_id"] for name, data in deployed.items()}
+    _validate_dependencies(change, dependency_lookup)
+
+    planner_name, planner_email = _resolve_planner_identity(
+        change.planner,
+        env,
+        committer_email,
+    )
+
+    committed_at = isoformat_utc(datetime.now(timezone.utc), drop_microseconds=False)
+    planned_at = isoformat_utc(change.planned_at, drop_microseconds=False)
+    note = change.notes or ""
+
+    def _record(cursor: sqlite3.Cursor) -> None:
+        _record_deployment_entries(
+            cursor=cursor,
+            project=project,
+            change=change,
+            change_id=change_id,
+            script_hash=script_hash,
+            note=note,
+            committed_at=committed_at,
+            committer_name=committer_name,
+            committer_email=committer_email,
+            planned_at=planned_at,
+            planner_name=planner_name,
+            planner_email=planner_email,
+            dependencies=change.dependencies,
+            dependency_lookup=dependency_lookup,
+            tags=change.tags,
+        )
+
+    try:
+        _execute_change_transaction(connection, script_body, _record)
+    except sqlite3.Error as exc:  # pragma: no cover - execution error propagated
+        raise CommandError(f"Deploy failed for change '{change.name}': {exc}") from exc
+
+    deployed[change.name] = {"change_id": change_id, "script_hash": script_hash}
+
+
+def _resolve_script_path(plan_root: Path, change: Change, kind: str) -> Path:
+    """Resolve a script path relative to the plan directory."""
+
+    script_ref = change.script_paths.get(kind)
+    if script_ref is None:
+        raise CommandError(f"Change '{change.name}' is missing a {kind} script path.")
+
+    path = Path(script_ref)
+    if not path.is_absolute():
+        path = plan_root / path
+    return path
+
+
+def _compute_script_hash(script_body: str) -> str:
+    """Return the SHA-1 hash of the deploy script body."""
+
+    return hashlib.sha1(script_body.encode("utf-8")).hexdigest()
+
+
+def _resolve_committer_identity(env: Mapping[str, str]) -> tuple[str, str]:
+    """Resolve the committer name and email from environment variables."""
+
+    name = (
+        env.get("SQLITCH_USER_NAME")
+        or env.get("GIT_COMMITTER_NAME")
+        or env.get("GIT_AUTHOR_NAME")
+        or env.get("USER")
+        or env.get("USERNAME")
+        or "SQLitch User"
+    )
+
+    email = (
+        env.get("SQLITCH_USER_EMAIL")
+        or env.get("GIT_COMMITTER_EMAIL")
+        or env.get("GIT_AUTHOR_EMAIL")
+        or env.get("EMAIL")
+    )
+
+    if not email:
+        sanitized = "".join(ch for ch in name.lower() if ch.isalnum() or ch in {".", "_"})
+        sanitized = sanitized or "sqlitch"
+        email = f"{sanitized}@example.invalid"
+
+    return name, email
+
+
+def _resolve_planner_identity(
+    planner: str,
+    env: Mapping[str, str],
+    fallback_email: str,
+) -> tuple[str, str]:
+    """Parse a planner identity string into name and email components."""
+
+    identity = planner or "SQLitch Planner"
+    name, email = _parse_identity(identity)
+
+    if not email:
+        email = env.get("SQLITCH_USER_EMAIL") or env.get("GIT_AUTHOR_EMAIL") or fallback_email
+
+    if not email:
+        sanitized = "".join(ch for ch in name.lower() if ch.isalnum() or ch in {".", "_"})
+        sanitized = sanitized or "planner"
+        email = f"{sanitized}@example.invalid"
+
+    return name, email
+
+
+def _parse_identity(identity: str) -> tuple[str, str | None]:
+    """Split ``identity`` into name and optional email components."""
+
+    text = identity.strip()
+    if "<" in text and ">" in text and text.index("<") < text.index(">"):
+        name_part, remainder = text.split("<", 1)
+        email_part, _ = remainder.split(">", 1)
+        name = name_part.strip() or text
+        email = email_part.strip() or None
+        return name, email
+    return text, None
+
+
+def _validate_dependencies(change: Change, deployed_lookup: Mapping[str, str]) -> None:
+    """Ensure all required dependencies have been deployed."""
+
+    missing = [dependency for dependency in change.dependencies if dependency not in deployed_lookup]
+    if not missing:
+        return
+
+    if len(missing) == 1:
+        message = (
+            f"Change '{change.name}' depends on '{missing[0]}' which has not been deployed."
+        )
+    else:
+        joined = ", ".join(missing)
+        message = (
+            f"Change '{change.name}' depends on the following changes which have not been deployed: {joined}."
+        )
+    raise CommandError(message)
+
+
+def _execute_change_transaction(
+    connection: sqlite3.Connection,
+    script_sql: str,
+    recorder: Callable[[sqlite3.Cursor], None],
+) -> None:
+    """Execute ``script_sql`` and record registry entries within a single transaction."""
+
+    script_cursor = connection.cursor()
+    try:
+        script_cursor.executescript(script_sql)
+    finally:
+        script_cursor.close()
+
+    registry_cursor = connection.cursor()
+    try:
+        connection.execute("BEGIN")
+        try:
+            recorder(registry_cursor)
+        except Exception:
+            try:
+                connection.execute("ROLLBACK")
+            except sqlite3.Error:  # pragma: no cover - defensive guard
+                pass
+            raise
+        else:
+            connection.execute("COMMIT")
+    finally:
+        registry_cursor.close()
+
+
+def _record_deployment_entries(
+    *,
+    cursor: sqlite3.Cursor,
+    project: str,
+    change: Change,
+    change_id: str,
+    script_hash: str,
+    note: str,
+    committed_at: str,
+    committer_name: str,
+    committer_email: str,
+    planned_at: str,
+    planner_name: str,
+    planner_email: str,
+    dependencies: Sequence[str],
+    dependency_lookup: Mapping[str, str],
+    tags: Sequence[str],
+) -> None:
+    """Persist registry entries for a deployed change."""
+
+    cursor.execute(
+        """
+        INSERT INTO changes (
+            change_id,
+            script_hash,
+            "change",
+            project,
+            note,
+            committed_at,
+            committer_name,
+            committer_email,
+            planned_at,
+            planner_name,
+            planner_email
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            change_id,
+            script_hash,
+            change.name,
+            project,
+            note,
+            committed_at,
+            committer_name,
+            committer_email,
+            planned_at,
+            planner_name,
+            planner_email,
+        ),
+    )
+
+    cursor.execute(
+        """
+        INSERT INTO events (
+            event,
+            change_id,
+            change,
+            project,
+            note,
+            requires,
+            conflicts,
+            tags,
+            committed_at,
+            committer_name,
+            committer_email,
+            planned_at,
+            planner_name,
+            planner_email
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            "deploy",
+            change_id,
+            change.name,
+            project,
+            note,
+            " ".join(dependencies),
+            "",
+            " ".join(tags),
+            committed_at,
+            committer_name,
+            committer_email,
+            planned_at,
+            planner_name,
+            planner_email,
+        ),
+    )
+
+    for dependency in dependencies:
+        dependency_id = dependency_lookup.get(dependency)
+        if dependency_id is None:
+            raise CommandError(
+                f"Dependency '{dependency}' is not recorded in the registry for change '{change.name}'."
+            )
+        cursor.execute(
+            """
+            INSERT INTO dependencies (change_id, type, dependency, dependency_id)
+            VALUES (?, 'require', ?, ?)
+            """,
+            (change_id, dependency, dependency_id),
+        )
+
+    for tag in tags:
+        tag_id = hashlib.sha1(f"{change_id}:{tag}".encode("utf-8")).hexdigest()
+        cursor.execute(
+            """
+            INSERT INTO tags (
+                tag_id,
+                tag,
+                project,
+                change_id,
+                note,
+                committed_at,
+                committer_name,
+                committer_email,
+                planned_at,
+                planner_name,
+                planner_email
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                tag_id,
+                tag,
+                project,
+                change_id,
+                note,
+                committed_at,
+                committer_name,
+                committer_email,
+                planned_at,
+                planner_name,
+                planner_email,
+            ),
+        )
 
 
 def _render_log_only_deploy(request: _DeployRequest, changes: Sequence[Change]) -> None:
