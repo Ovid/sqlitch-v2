@@ -35,7 +35,7 @@ def test_tag_adds_to_plan(runner: CliRunner) -> None:
         assert "Tagged users_table with @v1.0" in result.output
 
         # Verify plan file
-        plan_content = Path("sqlitch.plan").read_text(encoding="utf-8")
+        plan_content = Path("sqitch.plan").read_text(encoding="utf-8")
         assert "tag v1.0" in plan_content
         assert "users_table" in plan_content
 

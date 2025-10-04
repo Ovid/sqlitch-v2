@@ -69,7 +69,7 @@ def test_config_set_local_updates_file(runner: CliRunner) -> None:
 
         assert result.exit_code == 0, result.stderr
         assert "Set core.engine in local scope" in result.stdout
-        content = Path("sqlitch.conf").read_text(encoding="utf-8")
+        content = Path("sqitch.conf").read_text(encoding="utf-8")
         assert "engine = sqlite" in content
 
 
@@ -223,7 +223,7 @@ def test_config_set_default_section(runner: CliRunner) -> None:
 
         assert result.exit_code == 0, result.stderr
         assert "Set DEFAULT.color in local scope" in result.stdout
-        content = Path("sqlitch.conf").read_text(encoding="utf-8")
+        content = Path("sqitch.conf").read_text(encoding="utf-8")
         assert "color = blue" in content
 
 
