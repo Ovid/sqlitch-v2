@@ -35,6 +35,7 @@
 - [ ] T022 Update documentation (`docs/architecture/registry-lifecycle.md`, `specs/002-sqlite/quickstart.md`) with guidance on deploy scripts that manage their own transactions and reference the new regression coverage.
 - [ ] T023 Refresh default CLI output golden fixtures (e.g., `tests/support/golden/cli/deploy_default.txt`) to confirm SQLitch matches Sqitch output when no logging flags are provided (FR-023).
 - [ ] T024 Add regression test (e.g., `tests/regression/test_cli_output_parity.py`) asserting default CLI output omits structured logs while `--json`/`--verbose` modes still emit structured payloads.
+- [ ] T025 Add regression coverage (e.g., `tests/regression/test_logging_registry_scope.py`) proving `sqlitch` persists audit events exclusively to the registry and does not create standalone log files or unsolicited stdout/stderr payloads when run without logging flags.
 
 ## Dependencies
 - T001 prepares shared fixtures before any regression tests (T002–T005, T016).
@@ -44,7 +45,7 @@
 - T006 depends on T002; T007–T009 depend on T003; T010–T011 depend on T004.
 - T012 depends on the logging assertions added in T002–T005 to validate structured output.
 - T019–T020 depend on T018 to drive FR-022a behavior.
-- T023–T024 depend on T019–T020 to ensure default output changes are finalized.
+- T023–T025 depend on T019–T020 to ensure default output and logging changes are finalized.
 - T013 requires completion of T006–T012 (and T017 for logging parity) before fixture refresh; T021 requires T019–T020 as well.
 - T014 documents outcomes from T006–T013 and the credential updates from T017; T022 extends that guidance after T021 completes and T023/T024 inform final copy.
 - T015 runs only after implementation tasks (T006–T012, T017, T019–T020) and integration tasks (T013–T014, T021–T024) are complete.
@@ -71,4 +72,5 @@ Task: "T015 Run full validation and capture reports"
 - Credential regression tests in T016 should validate CLI flag → environment → config precedence and ensure logs emitted by the CLI and structured logging sink redact secret values before implementation begins in T017.
 - T018 must capture both successful and rollback scenarios for script-managed transactions so the ensuing implementation tasks (T019–T020) can satisfy FR-022a without regressions.
 - T023/T024 ensure FR-023 parity by validating default CLI output remains byte-identical to Sqitch while structured logs stay opt-in.
+- T025 enforces the updated FR-023 guidance by confirming audit events stay inside the registry and no standalone log artifacts or unsolicited console payloads appear during default runs.
 - Code Quality Refinement expectations from the constitution remain in force; enforce docstrings, typing, and structured logging standards during reviews.
