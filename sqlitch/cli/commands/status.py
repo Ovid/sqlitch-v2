@@ -9,8 +9,10 @@ from pathlib import Path
 
 import click
 
+from sqlitch.config import resolver as config_resolver
 from sqlitch.engine import EngineTarget, canonicalize_engine_name, create_engine
 from sqlitch.engine.base import UnsupportedEngineError
+from sqlitch.engine.sqlite import resolve_sqlite_filesystem_path
 from sqlitch.plan.model import Plan
 from sqlitch.plan.parser import PlanParseError, parse_plan
 
@@ -80,7 +82,10 @@ def status_command(
         )
 
     engine_target, display_target = _resolve_registry_target(
-        target_value, project_root, plan.default_engine
+        target_value,
+        project_root,
+        plan.default_engine,
+        registry_override=cli_context.registry,
     )
     registry_rows = _load_registry_rows(engine_target, resolved_project)
 
@@ -164,8 +169,12 @@ def _resolve_registry_target(
     target: str,
     project_root: Path,
     default_engine: str,
+    *,
+    registry_override: str | None = None,
 ) -> tuple[EngineTarget, str]:
     display_target = target
+
+    workspace_payload: str
 
     if target.startswith("db:"):
         remainder = target[3:]
@@ -173,10 +182,10 @@ def _resolve_registry_target(
         if not separator:
             raise CommandError(f"Malformed target URI: {target}")
         candidate_engine = engine_token or default_engine
-        payload_value = payload
+        workspace_payload = payload
     else:
         candidate_engine = default_engine
-        payload_value = target
+        workspace_payload = target
 
     try:
         engine_name = canonicalize_engine_name(candidate_engine)
@@ -184,21 +193,48 @@ def _resolve_registry_target(
         raise CommandError(f"Unsupported engine '{candidate_engine}'") from exc
 
     if engine_name == "sqlite":
-        if not payload_value:
+        if not workspace_payload:
             raise CommandError("SQLite targets require an explicit database path")
-        if payload_value == ":memory:":
+        if workspace_payload == ":memory:":
             raise CommandError("In-memory SQLite targets are not supported")
 
-        db_path = Path(payload_value)
-        if not db_path.is_absolute():
-            db_path = project_root / db_path
-        if not db_path.exists():
-            raise CommandError(f"Registry database {db_path} is missing")
-        registry_uri = f"db:{engine_name}:{db_path.as_posix()}"
-    else:
-        registry_uri = target if target.startswith("db:") else f"db:{engine_name}:{payload_value}"
+        if workspace_payload.startswith("file:"):
+            workspace_uri = f"db:sqlite:{workspace_payload}"
+            workspace_path = resolve_sqlite_filesystem_path(workspace_uri)
+        else:
+            workspace_path = Path(workspace_payload)
+            if not workspace_path.is_absolute():
+                workspace_path = project_root / workspace_path
+            workspace_path = workspace_path.resolve()
+            workspace_uri = f"db:sqlite:{workspace_path.as_posix()}"
 
-    engine_target = EngineTarget(name=display_target, engine=engine_name, uri=registry_uri)
+        if not workspace_path.exists():
+            raise CommandError(f"Workspace database {workspace_path} is missing")
+
+        registry_uri = config_resolver.resolve_registry_uri(
+            engine=engine_name,
+            workspace_uri=workspace_uri,
+            project_root=project_root,
+            registry_override=registry_override,
+        )
+    else:
+        workspace_uri = (
+            target
+            if target.startswith("db:")
+            else f"db:{engine_name}:{workspace_payload}"
+        )
+        registry_uri = (
+            registry_override
+            if registry_override is not None
+            else workspace_uri
+        )
+
+    engine_target = EngineTarget(
+        name=display_target,
+        engine=engine_name,
+        uri=workspace_uri,
+        registry_uri=registry_uri,
+    )
     return engine_target, display_target
 
 

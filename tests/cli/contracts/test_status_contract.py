@@ -13,6 +13,7 @@ from click.testing import CliRunner
 import pytest
 
 from sqlitch.cli.main import main
+from sqlitch.engine.sqlite import derive_sqlite_registry_uri, resolve_sqlite_filesystem_path
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change, PlanEntry, Tag
 
@@ -57,6 +58,19 @@ def _write_plan(plan_path: Path, entries: Sequence[PlanEntry]) -> None:
         entries=entries,
         plan_path=plan_path,
     )
+
+
+def _prepare_workspace(workspace_db: Path) -> Path:
+    workspace_db.parent.mkdir(parents=True, exist_ok=True)
+    workspace_db.touch(exist_ok=True)
+    workspace_uri = f"db:sqlite:{workspace_db.resolve().as_posix()}"
+    registry_uri = derive_sqlite_registry_uri(
+        workspace_uri=workspace_uri,
+        project_root=Path.cwd(),
+    )
+    registry_path = resolve_sqlite_filesystem_path(registry_uri)
+    registry_path.parent.mkdir(parents=True, exist_ok=True)
+    return registry_path
 
 
 def _change(
@@ -230,9 +244,10 @@ def test_status_outputs_in_sync_snapshot(runner: CliRunner) -> None:
         )
         _write_plan(plan_path, (users_change,))
 
-        db_path = Path("flipr_test.db")
+        workspace_db = Path("flipr_test.db")
+        registry_path = _prepare_workspace(workspace_db)
         _seed_registry(
-            db_path,
+            registry_path,
             [
                 RegistryFixtureRow(
                     change_id="f30fe47f5f99501fb8d481e910d9112c5ac0a676",
@@ -273,9 +288,10 @@ def test_status_reports_undeployed_changes(runner: CliRunner) -> None:
         )
         _write_plan(plan_path, (users_change, flips_change))
 
-        db_path = Path("flipr_test")
+        workspace_db = Path("flipr_test")
+        registry_path = _prepare_workspace(workspace_db)
         _seed_registry(
-            db_path,
+            registry_path,
             [
                 RegistryFixtureRow(
                     change_id="f30fe47f5f99501fb8d481e910d9112c5ac0a676",
@@ -328,9 +344,10 @@ def test_status_json_format_matches_fixture(runner: CliRunner) -> None:
         tag_entry = _tag("@v1.0.0-dev1", change_ref="userflips", tagged_at=userflips_time)
         _write_plan(plan_path, (users_change, flips_change, userflips_change, tag_entry))
 
-        db_path = Path("dev/flipr_dev.db")
+        workspace_db = Path("dev/flipr_dev.db")
+        registry_path = _prepare_workspace(workspace_db)
         _seed_registry(
-            db_path,
+            registry_path,
             [
                 RegistryFixtureRow(
                     change_id="f30fe47f5f99501fb8d481e910d9112c5ac0a676",

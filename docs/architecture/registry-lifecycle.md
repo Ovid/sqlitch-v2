@@ -23,6 +23,16 @@ The engine registry maps canonical engine identifiers (for example `"sqlite"`, `
 - The registry is a plain dictionary but behaves immutably by convention; writes are limited to the bootstrapping code path.
 - Because only reads occur during the operational phase, the registry is safe to use without additional synchronisation under CPython’s dictionary semantics.
 
+### SQLite Registry Attachment Flow
+- SQLite deployments resolve a canonical registry URI using `sqlitch.config.resolver.resolve_registry_uri()`. For file-based workspaces the helper derives a sibling `sqitch.db` path (for example `flipr_test.db` → `sqitch.db`), while in-memory or relative targets fall back to a project-root `sqitch.db` unless the user supplies an explicit override.
+- `sqlitch.engine.sqlite.SQLiteEngine.connect_workspace()` transparently `ATTACH`es the resolved registry under the canonical alias `sqitch` (`REGISTRY_ATTACHMENT_ALIAS`). Application code always reads and writes registry tables through this alias, guaranteeing parity with the Perl implementation.
+- The deploy command coordinates workspace migrations and registry writes inside a single `BEGIN IMMEDIATE` / `COMMIT` block. Any exception triggers a rollback that unwinds both user schema mutations and registry state, satisfying **FR-021** and **FR-022**.
+- Test fixtures should prepare registry state via the helpers under `tests.support.sqlite_fixtures` or derive the registry path with `derive_sqlite_registry_uri()` to keep expectations aligned with the production attachment logic.
+
+### Stub Engine Registrations
+- The MySQL and PostgreSQL adapters register during import but raise `NotImplementedError` with deterministic parity messaging (see `sqlitch.engine.mysql` / `sqlitch.engine.postgres`). This preserves registry wiring parity and allows the CLI to surface informative errors until full adapters are implemented.
+- Tests that temporarily replace these stubs must continue to restore the prior registration, matching the isolation pattern described above.
+
 ### Test Isolation
 - Tests that temporarily replace a registration must always restore the original value. The recommended pattern is to capture the previous implementation returned by `register_engine(..., replace=True)` and re-register it inside a `try`/`finally` block. If no previous implementation exists, call `unregister_engine()` in the `finally` block instead.
 - Avoid clearing the registry wholesale; doing so hides assumptions baked into other tests. Prefer targeted replace/restore logic so fixture order remains deterministic.

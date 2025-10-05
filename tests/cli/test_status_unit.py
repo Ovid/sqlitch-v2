@@ -23,6 +23,7 @@ from sqlitch.cli.commands.status import (
     _load_plan,
     _load_registry_rows,
 )
+from sqlitch.engine.sqlite import derive_sqlite_registry_uri, resolve_sqlite_filesystem_path
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change
 from sqlitch.plan.parser import PlanParseError
@@ -36,7 +37,21 @@ def runner() -> CliRunner:
     return CliRunner()
 
 
+def _prepare_workspace(workspace_db: Path) -> Path:
+    workspace_db.parent.mkdir(parents=True, exist_ok=True)
+    workspace_db.touch(exist_ok=True)
+    workspace_uri = f"db:sqlite:{workspace_db.resolve().as_posix()}"
+    registry_uri = derive_sqlite_registry_uri(
+        workspace_uri=workspace_uri,
+        project_root=Path.cwd(),
+    )
+    registry_path = resolve_sqlite_filesystem_path(registry_uri)
+    registry_path.parent.mkdir(parents=True, exist_ok=True)
+    return registry_path
+
+
 def _create_registry(db_path: Path) -> None:
+    db_path.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(db_path)
     try:
         connection.executescript(
@@ -124,62 +139,62 @@ def test_status_rejects_project_mismatch(runner: CliRunner) -> None:
         assert "does not match requested project" in result.output
 
 
-def test_status_rejects_registry_project_mismatch(runner: CliRunner, tmp_path: Path) -> None:
+def test_status_rejects_registry_project_mismatch(runner: CliRunner) -> None:
     """Plan and registry project disagreements should raise a CommandError."""
 
-    plan_path = tmp_path / "sqlitch.plan"
-    write_plan(project_name="widgets", default_engine="sqlite", entries=(), plan_path=plan_path)
-
-    db_path = tmp_path / "registry.db"
-    _create_registry(db_path)
-    connection = sqlite3.connect(db_path)
-    try:
-        connection.execute("INSERT INTO projects (project) VALUES (?)", ("other",))
-        connection.execute(
-            """
-            INSERT INTO changes (
-                change_id,
-                script_hash,
-                "change",
-                project,
-                note,
-                committed_at,
-                committer_name,
-                committer_email,
-                planned_at,
-                planner_name,
-                planner_email
-            )
-            VALUES (?, ?, ?, ?, '', ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                "abc",
-                None,
-                "users",
-                "other",
-                "2025-01-01T00:00:00Z",
-                "Ada",
-                "ada@example.com",
-                "2025-01-01T00:00:00Z",
-                "Ada",
-                "ada@example.com",
-            ),
+    with runner.isolated_filesystem():
+        write_plan(
+            project_name="widgets",
+            default_engine="sqlite",
+            entries=(),
+            plan_path=Path("sqlitch.plan"),
         )
-        connection.commit()
-    finally:
-        connection.close()
 
-    with runner.isolated_filesystem() as sandbox:
-        sandbox_path = Path(sandbox)
-        (sandbox_path / plan_path.name).write_bytes(plan_path.read_bytes())
-        (sandbox_path / db_path.name).write_bytes(db_path.read_bytes())
+        registry_path = _prepare_workspace(Path("registry.db"))
+        _create_registry(registry_path)
+        connection = sqlite3.connect(registry_path)
+        try:
+            connection.execute("INSERT INTO projects (project) VALUES (?)", ("other",))
+            connection.execute(
+                """
+                INSERT INTO changes (
+                    change_id,
+                    script_hash,
+                    "change",
+                    project,
+                    note,
+                    committed_at,
+                    committer_name,
+                    committer_email,
+                    planned_at,
+                    planner_name,
+                    planner_email
+                )
+                VALUES (?, ?, ?, ?, '', ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    "abc",
+                    None,
+                    "users",
+                    "other",
+                    "2025-01-01T00:00:00Z",
+                    "Ada",
+                    "ada@example.com",
+                    "2025-01-01T00:00:00Z",
+                    "Ada",
+                    "ada@example.com",
+                ),
+            )
+            connection.commit()
+        finally:
+            connection.close()
 
         result = runner.invoke(
             main,
             [
                 "status",
                 "--target",
-                f"db:sqlite:{db_path.name}",
+                "db:sqlite:registry.db",
             ],
         )
 
@@ -197,7 +212,8 @@ def test_status_outputs_human_summary_when_in_sync(runner: CliRunner) -> None:
             entries=(),
             plan_path=Path("sqlitch.plan"),
         )
-        _create_registry(Path("registry.db"))
+        registry_path = _prepare_workspace(Path("registry.db"))
+        _create_registry(registry_path)
 
         result = runner.invoke(
             main,
@@ -224,7 +240,8 @@ def test_status_outputs_json_with_pending_changes(runner: CliRunner) -> None:
             entries=(_make_change("users"),),
             plan_path=Path("sqlitch.plan"),
         )
-        _create_registry(Path("registry.db"))
+        registry_path = _prepare_workspace(Path("registry.db"))
+        _create_registry(registry_path)
 
         result = runner.invoke(
             main,
@@ -523,7 +540,7 @@ def test_resolve_registry_target_normalizes_relative_path(tmp_path: Path) -> Non
     """Non-prefixed targets should resolve relative to the project root."""
 
     registry_file = tmp_path / "registry.sqlite"
-    registry_file.touch()
+    registry_path = _prepare_workspace(registry_file)
 
     engine_target, display_target = _resolve_registry_target(
         "registry.sqlite",
@@ -531,8 +548,10 @@ def test_resolve_registry_target_normalizes_relative_path(tmp_path: Path) -> Non
         "sqlite",
     )
 
-    expected_uri = f"db:sqlite:{registry_file.as_posix()}"
-    assert engine_target.registry_uri == expected_uri
+    expected_registry = f"db:sqlite:{registry_path.as_posix()}"
+    expected_workspace = f"db:sqlite:{registry_file.resolve().as_posix()}"
+    assert engine_target.registry_uri == expected_registry
+    assert engine_target.uri == expected_workspace
     assert engine_target.name == "registry.sqlite"
     assert display_target == "registry.sqlite"
 
@@ -540,7 +559,7 @@ def test_resolve_registry_target_normalizes_relative_path(tmp_path: Path) -> Non
 def test_load_registry_rows_missing_database(tmp_path: Path) -> None:
     """Missing registry databases should surface as CommandError instances."""
 
-    with pytest.raises(CommandError, match="Registry database"):
+    with pytest.raises(CommandError, match="Workspace database"):
         _resolve_registry_target("missing.db", tmp_path, "sqlite")
 
 

@@ -118,6 +118,7 @@ def log_command(
         target_value,
         cli_context.project_root,
         default_engine,
+        registry_override=cli_context.registry,
     )
 
     records = _load_log_events(

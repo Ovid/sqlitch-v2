@@ -11,6 +11,7 @@ from typing import Iterable
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
+from sqlitch.engine.sqlite import derive_sqlite_registry_uri, resolve_sqlite_filesystem_path
 
 
 GOLDEN_ROOT = Path(__file__).resolve().parents[2] / "support" / "golden" / "registry" / "sqlite"
@@ -20,9 +21,9 @@ def _runner() -> CliRunner:
     return CliRunner()
 
 
-def _seed_events(db_path: Path, rows: Iterable[tuple[str, str, str, str, str, str, str]]) -> None:
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    connection = sqlite3.connect(db_path)
+def _seed_events(registry_path: Path, rows: Iterable[tuple[str, str, str, str, str, str, str]]) -> None:
+    registry_path.parent.mkdir(parents=True, exist_ok=True)
+    connection = sqlite3.connect(registry_path)
     try:
         connection.execute(
             """
@@ -60,6 +61,19 @@ def _seed_events(db_path: Path, rows: Iterable[tuple[str, str, str, str, str, st
         connection.close()
 
 
+def _prepare_workspace(workspace_db: Path) -> Path:
+    workspace_db.parent.mkdir(parents=True, exist_ok=True)
+    workspace_db.touch(exist_ok=True)
+    workspace_uri = f"db:sqlite:{workspace_db.resolve().as_posix()}"
+    registry_uri = derive_sqlite_registry_uri(
+        workspace_uri=workspace_uri,
+        project_root=Path.cwd(),
+    )
+    registry_path = resolve_sqlite_filesystem_path(registry_uri)
+    registry_path.parent.mkdir(parents=True, exist_ok=True)
+    return registry_path
+
+
 def test_log_reports_human_history() -> None:
     """Human output should mirror the Sqitch log for recent events."""
 
@@ -67,9 +81,10 @@ def test_log_reports_human_history() -> None:
 
     runner = _runner()
     with runner.isolated_filesystem():
-        db_path = Path("flipr_test.db")
+        workspace_db = Path("flipr_test.db")
+        registry_path = _prepare_workspace(workspace_db)
         _seed_events(
-            db_path,
+            registry_path,
             [
                 (
                     "revert",
@@ -107,9 +122,10 @@ def test_log_supports_json_format() -> None:
 
     runner = _runner()
     with runner.isolated_filesystem():
-        db_path = Path("flipr_test.db")
+        workspace_db = Path("flipr_test.db")
+        registry_path = _prepare_workspace(workspace_db)
         _seed_events(
-            db_path,
+            registry_path,
             [
                 (
                     "deploy",
@@ -154,9 +170,10 @@ def test_log_rejects_unknown_format() -> None:
 
     runner = _runner()
     with runner.isolated_filesystem():
-        db_path = Path("flipr_test.db")
+        workspace_db = Path("flipr_test.db")
+        registry_path = _prepare_workspace(workspace_db)
         _seed_events(
-            db_path,
+            registry_path,
             [
                 (
                     "deploy",
@@ -193,9 +210,10 @@ def test_log_rejects_negative_limit() -> None:
 
     runner = _runner()
     with runner.isolated_filesystem():
-        db_path = Path("flipr_test.db")
+        workspace_db = Path("flipr_test.db")
+        registry_path = _prepare_workspace(workspace_db)
         _seed_events(
-            db_path,
+            registry_path,
             [
                 (
                     "deploy",
@@ -243,9 +261,10 @@ def test_log_supports_filters_and_pagination() -> None:
 
     runner = _runner()
     with runner.isolated_filesystem():
-        db_path = Path("flipr_test.db")
+        workspace_db = Path("flipr_test.db")
+        registry_path = _prepare_workspace(workspace_db)
         _seed_events(
-            db_path,
+            registry_path,
             [
                 (
                     "deploy",
@@ -317,9 +336,10 @@ def test_log_reports_no_events_message() -> None:
 
     runner = _runner()
     with runner.isolated_filesystem():
-        db_path = Path("flipr_test.db")
+        workspace_db = Path("flipr_test.db")
+        registry_path = _prepare_workspace(workspace_db)
         _seed_events(
-            db_path,
+            registry_path,
             [
                 (
                     "deploy",
@@ -355,9 +375,10 @@ def test_log_skip_without_limit() -> None:
 
     runner = _runner()
     with runner.isolated_filesystem():
-        db_path = Path("flipr_test.db")
+        workspace_db = Path("flipr_test.db")
+        registry_path = _prepare_workspace(workspace_db)
         _seed_events(
-            db_path,
+            registry_path,
             [
                 (
                     "deploy",
