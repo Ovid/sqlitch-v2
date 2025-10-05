@@ -37,6 +37,9 @@
 - Q: When Docker isn’t available on a contributor machine or CI runner, how should the test suite behave? → A: Option B (skip Docker-backed tests with warning)
 - Q: Where should registry metadata tables live for SQLite compared to engines with schemas? → A: Mirror Sqitch behavior—write to a sibling `sqitch.db` file on SQLite and to a dedicated Sqitch-managed schema on engines that support schemas; consult the upstream Perl implementation for canonical details.
 
+### Session 2025-10-05
+- Q: How should SQLitch handle database credentials for target engines to keep parity while protecting secrets? → A: Align with Perl Sqitch behavior
+
 ### Delivery Milestones
 - **Milestone M1 (SQLite First)**: Ship a fully working SQLite experience—including engine adapter, CLI command surface, parity smoke tests, and manual walkthrough—before beginning any work on additional database engines. No MySQL/PostgreSQL development may start until the SQLite milestone is verified end-to-end from the shell.
 - **Milestone M2 (MySQL)**: After M1 parity documentation merges, extend the same workflows to MySQL and repeat the manual verification gate.
@@ -88,6 +91,7 @@ Database release engineers need to execute database change management workflows 
 
 ### Non-Functional Requirements
 - **NFR-001**: SQLitch MUST provide end-to-end observability through structured logging that captures a unique run identifier for every CLI invocation and records command, target, and outcome metadata. CLI entry points MUST expose consistent `--verbose`, `--quiet`, and `--json` modes (with deterministic precedence rules) that govern both log verbosity and emitted console output, ensuring parity-friendly human-readable logs by default and machine-ready JSON when requested. Structured log records MUST be forwarded to Rich/Click output handlers without breaking existing parity fixtures, and automated tests MUST exercise logging toggles to confirm coverage across modes.
+- **NFR-002**: Credential handling MUST mirror the upstream Sqitch behavior: SQLitch SHALL honor the same configuration-driven credential storage options (including Sqitch/SQLitch config files) while documenting required file-permission hardening, accept credentials supplied via environment variables or CLI prompts, and ensure logs and structured payloads never echo secrets. Per-engine adapters MUST surface the same precedence rules as Sqitch and provide parity warnings when credentials are missing or insecure.
 
 ### Key Entities *(include if feature involves data)*
 - **Deployment Plan**: Represents the ordered list of database changes, tags, and dependencies; must remain fully compatible with existing Sqitch plan files.

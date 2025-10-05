@@ -24,6 +24,13 @@
 - **Rationale**: Typed models expose validation errors early and allow tests to swap configuration roots without mutating real home directories.
 - **Alternatives Considered**: Raw dict parsing would duplicate validation logic and increase defect risk.
 
+## Decision: Credential Handling Parity
+- **Outcome**: Mirror Sqitch credential resolution—prefer CLI flags, then environment variables, then configuration files—while never persisting sensitive values back to disk and redacting credentials in structured logs.
+- **Rationale**: Aligns with clarified requirement (FR-019 & NFR-002) ensuring SQLitch neither downgrades Sqitch security posture nor surprises existing users migrating credentials.
+- **Alternatives Considered**:
+  - Persist credentials within SQLite registry tables for convenience; rejected due to security risk and deviation from Sqitch behavior.
+  - Prompting interactively on missing credentials; deferred to future UX improvements once parity baseline is met.
+
 ## Decision: Docker-Orchestrated Testing
 - **Outcome**: Provide Docker Compose definitions and pytest fixtures that start containers for MySQL and PostgreSQL; skip with warning when Docker cannot be reached.
 - **Rationale**: Ensures parity coverage with real engines while honoring environments without Docker access (per spec).

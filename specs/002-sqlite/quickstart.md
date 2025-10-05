@@ -51,6 +51,7 @@ Provisioned services:
 	- `sqlitch` installs as a console script (plus a compatibility shim in `bin/sqlitch` for direct invocation).
 	- Detects existing `sqitch.*` files if copying samples; tool aborts if conflicting `sqlitch.*` detected.
 	- Generated plan/scripts mirror Sqitch layout.
+	- Credentials resolve flags → environment (`SQLITCH_PASSWORD`, `SQLITCH_PG_URI`, etc.) → config files, and secrets are never written back to disk or echoed in logs.
 
 ## 6. Run Test Suite
 ```bash

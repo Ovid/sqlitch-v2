@@ -50,6 +50,8 @@
 - [X] T035c [P] Add skipped tooling test (remove skip immediately before implementation) covering lint gate aggregation for flake8/pylint in `tests/scripts/test_lint_suite.py`.
 - [X] T035d [P] Add skipped regression test (remove skip immediately before implementation) validating structured logging output and run identifier emission across verbosity modes in `tests/regression/test_observability_logging.py`.
 - [X] T035e [P] Add skipped contract test (remove skip immediately before implementation) for global verbosity flags (`--verbose`, `--quiet`, `--json`) in `tests/cli/contracts/test_global_options_contract.py`.
+- [ ] T035f [P] Add skipped regression test (remove skip immediately before implementation) covering credential precedence (CLI flag → environment → config) and secret persistence rules in `tests/regression/test_credentials_precedence.py`, referencing `specs/002-sqlite/research.md` §Credential Handling Parity.
+- [ ] T035g [P] Add skipped regression test (remove skip immediately before implementation) ensuring structured logging and stdout/stderr output redact sensitive credential values across verbosity/JSON modes in `tests/regression/test_credentials_redaction.py`.
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 *Before beginning any task in this phase, remove the related skip markers introduced in Phase 3.2, confirm the tests fail, and use that failure as the Red→Green starting point (FR-012).* 
@@ -76,6 +78,9 @@
 	- [X] T095d Refine `tests/cli/contracts/test_show_contract.py` (all nested contexts) to use the new output channels.
 	- [X] T095e Bring `tests/cli/contracts/test_add_contract.py` in line with the stdout/stderr contract conventions.
 	- [X] T095f Run the contract suite (`pytest tests/cli/contracts`) to confirm the harness/test updates hold before moving to further logging work.
+	- [ ] T096 Implement credential precedence resolution (CLI flags → environment → configuration files) and secret write protections in `sqlitch/config/resolver.py`, augmenting docstrings and referencing `specs/002-sqlite/research.md` §Credential Handling Parity.
+	- [ ] T097 Extend structured logging and CLI output redaction for sensitive credentials across verbosity/JSON modes in `sqlitch/utils/logging.py` and `sqlitch/cli/options.py`, ensuring parity with Sqitch guidance.
+	- [ ] T098 Update contributor-facing documentation (`specs/002-sqlite/quickstart.md`, `specs/002-sqlite/contracts/cli-config.md`, and related guides) to capture credential precedence, secret redaction, and required file-permission hardening from `specs/002-sqlite/research.md` §Credential Handling Parity.
 - [X] T052 [P] Implement `sqlitch add` command handler in `sqlitch/cli/commands/add.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-add.md`)*
 - [X] T053 [P] Implement `sqlitch bundle` command handler in `sqlitch/cli/commands/bundle.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-bundle.md`)*
 - [X] T054 [P] Implement `sqlitch checkout` command handler in `sqlitch/cli/commands/checkout.py` with SQLite parity. *(Ref: `specs/002-sqlite/contracts/cli-checkout.md`)*
@@ -110,7 +115,7 @@
 - [ ] T073 Integrate engine adapters with registry layer and plan execution pipeline in `sqlitch/engine/__init__.py`.
 - [ ] T074 Integrate CLI commands with Docker harness, config loader, and plan/registry modules ensuring deterministic stdout/stderr across platforms.
 - [ ] T075 Implement GitHub Actions artifacts (coverage XML, parity diff uploads) and document in `.github/workflows/ci.yml`.
-- [ ] T076 Finalize quickstart and docs updates (`quickstart.md`, `docs/ARCHITECTURE.md`, `docs/PARITY.md`) reflecting implementation details and smoke tests.
+- [ ] T076 Finalize quickstart and docs updates (`quickstart.md`, `docs/architecture/registry-lifecycle.md`, `docs/reports/sqlite-gate.md`) reflecting implementation details and smoke tests.
 
 ## Phase 3.5: Polish
 - [ ] T077 [P] Add targeted unit tests for utilities (`tests/unit/test_utils_fs.py`, `tests/unit/test_utils_time.py`).
@@ -140,6 +145,7 @@
 - Any PR exiting Phase 3.3 MUST include docstrings for all newly- or publicly-exposed symbols; reviewers should block merges otherwise.
 - T051 must complete before command handler tasks T052–T070.
 - T035d and T035e must be unskipped before starting observability implementation tasks T093–T095.
+- T035f and T035g must be unskipped before beginning credential handling work in T096–T097.
 - T093 completes before T095 updates command harnesses; T094 provides the structured logging sink consumed by T095.
 - T008a and T008b must finish before Phase 3.3 work begins to ensure the skip-removal gate is active in tooling and reviews.
 - Integration tasks T073–T074 depend on completion of all relevant command and engine tasks.
