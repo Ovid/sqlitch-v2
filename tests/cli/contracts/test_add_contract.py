@@ -74,9 +74,9 @@ def test_add_appends_change_and_creates_scripts(monkeypatch: pytest.MonkeyPatch)
         )
 
         assert result.exit_code == 0, result.stderr
-        deploy_name = "deploy/20250102030405_widgets.sql"
-        revert_name = "revert/20250102030405_widgets.sql"
-        verify_name = "verify/20250102030405_widgets.sql"
+        deploy_name = "deploy/widgets.sql"
+        revert_name = "revert/widgets.sql"
+        verify_name = "verify/widgets.sql"
 
         assert f"Created deploy script {deploy_name}" in result.stdout
         assert f"Created revert script {revert_name}" in result.stdout
@@ -167,8 +167,8 @@ def test_add_uses_explicit_plan_override(monkeypatch: pytest.MonkeyPatch) -> Non
 
         plan_content = override_plan.read_text(encoding="utf-8")
         assert "change reports" in plan_content
-        assert "deploy/20250708091011_reports.sql" in plan_content
-        assert "verify/20250708091011_reports.sql" in plan_content
+        assert "deploy/reports.sql" in plan_content
+        assert "verify/reports.sql" in plan_content
 
 
 def test_add_honours_project_templates(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -202,9 +202,9 @@ def test_add_honours_project_templates(monkeypatch: pytest.MonkeyPatch) -> None:
         result = runner.invoke(main, ["add", "widgets"])
 
         assert result.exit_code == 0, result.stderr
-        deploy_content = Path("deploy/20250910111213_widgets.sql").read_text(encoding="utf-8")
-        revert_content = Path("revert/20250910111213_widgets.sql").read_text(encoding="utf-8")
-        verify_content = Path("verify/20250910111213_widgets.sql").read_text(encoding="utf-8")
+        deploy_content = Path("deploy/widgets.sql").read_text(encoding="utf-8")
+        revert_content = Path("revert/widgets.sql").read_text(encoding="utf-8")
+        verify_content = Path("verify/widgets.sql").read_text(encoding="utf-8")
 
         assert deploy_content == "-- Custom deploy widgets for demo\n"
         assert revert_content == "-- Custom revert widgets\n"
@@ -239,14 +239,14 @@ def test_add_template_override_by_name(monkeypatch: pytest.MonkeyPatch) -> None:
 
         assert result.exit_code == 0, result.stderr
         assert (
-            Path("deploy/20251101020304_widgets.sql").read_text(encoding="utf-8")
+            Path("deploy/widgets.sql").read_text(encoding="utf-8")
             == "deploy widgets\n"
         )
         assert (
-            Path("revert/20251101020304_widgets.sql").read_text(encoding="utf-8")
+            Path("revert/widgets.sql").read_text(encoding="utf-8")
             == "revert widgets\n"
         )
         assert (
-            Path("verify/20251101020304_widgets.sql").read_text(encoding="utf-8")
+            Path("verify/widgets.sql").read_text(encoding="utf-8")
             == "verify widgets\n"
         )

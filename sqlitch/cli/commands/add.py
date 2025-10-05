@@ -203,11 +203,9 @@ def add_command(
     timestamp = _utcnow()
     slug = slugify_change_name(change_name)
 
-    timestamp_token = timestamp.strftime("%Y%m%d%H%M%S")
-
-    default_deploy = Path("deploy") / f"{timestamp_token}_{slug}.sql"
-    default_revert = Path("revert") / f"{timestamp_token}_{slug}.sql"
-    default_verify = Path("verify") / f"{timestamp_token}_{slug}.sql"
+    default_deploy = Path("deploy") / f"{slug}.sql"
+    default_revert = Path("revert") / f"{slug}.sql"
+    default_verify = Path("verify") / f"{slug}.sql"
 
     deploy_target = _resolve_script_path(project_root, deploy_path, default_deploy)
     revert_target = _resolve_script_path(project_root, revert_path, default_revert)

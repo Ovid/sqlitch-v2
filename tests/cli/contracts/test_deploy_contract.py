@@ -32,7 +32,7 @@ def _seed_plan(plan_path: Path) -> tuple[Change, Change, Tag]:
         planner="Ada Lovelace",
         planned_at=datetime(2025, 1, 1, 0, 0, tzinfo=timezone.utc),
         notes="Initialises core schema",
-    )
+    )   
 
     change_two = Change.create(
         name="widgets:add",
