@@ -152,6 +152,7 @@ class StructuredLogger:
         )
         level_name = config.level.upper()
         self._threshold = _LEVEL_ORDER.get(level_name, _LEVEL_ORDER["INFO"])
+        self._structured_logging_enabled = config.structured_logging_enabled
 
     def trace(
         self,
@@ -248,6 +249,9 @@ class StructuredLogger:
             message=message,
             payload=MappingProxyType(combined_payload),
         )
+
+        if not self._structured_logging_enabled:
+            return record
 
         if self._config.json_mode:
             self._emit_json(record)

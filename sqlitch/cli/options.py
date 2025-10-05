@@ -30,6 +30,8 @@ class LogConfiguration:
         destination: Where log output should be directed (defaults to stderr).
         rich_markup: Controls whether Rich markup should be enabled.
         rich_tracebacks: Controls whether Rich traceback formatting is enabled.
+        structured_logging_enabled: Indicates whether structured log sinks should emit
+            records to stderr/stdout (derived from verbosity and json mode).
     """
 
     run_identifier: str
@@ -64,7 +66,14 @@ class LogConfiguration:
             "destination": self.destination,
             "rich_markup": self.rich_markup,
             "rich_tracebacks": self.rich_tracebacks,
+            "structured_logging": self.structured_logging_enabled,
         }
+
+    @property
+    def structured_logging_enabled(self) -> bool:
+        """Return whether structured log sinks should emit console/JSON payloads."""
+
+        return self.json_mode or self.verbosity > 0
 
 
 def generate_run_identifier() -> str:

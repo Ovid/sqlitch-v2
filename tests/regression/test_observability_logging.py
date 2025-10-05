@@ -9,8 +9,8 @@ from click.testing import CliRunner
 from sqlitch.cli.main import main
 
 
-def test_structured_logging_emits_run_identifier() -> None:
-    """Structured logs should include the run identifier in human and JSON modes."""
+def test_structured_logging_emits_run_identifier_when_opted_in() -> None:
+    """Structured logs should emit only when logging flags are provided."""
 
     runner = CliRunner()
 
@@ -18,8 +18,18 @@ def test_structured_logging_emits_run_identifier() -> None:
 
     assert human_result.exit_code == 0, human_result.stderr
     human_lines = [line for line in human_result.stderr.splitlines() if line.strip()]
-    assert any("human-run" in line and "command.start" in line for line in human_lines)
-    assert any("human-run" in line and "command.complete" in line for line in human_lines)
+    assert human_lines == []
+
+    verbose_result = runner.invoke(
+        main,
+        ["--verbose", "help"],
+        env={"SQLITCH_RUN_ID": "human-run-verbose"},
+    )
+
+    assert verbose_result.exit_code == 0, verbose_result.stderr
+    verbose_lines = [line for line in verbose_result.stderr.splitlines() if line.strip()]
+    assert any("human-run-verbose" in line and "command.start" in line for line in verbose_lines)
+    assert any("human-run-verbose" in line and "command.complete" in line for line in verbose_lines)
 
     json_result = runner.invoke(main, ["--json", "help"], env={"SQLITCH_RUN_ID": "json-run"})
 
