@@ -69,13 +69,14 @@ class EngineTarget:
     engine: str
     uri: str
     variables: Mapping[str, str] = field(default_factory=dict)
-
-    registry_uri: str = field(init=False)
+    registry_uri: str | None = None
 
     def __post_init__(self) -> None:
         canonical = canonicalize_engine_name(self.engine)
         object.__setattr__(self, "engine", canonical)
-        object.__setattr__(self, "registry_uri", self.uri)
+
+        registry_uri = self.registry_uri or self.uri
+        object.__setattr__(self, "registry_uri", registry_uri)
 
         variables = {str(key): str(value) for key, value in dict(self.variables).items()}
         object.__setattr__(self, "variables", MappingProxyType(variables))

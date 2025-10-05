@@ -211,3 +211,67 @@ def test_determine_system_root_returns_default_when_no_paths_exist(
 
     result = resolver._determine_system_root(env={}, system_path=None)
     assert result == default_dir
+
+
+def test_resolve_registry_uri_sqlite_defaults_to_sibling(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace.db"
+    workspace_uri = f"db:sqlite:{workspace.as_posix()}"
+
+    registry_uri = resolver.resolve_registry_uri(
+        engine="sqlite",
+        workspace_uri=workspace_uri,
+        project_root=tmp_path,
+    )
+
+    expected = f"db:sqlite:{(workspace.parent / 'sqitch.db').as_posix()}"
+    assert registry_uri == expected
+
+
+def test_resolve_registry_uri_sqlite_honours_override(tmp_path: Path) -> None:
+    workspace_uri = f"db:sqlite:{(tmp_path / 'workspace.db').as_posix()}"
+    override = (tmp_path / "custom" / "registry.db").as_posix()
+
+    registry_uri = resolver.resolve_registry_uri(
+        engine="sqlite",
+        workspace_uri=workspace_uri,
+        project_root=tmp_path,
+        registry_override=override,
+    )
+
+    expected = f"db:sqlite:{(tmp_path / 'custom' / 'registry.db').as_posix()}"
+    assert registry_uri == expected
+
+
+def test_resolve_registry_uri_sqlite_in_memory(tmp_path: Path) -> None:
+    workspace_uri = "db:sqlite::memory:"
+
+    registry_uri = resolver.resolve_registry_uri(
+        engine="sqlite",
+        workspace_uri=workspace_uri,
+        project_root=tmp_path,
+    )
+
+    expected = f"db:sqlite:{(tmp_path / 'sqitch.db').as_posix()}"
+    assert registry_uri == expected
+
+
+def test_resolve_registry_uri_non_sqlite_defaults_to_workspace() -> None:
+    workspace_uri = "db:pg://example"
+
+    registry_uri = resolver.resolve_registry_uri(
+        engine="pg",
+        workspace_uri=workspace_uri,
+        project_root=Path("."),
+    )
+
+    assert registry_uri == workspace_uri
+
+    override = "db:pg://registry"
+    overridden = resolver.resolve_registry_uri(
+        engine="pg",
+        workspace_uri=workspace_uri,
+        project_root=Path("."),
+        registry_override=override,
+    )
+
+    assert overridden == override

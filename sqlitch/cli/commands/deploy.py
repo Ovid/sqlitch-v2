@@ -13,13 +13,26 @@ from typing import Callable
 
 import click
 
-from sqlitch.engine import EngineTarget, canonicalize_engine_name, create_engine
+from sqlitch.engine import (
+    EngineTarget,
+    MYSQL_STUB_MESSAGE,
+    POSTGRES_STUB_MESSAGE,
+    canonicalize_engine_name,
+    create_engine,
+)
 from sqlitch.engine.base import UnsupportedEngineError
-from sqlitch.engine.sqlite import REGISTRY_ATTACHMENT_ALIAS, SQLiteEngine
+from sqlitch.engine.sqlite import (
+    REGISTRY_ATTACHMENT_ALIAS,
+    SQLiteEngine,
+    resolve_sqlite_filesystem_path,
+)
 from sqlitch.plan.model import Change, Plan
 from sqlitch.plan.parser import PlanParseError, parse_plan
 from sqlitch.registry import LATEST_REGISTRY_VERSION, get_registry_migrations
+from sqlitch.utils.logging import StructuredLogger
 from sqlitch.utils.time import isoformat_utc
+
+from sqlitch.config import resolver as config_resolver
 
 from . import CommandError, register_command
 from ._context import (
@@ -45,6 +58,8 @@ class _DeployRequest:
     to_tag: str | None
     log_only: bool
     quiet: bool
+    logger: StructuredLogger
+    registry_override: str | None
 
 
 @click.command("deploy")
@@ -102,6 +117,8 @@ def deploy_command(
         log_only=log_only,
         quiet=quiet_mode_enabled(ctx),
         default_engine=default_engine,
+        logger=cli_context.logger,
+        registry_override=cli_context.registry,
     )
 
     _execute_deploy(request)
@@ -118,6 +135,8 @@ def _build_request(
     log_only: bool,
     quiet: bool,
     default_engine: str,
+    logger: StructuredLogger,
+    registry_override: str | None,
 ) -> _DeployRequest:
     if to_change and to_tag:
         raise CommandError("Cannot combine --to-change and --to-tag filters.")
@@ -135,17 +154,40 @@ def _build_request(
         to_tag=to_tag,
         log_only=log_only,
         quiet=quiet,
+        logger=logger,
+        registry_override=registry_override,
     )
 
 
 def _execute_deploy(request: _DeployRequest) -> None:
+    logger = request.logger
     changes = _select_changes(
         plan=request.plan,
         to_change=request.to_change,
         to_tag=request.to_tag,
     )
+    change_names = [change.name for change in changes]
+    logger.debug(
+        "deploy.changes.selected",
+        payload={
+            "plan": request.plan.project_name,
+            "plan_path": request.plan_path.as_posix(),
+            "changes": change_names,
+            "to_change": request.to_change,
+            "to_tag": request.to_tag,
+        },
+    )
 
     if request.log_only:
+        logger.info(
+            "deploy.log_only",
+            payload={
+                "plan": request.plan.project_name,
+                "plan_path": request.plan_path.as_posix(),
+                "target": request.target,
+                "changes": change_names,
+            },
+        )
         _render_log_only_deploy(request, changes)
         return
 
@@ -156,12 +198,35 @@ def _execute_deploy(request: _DeployRequest) -> None:
         project_root=request.project_root,
         default_engine=request.plan.default_engine,
         plan_path=request.plan_path,
+        registry_override=request.registry_override,
+        logger=logger,
     )
 
-    emitter(f"Deploying plan '{request.plan.project_name}' to target '{display_target}'.")
+    emitter(
+        f"Deploying plan '{request.plan.project_name}' to target '{display_target}'."
+    )
+    logger.info(
+        "deploy.start",
+        payload={
+            "plan": request.plan.project_name,
+            "plan_path": request.plan_path.as_posix(),
+            "target": engine_target.uri,
+            "display_target": display_target,
+            "registry": engine_target.registry_uri,
+            "changes": change_names,
+        },
+    )
 
     if not changes:
         emitter("Nothing to deploy (up-to-date).")
+        logger.info(
+            "deploy.noop",
+            payload={
+                "reason": "no-plan-changes",
+                "plan": request.plan.project_name,
+                "target": engine_target.uri,
+            },
+        )
         return
 
     committer_name, committer_email = _resolve_committer_identity(request.env)
@@ -174,6 +239,8 @@ def _execute_deploy(request: _DeployRequest) -> None:
     registry_schema = REGISTRY_ATTACHMENT_ALIAS
 
     try:
+        _begin_deploy_transaction(connection)
+
         _ensure_registry_ready(
             engine=engine,
             connection=connection,
@@ -193,25 +260,82 @@ def _execute_deploy(request: _DeployRequest) -> None:
 
         if not pending:
             emitter("Nothing to deploy (up-to-date).")
+            logger.info(
+                "deploy.noop",
+                payload={
+                    "reason": "already-deployed",
+                    "plan": request.plan.project_name,
+                    "target": engine_target.uri,
+                },
+            )
+            _rollback_deploy_transaction(connection)
             return
 
         applied = 0
         for change in pending:
-            _apply_change(
-                connection=connection,
-                project=request.plan.project_name,
-                plan_root=request.plan_path.parent,
-                change=change,
-                env=request.env,
-                committer_name=committer_name,
-                committer_email=committer_email,
-                deployed=deployed,
-                registry_schema=registry_schema,
-            )
-            emitter(f"  + {change.name}")
-            applied += 1
+            change_payload = {
+                "change": change.name,
+                "plan": request.plan.project_name,
+                "target": engine_target.uri,
+                "registry": engine_target.registry_uri,
+            }
+            logger.info("deploy.change.start", payload=change_payload)
+            try:
+                _apply_change(
+                    connection=connection,
+                    project=request.plan.project_name,
+                    plan_root=request.plan_path.parent,
+                    change=change,
+                    env=request.env,
+                    committer_name=committer_name,
+                    committer_email=committer_email,
+                    deployed=deployed,
+                    registry_schema=registry_schema,
+                )
+            except Exception as exc:
+                logger.error(
+                    "deploy.change.error",
+                    message=str(exc),
+                    payload=change_payload,
+                )
+                raise
+            else:
+                emitter(f"  + {change.name}")
+                applied += 1
+                logger.info(
+                    "deploy.change.success",
+                    payload={
+                        **change_payload,
+                        "transaction_scope": "change",
+                    },
+                )
 
+        _commit_deploy_transaction(connection)
         emitter(f"Deployment complete. Applied {applied} change(s).")
+        logger.info(
+            "deploy.complete",
+            payload={
+                "plan": request.plan.project_name,
+                "target": engine_target.uri,
+                "registry": engine_target.registry_uri,
+                "applied": applied,
+            },
+        )
+    except Exception as exc:
+        try:
+            _rollback_deploy_transaction(connection)
+        except sqlite3.Error:  # pragma: no cover - best effort rollback
+            pass
+        logger.error(
+            "deploy.error",
+            message=str(exc),
+            payload={
+                "plan": request.plan.project_name,
+                "target": engine_target.uri,
+                "registry": engine_target.registry_uri,
+            },
+        )
+        raise
     finally:
         try:
             connection.close()
@@ -302,54 +426,96 @@ def _resolve_engine_target(
     project_root: Path,
     default_engine: str,
     plan_path: Path,
+    registry_override: str | None,
+    logger: StructuredLogger,
 ) -> tuple[EngineTarget, str]:
     """Return an :class:`EngineTarget` for the requested deployment target."""
 
-    display_target = target
-    if target.startswith("db:"):
-        remainder = target[3:]
+    candidate = target.strip()
+    if candidate.startswith("db:"):
+        remainder = candidate[3:]
         engine_token, separator, payload = remainder.partition(":")
         if not separator:
             raise CommandError(f"Malformed target URI: {target}")
         engine_hint = engine_token or default_engine
-        payload_value = payload
-        workspace_uri = target
-        display_target = target
+        workspace_payload = payload
+        original_display = candidate
     else:
         engine_hint = default_engine
-        payload_value = target
-        workspace_uri = ""
-        display_target = ""
+        workspace_payload = candidate
+        original_display = candidate
 
     try:
         engine_name = canonicalize_engine_name(engine_hint)
     except UnsupportedEngineError as exc:
         raise CommandError(f"Unsupported engine '{engine_hint}'") from exc
 
-    if engine_name != "sqlite":
-        raise CommandError(f"Engine '{engine_name}' deployment is not supported yet.")
+    if engine_name == "sqlite":
+        workspace_uri, display_target = _resolve_sqlite_workspace_uri(
+            payload=workspace_payload,
+            project_root=project_root,
+            plan_path=plan_path,
+            original_target=original_display,
+        )
+        registry_uri = config_resolver.resolve_registry_uri(
+            engine=engine_name,
+            workspace_uri=workspace_uri,
+            project_root=project_root,
+            registry_override=registry_override,
+        )
+        display_name = display_target or workspace_uri
+        engine_target = EngineTarget(
+            name=display_name,
+            engine=engine_name,
+            uri=workspace_uri,
+            registry_uri=registry_uri,
+        )
+        return engine_target, display_name
 
-    if payload_value == ":memory:":
+    if engine_name == "mysql":
+        logger.warning(
+            "deploy.stub_engine",
+            message=MYSQL_STUB_MESSAGE,
+            payload={"engine": engine_name, "target": target},
+        )
+        raise CommandError(MYSQL_STUB_MESSAGE)
+
+    if engine_name == "pg":
+        logger.warning(
+            "deploy.stub_engine",
+            message=POSTGRES_STUB_MESSAGE,
+            payload={"engine": engine_name, "target": target},
+        )
+        raise CommandError(POSTGRES_STUB_MESSAGE)
+
+    raise CommandError(f"Engine '{engine_name}' deployment is not supported yet.")
+
+
+def _resolve_sqlite_workspace_uri(
+    *,
+    payload: str,
+    project_root: Path,
+    plan_path: Path,
+    original_target: str,
+) -> tuple[str, str]:
+    if payload == ":memory:":
         raise CommandError("In-memory SQLite targets are not supported")
 
-    if payload_value and payload_value.startswith("file:"):
-        workspace_uri = workspace_uri or f"db:{engine_name}:{payload_value}"
+    if payload.startswith("file:"):
+        workspace_uri = f"db:sqlite:{payload}"
+        display = original_target or workspace_uri
+        return workspace_uri, display
+
+    if payload:
+        candidate = Path(payload)
     else:
-        if payload_value:
-            candidate = Path(payload_value)
-        else:
-            candidate = plan_path.with_suffix(".db")
+        candidate = plan_path.with_suffix(".db")
 
-        database_path = candidate if candidate.is_absolute() else project_root / candidate
-        workspace_uri = f"db:{engine_name}:{database_path.as_posix()}"
-        display_target = workspace_uri
-
-    registry_path = project_root / "sqitch.db"
-    registry_uri = f"db:{engine_name}:{registry_path.as_posix()}"
-
-    engine_target = EngineTarget(name=display_target, engine=engine_name, uri=workspace_uri)
-    object.__setattr__(engine_target, "registry_uri", registry_uri)
-    return engine_target, display_target
+    database_path = candidate if candidate.is_absolute() else project_root / candidate
+    database_path = database_path.resolve()
+    workspace_uri = f"db:sqlite:{database_path.as_posix()}"
+    display = original_target or workspace_uri
+    return workspace_uri, display
 
 
 def _create_engine_connection(
@@ -391,14 +557,25 @@ def _ensure_sqlite_parent_directory(uri: str) -> None:
     if not uri.startswith(prefix):
         return
 
-    payload = uri[len(prefix) :]
-    if payload.startswith("file:"):
-        return
-
-    path = Path(payload)
+    path = resolve_sqlite_filesystem_path(uri)
     parent = path.parent
     if parent and not parent.exists():
         parent.mkdir(parents=True, exist_ok=True)
+
+
+def _begin_deploy_transaction(connection: sqlite3.Connection) -> None:
+    connection.execute("BEGIN IMMEDIATE")
+
+
+def _commit_deploy_transaction(connection: sqlite3.Connection) -> None:
+    connection.execute("COMMIT")
+
+
+def _rollback_deploy_transaction(connection: sqlite3.Connection) -> None:
+    try:
+        connection.execute("ROLLBACK")
+    except sqlite3.Error:  # pragma: no cover - best effort rollback
+        pass
 
 
 def _ensure_registry_ready(

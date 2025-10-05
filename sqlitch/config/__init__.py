@@ -8,4 +8,5 @@ from .resolver import (  # noqa: F401
 	determine_config_root,
 	resolve_config,
 	resolve_credentials,
+	resolve_registry_uri,
 )

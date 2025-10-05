@@ -9,6 +9,9 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import TYPE_CHECKING
 
+from sqlitch.engine import canonicalize_engine_name
+from sqlitch.engine.sqlite import derive_sqlite_registry_uri
+
 from .loader import ConfigProfile, ConfigScope, load_config
 
 if TYPE_CHECKING:
@@ -116,6 +119,31 @@ def resolve_config(
         scope_dirs=scope_dirs,
         config_filenames=config_filenames,
     )
+
+
+def resolve_registry_uri(
+    *,
+    engine: str,
+    workspace_uri: str,
+    project_root: Path | str,
+    registry_override: str | None = None,
+) -> str:
+    """Return the canonical registry URI for the given engine target."""
+
+    canonical_engine = canonicalize_engine_name(engine)
+    project_path = Path(project_root)
+
+    if canonical_engine == "sqlite":
+        return derive_sqlite_registry_uri(
+            workspace_uri=workspace_uri,
+            project_root=project_path,
+            registry_override=registry_override,
+        )
+
+    if registry_override:
+        return registry_override
+
+    return workspace_uri
 
 
 def resolve_credentials(

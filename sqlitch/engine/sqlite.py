@@ -6,12 +6,21 @@ from collections.abc import Mapping
 import sqlite3
 from pathlib import Path
 from typing import Any
+from urllib.parse import SplitResult, urlsplit, urlunsplit, unquote
 
-from .base import ConnectArguments, Engine, EngineError, EngineTarget, register_engine
+from .base import (
+    ConnectArguments,
+    Engine,
+    EngineError,
+    EngineTarget,
+    canonicalize_engine_name,
+    register_engine,
+)
 
 SQLITE_SCHEME_PREFIX = "db:sqlite:"
 DEFAULT_DETECT_TYPES = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
 REGISTRY_ATTACHMENT_ALIAS = "sqitch"
+REGISTRY_FILENAME = "sqitch.db"
 
 
 class SQLiteEngineError(EngineError):
@@ -46,8 +55,14 @@ class SQLiteEngine(Engine):
     def registry_filesystem_path(self) -> Path:
         """Return the filesystem path backing the attached registry database."""
 
-        if self._registry_is_uri and self._registry_path.startswith("file:"):
-            return Path(self._registry_path[5:])
+        if self._registry_is_uri:
+            if self._registry_path.startswith("file:"):
+                split = _split_file_uri(self._registry_path)
+                path = _filesystem_path_from_split(split)
+                return path
+            raise SQLiteEngineError(
+                "SQLite registry attachments only support file: URIs."
+            )
         return Path(self._registry_path)
 
     def _build_connect_arguments(self, uri: str) -> ConnectArguments:
@@ -72,6 +87,46 @@ class SQLiteEngine(Engine):
             cursor.close()
 
 
+def derive_sqlite_registry_uri(
+    *,
+    workspace_uri: str,
+    project_root: Path,
+    registry_override: str | None = None,
+) -> str:
+    """Return the canonical registry URI used for SQLite deployments.
+
+    The registry database must live adjacent to the workspace database (mirroring Sqitch)
+    unless an explicit override has been provided. Relative filesystem paths are resolved
+    against ``project_root`` to maintain deterministic behaviour for CLI commands executed
+    from inside a project directory.
+    """
+
+    if registry_override:
+        return _normalize_registry_override(registry_override, project_root)
+
+    payload = _extract_payload(workspace_uri)
+
+    if payload in {"", ":memory:"}:
+        registry_path = (project_root / REGISTRY_FILENAME).resolve()
+        return f"{SQLITE_SCHEME_PREFIX}{registry_path.as_posix()}"
+
+    if payload.startswith("file:"):
+        split = _split_file_uri(payload)
+        path = _filesystem_path_from_split(split)
+        if not path.is_absolute():
+            path = (project_root / path).resolve()
+        registry_path = path.with_name(REGISTRY_FILENAME)
+        registry_split = split._replace(path=registry_path.as_posix())
+        uri = urlunsplit(registry_split)
+        return f"{SQLITE_SCHEME_PREFIX}{uri}"
+
+    path = Path(payload)
+    if not path.is_absolute():
+        path = (project_root / path).resolve()
+    registry_path = path.with_name(REGISTRY_FILENAME)
+    return f"{SQLITE_SCHEME_PREFIX}{registry_path.as_posix()}"
+
+
 def _parse_sqlite_uri(uri: str) -> tuple[str, bool]:
     """Return (database, is_uri) parsed from a SQLitch-style SQLite URI."""
     if not uri.startswith(SQLITE_SCHEME_PREFIX):
@@ -90,6 +145,84 @@ def _parse_sqlite_uri(uri: str) -> tuple[str, bool]:
     return payload, False
 
 
+def _split_file_uri(uri: str) -> SplitResult:
+    split = urlsplit(uri, scheme="file")
+    if split.scheme != "file":  # pragma: no cover - defensive
+        raise SQLiteEngineError(f"unexpected file URI scheme: {uri!r}")
+    if split.netloc and split.netloc not in {"", "localhost"}:  # pragma: no cover - parity guard
+        raise SQLiteEngineError("SQLite registry attachments do not support remote file hosts")
+    return split
+
+
+def _filesystem_path_from_split(split: SplitResult) -> Path:
+    path = unquote(split.path)
+    if split.netloc and split.netloc not in {"", "localhost"}:
+        path = f"/{split.netloc}{path}"
+    if not path:
+        path = REGISTRY_FILENAME
+    return Path(path)
+
+
+def _extract_payload(uri: str) -> str:
+    if uri.startswith("db:"):
+        remainder = uri[3:]
+        engine_token, separator, payload = remainder.partition(":")
+        if not separator:
+            raise SQLiteEngineError(f"unexpected sqlite URI format: {uri!r}")
+        canonical = canonicalize_engine_name(engine_token or "sqlite")
+        if canonical != "sqlite":
+            raise SQLiteEngineError(
+                f"SQLite registry derivation requires sqlite targets, received {canonical!r}."
+            )
+        return payload
+    return uri
+
+
+def _normalize_registry_override(override: str, project_root: Path) -> str:
+    value = override.strip()
+    if not value:
+        raise SQLiteEngineError("Registry override cannot be empty.")
+
+    if value.startswith("db:"):
+        return value
+
+    if value.startswith("file:"):
+        return f"{SQLITE_SCHEME_PREFIX}{value}"
+
+    path = Path(value)
+    if not path.is_absolute():
+        path = (project_root / path).resolve()
+    return f"{SQLITE_SCHEME_PREFIX}{path.as_posix()}"
+
+
+def resolve_sqlite_filesystem_path(sqlite_uri: str) -> Path:
+    """Return the filesystem path pointed to by ``sqlite_uri``.
+
+    The helper understands SQLitch ``db:sqlite:`` URIs and the subset of ``file:``
+    URIs that SQLite accepts. The returned path is suitable for directory creation
+    prior to opening database connections.
+    """
+
+    database, is_uri = _parse_sqlite_uri(sqlite_uri)
+    if not is_uri:
+        return Path(database)
+
+    if not database.startswith("file:"):
+        raise SQLiteEngineError(
+            f"SQLite filesystem resolution only supports file: URIs, received {database!r}."
+        )
+
+    split = _split_file_uri(database)
+    return _filesystem_path_from_split(split)
+
+
 register_engine("sqlite", SQLiteEngine, replace=True)
 
-__all__ = ["SQLiteEngine", "SQLiteEngineError", "REGISTRY_ATTACHMENT_ALIAS"]
+__all__ = [
+    "SQLiteEngine",
+    "SQLiteEngineError",
+    "REGISTRY_ATTACHMENT_ALIAS",
+    "REGISTRY_FILENAME",
+    "derive_sqlite_registry_uri",
+    "resolve_sqlite_filesystem_path",
+]
