@@ -189,6 +189,18 @@ class SqlitchGroup(click.Group):
     type=click.Path(dir_okay=False, path_type=Path),
     help="Use an alternate plan file instead of the default discovery rules.",
 )
+@click.option(
+    "-C",
+    "--chdir",
+    "chdir_path",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    help="Change to directory before executing command.",
+)
+@click.option(
+    "--no-pager",
+    is_flag=True,
+    help="Do not pipe output into a pager.",
+)
 @global_output_options
 @click.pass_context
 def main(
@@ -202,12 +214,18 @@ def main(
     json_mode: bool,
     verbose: int,
     quiet: bool,
+    chdir_path: Path | None,
+    no_pager: bool,
 ) -> None:
     """Top-level SQLitch command group.
 
     The function resolves global options into a shared context that downstream
     command handlers can consume via :func:`click.get_current_context`.
     """
+
+    # Handle --chdir before any other processing
+    if chdir_path:
+        os.chdir(chdir_path)
 
     cli_context = _build_cli_context(
         config_root=config_root,
@@ -221,6 +239,7 @@ def main(
     )
     ctx.obj = cli_context
     ctx.meta[_CLI_CONTEXT_META_KEY] = cli_context
+    ctx.meta["no_pager"] = no_pager  # Store for commands that need it
     leftover_args = tuple(ctx.args)
     ctx.meta[_CLI_ARGS_META_KEY] = leftover_args
     if leftover_args:

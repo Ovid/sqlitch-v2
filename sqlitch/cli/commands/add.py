@@ -19,6 +19,7 @@ from sqlitch.utils.templates import default_template_body, render_template, reso
 from . import CommandError, register_command
 from ._context import require_cli_context
 from ._plan_utils import resolve_default_engine, resolve_plan_path
+from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["add_command"]
 
@@ -124,23 +125,30 @@ def _resolve_template_content(
 @click.command("add")
 @click.argument("change_name")
 @click.option("--requires", "requires", multiple=True, help="Declare change dependencies.")
+@click.option("--conflicts", "conflicts", multiple=True, help="Declare conflicting changes.")
 @click.option("--tags", "tags", multiple=True, help="Attach tags to the change.")
 @click.option("-n", "--note", "note", help="Add a note to the change entry.")
 @click.option("--deploy", "deploy_path", help="Explicit deploy script path.")
 @click.option("--revert", "revert_path", help="Explicit revert script path.")
 @click.option("--verify", "verify_path", help="Explicit verify script path.")
 @click.option("--template", "template_name", help="Template name to apply when generating scripts.")
+@global_sqitch_options
+@global_output_options
 @click.pass_context
 def add_command(
     ctx: click.Context,
     change_name: str,
     requires: Sequence[str],
+    conflicts: Sequence[str],
     tags: Sequence[str],
     note: str | None,
     deploy_path: str | None,
     revert_path: str | None,
     verify_path: str | None,
     template_name: str | None,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
 ) -> None:
     """Create change scripts and append an entry to the project plan.
 
@@ -148,6 +156,7 @@ def add_command(
         ctx: The Click context containing the prepared ``CLIContext``.
         change_name: Human-readable name used for plan entry and script files.
         requires: Zero or more change identifiers this change depends on.
+        conflicts: Zero or more change identifiers this change conflicts with.
         tags: Optional collection of tag strings applied to the new change.
         note: Optional free-form note stored with the change metadata.
         deploy_path: Optional explicit path for the deploy script template.
