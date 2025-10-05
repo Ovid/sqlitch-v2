@@ -27,6 +27,8 @@ SQLitch mirrors Sqitch’s file-based plan semantics and registry tables while e
   - `entries` (list[PlanEntry]): ordered union of `Change` and `Tag` entries
   - `checksum` (string): hashed representation used for drift detection
   - `default_engine` (string): engine alias resolved from config/CLI
+  - `syntax_version` (string): semantic version from `%syntax-version` header (defaults to `1.0.0`)
+  - `missing_dependencies` (list[str]): forward references captured as `"{change}->{dependency}"` when a compact Sqitch entry depends on a change that appears later in the file
 - **Relationships**: aggregates `Change` and `Tag`; associated with `EngineTarget`
 - **State Transitions**:
   - Created by `sqlitch init`
@@ -87,7 +89,9 @@ SQLitch mirrors Sqitch’s file-based plan semantics and registry tables while e
 
 ## Validation Rules
 - Plan entries must alternate logically (change or tag) following Sqitch semantics; duplicate change names invalid.
+- Forward-referenced dependencies encountered while parsing Sqitch-compact entries are preserved in `Plan.missing_dependencies` for downstream commands to surface as warnings instead of hard errors.
 - Registry schema identical to Sqitch reference; SQL migrations must match per-engine DDL ordering.
+- Credential resolution follows Sqitch precedence: CLI flag → environment → configuration file, with secrets never persisted back to disk or echoed in logs.
 - When both `sqitch.plan` and `sqlitch.plan` exist, CLI aborts with explicit error (implemented via config/profile validator).
 - Configuration roots default to `$XDG_CONFIG_HOME/sqlitch` (or `~/.config/sqlitch`) but allow override via `SQLITCH_CONFIG_ROOT` env and CLI `--config-root` flag.
 

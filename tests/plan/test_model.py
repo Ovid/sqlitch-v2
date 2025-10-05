@@ -38,10 +38,10 @@ def _make_tag(**overrides) -> model.Tag:
 
 
 def test_change_requires_deploy_and_revert_scripts():
-    with pytest.raises(ValueError, match="deploy script path is required"):
+    with pytest.raises(ValueError, match=r"script_paths\['deploy'\] is required"):
         _make_change(script_paths={"revert": Path("revert.sql")})
 
-    with pytest.raises(ValueError, match="revert script path is required"):
+    with pytest.raises(ValueError, match=r"script_paths\['revert'\] is required"):
         _make_change(script_paths={"deploy": Path("deploy.sql")})
 
 
@@ -64,8 +64,25 @@ def test_change_normalizes_string_script_paths():
     assert isinstance(change.script_paths["verify"], Path)
 
 
+def test_change_factory_applies_normalization():
+    change = model.Change.create(
+        name="widgets:add",
+        script_paths={"deploy": "deploy/widgets.sql", "revert": "revert/widgets.sql"},
+        planner="alice@example.com",
+        planned_at=datetime(2025, 10, 3, 12, 34, 56, tzinfo=timezone.utc),
+        dependencies=["core:init"],
+        tags=["v1.0"],
+    )
+
+    assert isinstance(change, model.Change)
+    assert change.script_paths["deploy"].name == "widgets.sql"
+    assert change.dependencies == ("core:init",)
+    assert change.tags == ("v1.0",)
+    assert change.change_id is None
+
+
 def test_change_rejects_duplicate_dependencies():
-    with pytest.raises(ValueError, match="duplicate dependency"):
+    with pytest.raises(ValueError, match=r"dependencies contains duplicates"):
         _make_change(dependencies=["core:init", "core:init"])
 
 
@@ -108,7 +125,7 @@ def test_plan_rejects_duplicate_change_names():
     change = _make_change(name="widgets:add", dependencies=[])
     duplicate = _make_change(name="widgets:add", dependencies=[])
 
-    with pytest.raises(ValueError, match="Duplicate change name"):
+    with pytest.raises(ValueError, match="duplicate change name"):
         model.Plan(
             project_name="widgets",
             file_path=Path("plan"),
@@ -123,23 +140,34 @@ def test_plan_rejects_dependency_defined_after_change():
     second = _make_change(name="widgets:index", dependencies=["widgets:add"])
     third = _make_change(name="widgets:cleanup", dependencies=["widgets:index"])
 
-    with pytest.raises(ValueError, match="not defined before"):
-        model.Plan(
-            project_name="widgets",
-            file_path=Path("plan"),
-            entries=[second, first, third],
-            checksum="abc123",
-            default_engine="pg",
-        )
+    plan = model.Plan(
+        project_name="widgets",
+        file_path=Path("plan"),
+        entries=[second, first, third],
+        checksum="abc123",
+        default_engine="pg",
+    )
+
+    assert plan.entries[0] is second
+    assert plan.entries[1] is first
+    assert plan.entries[2] is third
+    assert plan.missing_dependencies == (
+        "widgets:index->widgets:add",
+        "widgets:cleanup->widgets:index",
+    )
 
 
-def test_change_generates_uuid_when_not_provided():
+def test_change_preserves_missing_change_id():
     change = _make_change()
-    change2 = _make_change()
 
-    assert change.change_id is not None
-    assert change2.change_id is not None
-    assert change.change_id != change2.change_id
+    assert change.change_id is None
+
+
+def test_change_script_paths_are_immutable():
+    change = _make_change()
+
+    with pytest.raises(TypeError):
+        change.script_paths["deploy"] = Path("other.sql")
 
 
 def test_change_requires_timezone_aware_timestamp():
@@ -173,7 +201,7 @@ def test_plan_lookup_helpers():
 
 def test_plan_rejects_non_plan_entries():
     change = _make_change(name="widgets:add", dependencies=[])
-    with pytest.raises(TypeError, match="Plan entries must"):
+    with pytest.raises(TypeError, match="Plan.entries must contain Change or Tag"):
         model.Plan(
             project_name="widgets",
             file_path=Path("plan"),
@@ -184,9 +212,9 @@ def test_plan_rejects_non_plan_entries():
 
 
 def test_tag_requires_non_empty_fields():
-    with pytest.raises(ValueError, match="Tag name is required"):
+    with pytest.raises(ValueError, match="Tag.name is required"):
         _make_tag(name="")
-    with pytest.raises(ValueError, match="change reference"):
+    with pytest.raises(ValueError, match="Tag.change_ref is required"):
         _make_tag(change_ref="")
-    with pytest.raises(ValueError, match="planner is required"):
+    with pytest.raises(ValueError, match="Tag.planner is required"):
         _make_tag(planner="")

@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 import importlib
 from types import MappingProxyType, ModuleType
-from typing import Any, Dict, Mapping, Tuple, Type, TypeVar
+from typing import Any, TypeVar
 
 
 class EngineError(RuntimeError):
@@ -20,7 +22,7 @@ class UnsupportedEngineError(EngineError):
 class ConnectArguments:
     """Container for positional and keyword arguments passed to a driver."""
 
-    args: Tuple[Any, ...] = field(default_factory=tuple)
+    args: tuple[Any, ...] = field(default_factory=tuple)
     kwargs: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -67,13 +69,14 @@ class EngineTarget:
     engine: str
     uri: str
     variables: Mapping[str, str] = field(default_factory=dict)
-
-    registry_uri: str = field(init=False)
+    registry_uri: str | None = None
 
     def __post_init__(self) -> None:
         canonical = canonicalize_engine_name(self.engine)
         object.__setattr__(self, "engine", canonical)
-        object.__setattr__(self, "registry_uri", self.uri)
+
+        registry_uri = self.registry_uri or self.uri
+        object.__setattr__(self, "registry_uri", registry_uri)
 
         variables = {str(key): str(value) for key, value in dict(self.variables).items()}
         object.__setattr__(self, "variables", MappingProxyType(variables))
@@ -102,7 +105,7 @@ class ConnectionFactory:
         return connect_callable(*arguments.args, **arguments.kwargs)
 
 
-ENGINE_DRIVERS: Mapping[str, Tuple[str, str]] = MappingProxyType(
+ENGINE_DRIVERS: Mapping[str, tuple[str, str]] = MappingProxyType(
     {
         "sqlite": ("sqlite3", "connect"),
         "pg": ("psycopg", "connect"),
@@ -133,7 +136,7 @@ def connection_factory_for_engine(engine: str) -> ConnectionFactory:
 EngineType = TypeVar("EngineType", bound="Engine")
 
 
-class Engine:
+class Engine(ABC):
     """Base engine implementation providing connection helpers.
 
     Subclasses specialise the construction of connection arguments for their
@@ -144,13 +147,13 @@ class Engine:
         self.target = target
         self._connection_factory = connection_factory_for_engine(target.engine)
 
+    @abstractmethod
     def build_registry_connect_arguments(self) -> ConnectArguments:
         """Return the connection arguments for registry operations."""
-        raise NotImplementedError
 
+    @abstractmethod
     def build_workspace_connect_arguments(self) -> ConnectArguments:
         """Return the connection arguments for workspace operations."""
-        raise NotImplementedError
 
     def connect_registry(self) -> Any:
         """Open a connection to the engine's registry database."""
@@ -163,10 +166,23 @@ class Engine:
         return self._connection_factory.connect(arguments)
 
 
-ENGINE_REGISTRY: Dict[str, Type[Engine]] = {}
+ENGINE_REGISTRY: dict[str, type[Engine]] = {}
+"""Global registry mapping canonical engine names to their implementations.
+
+The registry lifecycle is documented in detail in ``docs/architecture/registry-lifecycle.md``.
+In summary, engine modules register themselves during import, client code treats the
+registry as immutable afterwards, and tests may temporarily patch registrations so long
+as they restore the previous state using the ``register_engine(..., replace=True)`` /
+``unregister_engine`` pattern shown in the documentation.
+
+The registry is intentionally a plain dictionary to keep lookup overhead negligible.
+Outside of controlled registration helpers, code MUST NOT mutate it directly.
+"""
 
 
-def register_engine(name: str, engine_cls: Type[EngineType], *, replace: bool = False) -> Type[Engine] | None:
+def register_engine(
+    name: str, engine_cls: type[EngineType], *, replace: bool = False
+) -> type[Engine] | None:
     """Register an :class:`Engine` implementation under ``name``.
 
     Args:
@@ -196,7 +212,7 @@ def register_engine(name: str, engine_cls: Type[EngineType], *, replace: bool = 
     return previous
 
 
-def unregister_engine(name: str) -> Type[Engine] | None:
+def unregister_engine(name: str) -> type[Engine] | None:
     """Remove the engine associated with ``name`` and return it if present."""
     canonical = canonicalize_engine_name(name)
     return ENGINE_REGISTRY.pop(canonical, None)
@@ -216,11 +232,10 @@ def create_engine(target: EngineTarget, **kwargs: Any) -> Engine:
     return engine_cls(target, **kwargs)
 
 
-def registered_engines() -> Tuple[str, ...]:
+def registered_engines() -> tuple[str, ...]:
     """Return the sorted tuple of canonical engine names currently registered."""
     return tuple(sorted(ENGINE_REGISTRY.keys()))
 
 
 def _import_module(module_name: str) -> ModuleType:
     return importlib.import_module(module_name)
-

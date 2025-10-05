@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 import hashlib
+import re
 import shlex
 from datetime import datetime
 from pathlib import Path
-from typing import List, Sequence
 from uuid import UUID
 
 from .model import Change, Plan, PlanEntry, Tag
+from sqlitch.plan.utils import slugify_change_name
 from sqlitch.utils.time import parse_iso_datetime
 
 
@@ -17,13 +19,39 @@ class PlanParseError(ValueError):
     """Raised when the plan file contains invalid data."""
 
 
-def parse_plan(path: Path | str) -> Plan:
+_CHANGE_PATTERN = re.compile(
+    r"""
+    ^
+    (?P<name>[^\s\[]+)
+    (?:\s+\[(?P<deps>[^\]]*)\])?
+    \s+(?P<timestamp>\S+)
+    \s+(?P<planner>.+?)
+    $
+    """,
+    re.VERBOSE,
+)
+
+
+_TAG_PATTERN = re.compile(
+    r"""
+    ^
+    @(?P<name>\S+)
+    \s+(?P<timestamp>\S+)
+    \s+(?P<planner>.+?)
+    $
+    """,
+    re.VERBOSE,
+)
+
+
+def parse_plan(path: Path | str, *, default_engine: str | None = None) -> Plan:
     plan_path = Path(path)
     content = plan_path.read_text(encoding="utf-8")
     checksum = hashlib.sha256(content.encode("utf-8")).hexdigest()
 
     headers: dict[str, str] = {}
-    entries: List[PlanEntry] = []
+    entries: list[PlanEntry] = []
+    last_change: Change | None = None
 
     for line_no, raw_line in enumerate(content.splitlines(), start=1):
         line = raw_line.strip()
@@ -35,17 +63,28 @@ def parse_plan(path: Path | str) -> Plan:
             continue
 
         tokens = shlex.split(line, comments=False, posix=True)
+        entry: PlanEntry
+        if not tokens:
+            continue
         entry_type, *rest = tokens
         if entry_type == "change":
-            entries.append(_parse_change(rest, plan_path.parent, line_no))
+            entry = _parse_change(rest, plan_path.parent, line_no)
         elif entry_type == "tag":
-            entries.append(_parse_tag(rest, line_no))
+            entry = _parse_tag(rest, line_no)
         else:
-            raise PlanParseError(f"Unknown plan entry '{entry_type}' on line {line_no}")
+            entry = _parse_compact_entry(raw_line, plan_path.parent, line_no, last_change)
+
+        entries.append(entry)
+        if isinstance(entry, Change):
+            last_change = entry
 
     project = headers.get("project")
-    default_engine = headers.get("default_engine")
-    if not project or not default_engine:
+    header_engine = headers.get("default_engine")
+    syntax_version = headers.get("syntax-version", "1.0.0")
+    uri = headers.get("uri")
+
+    resolved_engine = header_engine or default_engine
+    if not project or not resolved_engine:
         raise PlanParseError("plan file is missing project header or default engine header")
 
     return Plan(
@@ -53,7 +92,9 @@ def parse_plan(path: Path | str) -> Plan:
         file_path=plan_path,
         entries=entries,
         checksum=checksum,
-        default_engine=default_engine,
+        default_engine=resolved_engine,
+        syntax_version=syntax_version,
+        uri=uri,
     )
 
 
@@ -86,7 +127,9 @@ def _parse_change(tokens: Sequence[str], base_path: Path, line_no: int) -> Chang
     notes = metadata.get("notes")
     depends = _split_csv(metadata.get("depends"))
     tags = _split_csv(metadata.get("tags"))
-    change_id = _parse_uuid(metadata.get("change_id"), line_no) if metadata.get("change_id") else None
+    change_id = (
+        _parse_uuid(metadata.get("change_id"), line_no) if metadata.get("change_id") else None
+    )
 
     script_paths: dict[str, str | None] = {
         "deploy": deploy,
@@ -95,7 +138,10 @@ def _parse_change(tokens: Sequence[str], base_path: Path, line_no: int) -> Chang
     if verify_path is not None:
         script_paths["verify"] = verify_path
 
-    resolved_paths = {key: (base_path / value if value is not None else None) for key, value in script_paths.items()}
+    resolved_paths = {
+        key: (base_path / value if value is not None else None)
+        for key, value in script_paths.items()
+    }
 
     return Change(
         name=name,
@@ -129,6 +175,79 @@ def _parse_tag(tokens: Sequence[str], line_no: int) -> Tag:
     )
 
 
+def _parse_compact_entry(
+    raw_line: str,
+    base_dir: Path,
+    line_no: int,
+    last_change: Change | None,
+) -> PlanEntry:
+    body, note = _split_note(raw_line)
+    entry = body.strip()
+    if not entry:
+        raise PlanParseError(f"Invalid plan entry on line {line_no}")
+
+    if entry.startswith("@"):
+        return _parse_compact_tag(entry, note, line_no, last_change)
+    try:
+        return _parse_compact_change(entry, note, line_no, base_dir)
+    except PlanParseError as exc:
+        message = str(exc)
+        if message.startswith("Invalid change entry"):
+            raise ValueError(f"Unknown plan entry '{entry}'") from None
+        raise
+
+
+def _parse_compact_change(line: str, note: str | None, line_no: int, base_dir: Path) -> Change:
+    match = _CHANGE_PATTERN.match(line)
+    if not match:
+        raise PlanParseError(f"Invalid change entry on line {line_no}")
+
+    name = match.group("name")
+    dependencies = _parse_dependencies(match.group("deps"))
+    planned_at = _parse_timestamp(match.group("timestamp"), line_no, "planned_at")
+    planner = match.group("planner").strip()
+
+    slug = slugify_change_name(name)
+    script_paths = {
+        "deploy": base_dir / "deploy" / f"{slug}.sql",
+        "revert": base_dir / "revert" / f"{slug}.sql",
+        "verify": base_dir / "verify" / f"{slug}.sql",
+    }
+
+    return Change.create(
+        name=name,
+        script_paths=script_paths,
+        planner=planner,
+        planned_at=planned_at,
+        notes=_clean_note(note),
+        dependencies=dependencies,
+        tags=(),
+    )
+
+
+def _parse_compact_tag(
+    line: str, note: str | None, line_no: int, last_change: Change | None
+) -> Tag:
+    if last_change is None:
+        raise PlanParseError(f"Tag on line {line_no} has no preceding change to reference")
+
+    match = _TAG_PATTERN.match(line)
+    if not match:
+        raise PlanParseError(f"Invalid tag entry on line {line_no}")
+
+    name = match.group("name")
+    tagged_at = _parse_timestamp(match.group("timestamp"), line_no, "tagged_at")
+    planner = match.group("planner").strip()
+
+    return Tag(
+        name=name,
+        change_ref=last_change.name,
+        planner=planner,
+        tagged_at=tagged_at,
+        note=_clean_note(note),
+    )
+
+
 def _parse_metadata(tokens: Sequence[str], line_no: int) -> dict[str, str]:
     metadata: dict[str, str] = {}
     for token in tokens:
@@ -159,3 +278,24 @@ def _parse_uuid(value: str, line_no: int) -> UUID:
         return UUID(value)
     except ValueError as exc:  # pragma: no cover - invalid value reported to caller
         raise PlanParseError(f"Invalid change_id on line {line_no}") from exc
+
+
+def _split_note(raw_line: str) -> tuple[str, str | None]:
+    if "#" not in raw_line:
+        return raw_line.rstrip(), None
+    body, note = raw_line.split("#", 1)
+    return body.rstrip(), note.strip() or None
+
+
+def _clean_note(note: str | None) -> str | None:
+    if not note:
+        return None
+    cleaned = note.strip()
+    return cleaned or None
+
+
+def _parse_dependencies(raw: str | None) -> Sequence[str]:
+    if raw is None:
+        return ()
+    parts = [value.strip() for value in raw.split() if value.strip()]
+    return tuple(parts)

@@ -1,0 +1,12 @@
+2025-01-01T00:00:00.000000+00:00 00000000000000000000000000000000 INFO deploy.start 
+{"plan": "flipr", "plan_path": "/workdir/sqitch.plan", "target": "db:sqlite:/workdir/flipr_test.db", "display_target": "db:sqlite:flipr_test.db", "registry": "db:sqlite:/workdir/sqitch.db", "changes": ["users", "flips"]}
+2025-01-01T00:00:00.000500+00:00 00000000000000000000000000000000 INFO deploy.change.start 
+{"change": "users", "plan": "flipr", "target": "db:sqlite:/workdir/flipr_test.db", "registry": "db:sqlite:/workdir/sqitch.db"}
+2025-01-01T00:00:00.000800+00:00 00000000000000000000000000000000 INFO deploy.change.success 
+{"change": "users", "plan": "flipr", "target": "db:sqlite:/workdir/flipr_test.db", "registry": "db:sqlite:/workdir/sqitch.db", "transaction_scope": "change"}
+2025-01-01T00:00:00.001100+00:00 00000000000000000000000000000000 INFO deploy.change.start 
+{"change": "flips", "plan": "flipr", "target": "db:sqlite:/workdir/flipr_test.db", "registry": "db:sqlite:/workdir/sqitch.db"}
+2025-01-01T00:00:00.001400+00:00 00000000000000000000000000000000 INFO deploy.change.success 
+{"change": "flips", "plan": "flipr", "target": "db:sqlite:/workdir/flipr_test.db", "registry": "db:sqlite:/workdir/sqitch.db", "transaction_scope": "change"}
+2025-01-01T00:00:00.001700+00:00 00000000000000000000000000000000 INFO deploy.complete 
+{"plan": "flipr", "target": "db:sqlite:/workdir/flipr_test.db", "registry": "db:sqlite:/workdir/sqitch.db", "applied": 2}

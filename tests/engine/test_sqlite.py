@@ -10,8 +10,8 @@ import pytest
 from sqlitch.engine import base
 
 
-def _make_target(uri: str) -> base.EngineTarget:
-    return base.EngineTarget(name="db:test", engine="sqlite", uri=uri)
+def _make_target(uri: str, *, registry: str | None = None) -> base.EngineTarget:
+    return base.EngineTarget(name="db:test", engine="sqlite", uri=uri, registry_uri=registry)
 
 
 def test_sqlite_engine_registers_itself() -> None:
@@ -34,8 +34,10 @@ def test_sqlite_engine_registers_itself() -> None:
 def test_sqlite_engine_builds_connect_arguments_with_paths(tmp_path: Path) -> None:
     import sqlitch.engine.sqlite as sqlite_engine
 
-    target = _make_target(f"db:sqlite:{tmp_path / 'workspace.db'}")
-    object.__setattr__(target, "registry_uri", f"db:sqlite:{tmp_path / 'registry.db'}")
+    target = _make_target(
+        f"db:sqlite:{tmp_path / 'workspace.db'}",
+        registry=f"db:sqlite:{tmp_path / 'registry.db'}",
+    )
 
     engine = sqlite_engine.SQLiteEngine(target, connect_kwargs={"timeout": 2.5})
 

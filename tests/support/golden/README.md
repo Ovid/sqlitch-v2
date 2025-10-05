@@ -5,7 +5,7 @@ These fixtures capture canonical Sqitch outputs that we will diff against the Py
 ## Layout
 
 - `plans/` – Reference plan files with pragmas, dependencies, tags, and whitespace edge cases.
-- `registry/` – Text snapshots of Sqitch registry-driven commands (`status`, `verify`, `log`). Each engine has its own subdirectory (currently only `sqlite/`).
+- `registry/` – Text snapshots of Sqitch registry-driven commands (`status`, `verify`, `log`). Each engine has its own subdirectory (currently only `sqlite/`). The SQLite directory also contains a structured logging sample (`deploy_structured_log.jsonl`) that captures the JSON payloads emitted during an atomic deploy, including the resolved registry URI and `transaction_scope` metadata required for parity checks.
 
 ## Provenance
 

@@ -55,7 +55,9 @@ def test_engine_target_requires_known_engine() -> None:
         base.EngineTarget(name="db:oracle", engine="oracle", uri="db:oracle://example")
 
 
-def test_connection_factory_imports_driver_and_invokes_connect(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_connection_factory_imports_driver_and_invokes_connect(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     factory = base.connection_factory_for_engine("sqlite")
     args = base.ConnectArguments(args=(":memory:",), kwargs={"timeout": 10})
 
@@ -71,7 +73,7 @@ def test_connection_factory_imports_driver_and_invokes_connect(monkeypatch: pyte
     connection = factory.connect(args)
 
     assert connection == "connection"
-    assert calls == [((':memory:',), {'timeout': 10})]
+    assert calls == [((":memory:",), {"timeout": 10})]
 
 
 def test_connection_factory_rejects_unknown_engine() -> None:
@@ -114,10 +116,15 @@ def test_engine_connect_methods_use_connection_factory(monkeypatch: pytest.Monke
 
 
 def test_create_engine_rejects_unregistered_engine() -> None:
-    target = base.EngineTarget(name="db:test", engine="mysql", uri="db:mysql:app")
+    target = base.EngineTarget(name="db:test", engine="sqlite", uri="db:sqlite:app")
 
-    with pytest.raises(base.UnsupportedEngineError):
-        base.create_engine(target)
+    previous = base.unregister_engine("sqlite")
+    try:
+        with pytest.raises(base.UnsupportedEngineError):
+            base.create_engine(target)
+    finally:
+        if previous is not None:
+            base.register_engine("sqlite", previous, replace=True)
 
 
 def test_registered_engines_reports_registered_engines() -> None:

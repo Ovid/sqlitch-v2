@@ -1,5 +1,7 @@
 """SQLitch CLI package."""
 
-from .main import main
+from __future__ import annotations
 
-__all__ = ["main"]
+from .main import CLIContext, main
+
+__all__ = ["CLIContext", "main"]

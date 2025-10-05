@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from uuid import UUID, uuid4
 
 import pytest
 
@@ -9,6 +8,7 @@ from sqlitch.registry.state import (
     RegistryEntry,
     RegistryState,
     deserialize_registry_rows,
+    sort_registry_entries_by_deployment,
     serialize_registry_entries,
 )
 
@@ -17,143 +17,155 @@ def _aware(dt: datetime) -> datetime:
     return dt.replace(tzinfo=timezone.utc)
 
 
-def test_registry_entry_requires_timezone_aware_datetimes() -> None:
-    change_id = uuid4()
-    deployed_at = datetime.now(timezone.utc)
-
-    entry = RegistryEntry(
-        engine_target="db:pg",
-        change_id=change_id,
+def _entry(**overrides: object) -> RegistryEntry:
+    baseline = dict(
+        project="widgets",
+        change_id="abc123",
         change_name="alpha",
-        deployed_at=deployed_at,
-        planner="alice",
+        committed_at=_aware(datetime(2025, 1, 1, 9, 30)),
+        committer_name="Ada",
+        committer_email="ada@example.com",
+        planned_at=_aware(datetime(2024, 12, 31, 18, 0)),
+        planner_name="Ada",
+        planner_email="ada@example.com",
+        script_hash="deadbeef",
+        note="Initial deploy",
     )
+    baseline.update(overrides)
+    return RegistryEntry(**baseline)  # type: ignore[arg-type]
 
-    assert entry.deployed_at == deployed_at.astimezone(timezone.utc)
-    assert entry.reverted_at is None
 
-    with pytest.raises(ValueError, match="deployed_at must be timezone-aware"):
-        RegistryEntry(
-            engine_target="db:pg",
-            change_id=uuid4(),
-            change_name="beta",
-            deployed_at=datetime.now(),
-            planner="bob",
-        )
+def test_registry_entry_requires_timezone_aware_datetimes() -> None:
+    entry = _entry()
+    assert entry.committed_at.tzinfo is timezone.utc
+    assert entry.planned_at.tzinfo is timezone.utc
+
+    with pytest.raises(ValueError, match="committed_at must be timezone-aware"):
+        _entry(committed_at=datetime(2025, 1, 1, 9, 30))
+
+    with pytest.raises(ValueError, match="planned_at must be timezone-aware"):
+        _entry(planned_at=datetime(2024, 12, 31, 18, 0))
 
 
 def test_deserialize_registry_rows_coerces_types_and_sorts() -> None:
-    first_id = uuid4()
-    second_id = uuid4()
     rows = [
         {
-            "engine_target": "db:pg",
-            "change_id": str(second_id),
-            "change_name": "beta",
-            "deployed_at": _aware(datetime(2025, 1, 2, 12, 0)),
-            "planner": "bob",
-            "verify_status": "failed",
-            "reverted_at": None,
+            "project": "widgets",
+            "change_id": "beta",
+            "change": "beta",
+            "committed_at": _aware(datetime(2025, 1, 2, 12, 0)),
+            "committer_name": "Bea",
+            "committer_email": "bea@example.com",
+            "planned_at": "2025-01-02T08:00:00+00:00",
+            "planner_name": "Bea",
+            "planner_email": "bea@example.com",
+            "note": "Add beta",
         },
         {
-            "engine_target": "db:pg",
-            "change_id": first_id,
-            "change_name": "alpha",
-            "deployed_at": "2025-01-01T08:00:00+00:00",
-            "planner": "alice",
-            "verify_status": "success",
-            "reverted_at": None,
+            "project": "widgets",
+            "change_id": "alpha",
+            "change": "alpha",
+            "committed_at": "2025-01-01T08:00:00+00:00",
+            "committer_name": "Ada",
+            "committer_email": "ada@example.com",
+            "planned_at": _aware(datetime(2024, 12, 31, 18, 0)),
+            "planner_name": "Ada",
+            "planner_email": "ada@example.com",
         },
     ]
 
     entries = deserialize_registry_rows(rows)
 
-    assert isinstance(entries[0].change_id, UUID)
-    assert entries[0].change_id == first_id
-    assert entries[1].change_id == second_id
-    assert entries[0].change_name == "alpha"
-    assert entries[0].verify_status == "success"
-    assert entries[1].verify_status == "failed"
+    assert entries[0].change_id == "alpha"
+    assert entries[0].note == ""
+    assert entries[1].note == "Add beta"
+    assert entries[0].committed_at < entries[1].committed_at
 
 
 def test_serialize_registry_entries_produces_iso_strings() -> None:
-    entry = RegistryEntry(
-        engine_target="db:pg",
-        change_id=uuid4(),
-        change_name="alpha",
-        deployed_at=_aware(datetime(2025, 1, 1, 9, 30)),
-        planner="alice",
-        verify_status="skipped",
-        reverted_at=_aware(datetime(2025, 1, 2, 11, 0)),
+    entry = _entry(
+        committed_at=_aware(datetime(2025, 1, 1, 10, 15)),
+        planned_at=_aware(datetime(2024, 12, 30, 16, 45)),
     )
 
     serialized = serialize_registry_entries([entry])
+    payload = serialized[0]
 
-    assert serialized[0]["deployed_at"].endswith("+00:00")
-    assert serialized[0]["verify_status"] == "skipped"
-    assert serialized[0]["reverted_at"].endswith("+00:00")
+    assert payload["change"] == "alpha"
+    assert payload["committed_at"].endswith("+00:00")
+    assert payload["planned_at"].endswith("+00:00")
 
 
 def test_registry_state_mutations_round_trip() -> None:
-    base_entry = RegistryEntry(
-        engine_target="db:sqlite",
-        change_id=uuid4(),
-        change_name="alpha",
-        deployed_at=_aware(datetime(2025, 3, 4, 10, 0)),
-        planner="alice",
-    )
+    base_entry = _entry(change_id="alpha", change_name="alpha")
     state = RegistryState([base_entry])
 
-    new_entry = RegistryEntry(
-        engine_target="db:sqlite",
-        change_id=uuid4(),
+    new_entry = _entry(
+        change_id="beta",
         change_name="beta",
-        deployed_at=_aware(datetime(2025, 3, 4, 11, 0)),
-        planner="bob",
+        committed_at=_aware(datetime(2025, 1, 2, 10, 0)),
+        planned_at=_aware(datetime(2024, 12, 31, 20, 0)),
+        committer_name="Bea",
+        committer_email="bea@example.com",
+        planner_name="Bea",
+        planner_email="bea@example.com",
     )
+
     state.record_deploy(new_entry)
-    assert state.get_record(new_entry.change_id) == new_entry
+    assert state.get_record("beta") == new_entry
 
-    state.record_verify(new_entry.change_id, "failed")
-    updated = state.get_record(new_entry.change_id)
-    assert updated.verify_status == "failed"
+    with pytest.raises(ValueError, match="already contains"):
+        state.record_deploy(new_entry)
 
-    revert_time = _aware(datetime(2025, 3, 4, 11, 30))
-    state.record_revert(new_entry.change_id, revert_time)
-    reverted = state.get_record(new_entry.change_id)
-    assert reverted.reverted_at == revert_time
+    state.remove_change("beta")
+    with pytest.raises(KeyError):
+        state.get_record("beta")
 
     with pytest.raises(KeyError):
-        state.record_verify(uuid4(), "success")
-
-    with pytest.raises(ValueError, match="already recorded"):
-        state.record_deploy(base_entry)
+        state.remove_change("missing")
 
 
-def test_registry_state_requires_timezone_on_revert() -> None:
-    entry = RegistryEntry(
-        engine_target="db:pg",
-        change_id=uuid4(),
-        change_name="alpha",
-        deployed_at=_aware(datetime(2025, 1, 1, 0, 0)),
-        planner="alice",
-    )
-    state = RegistryState([entry])
+def test_sort_registry_entries_by_deployment_orders_deterministically() -> None:
+    timestamps = [
+        _aware(datetime(2025, 6, 1, 9, 0)),
+        _aware(datetime(2025, 6, 1, 10, 0)),
+        _aware(datetime(2025, 6, 1, 9, 0)),
+    ]
+    entries = [
+        _entry(
+            change_id="bravo",
+            change_name="bravo",
+            committed_at=timestamps[1],
+            planned_at=_aware(datetime(2025, 5, 31, 12, 0)),
+            committer_name="Bran",
+            committer_email="bran@example.com",
+            planner_name="Bran",
+            planner_email="bran@example.com",
+        ),
+        _entry(
+            change_id="alpha",
+            change_name="alpha",
+            committed_at=timestamps[0],
+            planned_at=_aware(datetime(2025, 5, 30, 12, 0)),
+            committer_name="Ann",
+            committer_email="ann@example.com",
+            planner_name="Ann",
+            planner_email="ann@example.com",
+        ),
+        _entry(
+            change_id="charlie",
+            change_name="charlie",
+            committed_at=timestamps[2],
+            planned_at=_aware(datetime(2025, 5, 31, 15, 0)),
+            committer_name="Cam",
+            committer_email="cam@example.com",
+            planner_name="Cam",
+            planner_email="cam@example.com",
+        ),
+    ]
 
-    with pytest.raises(ValueError, match="reverted_at must be timezone-aware"):
-        state.record_revert(entry.change_id, datetime.now())
+    ordered = sort_registry_entries_by_deployment(entries)
+    assert [entry.change_name for entry in ordered] == ["alpha", "charlie", "bravo"]
 
-
-def test_registry_state_forbids_unknown_verify_status() -> None:
-    state = RegistryState()
-    entry = RegistryEntry(
-        engine_target="db:sqlite",
-        change_id=uuid4(),
-        change_name="omega",
-        deployed_at=_aware(datetime(2025, 5, 5, 5, 5)),
-        planner="olivia",
-    )
-    state.record_deploy(entry)
-
-    with pytest.raises(ValueError, match="Unknown verify status"):
-        state.record_verify(entry.change_id, "flaky")
+    reversed_order = sort_registry_entries_by_deployment(entries, reverse=True)
+    assert [entry.change_name for entry in reversed_order] == ["bravo", "charlie", "alpha"]

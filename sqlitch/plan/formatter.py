@@ -5,14 +5,16 @@ from __future__ import annotations
 import hashlib
 import os
 import shlex
+from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Sequence
 
 from .model import Change, Plan, PlanEntry, Tag
 from sqlitch.utils.time import isoformat_utc
 
-_SHELL_SAFE_CHARS = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._:@+-/,:")
+_SHELL_SAFE_CHARS = frozenset(
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._:@+-/,:"
+)
 
 
 def compute_checksum(content: str) -> str:
@@ -28,11 +30,18 @@ def format_plan(
     entries: Sequence[PlanEntry],
     base_path: Path | str,
     newline: str = "\n",
+    syntax_version: str = "1.0.0",
+    uri: str | None = None,
 ) -> str:
     """Render a plan file as text without writing it to disk."""
 
     base_dir = Path(base_path)
-    lines = [f"%project={project_name}", f"%default_engine={default_engine}"]
+    header_lines = [f"%syntax-version={syntax_version}", f"%project={project_name}"]
+    header_lines.append(f"%default_engine={default_engine}")
+    if uri:
+        header_lines.append(f"%uri={uri}")
+
+    lines: list[str] = [*header_lines, ""]
     for entry in entries:
         if isinstance(entry, Change):
             lines.append(_format_change(entry, base_dir))
@@ -50,6 +59,8 @@ def write_plan(
     entries: Sequence[PlanEntry],
     plan_path: Path | str,
     newline: str = "\n",
+    syntax_version: str = "1.0.0",
+    uri: str | None = None,
 ) -> Plan:
     """Write a plan file to disk and return the corresponding :class:`Plan`."""
 
@@ -62,6 +73,8 @@ def write_plan(
         entries=entries,
         base_path=plan_file.parent,
         newline=newline,
+        syntax_version=syntax_version,
+        uri=uri,
     )
     plan_file.write_text(content, encoding="utf-8")
 
@@ -72,6 +85,8 @@ def write_plan(
         entries=tuple(entries),
         checksum=checksum,
         default_engine=default_engine,
+        syntax_version=syntax_version,
+        uri=uri,
     )
 
 

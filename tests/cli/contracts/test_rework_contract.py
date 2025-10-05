@@ -1,12 +1,229 @@
-"""Contract parity scaffold for sqlitch rework."""
+"""Contract parity tests for ``sqlitch rework``."""
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+from pathlib import Path
+
+from click.testing import CliRunner
 import pytest
 
-pytestmark = pytest.mark.skip(reason="Pending T021: enforce sqlitch rework contract parity")
+from sqlitch.cli.commands import rework as rework_module
+from sqlitch.cli.main import main
+from sqlitch.plan.formatter import write_plan
+from sqlitch.plan.model import Change
+from sqlitch.plan.parser import parse_plan
 
 
-def test_rework_contract_parity() -> None:
-    """Placeholder contract test to be implemented when T021 begins."""
-    ...
+@pytest.fixture()
+def runner() -> CliRunner:
+    """Return a Click CLI runner configured for isolation."""
+
+    return CliRunner()
+
+
+def _seed_change(
+    *,
+    project_root: Path,
+    name: str,
+    deploy_name: str,
+    revert_name: str,
+    verify_name: str,
+    planner: str = "Ada Lovelace",
+    planned_at: datetime | None = None,
+    notes: str | None = None,
+    dependencies: tuple[str, ...] = (),
+) -> Change:
+    if planned_at is None:
+        planned_at = datetime(2024, 1, 1, 0, 0, tzinfo=timezone.utc)
+
+    deploy_path = project_root / deploy_name
+    revert_path = project_root / revert_name
+    verify_path = project_root / verify_name
+
+    deploy_path.parent.mkdir(parents=True, exist_ok=True)
+    revert_path.parent.mkdir(parents=True, exist_ok=True)
+    verify_path.parent.mkdir(parents=True, exist_ok=True)
+
+    deploy_path.write_text("-- deploy script\n", encoding="utf-8")
+    revert_path.write_text("-- revert script\n", encoding="utf-8")
+    verify_path.write_text("-- verify script\n", encoding="utf-8")
+
+    return Change.create(
+        name=name,
+        script_paths={
+            "deploy": deploy_path,
+            "revert": revert_path,
+            "verify": verify_path,
+        },
+        planner=planner,
+        planned_at=planned_at,
+        notes=notes,
+        dependencies=dependencies,
+    )
+
+
+def test_rework_creates_rework_scripts_and_updates_plan(
+    monkeypatch: pytest.MonkeyPatch,
+    runner: CliRunner,
+) -> None:
+    """Rework should duplicate scripts with a rework suffix and update the plan."""
+
+    timestamp = datetime(2025, 2, 3, 4, 5, 6, tzinfo=timezone.utc)
+    monkeypatch.setattr(rework_module, "_utcnow", lambda: timestamp)
+    monkeypatch.setenv("SQLITCH_USER_NAME", "Grace Hopper")
+    monkeypatch.setenv("SQLITCH_USER_EMAIL", "grace@example.com")
+
+    with runner.isolated_filesystem():
+        project_root = Path.cwd()
+        plan_path = project_root / "sqlitch.plan"
+
+        core_change = _seed_change(
+            project_root=project_root,
+            name="core:init",
+            deploy_name="deploy/20231201000000_core_init.sql",
+            revert_name="revert/20231201000000_core_init.sql",
+            verify_name="verify/20231201000000_core_init.sql",
+        )
+
+        change = _seed_change(
+            project_root=project_root,
+            name="widgets:add",
+            deploy_name="deploy/20240101000000_widgets_add.sql",
+            revert_name="revert/20240101000000_widgets_add.sql",
+            verify_name="verify/20240101000000_widgets_add.sql",
+            notes="Adds widgets",
+            dependencies=("core:init",),
+        )
+
+        write_plan(
+            project_name="widgets",
+            default_engine="sqlite",
+            entries=(core_change, change),
+            plan_path=plan_path,
+        )
+
+        result = runner.invoke(main, ["rework", "widgets:add"])
+
+        assert result.exit_code == 0, result.output
+
+        deploy_name = "deploy/widgets_add_rework.sql"
+        revert_name = "revert/widgets_add_rework.sql"
+        verify_name = "verify/widgets_add_rework.sql"
+
+        assert f"Created rework deploy script {deploy_name}" in result.output
+        assert f"Created rework revert script {revert_name}" in result.output
+        assert f"Created rework verify script {verify_name}" in result.output
+        assert "Reworked widgets:add" in result.output
+
+        deploy_path = project_root / deploy_name
+        revert_path = project_root / revert_name
+        verify_path = project_root / verify_name
+
+        assert deploy_path.exists()
+        assert revert_path.exists()
+        assert verify_path.exists()
+
+        assert deploy_path.read_text(encoding="utf-8") == "-- deploy script\n"
+        assert revert_path.read_text(encoding="utf-8") == "-- revert script\n"
+        assert verify_path.read_text(encoding="utf-8") == "-- verify script\n"
+
+        updated_plan = parse_plan(plan_path)
+        updated_change = updated_plan.get_change("widgets:add")
+
+        relative_deploy = updated_change.script_paths["deploy"].relative_to(project_root).as_posix()
+        relative_revert = updated_change.script_paths["revert"].relative_to(project_root).as_posix()
+        relative_verify = updated_change.script_paths["verify"].relative_to(project_root).as_posix()
+
+        assert relative_deploy == deploy_name
+        assert relative_revert == revert_name
+        assert relative_verify == verify_name
+        assert updated_change.notes == "Adds widgets"
+        assert updated_change.dependencies == ("core:init",)
+        assert updated_change.planner == "Grace Hopper <grace@example.com>"
+        assert updated_change.planned_at == timestamp
+
+
+def test_rework_applies_overrides(monkeypatch: pytest.MonkeyPatch, runner: CliRunner) -> None:
+    """Dependencies, notes, and custom script paths should be honoured."""
+
+    timestamp = datetime(2025, 6, 7, 8, 9, 10, tzinfo=timezone.utc)
+    monkeypatch.setattr(rework_module, "_utcnow", lambda: timestamp)
+    monkeypatch.setenv("SQLITCH_USER_NAME", "Ada Lovelace")
+
+    with runner.isolated_filesystem():
+        project_root = Path.cwd()
+        plan_path = project_root / "sqlitch.plan"
+
+        schema_change = _seed_change(
+            project_root=project_root,
+            name="schema:init",
+            deploy_name="deploy/20221010101010_schema_init.sql",
+            revert_name="revert/20221010101010_schema_init.sql",
+            verify_name="verify/20221010101010_schema_init.sql",
+        )
+
+        users_change = _seed_change(
+            project_root=project_root,
+            name="users:add",
+            deploy_name="deploy/20221111111111_users_add.sql",
+            revert_name="revert/20221111111111_users_add.sql",
+            verify_name="verify/20221111111111_users_add.sql",
+        )
+
+        change = _seed_change(
+            project_root=project_root,
+            name="reports:generate",
+            deploy_name="deploy/20231212131415_reports_generate.sql",
+            revert_name="revert/20231212131415_reports_generate.sql",
+            verify_name="verify/20231212131415_reports_generate.sql",
+            notes="Initial reports",
+            dependencies=("schema:init", "users:add"),
+        )
+
+        write_plan(
+            project_name="reports",
+            default_engine="sqlite",
+            entries=(schema_change, users_change, change),
+            plan_path=plan_path,
+        )
+
+        result = runner.invoke(
+            main,
+            [
+                "rework",
+                "reports:generate",
+                "--requires",
+                "schema:init",
+                "--note",
+                "Tweaked reports",
+                "--deploy",
+                "deploy/custom_reports.sql",
+            ],
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "Created rework deploy script deploy/custom_reports.sql" in result.output
+
+        updated_plan = parse_plan(plan_path)
+        updated = updated_plan.get_change("reports:generate")
+
+        assert updated.notes == "Tweaked reports"
+        assert updated.dependencies == ("schema:init",)
+        assert (
+            updated.script_paths["deploy"].relative_to(project_root).as_posix()
+            == "deploy/custom_reports.sql"
+        )
+
+
+def test_rework_unknown_change_errors(runner: CliRunner) -> None:
+    """Reworking a change that does not exist should fail with a helpful error."""
+
+    with runner.isolated_filesystem():
+        plan_path = Path("sqlitch.plan")
+        write_plan(project_name="demo", default_engine="sqlite", entries=(), plan_path=plan_path)
+
+        result = runner.invoke(main, ["rework", "missing:change"])
+
+        assert result.exit_code != 0
+        assert 'Unknown change "missing:change"' in result.output

@@ -2,157 +2,170 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from bisect import bisect_right
+from collections.abc import Iterable, Iterator, Mapping, Sequence
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, Iterable, Iterator, List, Mapping, Sequence
-from uuid import UUID
 
-from sqlitch.utils.time import coerce_datetime, coerce_optional_datetime, isoformat_utc
+from sqlitch.utils.time import coerce_datetime, isoformat_utc
 
-_VALID_VERIFY_STATUSES = {"success", "failed", "skipped"}
-
-
-def _coerce_uuid(value: UUID | str) -> UUID:
-    if isinstance(value, UUID):
-        return value
-    if isinstance(value, str):
-        return UUID(value)
-    raise TypeError("change_id must be a UUID or string")
+__all__ = [
+    "RegistryEntry",
+    "RegistryState",
+    "serialize_registry_entries",
+    "sort_registry_entries_by_deployment",
+    "deserialize_registry_rows",
+]
 
 
-def _normalize_verify_status(value: str | None) -> str:
-    if value is None:
-        return "success"
-    normalized = value.lower()
-    if normalized not in _VALID_VERIFY_STATUSES:
-        raise ValueError(f"Unknown verify status: {value}")
-    return normalized
+def _ordering_key(entry: "RegistryEntry") -> tuple[datetime, str, str]:
+    return (entry.committed_at, entry.change_name, entry.change_id)
 
 
 @dataclass(frozen=True, slots=True)
 class RegistryEntry:
-    """Represents a single registry record for a deployed change."""
+    """Represents the latest deployment state recorded in the Sqitch registry."""
 
-    engine_target: str
-    change_id: UUID
+    project: str
+    change_id: str
     change_name: str
-    deployed_at: datetime
-    planner: str
-    verify_status: str = "success"
-    reverted_at: datetime | None = None
+    committed_at: datetime
+    committer_name: str
+    committer_email: str
+    planned_at: datetime
+    planner_name: str
+    planner_email: str
+    script_hash: str | None = None
+    note: str = ""
 
     def __post_init__(self) -> None:
-        if not self.engine_target:
-            raise ValueError("engine_target is required")
+        if not self.project:
+            raise ValueError("RegistryEntry.project is required")
+        if not self.change_id:
+            raise ValueError("RegistryEntry.change_id is required")
         if not self.change_name:
-            raise ValueError("change_name is required")
-        if not self.planner:
-            raise ValueError("planner is required")
+            raise ValueError("RegistryEntry.change_name is required")
+        if not self.committer_name:
+            raise ValueError("RegistryEntry.committer_name is required")
+        if not self.committer_email:
+            raise ValueError("RegistryEntry.committer_email is required")
+        if not self.planner_name:
+            raise ValueError("RegistryEntry.planner_name is required")
+        if not self.planner_email:
+            raise ValueError("RegistryEntry.planner_email is required")
 
-        normalized_id = _coerce_uuid(self.change_id)
-        normalized_deployed_at = coerce_datetime(self.deployed_at, "RegistryEntry deployed_at")
-        normalized_reverted_at = coerce_optional_datetime(self.reverted_at, "RegistryEntry reverted_at")
-        normalized_status = _normalize_verify_status(self.verify_status)
+        normalized_committed = coerce_datetime(self.committed_at, "RegistryEntry committed_at")
+        normalized_planned = coerce_datetime(self.planned_at, "RegistryEntry planned_at")
 
-        object.__setattr__(self, "change_id", normalized_id)
-        object.__setattr__(self, "deployed_at", normalized_deployed_at)
-        object.__setattr__(self, "reverted_at", normalized_reverted_at)
-        object.__setattr__(self, "verify_status", normalized_status)
-
-    def with_verify_status(self, status: str) -> "RegistryEntry":
-        normalized = _normalize_verify_status(status)
-        return replace(self, verify_status=normalized)
-
-    def with_reverted_at(self, reverted_at: datetime | str | None) -> "RegistryEntry":
-        normalized = coerce_optional_datetime(reverted_at, "reverted_at")
-        return replace(self, reverted_at=normalized)
+        object.__setattr__(self, "committed_at", normalized_committed)
+        object.__setattr__(self, "planned_at", normalized_planned)
 
 
 class RegistryState:
-    """In-memory view of registry entries to drive stateful operations."""
+    """In-memory view of registry entries keyed by ``change_id``."""
 
     def __init__(self, entries: Iterable[RegistryEntry] | None = None) -> None:
-        self._records: Dict[UUID, RegistryEntry] = {}
-        self._ordered_ids: List[UUID] = []
+        self._records: dict[str, RegistryEntry] = {}
+        self._ordered: list[tuple[tuple[datetime, str, str], str]] = []
         for entry in entries or ():
-            self._insert_entry(entry)
+            self.record_deploy(entry)
 
     def __iter__(self) -> Iterator[RegistryEntry]:
-        for change_id in self._ordered_ids:
+        for _, change_id in self._ordered:
             yield self._records[change_id]
 
     def __len__(self) -> int:
-        return len(self._ordered_ids)
+        return len(self._ordered)
 
     def records(self) -> Sequence[RegistryEntry]:
         return tuple(self)
 
-    def _insert_entry(self, entry: RegistryEntry) -> None:
-        change_id: UUID = entry.change_id
-        if change_id in self._records:
-            raise ValueError(f"Registry entry for {change_id} already recorded")
-        self._records[change_id] = entry
-        self._ordered_ids.append(change_id)
-        self._ordered_ids.sort(key=lambda cid: self._records[cid].deployed_at)
-
     def record_deploy(self, entry: RegistryEntry) -> None:
-        """Persist a new deployment record."""
+        """Add a deployment record to the state.
 
-        self._insert_entry(entry)
+        Raises:
+            ValueError: If an entry with the same ``change_id`` already exists.
+        """
 
-    def record_verify(self, change_id: UUID, status: str) -> None:
-        """Update verify status for an existing record."""
+        change_id = entry.change_id
+        if change_id in self._records:
+            raise ValueError(f"RegistryState already contains change_id {change_id}")
+
+        self._records[change_id] = entry
+        key = _ordering_key(entry)
+        index = bisect_right(self._ordered, (key, change_id))
+        self._ordered.insert(index, (key, change_id))
+
+    def remove_change(self, change_id: str) -> None:
+        """Remove a change from the state (e.g., after a revert)."""
 
         if change_id not in self._records:
             raise KeyError(change_id)
-        normalized = _normalize_verify_status(status)
-        updated = self._records[change_id].with_verify_status(normalized)
-        self._records[change_id] = updated
+        del self._records[change_id]
+        self._ordered = [item for item in self._ordered if item[1] != change_id]
 
-    def record_revert(self, change_id: UUID, reverted_at: datetime | str) -> None:
-        """Mark an entry as reverted at the provided timestamp."""
-
-        if change_id not in self._records:
-            raise KeyError(change_id)
-        updated = self._records[change_id].with_reverted_at(reverted_at)
-        self._records[change_id] = updated
-
-    def get_record(self, change_id: UUID) -> RegistryEntry:
+    def get_record(self, change_id: str) -> RegistryEntry:
         return self._records[change_id]
 
 
+def sort_registry_entries_by_deployment(
+    entries: Iterable[RegistryEntry],
+    *,
+    reverse: bool = False,
+) -> tuple[RegistryEntry, ...]:
+    """Return entries ordered by commit time, change name, and change ID."""
+
+    ordered = sorted(entries, key=_ordering_key, reverse=reverse)
+    return tuple(ordered)
+
+
+def _resolve_value(row: Mapping[str, object], *candidates: str) -> object:
+    for key in candidates:
+        if key in row:
+            return row[key]
+    raise KeyError(f"Row is missing required keys: {', '.join(candidates)}")
+
+
 def deserialize_registry_rows(rows: Iterable[Mapping[str, object]]) -> Sequence[RegistryEntry]:
-    """Convert raw registry rows (e.g., DB results) into RegistryEntry instances."""
+    """Convert registry query rows into :class:`RegistryEntry` instances."""
 
-    entries = [
-        RegistryEntry(
-            engine_target=row["engine_target"],
-            change_id=row["change_id"],
-            change_name=row["change_name"],
-            deployed_at=row["deployed_at"],
-            planner=row["planner"],
-            verify_status=row.get("verify_status", "success"),
-            reverted_at=row.get("reverted_at"),
+    entries = []
+    for row in rows:
+        entry = RegistryEntry(
+            project=str(_resolve_value(row, "project")),
+            change_id=str(_resolve_value(row, "change_id")),
+            change_name=str(_resolve_value(row, "change", "change_name")),
+            committed_at=_resolve_value(row, "committed_at"),
+            committer_name=str(_resolve_value(row, "committer_name")),
+            committer_email=str(_resolve_value(row, "committer_email")),
+            planned_at=_resolve_value(row, "planned_at"),
+            planner_name=str(_resolve_value(row, "planner_name")),
+            planner_email=str(_resolve_value(row, "planner_email")),
+            script_hash=(str(value) if (value := row.get("script_hash")) is not None else None),
+            note=str(row.get("note", "")),
         )
-        for row in rows
-    ]
-    return tuple(sorted(entries, key=lambda entry: entry.deployed_at))
+        entries.append(entry)
+    return sort_registry_entries_by_deployment(entries)
 
 
-def serialize_registry_entries(entries: Iterable[RegistryEntry]) -> List[Dict[str, object]]:
-    """Serialize RegistryEntry instances into plain dictionaries for persistence."""
+def serialize_registry_entries(entries: Iterable[RegistryEntry]) -> list[dict[str, object]]:
+    """Render entries as dictionaries matching the Sqitch ``changes`` schema."""
 
-    serialized: List[Dict[str, object]] = []
+    serialized: list[dict[str, object]] = []
     for entry in entries:
         serialized.append(
             {
-                "engine_target": entry.engine_target,
-                "change_id": str(entry.change_id),
-                "change_name": entry.change_name,
-                "deployed_at": isoformat_utc(entry.deployed_at),
-                "planner": entry.planner,
-                "verify_status": entry.verify_status,
-                "reverted_at": isoformat_utc(entry.reverted_at) if entry.reverted_at else None,
+                "project": entry.project,
+                "change_id": entry.change_id,
+                "change": entry.change_name,
+                "script_hash": entry.script_hash,
+                "note": entry.note,
+                "committed_at": isoformat_utc(entry.committed_at),
+                "committer_name": entry.committer_name,
+                "committer_email": entry.committer_email,
+                "planned_at": isoformat_utc(entry.planned_at),
+                "planner_name": entry.planner_name,
+                "planner_email": entry.planner_email,
             }
         )
     return serialized

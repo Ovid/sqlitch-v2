@@ -8,10 +8,11 @@ Display, diff, or amend the SQLitch deployment plan without mutating registry st
 - **Environment**: respects `SQLITCH_PLAN_FILE`, `SQITCH_PLAN_FILE`, `SQLITCH_CONFIG_ROOT`.
 
 ## Behavior
-1. Parse plan file using ported Sqitch grammar (supports comments, dependencies, tags).
-2. Output plan entries in requested format; `--short` truncates notes, `--no-header` removes metadata line.
-3. `--change` / `--tag` limits output to matching entry along with dependencies if required.
-4. JSON output returns sequence of objects with change metadata identical to Sqitch.
+1. Parse plan file using ported Sqitch grammar (supports comments, dependencies, tags, and Sqitch-compact entries).
+2. Record forward-referenced dependencies rather than failing; emit human-readable warnings when encountered.
+3. Output plan entries in requested format; `--short` truncates notes, `--no-header` removes metadata line.
+4. `--change` / `--tag` limits output to matching entry along with dependencies if required.
+5. JSON output returns sequence of objects with change metadata identical to Sqitch plus `missing_dependencies` metadata for warning consumers.
 
 ## Outputs
 - **STDOUT**: plan content; identical wording, indentation, and spacing.
@@ -22,6 +23,7 @@ Display, diff, or amend the SQLitch deployment plan without mutating registry st
 - Missing plan file → exit 1 `Cannot find plan file` with resolved search path.
 - Both `sqlitch.plan` and `sqitch.plan` present → exit 1 with conflict warning.
 - Malformed entry (e.g., dependency on unknown change) → exit 1 matching Sqitch message.
+- Forward dependency references encountered in compact plans → exit 0 with warning emitted to STDERR and serialized in JSON payload.
 
 ## Parity Checks
 - Golden file comparison ensures identical output for sample plans.

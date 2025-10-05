@@ -66,12 +66,12 @@ def test_resolve_config_uses_environment_overrides(tmp_path: Path) -> None:
     project_dir.mkdir()
 
     system_dir = tmp_path / "system"
-    _write_config(system_dir / "sqlitch.conf", "[core]\nengine=pg\n")
+    _write_config(system_dir / "sqitch.conf", "[core]\nengine=pg\n")
 
     override_root = tmp_path / "override"
-    _write_config(override_root / "sqlitch.conf", "[core]\nengine=mysql\n")
+    _write_config(override_root / "sqitch.conf", "[core]\nengine=mysql\n")
 
-    _write_config(project_dir / "sqlitch.conf", "[core]\nengine=sqlite\n")
+    _write_config(project_dir / "sqitch.conf", "[core]\nengine=sqlite\n")
 
     profile = resolver.resolve_config(
         root_dir=project_dir,
@@ -83,9 +83,9 @@ def test_resolve_config_uses_environment_overrides(tmp_path: Path) -> None:
 
     assert profile.root_dir == project_dir
     assert profile.files == (
-        system_dir / "sqlitch.conf",
-        override_root / "sqlitch.conf",
-        project_dir / "sqlitch.conf",
+        system_dir / "sqitch.conf",
+        override_root / "sqitch.conf",
+        project_dir / "sqitch.conf",
     )
     assert profile.settings["core"]["engine"] == "sqlite"
     assert profile.active_engine == "sqlite"
@@ -95,7 +95,7 @@ def test_resolve_config_honours_explicit_root_override(tmp_path: Path) -> None:
     project_dir = tmp_path / "project"
     project_dir.mkdir()
     explicit_root = tmp_path / "explicit"
-    _write_config(explicit_root / "sqlitch.conf", "[core]\nengine=pg\n")
+    _write_config(explicit_root / "sqitch.conf", "[core]\nengine=pg\n")
 
     profile = resolver.resolve_config(
         root_dir=project_dir,
@@ -106,7 +106,7 @@ def test_resolve_config_honours_explicit_root_override(tmp_path: Path) -> None:
         ),
     )
 
-    assert explicit_root / "sqlitch.conf" in profile.files
+    assert explicit_root / "sqitch.conf" in profile.files
     assert profile.settings.get("core", {}).get("engine") == "pg"
 
 
@@ -115,12 +115,12 @@ def test_resolve_config_accepts_system_path_override(tmp_path: Path) -> None:
     project_dir.mkdir()
 
     user_root = tmp_path / "user"
-    _write_config(user_root / "sqlitch.conf", "[core]\nengine=mysql\n")
+    _write_config(user_root / "sqitch.conf", "[core]\nengine=mysql\n")
 
     system_dir = tmp_path / "system"
-    _write_config(system_dir / "sqlitch.conf", "[core]\nengine=pg\n")
+    _write_config(system_dir / "sqitch.conf", "[core]\nengine=pg\n")
 
-    _write_config(project_dir / "sqlitch.conf", "[core]\nengine=sqlite\n")
+    _write_config(project_dir / "sqitch.conf", "[core]\nengine=sqlite\n")
 
     profile = resolver.resolve_config(
         root_dir=project_dir,
@@ -128,7 +128,7 @@ def test_resolve_config_accepts_system_path_override(tmp_path: Path) -> None:
         system_path=system_dir,
     )
 
-    assert profile.files[0] == system_dir / "sqlitch.conf"
+    assert profile.files[0] == system_dir / "sqitch.conf"
 
 
 def test_resolve_config_uses_legacy_system_env(tmp_path: Path) -> None:
@@ -212,3 +212,66 @@ def test_determine_system_root_returns_default_when_no_paths_exist(
     result = resolver._determine_system_root(env={}, system_path=None)
     assert result == default_dir
 
+
+def test_resolve_registry_uri_sqlite_defaults_to_sibling(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace.db"
+    workspace_uri = f"db:sqlite:{workspace.as_posix()}"
+
+    registry_uri = resolver.resolve_registry_uri(
+        engine="sqlite",
+        workspace_uri=workspace_uri,
+        project_root=tmp_path,
+    )
+
+    expected = f"db:sqlite:{(workspace.parent / 'sqitch.db').as_posix()}"
+    assert registry_uri == expected
+
+
+def test_resolve_registry_uri_sqlite_honours_override(tmp_path: Path) -> None:
+    workspace_uri = f"db:sqlite:{(tmp_path / 'workspace.db').as_posix()}"
+    override = (tmp_path / "custom" / "registry.db").as_posix()
+
+    registry_uri = resolver.resolve_registry_uri(
+        engine="sqlite",
+        workspace_uri=workspace_uri,
+        project_root=tmp_path,
+        registry_override=override,
+    )
+
+    expected = f"db:sqlite:{(tmp_path / 'custom' / 'registry.db').as_posix()}"
+    assert registry_uri == expected
+
+
+def test_resolve_registry_uri_sqlite_in_memory(tmp_path: Path) -> None:
+    workspace_uri = "db:sqlite::memory:"
+
+    registry_uri = resolver.resolve_registry_uri(
+        engine="sqlite",
+        workspace_uri=workspace_uri,
+        project_root=tmp_path,
+    )
+
+    expected = f"db:sqlite:{(tmp_path / 'sqitch.db').as_posix()}"
+    assert registry_uri == expected
+
+
+def test_resolve_registry_uri_non_sqlite_defaults_to_workspace() -> None:
+    workspace_uri = "db:pg://example"
+
+    registry_uri = resolver.resolve_registry_uri(
+        engine="pg",
+        workspace_uri=workspace_uri,
+        project_root=Path("."),
+    )
+
+    assert registry_uri == workspace_uri
+
+    override = "db:pg://registry"
+    overridden = resolver.resolve_registry_uri(
+        engine="pg",
+        workspace_uri=workspace_uri,
+        project_root=Path("."),
+        registry_override=override,
+    )
+
+    assert overridden == override

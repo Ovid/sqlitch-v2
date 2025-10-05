@@ -6,7 +6,7 @@ from uuid import UUID
 
 import pytest
 
-from sqlitch.plan import formatter
+from sqlitch.plan import formatter, parser
 from sqlitch.plan.model import Change, Tag
 
 
@@ -51,7 +51,7 @@ def test_format_plan_generates_expected_text(tmp_path: Path) -> None:
         base_path=plan_path.parent,
     )
 
-    expected = """%project=widgets\n%default_engine=pg\nchange core:init deploy/core.sql revert/core.sql planner=alice@example.com planned_at=2025-10-03T12:30:00Z change_id=123e4567-e89b-12d3-a456-426614174000\nchange widgets:add deploy/widgets.sql revert/widgets.sql verify=verify/widgets.sql planner=alice@example.com planned_at=2025-10-03T12:34:56Z notes='Add widgets table.' depends=core:init tags=v1.0 change_id=223e4567-e89b-12d3-a456-426614174000\ntag v1.0 widgets:add planner=alice@example.com tagged_at=2025-10-03T12:35:30Z\n"""
+    expected = """%syntax-version=1.0.0\n%project=widgets\n%default_engine=pg\n\nchange core:init deploy/core.sql revert/core.sql planner=alice@example.com planned_at=2025-10-03T12:30:00Z change_id=123e4567-e89b-12d3-a456-426614174000\nchange widgets:add deploy/widgets.sql revert/widgets.sql verify=verify/widgets.sql planner=alice@example.com planned_at=2025-10-03T12:34:56Z notes='Add widgets table.' depends=core:init tags=v1.0 change_id=223e4567-e89b-12d3-a456-426614174000\ntag v1.0 widgets:add planner=alice@example.com tagged_at=2025-10-03T12:35:30Z\n"""
 
     assert plan_text == expected
 
@@ -104,3 +104,19 @@ def test_write_plan_persists_content_and_returns_plan(tmp_path: Path) -> None:
 )
 def test_compute_checksum_matches_sha256(value: str, expected: str) -> None:
     assert formatter.compute_checksum(value) == expected
+
+
+def test_format_plan_preserves_missing_change_id(tmp_path: Path) -> None:
+    original = "%syntax-version=1.0.0\n%project=widgets\n%default_engine=pg\n\nchange core:init deploy/core.sql revert/core.sql planner=alice@example.com planned_at=2025-10-03T12:30:00Z\n"
+    plan_path = tmp_path / "plan"
+    plan_path.write_text(original, encoding="utf-8")
+
+    plan = parser.parse_plan(plan_path)
+    rendered = formatter.format_plan(
+        project_name=plan.project_name,
+        default_engine=plan.default_engine,
+        entries=plan.entries,
+        base_path=plan_path.parent,
+    )
+
+    assert rendered == original

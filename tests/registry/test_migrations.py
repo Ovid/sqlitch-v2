@@ -4,7 +4,11 @@ from pathlib import Path
 
 import pytest
 
-from sqlitch.registry.migrations import LATEST_REGISTRY_VERSION, RegistryMigration, get_registry_migrations
+from sqlitch.registry.migrations import (
+    LATEST_REGISTRY_VERSION,
+    RegistryMigration,
+    get_registry_migrations,
+)
 
 
 _ROOT = Path(__file__).resolve().parent.parent.parent

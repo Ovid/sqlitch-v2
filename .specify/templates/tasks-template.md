@@ -18,6 +18,8 @@
    → Core: models, services, CLI commands
    → Integration: DB, middleware, logging
    → Polish: unit tests, performance, docs
+   → Observability: add regression coverage for default human-readable CLI output
+     and opt-in structured logging modes where relevant
 4. Apply task rules:
    → Different files = mark [P] for parallel
    → Same file = sequential (no [P])

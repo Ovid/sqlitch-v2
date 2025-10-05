@@ -1,0 +1,227 @@
+"""Implementation of the ``sqlitch revert`` command."""
+
+from __future__ import annotations
+
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Callable
+
+import click
+
+from sqlitch.plan.model import Change, Plan
+from sqlitch.plan.parser import PlanParseError, parse_plan
+
+from . import CommandError, register_command
+from ._context import (
+    environment_from,
+    plan_override_from,
+    project_root_from,
+    quiet_mode_enabled,
+    require_cli_context,
+)
+from ._plan_utils import resolve_default_engine, resolve_plan_path
+
+__all__ = ["revert_command"]
+
+
+@dataclass(frozen=True, slots=True)
+class _RevertRequest:
+    project_root: Path
+    env: Mapping[str, str]
+    plan_path: Path
+    plan: Plan
+    target: str
+    to_change: str | None
+    to_tag: str | None
+    log_only: bool
+    quiet: bool
+
+
+@click.command("revert")
+@click.option("--target", "target_option", help="Deployment target alias or URI.")
+@click.option("--to-change", "to_change", help="Revert through the specified change (inclusive).")
+@click.option("--to-tag", "to_tag", help="Revert through the specified tag (inclusive).")
+@click.option(
+    "--log-only",
+    is_flag=True,
+    help="Show the revert actions without executing any scripts.",
+)
+@click.pass_context
+def revert_command(
+    ctx: click.Context,
+    *,
+    target_option: str | None,
+    to_change: str | None,
+    to_tag: str | None,
+    log_only: bool,
+) -> None:
+    """Revert deployed plan changes on the requested target."""
+
+    cli_context = require_cli_context(ctx)
+    project_root = project_root_from(ctx)
+    env = environment_from(ctx)
+    plan_override = plan_override_from(ctx)
+
+    plan_path_for_engine = _resolve_plan_path(
+        project_root=project_root, override=plan_override, env=env
+    )
+
+    default_engine = resolve_default_engine(
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=env,
+        engine_override=cli_context.engine,
+        plan_path=plan_path_for_engine,
+    )
+
+    target = _resolve_target(target_option, cli_context.target)
+
+    request = _build_request(
+        project_root=project_root,
+        env=env,
+        plan_override=plan_override,
+        to_change=to_change,
+        to_tag=to_tag,
+        target=target,
+        log_only=log_only,
+        quiet=quiet_mode_enabled(ctx),
+        default_engine=default_engine,
+    )
+
+    _execute_revert(request)
+
+
+def _build_request(
+    *,
+    project_root: Path,
+    env: Mapping[str, str],
+    plan_override: Path | None,
+    to_change: str | None,
+    to_tag: str | None,
+    target: str,
+    log_only: bool,
+    quiet: bool,
+    default_engine: str,
+) -> _RevertRequest:
+    if to_change and to_tag:
+        raise CommandError("Cannot combine --to-change and --to-tag filters.")
+
+    plan_path = _resolve_plan_path(project_root=project_root, override=plan_override, env=env)
+    plan = _load_plan(plan_path, default_engine)
+
+    return _RevertRequest(
+        project_root=project_root,
+        env=env,
+        plan_path=plan_path,
+        plan=plan,
+        target=target,
+        to_change=to_change,
+        to_tag=to_tag,
+        log_only=log_only,
+        quiet=quiet,
+    )
+
+
+def _execute_revert(request: _RevertRequest) -> None:
+    changes = _select_changes(
+        plan=request.plan,
+        to_change=request.to_change,
+        to_tag=request.to_tag,
+    )
+
+    if request.log_only:
+        _render_log_only_revert(request, changes)
+        return
+
+    raise CommandError("Revert execution is not yet implemented; rerun with --log-only for now.")
+
+
+def _resolve_target(target_option: str | None, configured_target: str | None) -> str:
+    target = target_option or configured_target
+    if not target:
+        raise CommandError("A deployment target must be provided via --target or configuration.")
+    return target
+
+
+def _resolve_plan_path(
+    *,
+    project_root: Path,
+    override: Path | None,
+    env: Mapping[str, str],
+) -> Path:
+    return resolve_plan_path(
+        project_root=project_root,
+        override=override,
+        env=env,
+        missing_plan_message="Cannot read plan file sqitch.plan",
+    )
+
+
+def _load_plan(plan_path: Path, default_engine: str | None) -> Plan:
+    try:
+        return parse_plan(plan_path, default_engine=default_engine)
+    except (PlanParseError, ValueError) as exc:  # pragma: no cover - delegated to parser tests
+        raise CommandError(str(exc)) from exc
+    except OSError as exc:  # pragma: no cover - IO failures surfaced to the CLI user
+        raise CommandError(f"Unable to read plan file {plan_path}: {exc}") from exc
+
+
+def _select_changes(
+    *,
+    plan: Plan,
+    to_change: str | None,
+    to_tag: str | None,
+) -> tuple[Change, ...]:
+    changes = plan.changes
+    if not changes:
+        return ()
+
+    if to_change:
+        try:
+            index = next(i for i, change in enumerate(changes) if change.name == to_change)
+        except StopIteration as exc:
+            raise CommandError(f"Plan does not contain change '{to_change}'.") from exc
+        return changes[: index + 1]
+
+    if to_tag:
+        try:
+            tag_entry = next(tag for tag in plan.tags if tag.name == to_tag)
+        except StopIteration as exc:
+            raise CommandError(f"Plan does not contain tag '{to_tag}'.") from exc
+        return _select_changes(plan=plan, to_change=tag_entry.change_ref, to_tag=None)
+
+    return changes
+
+
+def _render_log_only_revert(request: _RevertRequest, changes: Sequence[Change]) -> None:
+    emitter = _build_emitter(request.quiet)
+
+    emitter(
+        f"Reverting plan '{request.plan.project_name}' on target '{request.target}' (log-only)."
+    )
+
+    if not changes:
+        emitter("No changes available for reversion.")
+        emitter("Log-only run; no database changes were applied.")
+        return
+
+    for change in reversed(changes):
+        emitter(f"Would revert change {change.name}")
+
+    emitter("Log-only run; no database changes were applied.")
+
+
+def _build_emitter(quiet: bool) -> Callable[[str], None]:
+    def _emit(message: str) -> None:
+        if not quiet:
+            click.echo(message)
+
+    return _emit
+
+
+@register_command("revert")
+def _register_revert(group: click.Group) -> None:
+    """Attach the revert command to the root Click group."""
+
+    group.add_command(revert_command)

@@ -47,7 +47,17 @@
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- **Test-First Development:** Confirm every planned implementation task is
+   preceded by a failing test task in this plan.
+- **Observability & Determinism:** Ensure default CLI behavior remains human-only
+   and that any structured logging or registry instrumentation is explicitly
+   opt-in via flags.
+- **Behavioral Parity:** Validate all flows defer to the upstream `sqitch/`
+   reference; document any intentional deviations and migration notes.
+- **Simplicity-First:** Highlight the minimal viable change and document rejected
+   more complex alternatives if complexity is unavoidable.
+- **Documented Interfaces:** Capture docstring and public API updates as part of
+   the plan to keep user-facing documentation accurate.
 
 ## Project Structure
 
@@ -216,4 +226,4 @@ directories captured above]
 - [ ] Complexity deviations documented
 
 ---
-*Based on Constitution v2.1.1 - See `/memory/constitution.md`*
+*Based on Constitution v1.7.0 - See `/memory/constitution.md`*

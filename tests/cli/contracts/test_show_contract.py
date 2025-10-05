@@ -1,12 +1,327 @@
-"""Contract parity scaffold for sqlitch show."""
+"""Contract parity tests for ``sqlitch show``."""
 
 from __future__ import annotations
 
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+
+from click.testing import CliRunner
 import pytest
 
-pytestmark = pytest.mark.skip(reason="Pending T022: enforce sqlitch show contract parity")
+from sqlitch.cli.main import main
+from sqlitch.plan.formatter import write_plan
+from sqlitch.plan.model import Change, Tag
 
 
-def test_show_contract_parity() -> None:
-    """Placeholder contract test to be implemented when T022 begins."""
-    ...
+@pytest.fixture()
+def runner() -> CliRunner:
+    """Return an isolated Click runner for CLI invocations."""
+
+    return CliRunner()
+
+
+def _seed_project(project_root: Path) -> tuple[Path, Change]:
+    project_root.mkdir(parents=True, exist_ok=True)
+    deploy_core = project_root / "deploy/20240101000000_core_init.sql"
+    revert_core = project_root / "revert/20240101000000_core_init.sql"
+    verify_core = project_root / "verify/20240101000000_core_init.sql"
+    for path in (deploy_core, revert_core, verify_core):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("-- core script\n", encoding="utf-8")
+
+    core_change = Change.create(
+        name="core:init",
+        script_paths={
+            "deploy": deploy_core,
+            "revert": revert_core,
+            "verify": verify_core,
+        },
+        planner="Ada Lovelace",
+        planned_at=datetime(2024, 1, 1, 0, 0, tzinfo=timezone.utc),
+    )
+
+    deploy_target = project_root / "deploy/20240102000000_widgets_add.sql"
+    revert_target = project_root / "revert/20240102000000_widgets_add.sql"
+    verify_target = project_root / "verify/20240102000000_widgets_add.sql"
+    deploy_target.write_text("/* deploy widgets */\n", encoding="utf-8")
+    revert_target.write_text("/* revert widgets */\n", encoding="utf-8")
+    verify_target.write_text("/* verify widgets */\n", encoding="utf-8")
+
+    target_timestamp = datetime(2024, 1, 2, 0, 0, tzinfo=timezone.utc)
+    target_change = Change.create(
+        name="widgets:add",
+        script_paths={
+            "deploy": deploy_target,
+            "revert": revert_target,
+            "verify": verify_target,
+        },
+        planner="Grace Hopper",
+        planned_at=target_timestamp,
+        notes="Adds widgets",
+        dependencies=("core:init",),
+        tags=("release",),
+    )
+
+    core_tag = Tag(
+        name="baseline",
+        change_ref=core_change.name,
+        planner="Ada Lovelace",
+        tagged_at=datetime(2024, 1, 1, 0, 30, tzinfo=timezone.utc),
+    )
+
+    tag = Tag(
+        name="v1.0",
+        change_ref=target_change.name,
+        planner="Grace Hopper",
+        tagged_at=datetime(2024, 1, 2, 0, 5, tzinfo=timezone.utc),
+    )
+
+    plan_path = project_root / "sqlitch.plan"
+    write_plan(
+        project_name="widgets",
+        default_engine="sqlite",
+        entries=(core_change, core_tag, target_change, tag),
+        plan_path=plan_path,
+    )
+
+    return plan_path, target_change
+
+
+def _seed_minimal_project(project_root: Path) -> tuple[Path, Change]:
+    project_root.mkdir(parents=True, exist_ok=True)
+    for directory in ("deploy", "revert"):
+        (project_root / directory).mkdir(parents=True, exist_ok=True)
+
+    deploy_script = project_root / "deploy/minimal_change.sql"
+    revert_script = project_root / "revert/minimal_change.sql"
+    deploy_script.write_text("/* minimal deploy */\n", encoding="utf-8")
+    revert_script.write_text("/* minimal revert */\n", encoding="utf-8")
+
+    minimal_change = Change.create(
+        name="minimal:change",
+        script_paths={
+            "deploy": "deploy/minimal_change.sql",
+            "revert": "revert/minimal_change.sql",
+            "verify": None,
+        },
+        planner="Test Planner",
+        planned_at=datetime(2024, 1, 3, 0, 0, tzinfo=timezone.utc),
+    )
+
+    plan_path = project_root / "sqlitch.plan"
+    write_plan(
+        project_name="minimal",
+        default_engine="sqlite",
+        entries=(minimal_change,),
+        plan_path=plan_path,
+    )
+
+    return plan_path, minimal_change
+
+
+def test_show_human_format_displays_change_metadata(runner: CliRunner) -> None:
+    """Default output should mirror Sqitch show change metadata."""
+
+    with runner.isolated_filesystem():
+        project_root = Path.cwd()
+        _, change = _seed_project(project_root)
+
+        result = runner.invoke(main, ["show", change.name])
+
+        assert result.exit_code == 0, result.stderr
+        assert f"Change: {change.name}" in result.stdout
+        assert "Planner: Grace Hopper" in result.stdout
+        assert "Planned At: 2024-01-02T00:00:00Z" in result.stdout
+        assert "Dependencies: core:init" in result.stdout
+        assert "Tags: release, v1.0" in result.stdout
+        assert "Notes: Adds widgets" in result.stdout
+        assert "Deploy Script: deploy/20240102000000_widgets_add.sql" in result.stdout
+        assert "Revert Script: revert/20240102000000_widgets_add.sql" in result.stdout
+        assert "Verify Script: verify/20240102000000_widgets_add.sql" in result.stdout
+
+
+def test_show_json_format_returns_structured_payload(runner: CliRunner) -> None:
+    """JSON output should expose change metadata for automation."""
+
+    with runner.isolated_filesystem():
+        project_root = Path.cwd()
+        _, change = _seed_project(project_root)
+
+        result = runner.invoke(main, ["show", change.name, "--format", "json"])
+
+        assert result.exit_code == 0, result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["change"] == change.name
+        assert payload["planner"] == "Grace Hopper"
+        assert payload["planned_at"] == "2024-01-02T00:00:00Z"
+        assert payload["dependencies"] == ["core:init"]
+        assert payload["tags"] == ["release", "v1.0"]
+        assert payload["notes"] == "Adds widgets"
+        assert payload["scripts"] == {
+            "deploy": "deploy/20240102000000_widgets_add.sql",
+            "revert": "revert/20240102000000_widgets_add.sql",
+            "verify": "verify/20240102000000_widgets_add.sql",
+        }
+
+
+def test_show_script_option_outputs_script_contents(runner: CliRunner) -> None:
+    """Requesting a script should stream the script contents verbatim."""
+
+    with runner.isolated_filesystem():
+        project_root = Path.cwd()
+        _, change = _seed_project(project_root)
+
+        result = runner.invoke(main, ["show", change.name, "--script", "deploy"])
+
+        assert result.exit_code == 0, result.stderr
+        assert result.stdout == "/* deploy widgets */\n"
+
+
+def test_show_accepts_tag_reference(runner: CliRunner) -> None:
+    """Tags should resolve to their associated change."""
+
+    with runner.isolated_filesystem():
+        project_root = Path.cwd()
+        _, change = _seed_project(project_root)
+
+        result = runner.invoke(main, ["show", "v1.0"])
+
+        assert result.exit_code == 0, result.stderr
+        assert f"Change: {change.name}" in result.stdout
+
+
+def test_show_project_filter_mismatch_errors(runner: CliRunner) -> None:
+    """Project filters should reject plans that do not match."""
+
+    with runner.isolated_filesystem():
+        project_root = Path.cwd()
+        _, change = _seed_project(project_root)
+
+        result = runner.invoke(main, ["show", change.name, "--project", "gadgets"])
+
+        assert result.exit_code != 0
+        assert "Plan project 'widgets' does not match requested project 'gadgets'." in result.stderr
+
+
+def test_show_outputs_defaults_when_metadata_missing(runner: CliRunner) -> None:
+    """Show should surface sensible defaults when optional metadata is absent."""
+
+    with runner.isolated_filesystem():
+        project_root = Path.cwd()
+        _, change = _seed_minimal_project(project_root)
+
+        human = runner.invoke(main, ["show", change.name])
+        assert human.exit_code == 0, human.stderr
+        assert "Dependencies: (none)" in human.stdout
+        assert "Tags: (none)" in human.stdout
+        assert "Notes: (none)" in human.stdout
+        assert "Deploy Script: deploy/minimal_change.sql" in human.stdout
+        assert "Verify Script" not in human.stdout
+
+        json_result = runner.invoke(main, ["show", change.name, "--format", "json"])
+        assert json_result.exit_code == 0, json_result.stderr
+        payload = json.loads(json_result.stdout)
+        assert payload["dependencies"] == []
+        assert payload["tags"] == []
+        assert payload["notes"] is None
+        assert payload["scripts"] == {
+            "deploy": "deploy/minimal_change.sql",
+            "revert": "revert/minimal_change.sql",
+        }
+
+
+def test_show_script_option_reports_missing_files(runner: CliRunner) -> None:
+    """Missing or unspecified scripts should raise clear errors."""
+
+    with runner.isolated_filesystem():
+        project_root = Path.cwd()
+        _, change = _seed_minimal_project(project_root)
+
+        deploy_result = runner.invoke(main, ["show", change.name, "--script", "deploy"])
+        assert deploy_result.exit_code == 0, deploy_result.stderr
+        assert deploy_result.stdout == "/* minimal deploy */\n"
+
+        (project_root / "revert/minimal_change.sql").unlink()
+
+        missing_file = runner.invoke(main, ["show", change.name, "--script", "revert"])
+        assert missing_file.exit_code != 0
+        assert "Cannot find revert script for minimal:change" in missing_file.stderr
+
+        missing_kind = runner.invoke(main, ["show", change.name, "--script", "verify"])
+        assert missing_kind.exit_code != 0
+        assert "Cannot find verify script for minimal:change" in missing_kind.stderr
+
+
+def test_show_reports_plan_parse_errors(runner: CliRunner) -> None:
+    """Plan parse failures should surface the parser error message."""
+
+    with runner.isolated_filesystem():
+        project_root = Path.cwd()
+        plan_path, change = _seed_project(project_root)
+        plan_path.write_text("invalid-entry\n", encoding="utf-8")
+
+        result = runner.invoke(main, ["show", change.name])
+
+        assert result.exit_code != 0
+        assert "Unknown plan entry 'invalid-entry'" in result.stderr
+
+
+def test_show_deduplicates_plan_and_change_tags(runner: CliRunner) -> None:
+    """Tags applied at both change and plan level should not be repeated."""
+
+    with runner.isolated_filesystem():
+        project_root = Path.cwd()
+        for directory in ("deploy", "revert"):
+            (project_root / directory).mkdir(parents=True, exist_ok=True)
+
+        deploy_script = project_root / "deploy/duplicate.sql"
+        revert_script = project_root / "revert/duplicate.sql"
+        deploy_script.write_text("-- duplicate deploy\n", encoding="utf-8")
+        revert_script.write_text("-- duplicate revert\n", encoding="utf-8")
+
+        duplicate_change = Change.create(
+            name="duplicate:change",
+            script_paths={
+                "deploy": deploy_script,
+                "revert": revert_script,
+            },
+            planner="Grace Hopper",
+            planned_at=datetime(2024, 1, 4, 0, 0, tzinfo=timezone.utc),
+            tags=("duplicate",),
+        )
+
+        duplicate_tag = Tag(
+            name="duplicate",
+            change_ref=duplicate_change.name,
+            planner="Grace Hopper",
+            tagged_at=datetime(2024, 1, 4, 0, 5, tzinfo=timezone.utc),
+        )
+
+        plan_path = project_root / "sqlitch.plan"
+        write_plan(
+            project_name="duplicates",
+            default_engine="sqlite",
+            entries=(duplicate_change, duplicate_tag),
+            plan_path=plan_path,
+        )
+
+        result = runner.invoke(main, ["show", duplicate_change.name])
+
+        assert result.exit_code == 0, result.stderr
+        assert result.stdout.count("duplicate") == 4  # change line, tag line, planner, script paths
+        assert "Tags: duplicate" in result.stdout
+
+
+def test_show_unknown_change_errors(runner: CliRunner) -> None:
+    """Missing changes should raise a helpful error message."""
+
+    with runner.isolated_filesystem():
+        project_root = Path.cwd()
+        plan_path, _ = _seed_project(project_root)
+        assert plan_path.exists()
+
+        result = runner.invoke(main, ["show", "unknown:change"])
+
+        assert result.exit_code != 0
+        assert 'Unknown change "unknown:change"' in result.stderr
