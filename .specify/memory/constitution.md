@@ -1,14 +1,16 @@
 <!--
 - Sync Impact Report
-- Version change: 1.5.0 → 1.6.0
-- Added sections:
-  • I. Test-First Development — Added Sqitch consultation requirements for test creation and modification
-- Modified sections: None
+- Version change: 1.6.0 → 1.7.0
+- Modified sections:
+  • V. Observability and Determinism — Clarified opt-in structured logging and registry-only audit trail requirements.
+  • Additional Constraints — Added default logging confinement rule and removed redundant advisory guidance.
+- Added sections: None
 - Removed sections: None
 - Templates requiring updates:
-  ✅ Existing templates reviewed (no changes required)
-  ⚠  RATIFICATION_DATE left as TODO pending project decision
-- Rationale: Reinforces test-driven development alignment with upstream Sqitch behavior by codifying consultation requirements before tests change.
+  ✅ .specify/templates/plan-template.md
+  ✅ .specify/templates/spec-template.md
+  ✅ .specify/templates/tasks-template.md
+- Follow-up TODOs: None
 -->
 
 # SQLitch Constitution
@@ -62,11 +64,18 @@ Rationale: Separation improves reuse, testing, and long-term maintenance.
 Rationale: Predictable versioning builds trust and reduces upgrade risk.
 
 ### V. Observability and Determinism
-- Structured logging REQUIRED; `--verbose`/`--quiet` flags MUST be supported.
-- `--json` logging mode MUST emit machine-parseable records.
-- Given identical inputs and environment, outputs MUST be reproducible.
-- Commands SHOULD emit run IDs to correlate logs across tools.
-Rationale: Deterministic behavior and useful telemetry make issues diagnosable.
+- Structured logging infrastructure MUST exist but default CLI invocations (no
+  `--verbose`, `--json`, or other logging flags) MUST emit only Sqitch-parity human
+  output and MUST NOT stream structured payloads to stdout/stderr.
+- Structured records MAY be persisted inside the registry, but no standalone log
+  files or alternate sinks may appear unless a logging flag explicitly enables it.
+- `--verbose`/`--quiet` flags MUST be supported, and `--json` mode MUST emit
+  machine-parseable records containing run identifiers and outcomes.
+- All logging modes MUST redact secrets and include run IDs to correlate events
+  across tools.
+- Given identical inputs and environments, outputs MUST be reproducible.
+Rationale: Opt-in observability preserves Sqitch-parity defaults while keeping
+diagnostics rich when explicitly requested.
 
 ### VI. Behavioral Parity with Sqitch (Guiding Star)
 - The `sqitch/` directory in this repository is the authoritative reference for
@@ -107,8 +116,11 @@ by making behavior discoverable without reverse-engineering the implementation.
 
 ### Behavioral Constraints
 
-- **Advisory Clarity:** Always clarify when responses are guidance,
-  hypotheses, or unverifiable speculation.
+- **Default Logging Confinement:** Without explicit logging flags, SQLitch MUST
+  refrain from writing structured logs to stdout/stderr or standalone files and
+  MUST limit audit trails to the attached registry.
+- **Advisory Clarity:** Always clarify when responses are guidance, hypotheses,
+  or unverifiable speculation.
 - **Inquiry Non-Destructiveness:** When the user asks a question, respond
   with analysis or guidance only. Do not modify the workspace or repository
   unless explicitly directed afterward.
@@ -144,9 +156,6 @@ by making behavior discoverable without reverse-engineering the implementation.
 - Validation Patterns: Complex validation logic SHOULD be extracted from
   `__post_init__` methods into separate, testable factory methods or validators
   to improve clarity and testability.
-- Advisory Clarity: When recommending an approach, explicitly call out any
-  potential risks, uncertainties, or reasons it might be a bad idea, and explain
-  the rationale so reviewers can evaluate the trade-offs.
 - Skip Lifecycle Discipline: Tests for unimplemented features MAY be committed
   with skip markers, but removing those skips is a mandatory pre-implementation
   gate. Before any implementation task begins, the responsible engineer MUST
@@ -189,4 +198,4 @@ by making behavior discoverable without reverse-engineering the implementation.
 - Compliance: All specs, plans, tasks, and PRs MUST reference and adhere to this
   document. Non-compliance is a change request, not a discretionary choice.
 
-**Version**: 1.6.0 | **Ratified**: TODO(RATIFICATION_DATE): original adoption date unknown | **Last Amended**: 2025-10-05
+**Version**: 1.7.0 | **Ratified**: 2025-10-03 | **Last Amended**: 2025-10-05

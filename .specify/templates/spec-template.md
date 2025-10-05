@@ -31,6 +31,9 @@
 - ✅ Focus on WHAT users need and WHY
 - ❌ Avoid HOW to implement (no tech stack, APIs, code structure)
 - 👥 Written for business stakeholders, not developers
+- 🧭 Reference the Constitution for guardrails: SQlitch must mirror upstream
+   Sqitch behavior, default CLI output stays human-readable, and structured
+   logging remains opt-in via explicit flags.
 
 ### Section Requirements
 - **Mandatory sections**: Must be completed for every feature
