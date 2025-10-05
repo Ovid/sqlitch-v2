@@ -15,14 +15,14 @@
 - [X] T016 [P] Add regression tests `tests/regression/test_credentials_precedence.py` and `tests/regression/test_credentials_redaction.py` covering credential source ordering and structured-log redaction for SQLite targets and stub adapters.
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
-- [ ] T006 Update `sqlitch/cli/commands/deploy.py` to execute change scripts and registry writes inside a single SQLite transaction using the attached registry connection.
-- [ ] T007 Update `sqlitch/engine/sqlite.py` to resolve a canonical adjacent `sqitch.db`, attach it under the `sqitch` alias, and expose helpers consumed by the deploy command.
-- [ ] T008 Extend `sqlitch/config/resolver.py` and related providers to compute the registry SQLite path (including in-memory targets) and surface it through `EngineTarget.registry_uri`.
-- [ ] T009 Adjust registry migrations/tests in `sqlitch/registry/migrations.py` and `tests/engine/test_sqlite_registry.py` to accommodate attached `sqitch.db` connections and verify schema setup.
-- [ ] T010 Implement stub adapters `sqlitch/engine/mysql.py` and `sqlitch/engine/postgres.py` that register with `ENGINE_REGISTRY`, raise `NotImplementedError`, and document placeholders per FR-001a.
-- [ ] T011 Wire stub adapters into `sqlitch/engine/__init__.py` (and any CLI surface such as `sqlitch/cli/commands/engine.py`) so unsupported engine selection yields deterministic parity messaging.
-- [ ] T012 Update `sqlitch/cli/commands/deploy.py` and `sqlitch/utils/logging.py` to ensure structured logs reflect registry path, transaction scope, and stub-engine warnings without leaking credentials.
-- [ ] T017 Implement credential precedence resolution and structured logging redaction safeguards in `sqlitch/config/resolver.py`, `sqlitch/utils/logging.py`, and `sqlitch/cli/options.py` to satisfy NFR-002.
+- [X] T006 Update `sqlitch/cli/commands/deploy.py` to execute change scripts and registry writes inside a single SQLite transaction using the attached registry connection.
+- [X] T007 Update `sqlitch/engine/sqlite.py` to resolve a canonical adjacent `sqitch.db`, attach it under the `sqitch` alias, and expose helpers consumed by the deploy command.
+- [X] T008 Extend `sqlitch/config/resolver.py` and related providers to compute the registry SQLite path (including in-memory targets) and surface it through `EngineTarget.registry_uri`.
+- [X] T009 Adjust registry migrations/tests in `sqlitch/registry/migrations.py` and `tests/engine/test_sqlite_registry.py` to accommodate attached `sqitch.db` connections and verify schema setup.
+- [X] T010 Implement stub adapters `sqlitch/engine/mysql.py` and `sqlitch/engine/postgres.py` that register with `ENGINE_REGISTRY`, raise `NotImplementedError`, and document placeholders per FR-001a.
+- [X] T011 Wire stub adapters into `sqlitch/engine/__init__.py` (and any CLI surface such as `sqlitch/cli/commands/engine.py`) so unsupported engine selection yields deterministic parity messaging.
+- [X] T012 Update `sqlitch/cli/commands/deploy.py` and `sqlitch/utils/logging.py` to ensure structured logs reflect registry path, transaction scope, and stub-engine warnings without leaking credentials.
+- [X] T017 Implement credential precedence resolution and structured logging redaction safeguards in `sqlitch/config/resolver.py`, `sqlitch/utils/logging.py`, and `sqlitch/cli/options.py` to satisfy NFR-002.
 
 ## Phase 3.4: Integration
 - [ ] T013 Refresh parity fixtures in `tests/support/golden/` (SQLite deploy/log outputs) to match the new registry path and transaction logging.
