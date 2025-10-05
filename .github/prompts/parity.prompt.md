@@ -1,70 +1,77 @@
-Here’s a clean, handoff-ready prompt you can give to an AI agent to run the behavioral validation you described:
+You are analyzing a Python project called **`sqlitch`**, which is a fork of **`sqitch`**, a database change management system.
+
+Your goal is to ensure that **sqlitch** matches **sqitch** in its public-facing behavior, using **static analysis only** (no code or test execution).
 
 ---
 
-### 🧠 Prompt for AI Agent
+### Objective
 
-You are validating **functional parity** between two Python projects:
+1. Examine the **`tests/`** directory of the `sqlitch` project.
+2. Identify top-level, **public-facing commands or features** covered by the tests, such as:
 
-* **sqlitch** – the new implementation (a fork written in Python).
-* **sqitch** – the original reference implementation.
-
-Your goal is to confirm that all **non-skipped tests** in `sqlitch/tests/` produce behavior consistent with what `sqitch` implements, at a high level of functionality.
-
----
-
-### 🔍 Task Definition
-
-1. **Run all tests** in the `tests/` directory of `sqlitch`, ignoring any that are skipped (`@pytest.mark.skip`, `unittest.skip`, etc.).
-
-   * Record which tests are executed, their names, and their results.
-   * Ignore performance metrics and low-level implementation details (private methods, helper utilities, etc.).
-
-2. **For each test that passes**, identify what high-level functionality it validates.
-
-   * Summarize the user-visible or API-level behavior being confirmed.
-   * Example: “Deploying a change script with dependencies updates the registry table correctly.”
-
-3. **Compare** this functional behavior with the corresponding behavior in the `sqitch` reference implementation (in the `sqitch/` directory).
-
-   * Determine whether `sqlitch` replicates `sqitch`’s intended semantics.
-   * Highlight any discrepancies (e.g., missing feature, altered argument handling, different exit code, missing validation).
-
-4. **Ignore internal details**, such as:
-
-   * Private helper functions (`_method_name`).
-   * Logging verbosity or formatting differences.
-   * Minor output wording variations that do not affect semantics.
-   * Performance differences unless they imply functional deviation.
-
-5. **Produce a summary report** that includes:
-
-   * ✅ A list of all **tested behaviors** verified to match `sqitch`.
-   * ⚠️ A list of **behaviors that diverge** from `sqitch`, including short notes on what differs.
-   * 🚫 A list of **skipped or unimplemented** tests (optional).
-
-6. Where possible, suggest **minimal corrective actions** to align `sqlitch`’s behavior with `sqitch`, but do not implement those actions. Allow the user to decide.
+   * `deploy`
+   * `revert`
+   * `verify`
+   * `plan`
+   * `config`
+   * or other similar high-level user commands.
+3. Ignore any tests marked as skipped (`@pytest.mark.skip`, `unittest.skip`, etc.).
+4. For this initial step, do **not** perform detailed comparison or behavior analysis.
 
 ---
 
-### 🧩 Deliverables
+### Step 1: Command Discovery
 
-* A **summary table** or structured report (e.g., Markdown or JSON) with the following columns:
+List all discovered top-level commands or features, based on the organization and naming of the tests.
+For each, include a short description (one line) of what functionality the tests appear to cover.
 
-  | Test Name | Purpose / Behavior | Match with Sqitch | Notes / Differences |
-  | --------- | ------------------ | ----------------- | ------------------- |
+Example output:
 
-* A **brief natural-language summary** (2–3 paragraphs) explaining overall compatibility:
+```
+Discovered Public Commands:
+1. deploy — applies database change scripts and dependencies
+2. revert — rolls back applied change scripts
+3. verify — checks that deployed changes are valid
+4. plan — manages ordered change script definitions
+5. config — handles configuration settings
 
-  * How close `sqlitch` is to being a drop-in replacement.
-  * Which subsystems show divergence (e.g., deploy, rework, verify, plan).
+Please specify which commands you would like analyzed for deviations.
+```
 
 ---
 
-### ⚙️ Environment Assumptions
+### Step 2: On Request — Behavioral Deviation Analysis
 
-* Python 3.11+
-* `pytest` or compatible runner is available.
-* `sqlitch/` and `sqitch/` directories exist in the project root.
-* Both systems expose similar CLI or module-level entry points for comparison.
-* External resources (e.g., databases) can be mocked or stubbed.
+Once the user selects one or more commands, analyze **only those commands’ tests** to determine whether their tested behaviors in `sqlitch` differ from `sqitch`.
+Perform this purely via static reasoning.
+
+For each deviation, report in the following format:
+
+```
+Deviations Detected:
+
+test_<name>:
+  Expected (sqitch): <describe sqitch’s behavior>
+  Observed (sqlitch test): <describe sqlitch’s tested behavior>
+  Deviation: <concise description of difference>
+```
+
+If no deviations are found for a command, respond with:
+
+> No behavioral deviations detected for this command.
+
+---
+
+### Constraints
+
+* Do not execute any code or tests.
+* Examine code and tests statically.
+* Report only high-level, user-visible behavioral differences.
+* Ignore internal structure, private helpers, logging, or formatting.
+
+---
+
+### Deliverable
+
+Begin by listing all **top-level public commands or features** inferred from the tests, then wait for user input to specify which should be analyzed further.
+Only after the user selects commands should you report deviations between `sqlitch` and `sqitch`.
