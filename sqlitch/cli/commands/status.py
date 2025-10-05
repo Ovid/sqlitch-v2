@@ -316,11 +316,11 @@ def _registry_schema_missing(error: Exception) -> bool:
     missing_indicators = (
         "no such table: changes",
         'relation "changes" does not exist',
-        'table \"changes\" does not exist',
+        'table "changes" does not exist',
         'missing from-clause entry for table "changes"',
         "no such table: tags",
         'relation "tags" does not exist',
-        'table \"tags\" does not exist',
+        'table "tags" does not exist',
     )
     return any(indicator in message for indicator in missing_indicators)
 

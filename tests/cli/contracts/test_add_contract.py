@@ -238,15 +238,6 @@ def test_add_template_override_by_name(monkeypatch: pytest.MonkeyPatch) -> None:
         result = runner.invoke(main, ["add", "widgets", "--template", "custom"])
 
         assert result.exit_code == 0, result.stderr
-        assert (
-            Path("deploy/widgets.sql").read_text(encoding="utf-8")
-            == "deploy widgets\n"
-        )
-        assert (
-            Path("revert/widgets.sql").read_text(encoding="utf-8")
-            == "revert widgets\n"
-        )
-        assert (
-            Path("verify/widgets.sql").read_text(encoding="utf-8")
-            == "verify widgets\n"
-        )
+        assert Path("deploy/widgets.sql").read_text(encoding="utf-8") == "deploy widgets\n"
+        assert Path("revert/widgets.sql").read_text(encoding="utf-8") == "revert widgets\n"
+        assert Path("verify/widgets.sql").read_text(encoding="utf-8") == "verify widgets\n"

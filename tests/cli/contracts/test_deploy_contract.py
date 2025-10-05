@@ -32,7 +32,7 @@ def _seed_plan(plan_path: Path) -> tuple[Change, Change, Tag]:
         planner="Ada Lovelace",
         planned_at=datetime(2025, 1, 1, 0, 0, tzinfo=timezone.utc),
         notes="Initialises core schema",
-    )   
+    )
 
     change_two = Change.create(
         name="widgets:add",
@@ -220,9 +220,7 @@ def test_deploy_executes_scripts_and_updates_registry(
             cursor.execute("SELECT COUNT(*) FROM widgets")
             assert cursor.fetchone() == (1,)
 
-            cursor.execute(
-                "SELECT change, event FROM events ORDER BY committed_at, change_id"
-            )
+            cursor.execute("SELECT change, event FROM events ORDER BY committed_at, change_id")
             events = cursor.fetchall()
             assert events == [
                 ("core:init", "deploy"),

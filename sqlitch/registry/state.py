@@ -54,9 +54,7 @@ class RegistryEntry:
         if not self.planner_email:
             raise ValueError("RegistryEntry.planner_email is required")
 
-        normalized_committed = coerce_datetime(
-            self.committed_at, "RegistryEntry committed_at"
-        )
+        normalized_committed = coerce_datetime(self.committed_at, "RegistryEntry committed_at")
         normalized_planned = coerce_datetime(self.planned_at, "RegistryEntry planned_at")
 
         object.__setattr__(self, "committed_at", normalized_committed)
@@ -143,11 +141,7 @@ def deserialize_registry_rows(rows: Iterable[Mapping[str, object]]) -> Sequence[
             planned_at=_resolve_value(row, "planned_at"),
             planner_name=str(_resolve_value(row, "planner_name")),
             planner_email=str(_resolve_value(row, "planner_email")),
-            script_hash=(
-                str(value)
-                if (value := row.get("script_hash")) is not None
-                else None
-            ),
+            script_hash=(str(value) if (value := row.get("script_hash")) is not None else None),
             note=str(row.get("note", "")),
         )
         entries.append(entry)

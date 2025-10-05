@@ -482,7 +482,7 @@ def _load_deployed_state(
 
     cursor = connection.execute(
         'SELECT "change", change_id, script_hash FROM changes WHERE project = ? '
-        'ORDER BY committed_at ASC, change_id ASC',
+        "ORDER BY committed_at ASC, change_id ASC",
         (project,),
     )
     try:
@@ -643,19 +643,17 @@ def _parse_identity(identity: str) -> tuple[str, str | None]:
 def _validate_dependencies(change: Change, deployed_lookup: Mapping[str, str]) -> None:
     """Ensure all required dependencies have been deployed."""
 
-    missing = [dependency for dependency in change.dependencies if dependency not in deployed_lookup]
+    missing = [
+        dependency for dependency in change.dependencies if dependency not in deployed_lookup
+    ]
     if not missing:
         return
 
     if len(missing) == 1:
-        message = (
-            f"Change '{change.name}' depends on '{missing[0]}' which has not been deployed."
-        )
+        message = f"Change '{change.name}' depends on '{missing[0]}' which has not been deployed."
     else:
         joined = ", ".join(missing)
-        message = (
-            f"Change '{change.name}' depends on the following changes which have not been deployed: {joined}."
-        )
+        message = f"Change '{change.name}' depends on the following changes which have not been deployed: {joined}."
     raise CommandError(message)
 
 
