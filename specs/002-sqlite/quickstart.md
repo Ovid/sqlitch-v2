@@ -52,6 +52,7 @@ Provisioned services (used for future milestones and to confirm skipped suites s
 	- Detects existing `sqitch.*` files if copying samples; tool aborts if conflicting `sqlitch.*` detected.
 	- Generated plan/scripts mirror Sqitch layout.
 	- Deploying a SQLite workspace automatically creates a sibling `sqitch.db` registry, attaches it under the `sqitch` alias, and executes workspace + registry mutations inside a single transaction. Expect `sqitch.db` to appear alongside `workspace.db` after the first successful `sqlitch deploy`.
+	- Structured logs for `sqlitch deploy` now emit the resolved registry URI and the `transaction_scope` recorded for each change. A captured sample lives at `tests/support/golden/registry/sqlite/deploy_structured_log.jsonl` if you need to sanity-check parity manually.
 	- Credentials resolve flags → environment (`SQLITCH_PASSWORD`, `SQLITCH_PG_URI`, etc.) → config files, and secrets are never written back to disk or echoed in logs.
 
 ## 6. Run Test Suite (Full Matrix)
@@ -63,12 +64,12 @@ pytest --maxfail=1 --disable-warnings --cov=sqlitch --cov-report=term-missing
 - Mypy, pylint, flake8, isort, black, bandit enforced via `tox -e lint`.
 
 ## Engine Coverage & Stubs
-- SQLite is fully wired: the engine adapter resolves canonical registry paths, attaches `sqitch.db`, and guarantees atomic deploy transactions.
-- MySQL and PostgreSQL adapters register with the engine registry but raise `NotImplementedError` with deterministic parity messaging. CLI commands will emit structured warnings (`deploy.stub_engine`) before aborting, demonstrating framework extensibility while keeping future work gated.
+- SQLite is fully wired: the engine adapter resolves canonical registry paths, attaches `sqitch.db`, and guarantees atomic deploy transactions. Human output matches Sqitch, while structured logs surface `deploy.start`, per-change success/error events, and the terminal `deploy.complete` payload used by observability tooling.
+- MySQL and PostgreSQL adapters register with the engine registry but raise `NotImplementedError` with deterministic parity messaging. CLI commands emit both human-readable warnings and structured `deploy.stub_engine` events so log processors can differentiate intentional skips from unexpected failures.
 
 ## Credential Precedence & Redaction
 - Credential resolution order mirrors Sqitch exactly: explicit CLI flags (`--username/--password`) override environment variables (`SQLITCH_<TARGET>_USER/PASS`, then `SQLITCH_USER/PASS`, then their `SQITCH_` counterparts), followed by persisted configuration scope entries.
-- Structured logs emitted via `sqlitch.utils.logging.StructuredLogger` automatically redact sensitive payload fields (`password`, `token`, `api_key`, etc.) before writing to stderr or JSON sinks, preserving observability without leaking secrets.
+- Structured logs emitted via `sqlitch.utils.logging.StructuredLogger` automatically redact sensitive payload fields (`password`, `token`, `api_key`, etc.) before writing to stderr or JSON sinks, preserving observability without leaking secrets. The deploy structured-log golden mentioned above demonstrates how registry URIs survive while credentials are stripped.
 - Regression tests (`tests/regression/test_credentials_precedence.py`, `tests/regression/test_credentials_redaction.py`) cover the precedence ladder and redaction rules—refer to them when extending credential surfaces.
 
 ## 7. Parity Smoke Test

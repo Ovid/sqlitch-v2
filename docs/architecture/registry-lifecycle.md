@@ -27,6 +27,7 @@ The engine registry maps canonical engine identifiers (for example `"sqlite"`, `
 - SQLite deployments resolve a canonical registry URI using `sqlitch.config.resolver.resolve_registry_uri()`. For file-based workspaces the helper derives a sibling `sqitch.db` path (for example `flipr_test.db` → `sqitch.db`), while in-memory or relative targets fall back to a project-root `sqitch.db` unless the user supplies an explicit override.
 - `sqlitch.engine.sqlite.SQLiteEngine.connect_workspace()` transparently `ATTACH`es the resolved registry under the canonical alias `sqitch` (`REGISTRY_ATTACHMENT_ALIAS`). Application code always reads and writes registry tables through this alias, guaranteeing parity with the Perl implementation.
 - The deploy command coordinates workspace migrations and registry writes inside a single `BEGIN IMMEDIATE` / `COMMIT` block. Any exception triggers a rollback that unwinds both user schema mutations and registry state, satisfying **FR-021** and **FR-022**.
+- Structured logging emitted during deploy now includes the resolved registry URI and `transaction_scope` metadata for every change event. See `tests/support/golden/registry/sqlite/deploy_structured_log.jsonl` for the canonical JSON sample used by parity tests.
 - Test fixtures should prepare registry state via the helpers under `tests.support.sqlite_fixtures` or derive the registry path with `derive_sqlite_registry_uri()` to keep expectations aligned with the production attachment logic.
 
 ### Stub Engine Registrations

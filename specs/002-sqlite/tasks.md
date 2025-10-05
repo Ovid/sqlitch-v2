@@ -25,9 +25,9 @@
 - [X] T017 Implement credential precedence resolution and structured logging redaction safeguards in `sqlitch/config/resolver.py`, `sqlitch/utils/logging.py`, and `sqlitch/cli/options.py` to satisfy NFR-002.
 
 ## Phase 3.4: Integration
-- [ ] T013 Refresh parity fixtures in `tests/support/golden/` (SQLite deploy/log outputs) to match the new registry path and transaction logging.
-- [ ] T014 Update documentation (`docs/architecture/registry-lifecycle.md`, `specs/002-sqlite/quickstart.md`) with the attach-based registry flow, stub adapter behavior, and credential precedence/redaction guidance.
-- [ ] T015 Run full validation (`pytest` + `tox -e lint`) capturing evidence that skipped engine suites emit warnings while SQLite coverage remains ≥90% (store output under `docs/reports/sqlite-gate.md`).
+- [X] T013 Refresh parity fixtures in `tests/support/golden/` (SQLite deploy/log outputs) to match the new registry path and transaction logging.
+- [X] T014 Update documentation (`docs/architecture/registry-lifecycle.md`, `specs/002-sqlite/quickstart.md`) with the attach-based registry flow, stub adapter behavior, and credential precedence/redaction guidance.
+- [X] T015 Run full validation (`pytest` + `tox -e lint`) capturing evidence that skipped engine suites emit warnings while SQLite coverage remains ≥90% (store output under `docs/reports/sqlite-gate.md`).
 
 ## Dependencies
 - T001 prepares shared fixtures before any regression tests (T002–T005, T016).
