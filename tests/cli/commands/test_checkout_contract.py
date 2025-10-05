@@ -35,7 +35,7 @@ class TestCheckoutCommandContract:
         """
         with runner.isolated_filesystem():
             result = runner.invoke(main, ["checkout"])
-            
+
             # Should not be parsing error (exit 2)
             # May exit 1 for missing target/project, but not 2
             assert result.exit_code != 2, (

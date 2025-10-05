@@ -208,9 +208,7 @@ def _execute_deploy(request: _DeployRequest) -> None:
         logger=logger,
     )
 
-    emitter(
-        f"Deploying plan '{request.plan.project_name}' to target '{display_target}'."
-    )
+    emitter(f"Deploying plan '{request.plan.project_name}' to target '{display_target}'.")
     logger.info(
         "deploy.start",
         payload={

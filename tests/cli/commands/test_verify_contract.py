@@ -35,7 +35,7 @@ class TestVerifyCommandContract:
         """
         with runner.isolated_filesystem():
             result = runner.invoke(main, ["verify"])
-            
+
             # Should not be parsing error
             assert result.exit_code != 2, (
                 f"Should accept command without arguments. "
@@ -52,7 +52,7 @@ class TestVerifyCommandContract:
         """
         with runner.isolated_filesystem():
             result = runner.invoke(main, ["verify", "db:sqlite:test.db"])
-            
+
             # Should not be parsing error
             assert result.exit_code != 2, (
                 f"Should accept positional target. "

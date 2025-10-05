@@ -155,7 +155,7 @@ def global_output_options(func: F) -> F:
 
 def global_sqitch_options(func: F) -> F:
     """Apply global Sqitch-compatible options to a Click command.
-    
+
     These options are accepted by all Sqitch commands and should be
     available on all SQLitch commands for parity.
     """

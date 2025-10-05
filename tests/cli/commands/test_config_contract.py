@@ -35,7 +35,7 @@ class TestConfigCommandContract:
         """
         with runner.isolated_filesystem():
             result = runner.invoke(main, ["config", "--list"])
-            
+
             # Should not be parsing error
             assert result.exit_code != 2, (
                 f"Should accept --list without name argument. "
@@ -51,7 +51,7 @@ class TestConfigCommandContract:
         """
         with runner.isolated_filesystem():
             result = runner.invoke(main, ["config", "user.name"])
-            
+
             # Should accept the name argument (exit 0 or 1, not 2)
             assert result.exit_code != 2, (
                 f"Should accept name argument. Exit code: {result.exit_code}, "

@@ -35,7 +35,7 @@ class TestDeployCommandContract:
         """
         with runner.isolated_filesystem():
             result = runner.invoke(main, ["deploy"])
-            
+
             # Should not be parsing error
             assert result.exit_code != 2, (
                 f"Should accept command without arguments. "
@@ -51,7 +51,7 @@ class TestDeployCommandContract:
         """
         with runner.isolated_filesystem():
             result = runner.invoke(main, ["deploy", "db:sqlite:test.db"])
-            
+
             # Should not be parsing error
             assert result.exit_code != 2, (
                 f"Should accept positional target. "
@@ -67,7 +67,7 @@ class TestDeployCommandContract:
         """
         with runner.isolated_filesystem():
             result = runner.invoke(main, ["deploy", "--target", "db:sqlite:test.db"])
-            
+
             assert result.exit_code != 2 or "no such option" not in result.output.lower(), (
                 f"Should accept --target option. Exit code: {result.exit_code}, "
                 f"Output: {result.output}"

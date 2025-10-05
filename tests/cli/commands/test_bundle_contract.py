@@ -35,17 +35,18 @@ class TestBundleCommandContract:
         """
         with runner.isolated_filesystem():
             result = runner.invoke(main, ["bundle"])
-            
+
             # Should not be exit code 2 (parsing/argument error)
             assert result.exit_code != 2, (
                 f"Should accept command without arguments. "
                 f"Exit code: {result.exit_code}, Output: {result.output}"
             )
-            
+
             # Exit code might be 0 (success) or 1 (not implemented/project error)
-            assert result.exit_code in [0, 1], (
-                f"Expected exit code 0 or 1, got {result.exit_code}. Output: {result.output}"
-            )
+            assert result.exit_code in [
+                0,
+                1,
+            ], f"Expected exit code 0 or 1, got {result.exit_code}. Output: {result.output}"
 
     # CC-BUNDLE-002: Optional destination
     def test_bundle_accepts_destination_option(self, runner: CliRunner) -> None:
@@ -56,7 +57,7 @@ class TestBundleCommandContract:
         """
         with runner.isolated_filesystem():
             result = runner.invoke(main, ["bundle", "--dest", "/tmp/bundle"])
-            
+
             assert result.exit_code != 2 or "no such option" not in result.output.lower(), (
                 f"Should accept --dest option. Exit code: {result.exit_code}, "
                 f"Output: {result.output}"
@@ -79,7 +80,7 @@ class TestBundleGlobalContracts:
         """
         with runner.isolated_filesystem():
             result = runner.invoke(main, ["bundle", "--help"])
-            
+
             assert result.exit_code == 0, (
                 f"Expected exit code 0 for --help, got {result.exit_code}. "
                 f"Output: {result.output}"

@@ -225,15 +225,9 @@ def _resolve_registry_target(
         )
     else:
         workspace_uri = (
-            target
-            if target.startswith("db:")
-            else f"db:{engine_name}:{workspace_payload}"
+            target if target.startswith("db:") else f"db:{engine_name}:{workspace_payload}"
         )
-        registry_uri = (
-            registry_override
-            if registry_override is not None
-            else workspace_uri
-        )
+        registry_uri = registry_override if registry_override is not None else workspace_uri
 
     engine_target = EngineTarget(
         name=display_target,
