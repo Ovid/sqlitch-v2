@@ -14,6 +14,7 @@ from sqlitch.utils.fs import ArtifactConflictError, resolve_config_file
 
 from . import CommandError, register_command
 from ._context import quiet_mode_enabled, require_cli_context
+from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["engine_group"]
 
@@ -37,8 +38,15 @@ class EngineDefinition:
 
 
 @click.group("engine")
+@global_sqitch_options
+@global_output_options
 @click.pass_context
-def engine_group(ctx: click.Context) -> None:
+def engine_group(
+    ctx: click.Context,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
+) -> None:
     """Manage engine definitions for SQLitch deployments."""
 
     require_cli_context(ctx)

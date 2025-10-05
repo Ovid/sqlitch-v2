@@ -6,6 +6,7 @@ import click
 
 from . import CommandError, register_command
 from ._context import quiet_mode_enabled, require_cli_context
+from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["help_command"]
 
@@ -16,6 +17,8 @@ __all__ = ["help_command"]
     "--man", "man_flag", is_flag=True, help="Display the full manual page (falls back to stdout)."
 )
 @click.argument("topic", required=False)
+@global_sqitch_options
+@global_output_options
 @click.pass_context
 def help_command(
     ctx: click.Context,
@@ -23,6 +26,9 @@ def help_command(
     usage_only: bool,
     man_flag: bool,
     topic: str | None,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
 ) -> None:
     """Display contextual help output for SQLitch CLI commands.
 

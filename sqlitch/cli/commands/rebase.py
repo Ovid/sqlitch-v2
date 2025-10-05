@@ -21,6 +21,7 @@ from ._context import (
     require_cli_context,
 )
 from ._plan_utils import resolve_default_engine, resolve_plan_path
+from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["rebase_command"]
 
@@ -55,6 +56,8 @@ class _RebaseRequest:
     is_flag=True,
     help="Show the rebase actions without executing any scripts.",
 )
+@global_sqitch_options
+@global_output_options
 @click.pass_context
 def rebase_command(
     ctx: click.Context,
@@ -64,6 +67,9 @@ def rebase_command(
     from_ref: str | None,
     mode: str,
     log_only: bool,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
 ) -> None:
     """Rebase deployed plan changes to align with the current plan state."""
 

@@ -13,6 +13,7 @@ from sqlitch.utils.fs import ArtifactConflictError, resolve_config_file, resolve
 
 from . import CommandError, register_command
 from ._context import require_cli_context
+from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["init_command"]
 
@@ -47,6 +48,8 @@ _ENGINE_DEFAULTS: dict[str, dict[str, str]] = {
     "--target", "target_option", help="Default deployment target alias recorded in config."
 )
 @click.option("--uri", "uri_option", help="Project repository URI recorded in config.")
+@global_sqitch_options
+@global_output_options
 @click.pass_context
 def init_command(
     ctx: click.Context,
@@ -56,6 +59,9 @@ def init_command(
     plan_file_option: Path | None,
     target_option: str | None,
     uri_option: str | None,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
 ) -> None:
     """Initialize a new SQLitch project mirroring Sqitch scaffolding."""
 

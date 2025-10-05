@@ -43,6 +43,7 @@ from ._context import (
     require_cli_context,
 )
 from ._plan_utils import resolve_default_engine, resolve_plan_path
+from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["deploy_command"]
 
@@ -72,6 +73,8 @@ class _DeployRequest:
     is_flag=True,
     help="Show the deployment actions without executing any scripts.",
 )
+@global_sqitch_options
+@global_output_options
 @click.pass_context
 def deploy_command(
     ctx: click.Context,
@@ -81,6 +84,9 @@ def deploy_command(
     to_change: str | None,
     to_tag: str | None,
     log_only: bool,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
 ) -> None:
     """Deploy pending plan changes to the requested target."""
 

@@ -14,6 +14,7 @@ from sqlitch.plan.parser import PlanParseError, parse_plan
 from . import CommandError, register_command
 from ._context import require_cli_context
 from ._plan_utils import resolve_default_engine, resolve_plan_path
+from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["tag_command"]
 
@@ -46,6 +47,8 @@ def _resolve_planner(env: dict[str, str]) -> str:
 @click.argument("change_name", required=False)
 @click.option("--list", "list_tags", is_flag=True, help="List all tags in the plan.")
 @click.option("--note", "note", help="Note to associate with the tag.")
+@global_sqitch_options
+@global_output_options
 @click.pass_context
 def tag_command(
     ctx: click.Context,
@@ -53,6 +56,9 @@ def tag_command(
     change_name: str | None,
     list_tags: bool,
     note: str | None,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
 ) -> None:
     """Add or list tags in the deployment plan."""
 

@@ -17,6 +17,7 @@ from sqlitch.utils.fs import ArtifactConflictError, resolve_plan_file
 from . import CommandError, register_command
 from ._plan_utils import resolve_default_engine, resolve_plan_path
 from ._context import environment_from, plan_override_from, project_root_from, require_cli_context
+from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["plan_command"]
 
@@ -55,6 +56,8 @@ __all__ = ["plan_command"]
     is_flag=True,
     help="Omit plan header pragmas from human-readable output.",
 )
+@global_sqitch_options
+@global_output_options
 @click.pass_context
 def plan_command(
     ctx: click.Context,
@@ -65,6 +68,9 @@ def plan_command(
     output_format: str,
     short_output: bool,
     suppress_headers: bool,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
 ) -> None:
     """Render the deployment plan content using Sqitch-compatible ergonomics."""
 

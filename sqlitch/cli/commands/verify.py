@@ -6,6 +6,7 @@ import click
 
 from . import CommandError, register_command
 from ._context import require_cli_context
+from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["verify_command"]
 
@@ -18,6 +19,8 @@ __all__ = ["verify_command"]
 @click.option("--event", type=click.Choice(["deploy", "revert", "fail"]), help="Event type.")
 @click.option("--mode", type=click.Choice(["all", "change", "tag"]), help="Verification mode.")
 @click.option("--log-only", is_flag=True, help="Only log what would be done.")
+@global_sqitch_options
+@global_output_options
 @click.pass_context
 def verify_command(
     ctx: click.Context,
@@ -28,6 +31,9 @@ def verify_command(
     event: str | None,
     mode: str | None,
     log_only: bool,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
 ) -> None:
     """Execute verification scripts against deployed changes."""
 

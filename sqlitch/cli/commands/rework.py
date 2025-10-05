@@ -18,6 +18,7 @@ from . import CommandError, register_command
 from ._context import require_cli_context
 from ._plan_utils import resolve_default_engine, resolve_plan_path
 from .add import _ensure_script_path, _format_display_path, _resolve_planner
+from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["rework_command"]
 
@@ -79,6 +80,8 @@ def _replace_change(
 @click.option("--deploy", "deploy_override", help="Explicit path for the reworked deploy script.")
 @click.option("--revert", "revert_override", help="Explicit path for the reworked revert script.")
 @click.option("--verify", "verify_override", help="Explicit path for the reworked verify script.")
+@global_sqitch_options
+@global_output_options
 @click.pass_context
 def rework_command(
     ctx: click.Context,
@@ -88,6 +91,9 @@ def rework_command(
     deploy_override: str | None,
     revert_override: str | None,
     verify_override: str | None,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
 ) -> None:
     """Duplicate change scripts and update the plan entry for ``change_name``."""
 

@@ -14,6 +14,7 @@ from sqlitch.engine.base import UnsupportedEngineError
 from . import CommandError, register_command
 from ._context import require_cli_context
 from .status import _resolve_registry_target
+from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["log_command"]
 
@@ -53,6 +54,8 @@ class LogEvent:
     type=click.Choice(("deploy", "revert", "fail", "merge"), case_sensitive=False),
     help="Filter events by event type.",
 )
+@global_sqitch_options
+@global_output_options
 @click.pass_context
 def log_command(
     ctx: click.Context,
@@ -65,6 +68,9 @@ def log_command(
     output_format: str,
     change_filter: str | None,
     event_filter: str | None,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
 ) -> None:
     """Render deployment history for the requested target.
 

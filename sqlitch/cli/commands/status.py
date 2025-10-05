@@ -19,6 +19,7 @@ from sqlitch.plan.parser import PlanParseError, parse_plan
 from . import CommandError, register_command
 from ._context import require_cli_context
 from ._plan_utils import resolve_default_engine, resolve_plan_path
+from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["status_command"]
 
@@ -47,6 +48,8 @@ class RegistryRow:
     show_default=True,
     help="Select the output format (human or json).",
 )
+@global_sqitch_options
+@global_output_options
 @click.pass_context
 def status_command(
     ctx: click.Context,
@@ -54,6 +57,9 @@ def status_command(
     target_option: str | None,
     project_filter: str | None,
     output_format: str,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
 ) -> None:
     """Report the current deployment status for the requested target."""
 
