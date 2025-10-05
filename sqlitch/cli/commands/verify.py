@@ -11,7 +11,8 @@ __all__ = ["verify_command"]
 
 
 @click.command("verify")
-@click.option("--target", help="Target to verify against.")
+@click.argument("target_args", nargs=-1)
+@click.option("--target", "target_option", help="Target to verify against.")
 @click.option("--to-change", help="Verify up to this change.")
 @click.option("--to-tag", help="Verify up to this tag.")
 @click.option("--event", type=click.Choice(["deploy", "revert", "fail"]), help="Event type.")
@@ -20,7 +21,8 @@ __all__ = ["verify_command"]
 @click.pass_context
 def verify_command(
     ctx: click.Context,
-    target: str | None,
+    target_args: tuple[str, ...],
+    target_option: str | None,
     to_change: str | None,
     to_tag: str | None,
     event: str | None,
@@ -30,6 +32,14 @@ def verify_command(
     """Execute verification scripts against deployed changes."""
 
     require_cli_context(ctx)
+
+    # Resolve target from positional args or --target option
+    if target_args and target_option:
+        raise CommandError("Provide either a positional target or --target, not both.")
+    if len(target_args) > 1:
+        raise CommandError("Multiple positional targets are not supported.")
+
+    target = target_args[0] if target_args else target_option
 
     message = "sqlitch verify is not implemented yet; Sqitch parity pending"
     if log_only:
