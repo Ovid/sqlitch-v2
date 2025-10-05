@@ -9,7 +9,9 @@ import pytest
 
 from sqlitch.cli.commands import CommandError
 from sqlitch.cli.commands import deploy as deploy_module
+from sqlitch.cli.options import LogConfiguration
 from sqlitch.plan.model import Change, Plan, Tag
+from sqlitch.utils.logging import StructuredLogger
 
 
 def _make_change(name: str) -> Change:
@@ -31,6 +33,16 @@ def _make_plan(changes: tuple[Change, ...], tags: tuple[Tag, ...] = ()) -> Plan:
         checksum="checksum",
         default_engine="sqlite",
     )
+
+
+def _make_logger(*, quiet: bool = False) -> StructuredLogger:
+    config = LogConfiguration(
+        run_identifier="test",
+        verbosity=0,
+        quiet=quiet,
+        json_mode=False,
+    )
+    return StructuredLogger(config)
 
 
 def test_resolve_target_prefers_option_over_config() -> None:
@@ -139,6 +151,8 @@ def test_render_log_only_deploy_respects_quiet(
         to_tag=None,
         log_only=True,
         quiet=True,
+        logger=_make_logger(quiet=True),
+        registry_override=None,
     )
 
     deploy_module._render_log_only_deploy(request, plan.changes)
@@ -163,6 +177,8 @@ def test_render_log_only_deploy_outputs_messages(
         to_tag=None,
         log_only=True,
         quiet=False,
+        logger=_make_logger(),
+        registry_override=None,
     )
 
     deploy_module._render_log_only_deploy(request, ())
