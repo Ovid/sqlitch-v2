@@ -1,7 +1,7 @@
 
 # Implementation Plan: SQLitch Python Parity Fork MVP
 
-**Branch**: `002-sqlite` | **Date**: 2025-10-05 | **Spec**: [/specs/002-sqlite/spec.md](/specs/002-sqlite/spec.md)
+**Branch**: `[002-sqlite]` | **Date**: 2025-10-05 | **Spec**: [`/specs/002-sqlite/spec.md`](./spec.md)
 **Input**: Feature specification from `/specs/002-sqlite/spec.md`
 
 ## Execution Flow (/plan command scope)
@@ -31,29 +31,30 @@
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-Deliver a Python-based fork of Sqitch that provides command-line parity, structured logging, and rigorous quality gates while initially shipping a SQLite-only runtime. The implementation must mirror Sqitch semantics for plan parsing, registry management, and CLI ergonomics, supported by automated parity evidence, multi-engine architecture readiness, and constitution-driven development practices.
+Ship a SQLite-first SQLitch release that mirrors Sqitch CLI behavior, enforces structured logging and registry isolation, and proves the engine framework is extensible by wiring stub MySQL/PostgreSQL adapters into the registry/tests for future milestones.
 
 ## Technical Context
-**Language/Version**: Python 3.11 (with `from __future__ import annotations` enforcement)  
-**Primary Dependencies**: Click, Rich, SQLAlchemy Core, sqlite3 stdlib, `psycopg[binary]`, PyMySQL, python-dateutil, tomli, pydantic, docker SDK  
-**Storage**: SQLite primary (registry in sibling `sqitch.db`), architecture-ready for MySQL/PostgreSQL schemas  
-**Testing**: pytest + pytest-cov, CLI contract/regression suites with golden fixtures, docker-backed integration when available  
-**Target Platform**: macOS, Linux, and Windows via CI matrix  
-**Project Type**: Single CLI/library project (`sqlitch/` package + `tests/`)  
-**Performance Goals**: CLI commands should complete typical non-deploy actions in <200 ms; deploy operations stream progression similar to Sqitch  
-**Constraints**: ≥90 % coverage, zero lint/type/security warnings, structured logging parity, no secret leakage, registry isolation per engine  
-**Scale/Scope**: Supports existing Sqitch-sized projects (multi-target plans, dozens of changes); must remain deterministic for automation pipelines
+**Language/Version**: Python 3.11  
+**Primary Dependencies**: Click, Rich, SQLAlchemy Core, Pydantic, sqlite3, PyMySQL (stub), psycopg[binary] (stub)  
+**Storage**: SQLite registry file (`sqitch.db`) for runtime; stub DSNs for MySQL/PostgreSQL adapters  
+**Testing**: pytest + pytest-cov, tox (lint/type/security), golden fixture comparisons  
+**Target Platform**: macOS, Linux, Windows CLI environments
+**Project Type**: single (monolithic CLI package with mirrored tests)  
+**Performance Goals**: SQLite deploy/revert happy paths <200ms, long-running flows stream progress per constitution.  
+**Constraints**: ≥90% coverage, structured logging with run IDs, docstrings + `__all__`, no secrets in logs, Docker suites auto-skip when unavailable.  
+**Scale/Scope**: Plans up to 10k entries, registry tables scaling to millions of rows, contributors across all three desktop OSes.
 
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- **I. Test-First Development**: Plan centers on regenerating contract/regression tests before implementations; skips remain only for unstarted engines, satisfying Red→Green discipline.
-- **II. CLI-First Contracts**: All deliverables flow through `sqlitch` CLI parity, maintaining stdout/stderr semantics and JSON toggles.
-- **VI. Parity with Sqitch**: Research + contracts explicitly reference upstream `sqitch/` for behavior, including registry separation and plan whitespace.
-- **Observability & Security Constraints**: Structured logging, credential handling, and secret redaction align with NFR-001/NFR-002.
-- **Additional Constraints**: Type hints, docstrings, minimal global state, and ABC usage are already codified in spec and will be revalidated during design.
+- Test-First Development: `/tasks` will generate failing contract/regression tests before implementation begins, maintaining Red→Green discipline.
+- CLI-First Contracts: All features are driven through Click commands exposing human-readable and `--json` outputs with structured logging.
+- Library Separation: Core behavior resides in `sqlitch/` modules; CLI commands remain thin wrappers.
+- Observability & Determinism: Structured logging sink, run identifiers, and parity smoke tests enforce constitution Section V.
+- Documented Interfaces & Type Hints: Plan reiterates docstring, `__all__`, and modern typing mandates inherited from prior review tasks.
+- State Management & Registry Lifecycle: Registry isolation (FR-021/FR-022) and stub adapters ensure global registries remain well-documented and replaceable.
 
-✅ Initial Constitution Check: PASS (no deviations identified)
+No violations detected; Complexity Tracking remains empty.
 
 ## Project Structure
 
@@ -69,14 +70,19 @@ specs/[###-feature]/
 ```
 
 ### Source Code (repository root)
+ios/ or android/
 ```
 sqlitch/
+├── __init__.py
 ├── cli/
 │   ├── commands/
-│   ├── options.py
-│   └── main.py
+│   ├── main.py
+│   └── options.py
 ├── config/
 ├── engine/
+│   ├── base.py
+│   ├── sqlite.py
+│   └── __init__.py
 ├── plan/
 ├── registry/
 └── utils/
@@ -84,69 +90,50 @@ sqlitch/
 tests/
 ├── cli/
 │   ├── contracts/
-│   ├── regression/
-│   └── unit helpers
+│   └── regression/
 ├── engine/
 ├── plan/
 ├── registry/
 ├── scripts/
-└── utils/
+└── support/
 
-.github/
-└── prompts/, workflows/, guidance files
+docs/
+├── architecture/
+└── reports/
+
+scripts/
+└── docker-compose/
+   ├── compose.yaml
+   ├── up
+   ├── down
+   └── wait
+
+bin/
+└── sqlitch
+
+etc/
+└── templates/
 ```
 
-directories captured above]
-**Structure Decision**: Adopt existing single-package layout (`sqlitch/` with domain subpackages, `tests/` mirroring commands/engines/plan`) to preserve parity-focused module boundaries and reuse current contract and regression suites.
+**Structure Decision**: Preserve the single-repo CLI layout anchored at `sqlitch/`, mirroring Sqitch’s directory structure so documentation, tests, and tooling align 1:1 with the upstream reference.
 
 ## Phase 0: Outline & Research
-1. **Targeted research backlog** (map to `research.md`):
-   - Validate multi-engine registry behavior against upstream Sqitch (schema selection, SQLite `sqitch.db` mirroring).
-   - Confirm credential precedence and secure storage expectations (config vs env) from Sqitch docs and Perl source.
-   - Catalogue plan formatting nuances (pragma ordering, blank-line separation, timestamp normalization) to drive parser/formatter specs.
-   - Document Docker-backed integration requirements and fallback behavior when containers are unavailable.
-   - Inventory quality gate tooling configurations (black, isort, flake8, pylint, mypy, bandit, pytest-cov) and any repo-specific overrides.
+1. Consolidated prior investigations into `research.md`, covering language/tooling decisions, packaging layout, registry connectors, credential precedence, Docker harness behavior, timestamp parity, and the new stub adapter requirement.
+2. No additional research agents are required; existing documentation captures rationale and alternatives for each dependency.
+3. Updated “Multi-Engine Framework Proof for M1” and performance follow-up notes ensure there are no outstanding NEEDS CLARIFICATION markers.
 
-2. **Dispatch research tasks**:
-   ```
-   Task: "Research Sqitch registry storage strategy across SQLite/MySQL/PostgreSQL for SQLitch parity"
-   Task: "Summarize Sqitch credential handling precedence and redaction expectations"
-   Task: "Extract plan formatting rules (pragmas, blank lines, metadata) from Sqitch reference"
-   Task: "Detail Docker integration setup and skip semantics for SQLitch tests"
-   Task: "List enforcement settings for lint/type/security gates in sqlitch project"
-   ```
-
-3. **Record findings** in `research.md`:
-   - Decision, Rationale, Alternatives for each topic
-   - Link to upstream references (Sqitch docs, Perl modules) where applicable
-
-**Output**: `research.md` updated to capture upstream-aligned behavior and repo tooling expectations
+**Output**: `research.md` (updated) – COMPLETE
 
 ## Phase 1: Design & Contracts
 *Prerequisites: research.md complete*
 
-1. **Model design (`data-model.md`)**:
-   - Detail Deployment Plan, Plan Entry (Change/Tag), Registry Record, Engine Target, Log Configuration entities with fields, validation rules, and relationships.
-   - Capture registry storage separation (SQLite file vs schema) and credential attributes.
-   - Document state transitions (deploy → revert → rework) and checksum expectations.
+1. `data-model.md` captures entities (Change, Plan, Tag, RegistryRecord, EngineTarget, ConfigProfile) with invariants, scale assumptions, and lifecycle flows consistent with the spec.
+2. `/contracts/*.md` mirror Sqitch CLI behaviors for each command, providing the basis for skipped contract tests that will be unskipped during implementation.
+3. Regression and contract tests already exist (skipped where required) and align with FR-012 for the Red→Green workflow.
+4. `quickstart.md` now emphasizes the SQLite MVP, optional Docker harness for skip verification, and stub adapter expectations.
+5. Ran `.specify/scripts/bash/update-agent-context.sh copilot` to refresh the agent context with up-to-date technology references.
 
-2. **CLI contract specifications (`contracts/`)**:
-   - For each CLI surface (plan/add/deploy/status/log/config/global options), define command synopsis, options, stdout/stderr expectations, JSON payload schema, and structured logging events.
-   - Include regression contract for plan whitespace and registry isolation behavior.
-
-3. **Contract tests scaffolding**:
-   - Ensure each contract spec has a matching test skeleton referencing existing pytest modules (e.g., extend `tests/cli/contracts/*` with new cases for logging payloads or plan formatting).
-   - Tests should intentionally fail until implementation updates align with generated contracts.
-
-4. **Integration scenarios & quickstart**:
-   - Map user stories to end-to-end flows (initialize project, add changes, deploy, verify) emphasizing SQLite-first run-through and pointers for future engines.
-   - Update `quickstart.md` with deterministic CLI steps, environment setup (`python -m venv`), Docker expectations, and parity validation checkpoints.
-
-5. **Agent context refresh**:
-   - Run `.specify/scripts/bash/update-agent-context.sh copilot` after documentation updates.
-   - Append only newly introduced technologies or workflow adjustments (<150 lines total).
-
-**Output**: Updated `data-model.md`, refreshed `/specs/002-sqlite/contracts/`, failing-but-documented contract tests, refreshed `quickstart.md`, and synchronized Copilot agent context
+**Output**: `data-model.md`, `/contracts/*`, `quickstart.md`, agent context – COMPLETE
 
 ## Phase 2: Task Planning Approach
 *This section describes what the /tasks command will do - DO NOT execute during /plan*
@@ -180,18 +167,15 @@ directories captured above]
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
-
-*No constitution deviations currently identified; table intentionally empty.*
+| None | N/A | N/A |
 
 
 ## Progress Tracking
 *This checklist is updated during execution flow*
 
 **Phase Status**:
-- [ ] Phase 0: Research complete (/plan command)
-- [ ] Phase 1: Design complete (/plan command)
+- [x] Phase 0: Research complete (/plan command)
+- [x] Phase 1: Design complete (/plan command)
 - [ ] Phase 2: Task planning complete (/plan command - describe approach only)
 - [ ] Phase 3: Tasks generated (/tasks command)
 - [ ] Phase 4: Implementation complete
@@ -199,9 +183,9 @@ directories captured above]
 
 **Gate Status**:
 - [x] Initial Constitution Check: PASS
-- [ ] Post-Design Constitution Check: PASS
+- [x] Post-Design Constitution Check: PASS
 - [x] All NEEDS CLARIFICATION resolved
-- [ ] Complexity deviations documented (N/A)
+- [x] Complexity deviations documented
 
 ---
 *Based on Constitution v2.1.1 - See `/memory/constitution.md`*

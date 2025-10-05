@@ -4,6 +4,65 @@
 **Prerequisites**: plan.md (required), research.md, data-model.md, contracts/, quickstart.md
 
 ## Phase 3.1: Setup
+- [ ] T001 Create failing-change fixture and SQLite registry helper in `tests/support/sqlite_fixtures.py` to exercise transaction rollback and `sqitch.db` path assertions used by upcoming regression tests.
+
+## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
+*All new tests MUST be committed in a failing state before implementation work begins.*
+- [ ] T002 [P] Add regression test `tests/regression/test_sqlite_deploy_atomicity.py` asserting deploy+registry mutations roll back together when a scripted SQL error occurs.
+- [ ] T003 [P] Add regression test `tests/regression/test_sqlite_registry_attach.py` verifying deploy attaches `sqitch.db` under alias `sqitch` and leaves the workspace database untouched.
+- [ ] T004 [P] Add engine stub test `tests/engine/test_stub_adapters.py` confirming MySQL/PostgreSQL adapters register with `ENGINE_REGISTRY` and raise `NotImplementedError` with parity messaging.
+- [ ] T005 [P] Add suite-behavior test `tests/regression/test_engine_suite_skips.py` ensuring full pytest runs emit expected warnings for skipped MySQL/PostgreSQL suites while keeping SQLite coverage intact.
+
+## Phase 3.3: Core Implementation (ONLY after tests are failing)
+- [ ] T006 Update `sqlitch/cli/commands/deploy.py` to execute change scripts and registry writes inside a single SQLite transaction using the attached registry connection.
+- [ ] T007 Update `sqlitch/engine/sqlite.py` to resolve a canonical adjacent `sqitch.db`, attach it under the `sqitch` alias, and expose helpers consumed by the deploy command.
+- [ ] T008 Extend `sqlitch/config/resolver.py` and related providers to compute the registry SQLite path (including in-memory targets) and surface it through `EngineTarget.registry_uri`.
+- [ ] T009 Adjust registry migrations/tests in `sqlitch/registry/migrations.py` and `tests/engine/test_sqlite_registry.py` to accommodate attached `sqitch.db` connections and verify schema setup.
+- [ ] T010 Implement stub adapters `sqlitch/engine/mysql.py` and `sqlitch/engine/postgres.py` that register with `ENGINE_REGISTRY`, raise `NotImplementedError`, and document placeholders per FR-001a.
+- [ ] T011 Wire stub adapters into `sqlitch/engine/__init__.py` (and any CLI surface such as `sqlitch/cli/commands/engine.py`) so unsupported engine selection yields deterministic parity messaging.
+- [ ] T012 Update `sqlitch/cli/commands/deploy.py` and `sqlitch/utils/logging.py` to ensure structured logs reflect registry path, transaction scope, and stub-engine warnings without leaking credentials.
+
+## Phase 3.4: Integration
+- [ ] T013 Refresh parity fixtures in `tests/support/golden/` (SQLite deploy/log outputs) to match the new registry path and transaction logging.
+- [ ] T014 Update documentation (`docs/architecture/registry-lifecycle.md`, `specs/002-sqlite/quickstart.md`) with the attach-based registry flow and stub adapter behavior.
+- [ ] T015 Run full validation (`pytest` + `tox -e lint`) capturing evidence that skipped engine suites emit warnings while SQLite coverage remains ≥90% (store output under `docs/reports/sqlite-gate.md`).
+
+## Phase 3.5: Polish
+- [ ] T016 [P] Add targeted performance test `tests/perf/test_sqlite_deploy_latency.py` asserting happy-path deploy stays under 200 ms on representative hardware.
+- [ ] T017 [P] Update contributor-facing docs (`README.md`, `/specs/002-sqlite/quickstart.md`) with troubleshooting for the new `sqitch.db` attachment and guidance on stub adapter behavior.
+
+## Dependencies
+- T001 precedes all Phase 3.2 regression tests.
+- T002–T005 must fail before starting any Phase 3.3 implementation tasks.
+- T006 depends on T002; T007 depends on T003; T008 depends on T003; T009 depends on T003.
+- T010 and T011 depend on T004; T012 depends on T002–T004.
+- T013 depends on completion of T006–T009 and T012.
+- T014 depends on T006–T013; T015 depends on all implementation tasks.
+- T016 depends on T006–T013; T017 depends on T014 and T015.
+
+## Parallel Execution Example
+```
+# After T001, generate failing tests in parallel:
+Task: "T002 Add regression test tests/regression/test_sqlite_deploy_atomicity.py"
+Task: "T003 Add regression test tests/regression/test_sqlite_registry_attach.py"
+Task: "T004 Add engine stub test tests/engine/test_stub_adapters.py"
+Task: "T005 Add suite-behavior test tests/regression/test_engine_suite_skips.py"
+
+# Following successful implementation of T006–T012, run polish tasks together:
+Task: "T016 Add targeted performance test tests/perf/test_sqlite_deploy_latency.py"
+Task: "T017 Update contributor docs with registry/stub guidance"
+```
+
+## Notes
+- [P] indicates tasks that can be executed in parallel because they touch distinct files with no ordering constraints.
+- Maintain Red→Green discipline: remove skip markers and confirm failures before implementing fixes.
+- Capture CI output for parity evidence in `docs/reports/sqlite-gate.md` as part of T015.
+# Tasks: SQLitch Python Parity Fork MVP
+
+**Input**: Design documents from `/specs/002-sqlite/`
+**Prerequisites**: plan.md (required), research.md, data-model.md, contracts/, quickstart.md
+
+## Phase 3.1: Setup
 - [X] T001 Create SQLitch project skeleton (top-level `bin/`, `docs/`, `etc/`, `scripts/`, `sqlitch/`, `tests/`, `xt/`) mirroring Sqitch’s layout without the legacy `t/` root.
 - [X] T002 Author `pyproject.toml` with runtime dependencies (Click, Rich, SQLAlchemy Core, sqlite3, `psycopg[binary]`, `PyMySQL`, python-dateutil, tomli, pydantic, docker SDK) and dev tool configurations (black, isort, flake8, pylint, mypy, bandit, pytest, pytest-cov, hypothesis, tox).
 - [X] T003 Configure linting and type checking (`.flake8`, `.pylintrc`, `mypy.ini`, black/isort sections in `pyproject.toml`) ensuring zero-warning gates per FR-004.
@@ -78,8 +137,9 @@
 	- [X] T095d Refine `tests/cli/contracts/test_show_contract.py` (all nested contexts) to use the new output channels.
 	- [X] T095e Bring `tests/cli/contracts/test_add_contract.py` in line with the stdout/stderr contract conventions.
 	- [X] T095f Run the contract suite (`pytest tests/cli/contracts`) to confirm the harness/test updates hold before moving to further logging work.
-	- [ ] T095g Ensure deploy script execution and registry writes occur in a single transaction (update `sqlitch/cli/commands/deploy.py` and associated tests).
-	- [ ] T095h Relocate SQLite registry storage to a dedicated `sqitch.db` sibling file and ensure all deploy/verify/revert/rework flows attach it under the canonical alias on a shared transaction boundary (touch `sqlitch/cli/commands/deploy.py`, `sqlitch/engine/sqlite.py`, and registry tests in `tests/`).
+	- [ ] T095g Relocate SQLite registry storage to a dedicated `sqitch.db` sibling file and ensure all deploy/verify/revert/rework flows attach it under the canonical alias on a shared transaction boundary (touch `sqlitch/cli/commands/deploy.py`, `sqlitch/engine/sqlite.py`, and registry tests in `tests/`).
+	- [ ] T095gh Ensure deploy script execution and registry writes occur in a single transaction (update `sqlitch/cli/commands/deploy.py` and associated tests).
+	- [ ] T095gi Correct MySQL registry migration triggers to raise valid SQLSTATE codes (replace placeholder `'ERR0R'` state in `sqlitch/registry/migrations.py`, add regression coverage, and update golden fixtures if required).
 	- [ ] T096 Implement credential precedence resolution (CLI flags → environment → configuration files) and secret write protections in `sqlitch/config/resolver.py`, augmenting docstrings and referencing `specs/002-sqlite/research.md` §Credential Handling Parity.
 	- [ ] T097 Extend structured logging and CLI output redaction for sensitive credentials across verbosity/JSON modes in `sqlitch/utils/logging.py` and `sqlitch/cli/options.py`, ensuring parity with Sqitch guidance.
 	- [ ] T098 Update contributor-facing documentation (`specs/002-sqlite/quickstart.md`, `specs/002-sqlite/contracts/cli-config.md`, and related guides) to capture credential precedence, secret redaction, and required file-permission hardening from `specs/002-sqlite/research.md` §Credential Handling Parity.

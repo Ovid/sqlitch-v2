@@ -19,6 +19,13 @@
   - asyncpg / aiomysql: async models misalign with Sqitch synchronous execution.
   - mysqlclient: libmysql-backed and faster, but rejected after install failures on clean macOS machines due to missing headers; deemed too high-friction for collaborators.
 
+## Decision: Multi-Engine Framework Proof for M1
+- **Outcome**: Ship stub MySQL and PostgreSQL adapters that register with the engine registry, raise `NotImplementedError`, and exercise parity wiring via smoke tests that assert the correct error messaging and registry routing.
+- **Rationale**: Satisfies the clarified FR-001a requirement to demonstrate extensibility without delaying SQLite parity, keeping future adapters as incremental work.
+- **Alternatives Considered**:
+  - Omitting stubs until the implementation phase for MySQL/PostgreSQL: rejected because it provides no verifiable proof that the framework supports additional engines.
+  - Providing partial end-to-end spikes behind flags: deferred to future milestones to avoid distraction from SQLite readiness.
+
 ## Decision: Configuration Management
 - **Outcome**: Represent configuration via Pydantic models loading from `sqlitch.conf`, `sqitch.conf`, or environment variables with overrideable root directory support.
 - **Rationale**: Typed models expose validation errors early and allow tests to swap configuration roots without mutating real home directories.
@@ -44,3 +51,4 @@
 ## Open Follow-Ups
 - Document official PyPI publishing strategy post-MVP (out of current scope).
 - Track potential performance regression tests for `PyMySQL` vs `mysqlclient`; initial manual parity shows acceptable latency, but integration benchmarks are still pending.
+- Define performance baselines for SQLite deploy commands (<200ms typical path) once the MVP implementation stabilizes to satisfy constitution performance guidance.

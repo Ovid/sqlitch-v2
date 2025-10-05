@@ -39,6 +39,10 @@
 
 ### Session 2025-10-05
 - Q: How should SQLitch handle database credentials for target engines to keep parity while protecting secrets? → A: Align with Perl Sqitch behavior
+- Q: For Acceptance Scenario 1 during the SQLite-only milestone, which engines must parity checks cover? → A: Limit checks to SQLite only.
+- Q: What evidence must the SQLite milestone deliver to prove the engine framework can handle future adapters? → A: Provide stub MySQL/PostgreSQL adapters raising `NotImplementedError` wired into the registry/tests.
+- Q: Do we need separate personas for the SQLite milestone? → A: A single combined persona.
+- Q: For Acceptance Scenario 2, which tests must contributors execute during the SQLite milestone? → A: Run full suite, ensuring non-SQLite suites remain skipped.
 
 ### Delivery Milestones
 - **Milestone M1 (SQLite MVP with Multi-Engine Framework)**: Ship a fully working SQLite experience—including engine adapter, CLI command surface, registry management, parity smoke tests, and manual walkthrough—while proving that the underlying architecture cleanly supports additional engines. This milestone MUST deliver extensibility hooks (engine registry, configuration abstractions, adapter contracts, test scaffolding) that demonstrate how MySQL and PostgreSQL adapters will plug in later, but the only runtime support required for shipment is SQLite. Future engine enablement will be scheduled through subsequent planning cycles once this milestone merges.
@@ -48,11 +52,11 @@
 ## User Scenarios & Testing *(mandatory)*
 
 ### Primary User Story
-Database release engineers need to execute database change management workflows through SQLitch with the same steps, feedback, and confidence they currently have with Sqitch, while benefiting from a modernized, fully tested Python-based toolchain.
+Database release engineers (acting as both day-to-day operators and maintainers for this milestone) need to execute database change management workflows through SQLitch with the same steps, feedback, and confidence they currently have with Sqitch, while benefiting from a modernized, fully tested Python-based toolchain.
 
 ### Acceptance Scenarios
-1. **Given** an existing Sqitch project targeting SQLite, MySQL, or PostgreSQL, **When** a release engineer runs equivalent SQLitch commands (e.g., `sqlitch plan`, `sqlitch add`, `sqlitch deploy`), **Then** the observable output, exit codes, and plan file mutations match Sqitch results for all supported flows.
-2. **Given** a new contributor onboarding to SQLitch, **When** they follow the documented setup process, **Then** they obtain an isolated development environment, run the full automated test suite (including Docker-backed integration tests when Docker is available), and achieve ≥90% code coverage with all quality gates passing on macOS, Windows, and Linux matrix checks.
+1. **Given** an existing Sqitch project targeting SQLite, **When** a release engineer runs equivalent SQLitch commands (e.g., `sqlitch plan`, `sqlitch add`, `sqlitch deploy`), **Then** the observable output, exit codes, and plan file mutations match Sqitch results for all supported flows on SQLite. (MySQL/PostgreSQL parity will be validated when those adapters are scheduled.)
+2. **Given** a new contributor onboarding to SQLitch, **When** they follow the documented setup process, **Then** they obtain an isolated development environment, execute the full automated test suite (including the placeholder/skipped suites for future engines to confirm they remain gated), and achieve ≥90% code coverage with all quality gates passing on macOS, Windows, and Linux matrix checks.
 3. **Given** a project containing existing `sqitch.*` artifacts and no conflicting `sqlitch.*` files, **When** SQLitch commands are executed, **Then** they operate as a drop-in replacement without requiring users to rename or migrate those files.
 
 ### Edge Cases
@@ -66,6 +70,7 @@ Database release engineers need to execute database change management workflows 
 
 ### Functional Requirements
 - **FR-001**: SQLitch MUST expose the same CLI commands, options, help text, and default behaviors as Sqitch for SQLite, MySQL, and PostgreSQL, yielding identical human-readable and machine-consumable outputs, and MUST fail immediately with a clear error message when invoked against unsupported engines. The architecture, abstractions, and acceptance tests MUST be multi-engine ready even though the first MVP release will ship runtime support for SQLite only; MySQL and PostgreSQL enablement follows in later milestones without breaking CLI ergonomics.
+- **FR-001a**: The SQLite milestone MUST include stub MySQL and PostgreSQL engine adapter modules that register with the engine framework, raise `NotImplementedError` when invoked, and are covered by smoke tests ensuring the registry wiring and error messaging behave as expected. These stubs serve as proof that additional engines can be plugged in without rearchitecting the framework.
 - **FR-002**: The project MUST mirror Sqitch's directory and test layout so developers can cross-reference files one-to-one between the Perl and Python implementations.
 - **FR-003**: SQLitch MUST pass a comprehensive automated test suite that validates all behaviors covered by Sqitch tests, plus any additional cases needed to maintain ≥90% coverage and highlight behavioral deviations.
 - **FR-004**: Quality gates MUST block merges unless formatting, linting, static type analysis, security scanning, and coverage thresholds all pass with zero warnings.
