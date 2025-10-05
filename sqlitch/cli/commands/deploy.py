@@ -24,6 +24,7 @@ from sqlitch.engine.sqlite import (
     REGISTRY_ATTACHMENT_ALIAS,
     SQLiteEngine,
     resolve_sqlite_filesystem_path,
+    script_manages_transactions,
 )
 from sqlitch.plan.model import Change, Plan
 from sqlitch.plan.parser import PlanParseError, parse_plan
@@ -238,9 +239,7 @@ def _execute_deploy(request: _DeployRequest) -> None:
     registry_schema = REGISTRY_ATTACHMENT_ALIAS
 
     try:
-        _begin_deploy_transaction(connection)
-
-        _ensure_registry_ready(
+        _initialise_registry_state(
             connection=connection,
             registry_schema=registry_schema,
             project=request.plan.project_name,
@@ -266,7 +265,6 @@ def _execute_deploy(request: _DeployRequest) -> None:
                     "target": engine_target.uri,
                 },
             )
-            _rollback_deploy_transaction(connection)
             return
 
         applied = 0
@@ -279,7 +277,7 @@ def _execute_deploy(request: _DeployRequest) -> None:
             }
             logger.info("deploy.change.start", payload=change_payload)
             try:
-                _apply_change(
+                transaction_scope = _apply_change(
                     connection=connection,
                     project=request.plan.project_name,
                     plan_root=request.plan_path.parent,
@@ -304,11 +302,10 @@ def _execute_deploy(request: _DeployRequest) -> None:
                     "deploy.change.success",
                     payload={
                         **change_payload,
-                        "transaction_scope": "change",
+                        "transaction_scope": transaction_scope,
                     },
                 )
 
-        _commit_deploy_transaction(connection)
         emitter(f"Deployment complete. Applied {applied} change(s).")
         logger.info(
             "deploy.complete",
@@ -320,10 +317,6 @@ def _execute_deploy(request: _DeployRequest) -> None:
             },
         )
     except Exception as exc:
-        try:
-            _rollback_deploy_transaction(connection)
-        except sqlite3.Error:  # pragma: no cover - best effort rollback
-            pass
         logger.error(
             "deploy.error",
             message=str(exc),
@@ -561,19 +554,35 @@ def _ensure_sqlite_parent_directory(uri: str) -> None:
         parent.mkdir(parents=True, exist_ok=True)
 
 
-def _begin_deploy_transaction(connection: sqlite3.Connection) -> None:
+def _initialise_registry_state(
+    *,
+    connection: sqlite3.Connection,
+    registry_schema: str,
+    project: str,
+    plan: Plan,
+    committer_name: str,
+    committer_email: str,
+) -> None:
+    """Prepare the attached registry schema inside an immediate transaction."""
+
     connection.execute("BEGIN IMMEDIATE")
-
-
-def _commit_deploy_transaction(connection: sqlite3.Connection) -> None:
-    connection.execute("COMMIT")
-
-
-def _rollback_deploy_transaction(connection: sqlite3.Connection) -> None:
     try:
-        connection.execute("ROLLBACK")
-    except sqlite3.Error:  # pragma: no cover - best effort rollback
-        pass
+        _ensure_registry_ready(
+            connection=connection,
+            registry_schema=registry_schema,
+            project=project,
+            plan=plan,
+            committer_name=committer_name,
+            committer_email=committer_email,
+        )
+    except Exception:
+        try:
+            connection.execute("ROLLBACK")
+        except sqlite3.Error:  # pragma: no cover - best effort rollback
+            pass
+        raise
+    else:
+        connection.execute("COMMIT")
 
 
 def _ensure_registry_ready(
@@ -744,8 +753,11 @@ def _apply_change(
     committer_email: str,
     deployed: dict[str, dict[str, str]],
     registry_schema: str,
-) -> None:
-    """Execute a deploy script and record registry state for ``change``."""
+) -> str:
+    """Execute a deploy script and record registry state for ``change``.
+
+    Returns the transaction scope applied for structured logging.
+    """
 
     script_path = _resolve_script_path(plan_root, change, "deploy")
     if not script_path.exists():
@@ -753,6 +765,7 @@ def _apply_change(
 
     script_body = script_path.read_text(encoding="utf-8")
     script_hash = _compute_script_hash(script_body)
+    manages_transactions = script_manages_transactions(script_body)
     change_id = str(change.change_id) if change.change_id is not None else script_hash
 
     dependency_lookup = {name: data["change_id"] for name, data in deployed.items()}
@@ -789,11 +802,18 @@ def _apply_change(
         )
 
     try:
-        _execute_change_transaction(connection, script_body, _record)
+        _execute_change_transaction(
+            connection,
+            script_body,
+            _record,
+            manages_transactions=manages_transactions,
+        )
     except sqlite3.Error as exc:  # pragma: no cover - execution error propagated
         raise CommandError(f"Deploy failed for change '{change.name}': {exc}") from exc
 
     deployed[change.name] = {"change_id": change_id, "script_hash": script_hash}
+
+    return "script-managed" if manages_transactions else "engine-managed"
 
 
 def _resolve_script_path(plan_root: Path, change: Change, kind: str) -> Path:
@@ -897,45 +917,95 @@ def _execute_change_transaction(
     connection: sqlite3.Connection,
     script_sql: str,
     recorder: Callable[[sqlite3.Cursor], None],
+    *,
+    manages_transactions: bool,
 ) -> None:
-    """Execute ``script_sql`` and record registry entries within a single transaction."""
+    """Execute ``script_sql`` while preserving atomic registry recording."""
 
     script_cursor = connection.cursor()
     registry_cursor = connection.cursor()
     try:
-        savepoint = "sqlitch_deploy_change"
-        connection.execute(f"SAVEPOINT {savepoint}")
+        if manages_transactions:
+            _execute_sqlite_script(script_cursor, script_sql)
+            _record_registry_entries(connection, registry_cursor, recorder)
+        else:
+            _execute_engine_managed_change(
+                connection,
+                script_cursor,
+                registry_cursor,
+                script_sql,
+                recorder,
+            )
+    finally:
+        script_cursor.close()
+        registry_cursor.close()
 
+
+def _execute_engine_managed_change(
+    connection: sqlite3.Connection,
+    script_cursor: sqlite3.Cursor,
+    registry_cursor: sqlite3.Cursor,
+    script_sql: str,
+    recorder: Callable[[sqlite3.Cursor], None],
+) -> None:
+    savepoint = "sqlitch_change"
+    connection.execute("BEGIN IMMEDIATE")
+    try:
+        connection.execute(f"SAVEPOINT {savepoint}")
         try:
             _execute_sqlite_script(script_cursor, script_sql)
             recorder(registry_cursor)
         except Exception:
-            try:
-                connection.execute(f"ROLLBACK TO SAVEPOINT {savepoint}")
-            except sqlite3.Error:  # pragma: no cover - defensive guard
-                pass
-            finally:
-                try:
-                    connection.execute(f"RELEASE SAVEPOINT {savepoint}")
-                except sqlite3.Error:  # pragma: no cover - defensive guard
-                    pass
+            _rollback_savepoint(connection, savepoint)
             raise
         else:
-            try:
-                connection.execute(f"RELEASE SAVEPOINT {savepoint}")
-            except sqlite3.Error as exc:
-                try:
-                    connection.execute(f"ROLLBACK TO SAVEPOINT {savepoint}")
-                except sqlite3.Error:  # pragma: no cover - defensive guard
-                    pass
-                try:
-                    connection.execute(f"RELEASE SAVEPOINT {savepoint}")
-                except sqlite3.Error:  # pragma: no cover - defensive guard
-                    pass
-                raise exc
+            _release_savepoint(connection, savepoint)
+        connection.execute("COMMIT")
+    except Exception:
+        try:
+            connection.execute("ROLLBACK")
+        except sqlite3.Error:  # pragma: no cover - defensive guard
+            pass
+        raise
+
+
+def _record_registry_entries(
+    connection: sqlite3.Connection,
+    registry_cursor: sqlite3.Cursor,
+    recorder: Callable[[sqlite3.Cursor], None],
+) -> None:
+    savepoint = "sqlitch_registry"
+    connection.execute(f"SAVEPOINT {savepoint}")
+    try:
+        recorder(registry_cursor)
+    except Exception:
+        _rollback_savepoint(connection, savepoint)
+        raise
+    else:
+        _release_savepoint(connection, savepoint)
+
+
+def _rollback_savepoint(connection: sqlite3.Connection, name: str) -> None:
+    try:
+        connection.execute(f"ROLLBACK TO SAVEPOINT {name}")
+    except sqlite3.Error:  # pragma: no cover - defensive guard
+        pass
     finally:
-        script_cursor.close()
-        registry_cursor.close()
+        _release_savepoint(connection, name, suppress_errors=True)
+
+
+def _release_savepoint(
+    connection: sqlite3.Connection,
+    name: str,
+    *,
+    suppress_errors: bool = False,
+) -> None:
+    try:
+        connection.execute(f"RELEASE SAVEPOINT {name}")
+    except sqlite3.Error:
+        if suppress_errors:  # pragma: no cover - defensive guard
+            return
+        raise
 
 
 def _execute_sqlite_script(cursor: sqlite3.Cursor, script_sql: str) -> None:

@@ -224,5 +224,95 @@ __all__ = [
     "REGISTRY_ATTACHMENT_ALIAS",
     "REGISTRY_FILENAME",
     "derive_sqlite_registry_uri",
+    "extract_sqlite_statements",
+    "script_manages_transactions",
     "resolve_sqlite_filesystem_path",
 ]
+
+
+_TRANSACTION_KEYWORDS: tuple[str, ...] = (
+    "BEGIN",
+    "END",
+    "COMMIT",
+    "ROLLBACK",
+    "SAVEPOINT",
+    "RELEASE",
+)
+
+
+def extract_sqlite_statements(script_sql: str) -> tuple[str, ...]:
+    """Return SQL statements contained within ``script_sql``.
+
+    The helper mirrors the behaviour of ``sqlite3.complete_statement`` so callers can
+    reuse the parsed statements for execution or analysis. Empty statements and
+    whitespace-only chunks are discarded.
+    """
+
+    statements: list[str] = []
+    buffer = ""
+    for line in script_sql.splitlines():
+        buffer += line + "\n"
+        if sqlite3.complete_statement(buffer):
+            statement = buffer.strip()
+            if statement:
+                statements.append(statement)
+            buffer = ""
+
+    remainder = buffer.strip()
+    if remainder:
+        statements.append(remainder)
+
+    return tuple(statements)
+
+
+def script_manages_transactions(script_sql: str) -> bool:
+    """Return ``True`` when ``script_sql`` contains explicit transaction control."""
+
+    for statement in extract_sqlite_statements(script_sql):
+        keyword = _leading_keyword(statement)
+        if keyword in _TRANSACTION_KEYWORDS:
+            return True
+    return False
+
+
+def _leading_keyword(statement: str) -> str:
+    tokens = _tokenize_statement(statement)
+    return tokens[0] if tokens else ""
+
+
+def _tokenize_statement(statement: str) -> list[str]:
+    normalized = statement.strip()
+    if not normalized:
+        return []
+    pieces: list[str] = []
+    token = []
+    in_string = False
+    string_quote: str | None = None
+    for char in normalized:
+        if in_string:
+            token.append(char)
+            if char == string_quote:
+                in_string = False
+                string_quote = None
+            elif char == "\\":  # pragma: no cover - string escape handling
+                continue
+            continue
+
+        if char in {'"', "'"}:
+            in_string = True
+            string_quote = char
+            token.append(char)
+            continue
+
+        if char.isspace() or char in {",", "(", ")", ";"}:
+            if token:
+                pieces.append("".join(token).upper())
+                token.clear()
+            continue
+
+        token.append(char)
+
+    if token:
+        pieces.append("".join(token).upper())
+
+    return pieces

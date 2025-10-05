@@ -13,7 +13,7 @@
 - [X] T004 [P] Add engine stub test `tests/engine/test_stub_adapters.py` confirming MySQL/PostgreSQL adapters register with `ENGINE_REGISTRY` and raise `NotImplementedError` with parity messaging.
 - [X] T005 [P] Add suite-behavior test `tests/regression/test_engine_suite_skips.py` ensuring full pytest runs emit expected warnings for skipped MySQL/PostgreSQL suites while keeping SQLite coverage intact.
 - [X] T016 [P] Add regression tests `tests/regression/test_credentials_precedence.py` and `tests/regression/test_credentials_redaction.py` covering credential source ordering and structured-log redaction for SQLite targets and stub adapters.
-- [ ] T018 [P] Add regression test `tests/regression/test_sqlite_deploy_script_transactions.py` proving deploy succeeds when change scripts manage their own transactions (BEGIN/COMMIT) and rolls back registry entries if the script rolls back.
+- [X] T018 [P] Add regression test `tests/regression/test_sqlite_deploy_script_transactions.py` proving deploy succeeds when change scripts manage their own transactions (BEGIN/COMMIT) and rolls back registry entries if the script rolls back.
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 - [X] T006 Update `sqlitch/cli/commands/deploy.py` to execute change scripts and registry writes inside a single SQLite transaction using the attached registry connection.
@@ -24,8 +24,8 @@
 - [X] T011 Wire stub adapters into `sqlitch/engine/__init__.py` (and any CLI surface such as `sqlitch/cli/commands/engine.py`) so unsupported engine selection yields deterministic parity messaging.
 - [X] T012 Update `sqlitch/cli/commands/deploy.py` and `sqlitch/utils/logging.py` to ensure structured logs reflect registry path, transaction scope, and stub-engine warnings without leaking credentials.
 - [X] T017 Implement credential precedence resolution and structured logging redaction safeguards in `sqlitch/config/resolver.py`, `sqlitch/utils/logging.py`, and `sqlitch/cli/options.py` to satisfy NFR-002.
-- [ ] T019 Update `sqlitch/cli/commands/deploy.py` and related helpers to skip issuing a top-level `BEGIN IMMEDIATE` when the change script controls its own transaction while still guaranteeing registry updates occur only after successful commits.
-- [ ] T020 Enhance `sqlitch/engine/sqlite.py` (and any transaction orchestration utilities) to expose helpers used by deploy to detect script-managed transactions and to maintain attachment lifecycle per FR-022a.
+- [X] T019 Update `sqlitch/cli/commands/deploy.py` and related helpers to skip issuing a top-level `BEGIN IMMEDIATE` when the change script controls its own transaction while still guaranteeing registry updates occur only after successful commits.
+- [X] T020 Enhance `sqlitch/engine/sqlite.py` (and any transaction orchestration utilities) to expose helpers used by deploy to detect script-managed transactions and to maintain attachment lifecycle per FR-022a.
 
 ## Phase 3.4: Integration
 - [X] T013 Refresh parity fixtures in `tests/support/golden/` (SQLite deploy/log outputs) to match the new registry path and transaction logging.
