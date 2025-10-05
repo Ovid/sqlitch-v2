@@ -1,15 +1,15 @@
 <!--
 - Sync Impact Report
-- Version change: 1.6.0 → 1.7.0
+- Version change: 1.8.0 → 1.9.0 (MINOR bump)
 - Modified sections:
-  • V. Observability and Determinism — Clarified opt-in structured logging and registry-only audit trail requirements.
-  • Additional Constraints — Added default logging confinement rule and removed redundant advisory guidance.
-- Added sections: None
+  • I. Test-First Development — Added explicit "no failing tests" rule and Test Failure Validation Protocol
+- Added sections:
+  • Test Failure Validation Protocol (4-step process for handling test failures)
 - Removed sections: None
-- Templates requiring updates:
-  ✅ .specify/templates/plan-template.md
-  ✅ .specify/templates/spec-template.md
-  ✅ .specify/templates/tasks-template.md
+- Rationale: Restored critical rule from earlier constitution version (commit 0351a08) that was lost.
+  The "no failing tests in codebase" principle is fundamental to maintaining confidence in test suite.
+  Tests for unimplemented features must be skipped, not failing.
+- Templates requiring updates: None (rule enforcement, not template change)
 - Follow-up TODOs: None
 -->
 
@@ -22,13 +22,24 @@
 - Every new feature/bugfix PR MUST include failing tests that define behavior.
 - Contract/integration tests MUST cover user-visible flows and CLI contracts.
 - Unused or untested code MUST NOT be merged.
+- **All tests in the codebase MUST pass**. Unimplemented features MUST be marked with
+  pytest skip markers (`@pytest.mark.skip(reason="Pending: ...")`), not committed as
+  failing tests.
 Rationale: Defining behavior in tests first creates living specifications and prevents
-regressions while enabling safe refactors.
+regressions while enabling safe refactors. A clean test suite (all passing or explicitly
+skipped) ensures confidence in the codebase state at any commit.
+
+**Test Failure Validation Protocol (MANDATORY)**:
+When encountering test failures during implementation or refactoring:
+1. **Consult Perl Reference**: Check `sqitch/` implementation to confirm expected behavior
+2. **Validate Test Correctness**: Verify the test accurately reflects Sqitch's behavior
+3. **Fix Code, Not Tests**: If test is correct per Perl reference, fix implementation to pass
+4. **Only Modify Tests**: If Perl reference contradicts test, update test with justification
 
 - Before writing new tests or altering existing tests, contributors MUST consult the
   upstream Perl implementation under `sqitch/` to confirm the intended public-facing
   behavior and document any deliberate deviations.
-- When implementing fixes or new features, assume existing tests are correct. If a
+- **When implementing fixes or new features, assume existing tests are correct**. If a
   change appears to require modifying tests, first verify parity with the Perl Sqitch
   behavior; only adjust tests after confirming the upstream semantics truly differ.
 - The default expectation is to expand test coverage while leaving current tests
