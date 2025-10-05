@@ -209,8 +209,9 @@ def test_status_outputs_human_summary_when_in_sync(runner: CliRunner) -> None:
         )
 
         assert result.exit_code == 0, result.output
-        assert "# On database db:sqlite:registry.db" in result.output
-        assert "Nothing to deploy (up-to-date)" in result.output
+        stdout = result.stdout
+        assert "# On database db:sqlite:registry.db" in stdout
+        assert "Nothing to deploy (up-to-date)" in stdout
 
 
 def test_status_outputs_json_with_pending_changes(runner: CliRunner) -> None:
@@ -237,7 +238,7 @@ def test_status_outputs_json_with_pending_changes(runner: CliRunner) -> None:
         )
 
         assert result.exit_code == 1, result.output
-        payload = json.loads(result.output)
+        payload = json.loads(result.stdout)
         assert payload["status"] == "not_deployed"
         assert payload["pending_changes"] == ["users"]
 

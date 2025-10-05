@@ -163,7 +163,7 @@ def test_engine_list_outputs_table(tmp_path: Path) -> None:
         result = runner.invoke(main, ["engine", "list"], env=env)
 
         assert result.exit_code == 0, result.output
-        output = result.output.strip().splitlines()
+        output = result.stdout.strip().splitlines()
         assert output[0].startswith("NAME")
         assert "widgets" in output[1]
         assert "db:sqlite:widgets.db" in output[1]

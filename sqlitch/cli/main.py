@@ -3,19 +3,25 @@
 from __future__ import annotations
 
 import os
+import time
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
+from typing import Any
 
 import click
 
 from sqlitch.config import resolver as config_resolver
+from sqlitch.utils.logging import StructuredLogger, create_logger
 
 from .commands import CommandError, iter_command_registrars, load_commands
 from .options import LogConfiguration, build_log_configuration, global_output_options
 
 _CLI_CONTEXT_META_KEY = "sqlitch_cli_context"
+_CLI_ARGS_META_KEY = "sqlitch_cli_args"
+_CLI_SUBCOMMAND_META_KEY = "sqlitch_cli_subcommand"
+_CLI_START_TIME_META_KEY = "sqlitch_cli_start_time"
 
 
 @dataclass(slots=True)
@@ -35,6 +41,7 @@ class CLIContext:
         quiet: Indicates whether non-essential output should be suppressed.
         json_mode: Indicates whether structured JSON output has been requested.
         log_config: Default logging configuration for the invocation.
+        logger: Structured logger that honors the configured verbosity/quiet settings.
     """
 
     project_root: Path
@@ -49,6 +56,7 @@ class CLIContext:
     quiet: bool
     json_mode: bool
     log_config: LogConfiguration
+    logger: StructuredLogger
 
     @property
     def run_identifier(self) -> str:
@@ -89,6 +97,7 @@ def _build_cli_context(
         json_mode=json_mode,
         env=environment,
     )
+    logger = create_logger(log_config)
 
     return CLIContext(
         project_root=Path.cwd(),
@@ -103,10 +112,58 @@ def _build_cli_context(
         quiet=quiet,
         json_mode=json_mode,
         log_config=log_config,
+        logger=logger,
     )
 
 
-@click.group(name="sqlitch", context_settings={"help_option_names": ["-h", "--help"]})
+class SqlitchGroup(click.Group):
+    """Custom Click group that emits structured logging events."""
+
+    def invoke(self, ctx: click.Context) -> Any:  # type: ignore[override]
+        error: BaseException | None = None
+        try:
+            return super().invoke(ctx)
+        except click.ClickException as exc:  # pragma: no cover - exercised in tests via CLI
+            error = exc
+            raise
+        except Exception as exc:  # pragma: no cover - safety net for unexpected failures
+            error = exc
+            raise
+        finally:
+            cli_context = _resolve_cli_context(ctx)
+            if cli_context is not None:
+                logger = cli_context.logger
+                payload = _command_payload(ctx, cli_context)
+
+                start_time = ctx.meta.get(_CLI_START_TIME_META_KEY)
+                if isinstance(start_time, (int, float)):
+                    payload["duration_ms"] = round((time.perf_counter() - start_time) * 1000, 3)
+
+                if error is None:
+                    payload["status"] = "success"
+                    payload["exit_code"] = 0
+                    logger.info("command.complete", message="Command completed", payload=payload)
+                else:
+                    payload["status"] = "error"
+                    payload["error_type"] = type(error).__name__
+                    message = str(error)
+                    if isinstance(error, click.ClickException):
+                        payload["exit_code"] = error.exit_code
+                        logger.error("command.error", message=message, payload=payload)
+                        logger.info(
+                            "command.complete",
+                            message="Command aborted",
+                            payload=payload,
+                        )
+                    else:
+                        logger.critical("command.error", message=message, payload=payload)
+
+
+@click.group(
+    name="sqlitch",
+    context_settings={"help_option_names": ["-h", "--help"]},
+    cls=SqlitchGroup,
+)
 @click.version_option(package_name="sqlitch", prog_name="sqlitch")
 @click.option(
     "--config-root",
@@ -164,6 +221,46 @@ def main(
     )
     ctx.obj = cli_context
     ctx.meta[_CLI_CONTEXT_META_KEY] = cli_context
+    leftover_args = tuple(ctx.args)
+    ctx.meta[_CLI_ARGS_META_KEY] = leftover_args
+    if leftover_args:
+        ctx.meta[_CLI_SUBCOMMAND_META_KEY] = leftover_args[0]
+    ctx.meta[_CLI_START_TIME_META_KEY] = time.perf_counter()
+
+    _log_command_start(ctx, cli_context)
+
+
+def _resolve_cli_context(ctx: click.Context) -> CLIContext | None:
+    obj = ctx.obj
+    if isinstance(obj, CLIContext):
+        return obj
+
+    candidate = ctx.meta.get(_CLI_CONTEXT_META_KEY)
+    if isinstance(candidate, CLIContext):
+        return candidate
+    return None
+
+
+def _command_payload(ctx: click.Context, cli_context: CLIContext) -> dict[str, Any]:
+    argv = list(ctx.meta.get(_CLI_ARGS_META_KEY, ()))
+    payload: dict[str, Any] = {
+        "command": ctx.command_path,
+        "subcommand": ctx.invoked_subcommand or ctx.meta.get(_CLI_SUBCOMMAND_META_KEY),
+        "argv": argv,
+        "verbosity": cli_context.verbosity,
+        "quiet": cli_context.quiet,
+        "json": cli_context.json_mode,
+    }
+    return payload
+
+
+def _log_command_start(ctx: click.Context, cli_context: CLIContext) -> None:
+    payload = _command_payload(ctx, cli_context)
+    cli_context.logger.info(
+        "command.start",
+        message=f"Starting {payload['command']}",
+        payload=payload,
+    )
 
 
 load_commands()

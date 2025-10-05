@@ -247,7 +247,7 @@ def test_status_outputs_in_sync_snapshot(runner: CliRunner) -> None:
         result = runner.invoke(main, ["status", "--target", "db:sqlite:flipr_test.db"])
 
         assert result.exit_code == 0, result.output
-        assert result.output == expected
+        assert result.stdout == expected
 
 
 def test_status_reports_undeployed_changes(runner: CliRunner) -> None:
@@ -293,7 +293,7 @@ def test_status_reports_undeployed_changes(runner: CliRunner) -> None:
         )
 
         assert result.exit_code == 1, result.output
-        assert result.output == expected
+        assert result.stdout == expected
 
 
 def test_status_json_format_matches_fixture(runner: CliRunner) -> None:
@@ -369,7 +369,7 @@ def test_status_json_format_matches_fixture(runner: CliRunner) -> None:
         )
 
         assert result.exit_code == 0, result.output
-        payload = json.loads(result.output)
+        payload = json.loads(result.stdout)
         assert payload["project"] == PROJECT
         assert payload["target"] == "db:sqlite:dev/flipr_dev.db"
         assert payload["status"] in {"in_sync", "ahead", "behind"}

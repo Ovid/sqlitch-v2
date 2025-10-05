@@ -69,7 +69,7 @@
 - [X] T051 Wire Click group, global options, and command registration in `sqlitch/cli/main.py`, ensuring SQLite workflows operate end-to-end.
 - [X] T093 [P] Implement shared CLI options module in `sqlitch/cli/options.py`, defining global verbosity flags, default log configuration, and run identifier injection for command contexts.
 - [X] T094 Implement structured logging sink and adapters in `sqlitch/utils/logging.py`, ensuring Rich/Click output parity while capturing run metadata.
-- [ ] T095 Update CLI command harnesses to emit structured logs, honor verbosity toggles, and surface run identifiers in user-facing output/tests.
+- [X] T095 Update CLI command harnesses to emit structured logs, honor verbosity toggles, and surface run identifiers in user-facing output/tests.
 	- [X] T095a Align `tests/cli/contracts/test_help_contract.py` assertions with stdout/stderr separation introduced by structured logging.
 	- [X] T095b Apply the same stdout/stderr expectations to `tests/cli/contracts/test_config_contract.py`.
 	- [X] T095c Update `tests/cli/contracts/test_log_contract.py` to parse human and JSON output from stdout while checking errors on stderr.

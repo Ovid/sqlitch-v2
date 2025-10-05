@@ -76,7 +76,7 @@ def test_plan_outputs_plan_file_by_default(runner: CliRunner) -> None:
 
         assert result.exit_code == 0, result.output
         expected = plan_path.read_text(encoding="utf-8")
-        assert result.output == expected
+        assert result.stdout == expected
 
 
 def test_plan_supports_change_filter_and_no_header(runner: CliRunner) -> None:
@@ -98,7 +98,7 @@ def test_plan_supports_change_filter_and_no_header(runner: CliRunner) -> None:
         )
         expected_lines = [line for line in rendered.splitlines() if not line.startswith("%")]
         expected = "\n".join(expected_lines) + "\n"
-        assert result.output == expected
+        assert result.stdout == expected
 
 
 def test_plan_supports_json_format(runner: CliRunner) -> None:
@@ -111,7 +111,7 @@ def test_plan_supports_json_format(runner: CliRunner) -> None:
         result = runner.invoke(main, ["plan", "--format", "json"])
 
         assert result.exit_code == 0, result.output
-        payload = json.loads(result.output)
+        payload = json.loads(result.stdout)
         assert payload["project"] == "widgets"
         assert payload["default_engine"] == "sqlite"
         assert payload["plan_path"].endswith("sqlitch.plan")
@@ -157,7 +157,7 @@ def test_plan_tag_filter_outputs_tag_entry(runner: CliRunner) -> None:
             entries=(tag,),
             base_path=plan_path.parent,
         )
-        assert result.output == rendered
+        assert result.stdout == rendered
 
 
 def test_plan_short_option_strips_notes_metadata(runner: CliRunner) -> None:
@@ -170,9 +170,10 @@ def test_plan_short_option_strips_notes_metadata(runner: CliRunner) -> None:
         result = runner.invoke(main, ["plan", "--short"])
 
         assert result.exit_code == 0, result.output
-        assert "notes=" not in result.output
-        assert "widgets" in result.output
-        assert "Adds widgets table" not in result.output
+        stdout = result.stdout
+        assert "notes=" not in stdout
+        assert "widgets" in stdout
+        assert "Adds widgets table" not in stdout
 
 
 def test_plan_reports_missing_change_filter(runner: CliRunner) -> None:
