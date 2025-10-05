@@ -78,6 +78,7 @@
 	- [X] T095d Refine `tests/cli/contracts/test_show_contract.py` (all nested contexts) to use the new output channels.
 	- [X] T095e Bring `tests/cli/contracts/test_add_contract.py` in line with the stdout/stderr contract conventions.
 	- [X] T095f Run the contract suite (`pytest tests/cli/contracts`) to confirm the harness/test updates hold before moving to further logging work.
+	- [ ] T095g Ensure deploy script execution and registry writes occur in a single transaction (update `sqlitch/cli/commands/deploy.py` and associated tests).
 	- [ ] T096 Implement credential precedence resolution (CLI flags → environment → configuration files) and secret write protections in `sqlitch/config/resolver.py`, augmenting docstrings and referencing `specs/002-sqlite/research.md` §Credential Handling Parity.
 	- [ ] T097 Extend structured logging and CLI output redaction for sensitive credentials across verbosity/JSON modes in `sqlitch/utils/logging.py` and `sqlitch/cli/options.py`, ensuring parity with Sqitch guidance.
 	- [ ] T098 Update contributor-facing documentation (`specs/002-sqlite/quickstart.md`, `specs/002-sqlite/contracts/cli-config.md`, and related guides) to capture credential precedence, secret redaction, and required file-permission hardening from `specs/002-sqlite/research.md` §Credential Handling Parity.
