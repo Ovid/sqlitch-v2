@@ -1,15 +1,17 @@
 <!--
 - Sync Impact Report
-- Version change: 1.8.0 → 1.9.0 (MINOR bump)
+- Version change: 1.9.0 → 1.10.0 (MINOR bump)
 - Modified sections:
-  • I. Test-First Development — Added explicit "no failing tests" rule and Test Failure Validation Protocol
+  • I. Test-First Development — Added "Test Isolation and Cleanup" requirement
 - Added sections:
-  • Test Failure Validation Protocol (4-step process for handling test failures)
+  • Test Isolation and Cleanup principle (mandatory use of isolated filesystem for all CLI tests)
 - Removed sections: None
-- Rationale: Restored critical rule from earlier constitution version (commit 0351a08) that was lost.
-  The "no failing tests in codebase" principle is fundamental to maintaining confidence in test suite.
-  Tests for unimplemented features must be skipped, not failing.
-- Templates requiring updates: None (rule enforcement, not template change)
+- Rationale: Restored critical test discipline requirement that was lost from earlier versions.
+  Tests must not pollute the repository with artifacts. All CLI tests must use Click's
+  `isolated_filesystem()` context manager or equivalent isolation to ensure automatic cleanup.
+  This prevents test artifacts (sqitch.conf, sqitch.plan, deploy/, revert/, verify/, bundle/)
+  from being left in the repository root.
+- Templates requiring updates: None (enforcement rule, not template change)
 - Follow-up TODOs: None
 -->
 
@@ -53,6 +55,19 @@ When encountering test failures during implementation or refactoring:
   confined behind clear abstraction seams.
 - Prefer invoking the actual CLI with temp directories and verifying stdout,
   stderr, and exit codes for end-to-end realism.
+
+**Test Isolation and Cleanup (MANDATORY)**:
+- All tests that invoke CLI commands or create filesystem artifacts MUST use Click's
+  `runner.isolated_filesystem()` context manager or equivalent isolation mechanisms.
+- Tests MUST NOT leave artifacts (config files, plan files, script directories, or any
+  other generated content) in the repository working directory after execution.
+- The `isolated_filesystem()` context creates a temporary directory that is automatically
+  cleaned up when the test completes, ensuring zero pollution of the repository.
+- Any test creating files outside an isolated context is a constitution violation and
+  MUST be fixed immediately.
+Rationale: Test pollution makes the repository state non-deterministic, can interfere
+with other tests, and creates confusion about what is intentional project structure
+versus accidental leftovers. Isolated filesystems guarantee clean test runs.
 
 ### II. CLI-First, Text I/O Contracts
 - All functionality MUST be accessible via CLI commands (thin wrappers over libs).
@@ -209,4 +224,4 @@ by making behavior discoverable without reverse-engineering the implementation.
 - Compliance: All specs, plans, tasks, and PRs MUST reference and adhere to this
   document. Non-compliance is a change request, not a discretionary choice.
 
-**Version**: 1.7.0 | **Ratified**: 2025-10-03 | **Last Amended**: 2025-10-05
+**Version**: 1.10.0 | **Ratified**: 2025-10-03 | **Last Amended**: 2025-10-05
