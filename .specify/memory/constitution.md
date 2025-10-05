@@ -1,18 +1,14 @@
 <!--
- Sync Impact Report
-- Version change: 1.4.0 → 1.5.0
+- Sync Impact Report
+- Version change: 1.5.0 → 1.6.0
 - Added sections:
-  • Additional Constraints — Type Hints, Error Handling, State Management, Abstract Interfaces, Validation Patterns (codifies Python best practices from code review)
-- Modified sections:
-  • VIII. Documented Public Interfaces — Added __all__ exports requirement
-  • Development Workflow & Quality Gates — Added Code Style Gate with PEP 8 import grouping requirement
+  • I. Test-First Development — Added Sqitch consultation requirements for test creation and modification
+- Modified sections: None
 - Removed sections: None
 - Templates requiring updates:
   ✅ Existing templates reviewed (no changes required)
   ⚠  RATIFICATION_DATE left as TODO pending project decision
-- Rationale: Incorporates findings from 2025-10-03 comprehensive code review (REPORT.md)
-  to standardize Python idioms, improve type safety, and ensure consistent code quality
-  before scaling to full command handler implementation.
+- Rationale: Reinforces test-driven development alignment with upstream Sqitch behavior by codifying consultation requirements before tests change.
 -->
 
 # SQLitch Constitution
@@ -26,6 +22,15 @@
 - Unused or untested code MUST NOT be merged.
 Rationale: Defining behavior in tests first creates living specifications and prevents
 regressions while enabling safe refactors.
+
+- Before writing new tests or altering existing tests, contributors MUST consult the
+  upstream Perl implementation under `sqitch/` to confirm the intended public-facing
+  behavior and document any deliberate deviations.
+- When implementing fixes or new features, assume existing tests are correct. If a
+  change appears to require modifying tests, first verify parity with the Perl Sqitch
+  behavior; only adjust tests after confirming the upstream semantics truly differ.
+- The default expectation is to expand test coverage while leaving current tests
+  intact, ensuring alignment with Sqitch behavior and avoiding unnecessary churn.
 
 - Mocks and stubs SHOULD be avoided. Tests MUST exercise real interfaces (CLI
   commands and library entry points) with real files/process boundaries whenever
@@ -184,4 +189,4 @@ by making behavior discoverable without reverse-engineering the implementation.
 - Compliance: All specs, plans, tasks, and PRs MUST reference and adhere to this
   document. Non-compliance is a change request, not a discretionary choice.
 
-**Version**: 1.5.0 | **Ratified**: TODO(RATIFICATION_DATE): original adoption date unknown | **Last Amended**: 2025-10-03
+**Version**: 1.6.0 | **Ratified**: TODO(RATIFICATION_DATE): original adoption date unknown | **Last Amended**: 2025-10-05
