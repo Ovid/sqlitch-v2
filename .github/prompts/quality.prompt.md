@@ -44,11 +44,19 @@ For each issue found, provide:
 Organize findings by category and prioritize by impact on maintainability and correctness. Do not fix anything yet—this is a report only.
 
 In addition to displaying a quick report summary, write the full report to
-REPORT.md in the top-level directory. This file is in `.gitignore`, so do not
-attempt to add it to git.
+REPORT.md in the top-level directory. Also, create a short, one task per line
+task list in REPORT-TASKS.md, in the following order:
+
+1. Any tasks dependent on other tasks must come after the tasks they're dependent on
+2. Easiest tasks
+3. Hardest tasks
+
+Each task should have a simple `[<label>]` indicating why it was sorted that way.
+
+These files are in `.gitignore`, so do not attempt to add them to git. 
 
 When you are finished, ask the user to review the report and ask if they would
-like the specs/<branchname>/tasks.md updated. Add tasks, one-by-one, after completed tasks, but
-before pending tasks. Each new task from this report should be  added after
-the previous task from this report. You MUST ask the user for confirmation
-prior to every task. They should be allowed to skip adding that task.
+like the specs/<branchname>/tasks.md updated from the task list in
+REPORT-TASKS.md. The user is expected to edit that list, as appropriate. If
+they agree to add the tasks, they should be added after completed tasks and
+before pending tasks.
