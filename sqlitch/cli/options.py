@@ -73,6 +73,24 @@ def generate_run_identifier() -> str:
     return uuid4().hex
 
 
+@dataclass(frozen=True, slots=True)
+class CredentialOverrides:
+    """Credential values supplied via CLI flags prior to precedence resolution."""
+
+    username: str | None = None
+    password: str | None = None
+
+    def as_dict(self) -> dict[str, str]:
+        """Return a dictionary containing defined credential values."""
+
+        data: dict[str, str] = {}
+        if self.username is not None:
+            data["username"] = self.username
+        if self.password is not None:
+            data["password"] = self.password
+        return data
+
+
 def build_log_configuration(
     *,
     verbosity: int,
@@ -130,6 +148,7 @@ __all__ = [
     "RUN_IDENTIFIER_ENV_VAR",
     "DEFAULT_LOG_DESTINATION",
     "LogConfiguration",
+    "CredentialOverrides",
     "build_log_configuration",
     "generate_run_identifier",
     "global_output_options",

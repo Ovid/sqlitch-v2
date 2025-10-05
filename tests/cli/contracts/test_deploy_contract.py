@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import sqlite3
+from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
-import sqlite3
 
 from click.testing import CliRunner
 import pytest
@@ -209,8 +210,7 @@ def test_deploy_executes_scripts_and_updates_registry(
         assert "core:init" in result.output
         assert "widgets:add" in result.output
 
-        connection = sqlite3.connect("deploy.db")
-        try:
+        with closing(sqlite3.connect("deploy.db")) as connection:
             cursor = connection.cursor()
             cursor.execute(
                 "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'widgets'"
@@ -220,19 +220,28 @@ def test_deploy_executes_scripts_and_updates_registry(
             cursor.execute("SELECT COUNT(*) FROM widgets")
             assert cursor.fetchone() == (1,)
 
-            cursor.execute("SELECT change, event FROM events ORDER BY committed_at, change_id")
+            cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'events'"
+            )
+            assert cursor.fetchone() is None, "Workspace database should not contain registry tables"
+            cursor.close()
+
+        with closing(sqlite3.connect("sqitch.db")) as registry:
+            cursor = registry.cursor()
+            cursor.execute(
+                "SELECT change, event FROM events ORDER BY committed_at, change_id"
+            )
             events = cursor.fetchall()
             assert events == [
                 ("core:init", "deploy"),
                 ("widgets:add", "deploy"),
             ]
-        finally:
-            connection.close()
+            cursor.close()
 
         rerun = runner.invoke(
             main,
             ["deploy", "--target", "db:sqlite:deploy.db"],
         )
 
-        assert rerun.exit_code == 0, rerun.output
-        assert "Nothing to deploy" in rerun.output
+    assert rerun.exit_code == 0, rerun.output
+    assert "Nothing to deploy" in rerun.output

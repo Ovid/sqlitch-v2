@@ -15,6 +15,8 @@ from .base import (
     unregister_engine,
     registered_engines,
 )
+from .mysql import MYSQL_STUB_MESSAGE, MySQLEngine
+from .postgres import POSTGRES_STUB_MESSAGE, PostgresEngine
 from .sqlite import SQLiteEngine, SQLiteEngineError
 
 __all__ = [
@@ -29,6 +31,10 @@ __all__ = [
     "register_engine",
     "unregister_engine",
     "registered_engines",
+    "MySQLEngine",
+    "MYSQL_STUB_MESSAGE",
+    "PostgresEngine",
+    "POSTGRES_STUB_MESSAGE",
     "SQLiteEngine",
     "SQLiteEngineError",
 ]

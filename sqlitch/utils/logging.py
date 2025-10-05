@@ -6,6 +6,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
+import re
 from types import MappingProxyType
 from typing import Any, TextIO
 
@@ -33,6 +34,68 @@ _LEVEL_STYLES: dict[str, str] = {
 }
 
 _JSON_SEPARATORS = (",", ":")
+
+REDACTED_PLACEHOLDER = "***REDACTED***"
+
+_SENSITIVE_KEYWORDS: tuple[str, ...] = (
+    "password",
+    "passwd",
+    "passphrase",
+    "secret",
+    "token",
+    "apikey",
+    "api_key",
+    "access_key",
+    "access_token",
+    "refresh_token",
+    "credential",
+    "credentials",
+    "auth_token",
+)
+
+_URL_PASSWORD_PATTERN = re.compile(r":([^@]*)@")
+
+
+def _is_sensitive_key(key: str | None) -> bool:
+    if key is None:
+        return False
+
+    normalised = key.replace("-", "_").lower()
+    if normalised in _SENSITIVE_KEYWORDS:
+        return True
+    return any(keyword in normalised for keyword in _SENSITIVE_KEYWORDS)
+
+
+def _redact_string(value: str) -> str:
+    if "@" not in value or ":" not in value:
+        return value
+    if "://" not in value and value.count(":") == 1:
+        return value
+    return _URL_PASSWORD_PATTERN.sub(f":{REDACTED_PLACEHOLDER}@", value)
+
+
+def _redact_value(value: Any, *, key: str | None = None) -> Any:
+    if _is_sensitive_key(key):
+        return REDACTED_PLACEHOLDER
+
+    if isinstance(value, Mapping):
+        return {sub_key: _redact_value(sub_value, key=sub_key) for sub_key, sub_value in value.items()}
+
+    if isinstance(value, list):
+        return [_redact_value(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_redact_value(item) for item in value)
+    if isinstance(value, set):  # pragma: no cover - uncommon, preserved for completeness
+        return {_redact_value(item) for item in value}
+
+    if isinstance(value, str):
+        return _redact_string(value)
+
+    return value
+
+
+def _redact_payload(payload: Mapping[str, Any]) -> dict[str, Any]:
+    return {key: _redact_value(value, key=key) for key, value in payload.items()}
 
 
 @dataclass(slots=True, frozen=True)
@@ -173,6 +236,8 @@ class StructuredLogger:
             combined_payload.update(payload)
         if extra:
             combined_payload.update(extra)
+        if combined_payload:
+            combined_payload = _redact_payload(combined_payload)
 
         timestamp = self._clock()
         record = StructuredLogRecord(
@@ -237,4 +302,9 @@ def create_logger(
     return StructuredLogger(config, console=console, json_stream=json_stream, clock=clock)
 
 
-__all__ = ["StructuredLogRecord", "StructuredLogger", "create_logger"]
+__all__ = [
+    "StructuredLogRecord",
+    "StructuredLogger",
+    "create_logger",
+    "REDACTED_PLACEHOLDER",
+]
