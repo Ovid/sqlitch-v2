@@ -41,9 +41,7 @@
 - Q: How should SQLitch handle database credentials for target engines to keep parity while protecting secrets? → A: Align with Perl Sqitch behavior
 
 ### Delivery Milestones
-- **Milestone M1 (SQLite First)**: Ship a fully working SQLite experience—including engine adapter, CLI command surface, parity smoke tests, and manual walkthrough—before beginning any work on additional database engines. No MySQL/PostgreSQL development may start until the SQLite milestone is verified end-to-end from the shell.
-- **Milestone M2 (MySQL)**: After M1 parity documentation merges, extend the same workflows to MySQL and repeat the manual verification gate.
-- **Milestone M3 (PostgreSQL)**: After M2 merges, broaden coverage to PostgreSQL and complete the corresponding gate prior to integration tasks.
+- **Milestone M1 (SQLite MVP with Multi-Engine Framework)**: Ship a fully working SQLite experience—including engine adapter, CLI command surface, registry management, parity smoke tests, and manual walkthrough—while proving that the underlying architecture cleanly supports additional engines. This milestone MUST deliver extensibility hooks (engine registry, configuration abstractions, adapter contracts, test scaffolding) that demonstrate how MySQL and PostgreSQL adapters will plug in later, but the only runtime support required for shipment is SQLite. Future engine enablement will be scheduled through subsequent planning cycles once this milestone merges.
 
 ---
 
