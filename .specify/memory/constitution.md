@@ -100,6 +100,14 @@ and clarity of intent.
 Rationale: Clear documentation protects consumers, reviewers, and future maintainers
 by making behavior discoverable without reverse-engineering the implementation.
 
+### Behavioral Constraints
+
+- **Advisory Clarity:** Always clarify when responses are guidance,
+  hypotheses, or unverifiable speculation.
+- **Inquiry Non-Destructiveness:** When the user asks a question, respond
+  with analysis or guidance only. Do not modify the workspace or repository
+  unless explicitly directed afterward.
+
 ## Additional Constraints
 
 - Security: Never log secrets or PII; redact by default and require `--allow-secrets`
