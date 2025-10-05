@@ -19,6 +19,7 @@
 
 ## ⚡ Quick Guidelines
 - Preserve the end-user experience of Sqitch while modernizing team workflows around the new SQLitch tool.
+- Architect SQLitch for SQLite/MySQL/PostgreSQL parity from the outset, while explicitly limiting the first shippable milestone to SQLite runtime support.
 - Deliver identical command-line ergonomics, messaging, and plan behaviors so existing automation continues to work.
 - Emphasize maintainability: clear documentation, mirrored directory/test layout, and enforceable quality gates are non-negotiable.
 - Highlight any intentional deviations from Sqitch behavior so stakeholders can approve them explicitly.
@@ -34,6 +35,7 @@
 - Q: Which tool should the documented virtual environment setup mandate so every contributor uses the same workflow? → A: Option A (`python -m venv`)
 - Q: When a user targets an engine outside the MVP scope (e.g., Oracle), how should SQLitch respond? → A: Option A (fail immediately with clear error)
 - Q: When Docker isn’t available on a contributor machine or CI runner, how should the test suite behave? → A: Option B (skip Docker-backed tests with warning)
+- Q: Where should registry metadata tables live for SQLite compared to engines with schemas? → A: Mirror Sqitch behavior—write to a sibling `sqitch.db` file on SQLite and to a dedicated Sqitch-managed schema on engines that support schemas; consult the upstream Perl implementation for canonical details.
 
 ### Delivery Milestones
 - **Milestone M1 (SQLite First)**: Ship a fully working SQLite experience—including engine adapter, CLI command surface, parity smoke tests, and manual walkthrough—before beginning any work on additional database engines. No MySQL/PostgreSQL development may start until the SQLite milestone is verified end-to-end from the shell.
@@ -62,7 +64,7 @@ Database release engineers need to execute database change management workflows 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
-- **FR-001**: SQLitch MUST expose the same CLI commands, options, help text, and default behaviors as Sqitch for SQLite, MySQL, and PostgreSQL, yielding identical human-readable and machine-consumable outputs, and MUST fail immediately with a clear error message when invoked against unsupported engines.
+- **FR-001**: SQLitch MUST expose the same CLI commands, options, help text, and default behaviors as Sqitch for SQLite, MySQL, and PostgreSQL, yielding identical human-readable and machine-consumable outputs, and MUST fail immediately with a clear error message when invoked against unsupported engines. The architecture, abstractions, and acceptance tests MUST be multi-engine ready even though the first MVP release will ship runtime support for SQLite only; MySQL and PostgreSQL enablement follows in later milestones without breaking CLI ergonomics.
 - **FR-002**: The project MUST mirror Sqitch's directory and test layout so developers can cross-reference files one-to-one between the Perl and Python implementations.
 - **FR-003**: SQLitch MUST pass a comprehensive automated test suite that validates all behaviors covered by Sqitch tests, plus any additional cases needed to maintain ≥90% coverage and highlight behavioral deviations.
 - **FR-004**: Quality gates MUST block merges unless formatting, linting, static type analysis, security scanning, and coverage thresholds all pass with zero warnings.
@@ -81,6 +83,8 @@ Database release engineers need to execute database change management workflows 
 - **FR-017**: Classes designed for subclassing MUST use `abc.ABC` and `@abstractmethod` to declare their contract explicitly.
 - **FR-018**: Global mutable state MUST be minimized and documented. Registries MUST be immutable after initialization or provide clear lifecycle documentation with test cleanup utilities.
 - **FR-019**: Complex validation logic MUST be extracted from `__post_init__` methods into separate, testable factory methods or validators to improve clarity, testability, and maintainability.
+- **FR-020**: Plan parsing and formatting MUST emit a blank line between plan pragmas (e.g., `%project=…`, `%uri=…`) and the first change entry so that generated `sqitch.plan` files mirror Sqitch whitespace conventions exactly.
+- **FR-021**: Deployments MUST persist registry tables (`changes`, `dependencies`, `events`, `projects`, `releases`, `tags`) to a dedicated storage scope separate from user-managed objects. On SQLite this requires writing to an adjacent `sqitch.db` file rather than the primary database file; on engines with schema support, these tables MUST reside in the Sqitch-managed schema to avoid conflicts.
 
 ### Non-Functional Requirements
 - **NFR-001**: SQLitch MUST provide end-to-end observability through structured logging that captures a unique run identifier for every CLI invocation and records command, target, and outcome metadata. CLI entry points MUST expose consistent `--verbose`, `--quiet`, and `--json` modes (with deterministic precedence rules) that govern both log verbosity and emitted console output, ensuring parity-friendly human-readable logs by default and machine-ready JSON when requested. Structured log records MUST be forwarded to Rich/Click output handlers without breaking existing parity fixtures, and automated tests MUST exercise logging toggles to confirm coverage across modes.
