@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import sqlite3
-from contextlib import closing
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -242,7 +241,6 @@ def _execute_deploy(request: _DeployRequest) -> None:
         _begin_deploy_transaction(connection)
 
         _ensure_registry_ready(
-            engine=engine,
             connection=connection,
             registry_schema=registry_schema,
             project=request.plan.project_name,
@@ -580,7 +578,6 @@ def _rollback_deploy_transaction(connection: sqlite3.Connection) -> None:
 
 def _ensure_registry_ready(
     *,
-    engine: SQLiteEngine,
     connection: sqlite3.Connection,
     registry_schema: str,
     project: str,
@@ -592,7 +589,7 @@ def _ensure_registry_ready(
 
     try:
         if not _registry_tables_exist(connection, registry_schema):
-            _apply_registry_baseline(engine)
+            _apply_registry_baseline(connection, registry_schema)
 
         _ensure_release_entry(
             connection,
@@ -626,7 +623,7 @@ def _registry_tables_exist(connection: sqlite3.Connection, registry_schema: str)
     return {"changes", "projects", "events"}.issubset(names)
 
 
-def _apply_registry_baseline(engine: SQLiteEngine) -> None:
+def _apply_registry_baseline(connection: sqlite3.Connection, registry_schema: str) -> None:
     """Create the registry schema using the bundled baseline migration."""
 
     migrations = get_registry_migrations("sqlite")
@@ -634,11 +631,26 @@ def _apply_registry_baseline(engine: SQLiteEngine) -> None:
     if baseline is None:  # pragma: no cover - defensive guard
         raise CommandError("SQLite registry baseline migration is unavailable.")
 
-    registry_path = engine.registry_filesystem_path()
-    registry_path.parent.mkdir(parents=True, exist_ok=True)
+    statements: list[str] = []
+    for raw_statement in baseline.sql.strip().split(";"):
+        statement = raw_statement.strip()
+        if not statement:
+            continue
 
-    with closing(sqlite3.connect(registry_path)) as registry_connection:
-        registry_connection.executescript(baseline.sql)
+        upper = statement.upper()
+        if upper == "BEGIN" or upper == "COMMIT":
+            continue
+
+        if statement.upper().startswith("CREATE TABLE "):
+            statement = statement.replace("CREATE TABLE ", f"CREATE TABLE {registry_schema}.", 1)
+
+        statements.append(statement)
+
+    if not statements:  # pragma: no cover - defensive guard
+        return
+
+    for statement in statements:
+        connection.execute(statement)
 
 
 def _ensure_release_entry(
