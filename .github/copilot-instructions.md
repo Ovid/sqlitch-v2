@@ -1,51 +1,51 @@
-# sqlitch-v3 Development Guidelines
+# SQLitch Agent Onboarding (Updated 2025-10-05)
 
-Auto-generated from all feature plans. Last updated: 2025-10-03
+## Architecture Snapshot
+- `sqlitch/plan/` owns plan parsing (`parser.py`) and immutable domain models (`model.py`). Parsers demand project/default-engine headers and normalize timestamps via `sqlitch.utils.time`.
+- `sqlitch/engine/` registers DB targets. `engine/base.py` defines canonical names, connection factories, and the global `ENGINE_REGISTRY`; adapters (e.g., `engine/sqlite.py`) register themselves at import.
+- `sqlitch/cli/` bootstraps Click. `cli/main.py` builds a `CLIContext` with config/env resolution, then hydrates command modules through `cli/commands/__init__.py`'s registry.
+- Config resolution lives in `sqlitch/config/resolver.py`/`loader.py`, merging system → user → local scopes while rejecting duplicate files per scope.
+- Vendored `sqitch/` mirrors upstream Perl fixtures—treat it as read-only and use it for parity comparisons.
 
-## Active Technologies
-- Python 3.11 (CPython) + Click (CLI), Rich (structured console output), SQLAlchemy core for plan parsing, sqlite3 stdlib, `psycopg[binary]`, `PyMySQL`, `python-dateutil`, `tomli`, `pydantic` for config validation, packaging extras for Docker orchestration (`docker` SDK) (001-we-re-going)
+## Key Patterns to Follow
+- Always add `from __future__ import annotations`, populate `__all__`, and group imports (stdlib, third-party, local).
+- Public dataclasses (plan models, CLI context) enforce immutability via `MappingProxyType` and validation in `__post_init__`; extend them through dedicated factory helpers (`Change.create`, etc.).
+- CLI commands register once via `@register_command`; tests must call `_clear_registry()` when importing custom command modules to avoid leakage.
+- Engine extensions must expose an `Engine` subclass and call `register_engine(..., replace=True)` during module import; tests replace entries with `try/finally` restore (see `docs/architecture/registry-lifecycle.md`).
+- Template discovery in `cli/commands/add.py` searches project, config, and `/etc/{sqlitch,sqitch}`; reuse `_discover_template_directories` when introducing new script generators.
+- Golden fixtures under `tests/support/golden/` are compared byte-for-byte; never normalize whitespace when loading them.
+- Many tests assert timezone awareness—use `sqlitch.utils.time.ensure_timezone`/`parse_iso_datetime` instead of `datetime.fromisoformat` directly.
 
-## Project Structure
-```
-src/
-tests/
-```
+## Core Workflows
+- Install tooling from the repo root:
+	```bash
+	python3 -m venv .venv
+	source .venv/bin/activate
+	pip install -e .[dev]
+	```
+- Run the fast checks (pytest is strict about markers and coverage ≥90%):
+	```bash
+	source .venv/bin/activate
+	python -m pytest
+	```
+- full gate (lint, type, security) mirrors CI:
+	```bash
+	source .venv/bin/activate
+	python -m tox
+	```
+- Guard against stale skips before tackling a spec task:
+	```bash
+	source .venv/bin/activate
+	python scripts/check-skips.py T123
+	```
 
-## Commands
-cd src [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLOGIES] pytest [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLOGIES] ruff check .
+## Integration & Testing Notes
+- Pytest config (`pyproject.toml`) enables `pytest-randomly`; stabilize flaky tests with deterministic fixtures, not ordering assumptions.
+- CLI tests use `click.testing.CliRunner` and patch env via `monkeypatch`; prefer `_build_cli_context` and helpers in `cli/_context.py` over ad-hoc mocks.
+- Registry tests snapshot previous state and restore it (`register_engine(..., replace=True)`) to keep global dicts clean.
+- Use `tests/support/` helpers when diffing against Sqitch outputs; never hit real databases inside unit tests.
 
-## Code Style
-Python 3.11 (CPython): Follow standard conventions
-
-### Type Hints (Constitution v1.5.0)
-- MUST use modern Python 3.9+ built-ins: `dict`, `list`, `tuple`, `type` (NOT `Dict`, `List`, `Tuple`, `Type`)
-- MUST use `X | None` syntax (NOT `Optional[X]`)
-- MUST include `from __future__ import annotations` in all modules
-- Abstract base classes MUST use `abc.ABC` and `@abstractmethod`
-
-### Code Organization
-- Public modules MUST define `__all__` exports
-- Imports MUST follow PEP 8 grouping: stdlib, third-party, local (with blank lines)
-- All public APIs MUST have comprehensive docstrings (Google/NumPy style)
-- Private helpers MAY use inline comments instead
-
-### Error Handling
-- Use `ValueError` for invalid input data
-- Use `RuntimeError` for system/state errors
-- Domain exceptions MUST extend appropriate base class
-
-### State Management
-- Minimize global mutable state
-- Registries MUST be immutable after initialization or documented
-- Complex validation MUST be extracted from `__post_init__` into factory methods
-
-### Quality Gates
-- Coverage ≥90% required
-- Zero warnings from: black, isort, flake8, pylint, mypy, bandit
-- All tests must pass before merge
-
-## Recent Changes
-- 001-we-re-going: Added Python 3.11 (CPython) + Click (CLI), Rich (structured console output), SQLAlchemy core for plan parsing, sqlite3 stdlib, `psycopg[binary]`, `PyMySQL`, `python-dateutil`, `tomli`, `pydantic` for config validation, packaging extras for Docker orchestration (`docker` SDK)
-
-<!-- MANUAL ADDITIONS START -->
-<!-- MANUAL ADDITIONS END -->
+## Reference Docs
+- Docs on registry lifecycle: `docs/architecture/registry-lifecycle.md`.
+- Current milestone specs: `specs/002-sqlite/plan.md` and related research notes.
+- Golden fixture provenance and regeneration: `tests/support/golden/README.md`.
