@@ -68,7 +68,7 @@ Database release engineers and automation scripts need SQLitch to expose the com
 - **FR-004**: The global help command (`sqlitch help` and `sqlitch --help`) MUST list all available commands with descriptions matching sqitchcommands.pod.
 
 #### Global Options
-- **FR-005**: All SQLitch commands MUST support the global options `--chdir <path>`, `--no-pager`, `--no-pager`, `--quiet`, and `--verbose`, implementing behavior identical to Sqitch.
+- **FR-005**: All SQLitch commands MUST support the global options `--chdir <path>`, `--no-pager`, `--quiet`, and `--verbose`, implementing behavior identical to Sqitch.
 
 - **FR-006**: When conflicting global options are provided (e.g., `--quiet` and `--verbose`), SQLitch MUST follow Sqitch's precedence rules and emit the same warnings or errors.
 
