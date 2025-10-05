@@ -24,9 +24,9 @@ def _seed_plan(plan_path: Path) -> None:
     change = Change.create(
         name="widgets:init",
         script_paths={
-            "deploy": Path("deploy") / "20250101000000_widgets_init.sql",
-            "revert": Path("revert") / "20250101000000_widgets_init.sql",
-            "verify": Path("verify") / "20250101000000_widgets_init.sql",
+            "deploy": Path("deploy") / "widgets_init.sql",
+            "revert": Path("revert") / "widgets_init.sql",
+            "verify": Path("verify") / "widgets_init.sql",
         },
         planner="Ada Lovelace",
         planned_at=datetime(2025, 1, 1, 0, 0, tzinfo=timezone.utc),

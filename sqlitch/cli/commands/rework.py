@@ -33,7 +33,6 @@ def _resolve_new_path(
     project_root: Path,
     original: Path | None,
     override: str | None,
-    token: str,
     slug: str,
 ) -> Path | None:
     if override:
@@ -43,7 +42,7 @@ def _resolve_new_path(
     if original is None:
         return None
 
-    filename = f"{token}_{slug}_rework{original.suffix}"
+    filename = f"{slug}_rework{original.suffix}"
     return original.parent / filename
 
 
@@ -126,7 +125,6 @@ def rework_command(
         raise CommandError(f'Unknown change "{change_name}"') from exc
 
     timestamp = _utcnow()
-    token = timestamp.strftime("%Y%m%d%H%M%S")
     slug = slugify_change_name(change_name)
 
     deploy_source = original_change.script_paths.get("deploy")
@@ -137,21 +135,18 @@ def rework_command(
         project_root=project_root,
         original=deploy_source,
         override=deploy_override,
-        token=token,
         slug=slug,
     )
     revert_target = _resolve_new_path(
         project_root=project_root,
         original=revert_source,
         override=revert_override,
-        token=token,
         slug=slug,
     )
     verify_target = _resolve_new_path(
         project_root=project_root,
         original=verify_source,
         override=verify_override,
-        token=token,
         slug=slug,
     )
 

@@ -35,3 +35,12 @@ all dumped in your top-level directory. Instead, you'll just have a
 your files.
 
 # SQLITCH. env variables need to be fixed
+
+# Dups in _seed tests
+
+        modified:   tests/cli/contracts/test_checkout_contract.py
+        modified:   tests/cli/contracts/test_deploy_contract.py
+        modified:   tests/cli/contracts/test_plan_contract.py
+        modified:   tests/cli/contracts/test_rebase_contract.py
+        modified:   tests/cli/contracts/test_revert_contract.py
+        modified:   tests/cli/test_rework_helpers.py

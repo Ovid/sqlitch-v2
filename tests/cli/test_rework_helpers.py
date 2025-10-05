@@ -33,7 +33,6 @@ def test_resolve_new_path_with_override(tmp_path: Path) -> None:
         project_root=tmp_path,
         original=None,
         override=str(override),
-        token="20250101000000",
         slug="widgets",
     )
 
@@ -46,11 +45,10 @@ def test_resolve_new_path_generates_when_original_present(tmp_path: Path) -> Non
         project_root=tmp_path,
         original=original,
         override=None,
-        token="20250101000000",
         slug="widgets",
     )
 
-    assert generated == original.parent / "20250101000000_widgets_rework.sql"
+    assert generated == original.parent / "widgets_rework.sql"
 
 
 def test_copy_script_missing_source_errors(tmp_path: Path) -> None:

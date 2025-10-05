@@ -23,7 +23,7 @@
 - Emphasize maintainability: clear documentation, mirrored directory/test layout, and enforceable quality gates are non-negotiable.
 - Highlight any intentional deviations from Sqitch behavior so stakeholders can approve them explicitly.
 - Write and/or leave contract and regression tests in a skipped state until immediately before their corresponding implementation begins; immediately prior to starting the feature, remove the skip so the test fails, run the `scripts/check-skips.py` gate, and tick the PR checklist item before writing code (enforced via tasks T008a/T008b).
-- Change script filenames MUST match the change name produced by `sqlitch add` without any prefixed timestamps, following the layout `{deploy,revert,verify}/<change-name>.sql` (e.g., change `core:init` → `deploy/core_init.sql`).
+- Change script filenames MUST match the change name produced by `sqlitch add` without any prefixed timestamps, following the layout `{deploy,revert,verify}/<change-name>.sql` (e.g., change `core:init` → `deploy/core_init.sql`), and rework-generated scripts MUST follow the same convention, appending `_rework` without any timestamp token (e.g., `deploy/core_init_rework.sql`).
 - Public modules, classes, and functions MUST ship with clear docstrings that describe behavior, inputs, outputs, and error modes; private helpers MAY rely on concise inline comments when necessary.
 
 ---

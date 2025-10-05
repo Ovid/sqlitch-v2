@@ -107,10 +107,9 @@ def test_rework_creates_rework_scripts_and_updates_plan(
 
         assert result.exit_code == 0, result.output
 
-        token = "20250203040506"
-        deploy_name = f"deploy/{token}_widgets_add_rework.sql"
-        revert_name = f"revert/{token}_widgets_add_rework.sql"
-        verify_name = f"verify/{token}_widgets_add_rework.sql"
+        deploy_name = "deploy/widgets_add_rework.sql"
+        revert_name = "revert/widgets_add_rework.sql"
+        verify_name = "verify/widgets_add_rework.sql"
 
         assert f"Created rework deploy script {deploy_name}" in result.output
         assert f"Created rework revert script {revert_name}" in result.output

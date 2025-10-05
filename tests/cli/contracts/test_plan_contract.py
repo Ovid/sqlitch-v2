@@ -25,9 +25,9 @@ def _seed_plan(plan_path: Path) -> tuple[Change, Change, Tag]:
     change_one = Change.create(
         name="core:init",
         script_paths={
-            "deploy": Path("deploy") / "20250101000000_core_init.sql",
-            "revert": Path("revert") / "20250101000000_core_init.sql",
-            "verify": Path("verify") / "20250101000000_core_init.sql",
+            "deploy": Path("deploy") / "core_init.sql",
+            "revert": Path("revert") / "core_init.sql",
+            "verify": Path("verify") / "core_init.sql",
         },
         planner="Ada Lovelace",
         planned_at=datetime(2025, 1, 1, 0, 0, tzinfo=timezone.utc),
@@ -37,9 +37,9 @@ def _seed_plan(plan_path: Path) -> tuple[Change, Change, Tag]:
     change_two = Change.create(
         name="widgets:add",
         script_paths={
-            "deploy": Path("deploy") / "20250102000000_widgets_add.sql",
-            "revert": Path("revert") / "20250102000000_widgets_add.sql",
-            "verify": Path("verify") / "20250102000000_widgets_add.sql",
+            "deploy": Path("deploy") / "widgets_add.sql",
+            "revert": Path("revert") / "widgets_add.sql",
+            "verify": Path("verify") / "widgets_add.sql",
         },
         planner="Ada Lovelace",
         planned_at=datetime(2025, 1, 2, 0, 0, tzinfo=timezone.utc),
@@ -123,7 +123,7 @@ def test_plan_supports_json_format(runner: CliRunner) -> None:
         first, second, third = entries
         assert first["name"] == change_one.name
         assert first["type"] == "change"
-        assert first["scripts"]["deploy"].endswith("20250101000000_core_init.sql")
+        assert first["scripts"]["deploy"].endswith("core_init.sql")
         assert second["dependencies"] == ["core:init"]
         assert second["tags"] == ["v1.0"]
         assert third["type"] == "tag"
