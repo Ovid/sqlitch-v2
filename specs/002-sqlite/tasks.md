@@ -4,15 +4,15 @@
 **Prerequisites**: plan.md (required), research.md, data-model.md, contracts/, quickstart.md
 
 ## Phase 3.1: Setup
-- [ ] T001 Create failing-change fixture and SQLite registry helper in `tests/support/sqlite_fixtures.py` to exercise transaction rollback and `sqitch.db` path assertions used by upcoming regression tests.
+- [X] T001 Create failing-change fixture and SQLite registry helper in `tests/support/sqlite_fixtures.py` to exercise transaction rollback and `sqitch.db` path assertions used by upcoming regression tests.
 
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
 *All new tests MUST be committed in a failing state before implementation work begins.*
-- [ ] T002 [P] Add regression test `tests/regression/test_sqlite_deploy_atomicity.py` asserting deploy+registry mutations roll back together when a scripted SQL error occurs.
-- [ ] T003 [P] Add regression test `tests/regression/test_sqlite_registry_attach.py` verifying deploy attaches `sqitch.db` under alias `sqitch` and leaves the workspace database untouched.
-- [ ] T004 [P] Add engine stub test `tests/engine/test_stub_adapters.py` confirming MySQL/PostgreSQL adapters register with `ENGINE_REGISTRY` and raise `NotImplementedError` with parity messaging.
-- [ ] T005 [P] Add suite-behavior test `tests/regression/test_engine_suite_skips.py` ensuring full pytest runs emit expected warnings for skipped MySQL/PostgreSQL suites while keeping SQLite coverage intact.
-- [ ] T016 [P] Add regression tests `tests/regression/test_credentials_precedence.py` and `tests/regression/test_credentials_redaction.py` covering credential source ordering and structured-log redaction for SQLite targets and stub adapters.
+- [X] T002 [P] Add regression test `tests/regression/test_sqlite_deploy_atomicity.py` asserting deploy+registry mutations roll back together when a scripted SQL error occurs.
+- [X] T003 [P] Add regression test `tests/regression/test_sqlite_registry_attach.py` verifying deploy attaches `sqitch.db` under alias `sqitch` and leaves the workspace database untouched.
+- [X] T004 [P] Add engine stub test `tests/engine/test_stub_adapters.py` confirming MySQL/PostgreSQL adapters register with `ENGINE_REGISTRY` and raise `NotImplementedError` with parity messaging.
+- [X] T005 [P] Add suite-behavior test `tests/regression/test_engine_suite_skips.py` ensuring full pytest runs emit expected warnings for skipped MySQL/PostgreSQL suites while keeping SQLite coverage intact.
+- [X] T016 [P] Add regression tests `tests/regression/test_credentials_precedence.py` and `tests/regression/test_credentials_redaction.py` covering credential source ordering and structured-log redaction for SQLite targets and stub adapters.
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 - [ ] T006 Update `sqlitch/cli/commands/deploy.py` to execute change scripts and registry writes inside a single SQLite transaction using the attached registry connection.

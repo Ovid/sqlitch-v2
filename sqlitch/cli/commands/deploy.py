@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import sqlite3
+from contextlib import closing
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -14,6 +15,7 @@ import click
 
 from sqlitch.engine import EngineTarget, canonicalize_engine_name, create_engine
 from sqlitch.engine.base import UnsupportedEngineError
+from sqlitch.engine.sqlite import REGISTRY_ATTACHMENT_ALIAS, SQLiteEngine
 from sqlitch.plan.model import Change, Plan
 from sqlitch.plan.parser import PlanParseError, parse_plan
 from sqlitch.registry import LATEST_REGISTRY_VERSION, get_registry_migrations
@@ -164,18 +166,29 @@ def _execute_deploy(request: _DeployRequest) -> None:
 
     committer_name, committer_email = _resolve_committer_identity(request.env)
 
-    connection = _create_engine_connection(engine_target)
+    engine, connection = _create_engine_connection(engine_target)
+
+    if not isinstance(engine, SQLiteEngine):  # pragma: no cover - defensive guard
+        raise CommandError("Only the SQLite engine is supported for deploy in this milestone")
+
+    registry_schema = REGISTRY_ATTACHMENT_ALIAS
 
     try:
         _ensure_registry_ready(
+            engine=engine,
             connection=connection,
+            registry_schema=registry_schema,
             project=request.plan.project_name,
             plan=request.plan,
             committer_name=committer_name,
             committer_email=committer_email,
         )
 
-        deployed = _load_deployed_state(connection, request.plan.project_name)
+        deployed = _load_deployed_state(
+            connection=connection,
+            registry_schema=registry_schema,
+            project=request.plan.project_name,
+        )
         pending = [change for change in changes if change.name not in deployed]
 
         if not pending:
@@ -193,6 +206,7 @@ def _execute_deploy(request: _DeployRequest) -> None:
                 committer_name=committer_name,
                 committer_email=committer_email,
                 deployed=deployed,
+                registry_schema=registry_schema,
             )
             emitter(f"  + {change.name}")
             applied += 1
@@ -299,9 +313,13 @@ def _resolve_engine_target(
             raise CommandError(f"Malformed target URI: {target}")
         engine_hint = engine_token or default_engine
         payload_value = payload
+        workspace_uri = target
+        display_target = target
     else:
         engine_hint = default_engine
         payload_value = target
+        workspace_uri = ""
+        display_target = ""
 
     try:
         engine_name = canonicalize_engine_name(engine_hint)
@@ -315,7 +333,7 @@ def _resolve_engine_target(
         raise CommandError("In-memory SQLite targets are not supported")
 
     if payload_value and payload_value.startswith("file:"):
-        registry_uri = f"db:{engine_name}:{payload_value}"
+        workspace_uri = workspace_uri or f"db:{engine_name}:{payload_value}"
     else:
         if payload_value:
             candidate = Path(payload_value)
@@ -323,13 +341,20 @@ def _resolve_engine_target(
             candidate = plan_path.with_suffix(".db")
 
         database_path = candidate if candidate.is_absolute() else project_root / candidate
-        registry_uri = f"db:{engine_name}:{database_path.as_posix()}"
+        workspace_uri = f"db:{engine_name}:{database_path.as_posix()}"
+        display_target = workspace_uri
 
-    engine_target = EngineTarget(name=display_target, engine=engine_name, uri=registry_uri)
-    return engine_target, registry_uri
+    registry_path = project_root / "sqitch.db"
+    registry_uri = f"db:{engine_name}:{registry_path.as_posix()}"
+
+    engine_target = EngineTarget(name=display_target, engine=engine_name, uri=workspace_uri)
+    object.__setattr__(engine_target, "registry_uri", registry_uri)
+    return engine_target, display_target
 
 
-def _create_engine_connection(engine_target: EngineTarget) -> sqlite3.Connection:
+def _create_engine_connection(
+    engine_target: EngineTarget,
+) -> tuple[SQLiteEngine, sqlite3.Connection]:
     """Instantiate the engine and open a workspace connection."""
 
     try:
@@ -340,7 +365,11 @@ def _create_engine_connection(engine_target: EngineTarget) -> sqlite3.Connection
     if engine_target.engine != "sqlite":
         raise CommandError(f"Engine '{engine_target.engine}' deployment is not supported yet.")
 
+    assert isinstance(engine, SQLiteEngine)  # narrow for downstream operations
+
     _ensure_sqlite_parent_directory(engine_target.uri)
+    if engine_target.registry_uri:
+        _ensure_sqlite_parent_directory(engine_target.registry_uri)
 
     try:
         connection = engine.connect_workspace()
@@ -349,7 +378,10 @@ def _create_engine_connection(engine_target: EngineTarget) -> sqlite3.Connection
             f"Failed to connect to deployment target {engine_target.uri}: {exc}"
         ) from exc
 
-    return connection
+    # Manage SQLite transactions manually to coordinate workspace and registry writes.
+    connection.isolation_level = None
+
+    return engine, connection
 
 
 def _ensure_sqlite_parent_directory(uri: str) -> None:
@@ -371,7 +403,9 @@ def _ensure_sqlite_parent_directory(uri: str) -> None:
 
 def _ensure_registry_ready(
     *,
+    engine: SQLiteEngine,
     connection: sqlite3.Connection,
+    registry_schema: str,
     project: str,
     plan: Plan,
     committer_name: str,
@@ -380,16 +414,18 @@ def _ensure_registry_ready(
     """Initialise registry schema and project metadata if required."""
 
     try:
-        if not _registry_tables_exist(connection):
-            _apply_registry_baseline(connection)
+        if not _registry_tables_exist(connection, registry_schema):
+            _apply_registry_baseline(engine)
 
         _ensure_release_entry(
             connection,
+            registry_schema,
             committer_name=committer_name,
             committer_email=committer_email,
         )
         _ensure_project_entry(
             connection,
+            registry_schema,
             project=project,
             plan_uri=plan.uri,
             creator_name=committer_name,
@@ -399,11 +435,11 @@ def _ensure_registry_ready(
         raise CommandError(f"Failed to initialise registry: {exc}") from exc
 
 
-def _registry_tables_exist(connection: sqlite3.Connection) -> bool:
+def _registry_tables_exist(connection: sqlite3.Connection, registry_schema: str) -> bool:
     """Return ``True`` if essential registry tables are present."""
 
     cursor = connection.execute(
-        "SELECT name FROM sqlite_master WHERE type = 'table' "
+        f"SELECT name FROM {registry_schema}.sqlite_master WHERE type = 'table' "
         "AND name IN ('changes', 'projects', 'events')"
     )
     try:
@@ -413,7 +449,7 @@ def _registry_tables_exist(connection: sqlite3.Connection) -> bool:
     return {"changes", "projects", "events"}.issubset(names)
 
 
-def _apply_registry_baseline(connection: sqlite3.Connection) -> None:
+def _apply_registry_baseline(engine: SQLiteEngine) -> None:
     """Create the registry schema using the bundled baseline migration."""
 
     migrations = get_registry_migrations("sqlite")
@@ -421,11 +457,16 @@ def _apply_registry_baseline(connection: sqlite3.Connection) -> None:
     if baseline is None:  # pragma: no cover - defensive guard
         raise CommandError("SQLite registry baseline migration is unavailable.")
 
-    connection.executescript(baseline.sql)
+    registry_path = engine.registry_filesystem_path()
+    registry_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with closing(sqlite3.connect(registry_path)) as registry_connection:
+        registry_connection.executescript(baseline.sql)
 
 
 def _ensure_release_entry(
     connection: sqlite3.Connection,
+    registry_schema: str,
     *,
     committer_name: str,
     committer_email: str,
@@ -433,7 +474,7 @@ def _ensure_release_entry(
     """Ensure the registry release version row exists."""
 
     cursor = connection.execute(
-        "SELECT 1 FROM releases WHERE version = ?",
+        f"SELECT 1 FROM {registry_schema}.releases WHERE version = ?",
         (LATEST_REGISTRY_VERSION,),
     )
     try:
@@ -443,13 +484,15 @@ def _ensure_release_entry(
 
     if not exists:
         connection.execute(
-            "INSERT INTO releases (version, installer_name, installer_email) VALUES (?, ?, ?)",
+            f"INSERT INTO {registry_schema}.releases (version, installer_name, installer_email) "
+            "VALUES (?, ?, ?)",
             (LATEST_REGISTRY_VERSION, committer_name, committer_email),
         )
 
 
 def _ensure_project_entry(
     connection: sqlite3.Connection,
+    registry_schema: str,
     *,
     project: str,
     plan_uri: str | None,
@@ -459,7 +502,7 @@ def _ensure_project_entry(
     """Insert the project metadata if it has not already been registered."""
 
     cursor = connection.execute(
-        "SELECT 1 FROM projects WHERE project = ?",
+        f"SELECT 1 FROM {registry_schema}.projects WHERE project = ?",
         (project,),
     )
     try:
@@ -469,19 +512,21 @@ def _ensure_project_entry(
 
     if not exists:
         connection.execute(
-            "INSERT INTO projects (project, uri, creator_name, creator_email) VALUES (?, ?, ?, ?)",
+            f"INSERT INTO {registry_schema}.projects (project, uri, creator_name, creator_email) "
+            "VALUES (?, ?, ?, ?)",
             (project, plan_uri, creator_name, creator_email),
         )
 
 
 def _load_deployed_state(
     connection: sqlite3.Connection,
+    registry_schema: str,
     project: str,
 ) -> dict[str, dict[str, str]]:
     """Return a mapping of deployed change names to registry metadata."""
 
     cursor = connection.execute(
-        'SELECT "change", change_id, script_hash FROM changes WHERE project = ? '
+        f'SELECT "change", change_id, script_hash FROM {registry_schema}.changes WHERE project = ? '
         "ORDER BY committed_at ASC, change_id ASC",
         (project,),
     )
@@ -509,6 +554,7 @@ def _apply_change(
     committer_name: str,
     committer_email: str,
     deployed: dict[str, dict[str, str]],
+    registry_schema: str,
 ) -> None:
     """Execute a deploy script and record registry state for ``change``."""
 
@@ -536,6 +582,7 @@ def _apply_change(
     def _record(cursor: sqlite3.Cursor) -> None:
         _record_deployment_entries(
             cursor=cursor,
+            registry_schema=registry_schema,
             project=project,
             change=change,
             change_id=change_id,
@@ -665,31 +712,64 @@ def _execute_change_transaction(
     """Execute ``script_sql`` and record registry entries within a single transaction."""
 
     script_cursor = connection.cursor()
-    try:
-        script_cursor.executescript(script_sql)
-    finally:
-        script_cursor.close()
-
     registry_cursor = connection.cursor()
     try:
-        connection.execute("BEGIN")
+        savepoint = "sqlitch_deploy_change"
+        connection.execute(f"SAVEPOINT {savepoint}")
+
         try:
+            _execute_sqlite_script(script_cursor, script_sql)
             recorder(registry_cursor)
         except Exception:
             try:
-                connection.execute("ROLLBACK")
+                connection.execute(f"ROLLBACK TO SAVEPOINT {savepoint}")
             except sqlite3.Error:  # pragma: no cover - defensive guard
                 pass
+            finally:
+                try:
+                    connection.execute(f"RELEASE SAVEPOINT {savepoint}")
+                except sqlite3.Error:  # pragma: no cover - defensive guard
+                    pass
             raise
         else:
-            connection.execute("COMMIT")
+            try:
+                connection.execute(f"RELEASE SAVEPOINT {savepoint}")
+            except sqlite3.Error as exc:
+                try:
+                    connection.execute(f"ROLLBACK TO SAVEPOINT {savepoint}")
+                except sqlite3.Error:  # pragma: no cover - defensive guard
+                    pass
+                try:
+                    connection.execute(f"RELEASE SAVEPOINT {savepoint}")
+                except sqlite3.Error:  # pragma: no cover - defensive guard
+                    pass
+                raise exc
     finally:
+        script_cursor.close()
         registry_cursor.close()
+
+
+def _execute_sqlite_script(cursor: sqlite3.Cursor, script_sql: str) -> None:
+    """Execute ``script_sql`` statement-by-statement against ``cursor``."""
+
+    buffer = ""
+    for line in script_sql.splitlines():
+        buffer += line + "\n"
+        if sqlite3.complete_statement(buffer):
+            statement = buffer.strip()
+            if statement:
+                cursor.execute(statement)
+            buffer = ""
+
+    remainder = buffer.strip()
+    if remainder:
+        cursor.execute(remainder)
 
 
 def _record_deployment_entries(
     *,
     cursor: sqlite3.Cursor,
+    registry_schema: str,
     project: str,
     change: Change,
     change_id: str,
@@ -708,8 +788,8 @@ def _record_deployment_entries(
     """Persist registry entries for a deployed change."""
 
     cursor.execute(
-        """
-        INSERT INTO changes (
+        f"""
+        INSERT INTO {registry_schema}.changes (
             change_id,
             script_hash,
             "change",
@@ -739,8 +819,8 @@ def _record_deployment_entries(
     )
 
     cursor.execute(
-        """
-        INSERT INTO events (
+        f"""
+        INSERT INTO {registry_schema}.events (
             event,
             change_id,
             change,
@@ -782,8 +862,8 @@ def _record_deployment_entries(
                 f"Dependency '{dependency}' is not recorded in the registry for change '{change.name}'."
             )
         cursor.execute(
-            """
-            INSERT INTO dependencies (change_id, type, dependency, dependency_id)
+            f"""
+            INSERT INTO {registry_schema}.dependencies (change_id, type, dependency, dependency_id)
             VALUES (?, 'require', ?, ?)
             """,
             (change_id, dependency, dependency_id),
@@ -792,8 +872,8 @@ def _record_deployment_entries(
     for tag in tags:
         tag_id = hashlib.sha1(f"{change_id}:{tag}".encode("utf-8")).hexdigest()
         cursor.execute(
-            """
-            INSERT INTO tags (
+            f"""
+            INSERT INTO {registry_schema}.tags (
                 tag_id,
                 tag,
                 project,
