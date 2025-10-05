@@ -31,7 +31,7 @@
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-Ship a SQLite-first SQLitch release that mirrors Sqitch CLI behavior, enforces structured logging and registry isolation, and proves the engine framework is extensible by wiring stub MySQL/PostgreSQL adapters into the registry/tests for future milestones.
+Ship a SQLite-first SQLitch release that mirrors Sqitch CLI behavior, enforces structured logging and registry isolation, preserves Sqitch’s default human-readable CLI output without unsolicited structured logs, tolerates Sqitch-style deploy scripts that manage their own transactions, and proves the engine framework is extensible by wiring stub MySQL/PostgreSQL adapters into the registry/tests for future milestones.
 
 ## Technical Context
 **Language/Version**: Python 3.11  
@@ -41,7 +41,7 @@ Ship a SQLite-first SQLitch release that mirrors Sqitch CLI behavior, enforces s
 **Target Platform**: macOS, Linux, Windows CLI environments
 **Project Type**: single (monolithic CLI package with mirrored tests)  
 **Performance Goals**: SQLite deploy/revert happy paths <200ms, long-running flows stream progress per constitution.  
-**Constraints**: ≥90% coverage, structured logging with run IDs, docstrings + `__all__`, no secrets in logs, Docker suites auto-skip when unavailable.  
+**Constraints**: ≥90% coverage, structured logging with run IDs, docstrings + `__all__`, no secrets in logs, Docker suites auto-skip when unavailable, SQLite change scripts may manage their own transactions so engine orchestration MUST avoid conflicting outer transactions, default CLI output MUST remain byte-aligned with Sqitch unless logging flags are provided.  
 **Scale/Scope**: Plans up to 10k entries, registry tables scaling to millions of rows, contributors across all three desktop OSes.
 
 ## Constitution Check
@@ -50,9 +50,9 @@ Ship a SQLite-first SQLitch release that mirrors Sqitch CLI behavior, enforces s
 - Test-First Development: `/tasks` will generate failing contract/regression tests before implementation begins, maintaining Red→Green discipline.
 - CLI-First Contracts: All features are driven through Click commands exposing human-readable and `--json` outputs with structured logging.
 - Library Separation: Core behavior resides in `sqlitch/` modules; CLI commands remain thin wrappers.
-- Observability & Determinism: Structured logging sink, run identifiers, and parity smoke tests enforce constitution Section V.
+- Observability & Determinism: Structured logging sink, run identifiers, and parity smoke tests enforce constitution Section V while FR-023 guarantees default output parity when no logging flags are passed.
 - Documented Interfaces & Type Hints: Plan reiterates docstring, `__all__`, and modern typing mandates inherited from prior review tasks.
-- State Management & Registry Lifecycle: Registry isolation (FR-021/FR-022) and stub adapters ensure global registries remain well-documented and replaceable.
+- State Management & Registry Lifecycle: Registry isolation (FR-021/FR-022) and stub adapters ensure global registries remain well-documented and replaceable while FR-022a now requires respecting script-managed transactions without violating atomicity guarantees.
 
 No violations detected; Complexity Tracking remains empty.
 
@@ -129,7 +129,7 @@ etc/
 
 1. `data-model.md` captures entities (Change, Plan, Tag, RegistryRecord, EngineTarget, ConfigProfile) with invariants, scale assumptions, and lifecycle flows consistent with the spec.
 2. `/contracts/*.md` mirror Sqitch CLI behaviors for each command, providing the basis for skipped contract tests that will be unskipped during implementation.
-3. Regression and contract tests already exist (skipped where required) and align with FR-012 for the Red→Green workflow.
+3. Regression and contract tests already exist (skipped where required) and align with FR-012 for the Red→Green workflow; backlog now includes an explicit regression capturing Sqitch-style deploy scripts that open their own transactions (FR-022a) and upcoming parity fixtures to confirm default CLI output remains free of structured logs (FR-023).
 4. `quickstart.md` now emphasizes the SQLite MVP, optional Docker harness for skip verification, and stub adapter expectations.
 5. Ran `.specify/scripts/bash/update-agent-context.sh copilot` to refresh the agent context with up-to-date technology references.
 
@@ -145,6 +145,8 @@ etc/
 - Each entity → model creation task [P] 
 - Each user story → integration test task
 - Implementation tasks to make tests pass
+- Add a regression task covering deploy scripts that issue their own `BEGIN`/`COMMIT` statements so the engine changes required by FR-022a are test-driven.
+- Refresh parity fixture tasks to validate that default CLI output stays aligned with Sqitch when structured logging is opt-in (FR-023).
 
 **Ordering Strategy**:
 - TDD order: Tests before implementation 
