@@ -38,8 +38,10 @@ class RegistryRow:
 
 
 @click.command("status")
+@click.argument("target_args", nargs=-1)
 @click.option("--target", "target_option", help="Deployment target URI or database path.")
 @click.option("--project", "project_filter", help="Restrict output to the specified project.")
+@click.option("--show-tags", is_flag=True, help="Show deployment tags in the output.")
 @click.option(
     "--format",
     "output_format",
@@ -54,8 +56,10 @@ class RegistryRow:
 def status_command(
     ctx: click.Context,
     *,
+    target_args: tuple[str, ...],
     target_option: str | None,
     project_filter: str | None,
+    show_tags: bool,
     output_format: str,
     json_mode: bool,
     verbose: int,
@@ -67,7 +71,17 @@ def status_command(
     project_root = cli_context.project_root
     environment = cli_context.env
 
-    target_value = target_option or cli_context.target
+    # Resolve target from positional args, --target option, or config
+    target_value = None
+    if target_args:
+        if len(target_args) > 1:
+            raise CommandError("Only one target may be specified")
+        target_value = target_args[0]
+    elif target_option:
+        target_value = target_option
+    else:
+        target_value = cli_context.target
+        
     if not target_value:
         raise CommandError("A target must be provided via --target or configuration.")
 

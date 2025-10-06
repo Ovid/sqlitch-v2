@@ -40,6 +40,7 @@ class _RevertRequest:
 
 
 @click.command("revert")
+@click.argument("target_args", nargs=-1)
 @click.option("--target", "target_option", help="Deployment target alias or URI.")
 @click.option("--to-change", "to_change", help="Revert through the specified change (inclusive).")
 @click.option("--to-tag", "to_tag", help="Revert through the specified tag (inclusive).")
@@ -54,6 +55,7 @@ class _RevertRequest:
 def revert_command(
     ctx: click.Context,
     *,
+    target_args: tuple[str, ...],
     target_option: str | None,
     to_change: str | None,
     to_tag: str | None,

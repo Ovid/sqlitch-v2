@@ -61,13 +61,14 @@ def test_tag_lists_tags(runner: CliRunner) -> None:
 
 
 def test_tag_requires_name(runner: CliRunner) -> None:
-    """Tag command requires a tag name."""
+    """Tag command without name lists tags (or errors if no plan)."""
 
     with runner.isolated_filesystem():
         result = runner.invoke(main, ["tag"])
 
+    # Should error because there's no plan file, not because name is missing
     assert result.exit_code != 0
-    assert "tag name must be provided" in result.output
+    assert "No plan file found" in result.output
 
 
 def test_tag_list_rejects_additional_arguments(runner: CliRunner) -> None:

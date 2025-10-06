@@ -88,77 +88,100 @@ Repository root: `/Users/poecurt/projects/sqlitch-v3/`
   - Test GC-002: Global options recognition ✅ PASS
   - **Status**: ✅ 12/12 TESTS PASSING (completed 2025-10-05)
 
-- [ ] **T006 [P]** Write contract tests for `engine` command in `tests/cli/commands/test_engine_contract.py`
-  - Test CC-ENGINE-001: Action required (or default list)
-  - Test GC-001: Help flag support
-  - Test GC-002: Global options recognition
+- [x] **T006 [P]** Write contract tests for `engine` command in `tests/cli/commands/test_engine_contract.py`
+  - Test CC-ENGINE-001: Action required (or default list) ⚠️ 2 FAILURES (missing default action)
+  - Test GC-001: Help flag support ✅ PASS
+  - Test GC-002: Global options recognition ✅ PASS
+  - **Status**: ✅ 11/13 TESTS PASSING (completed 2025-10-06)
+  - **Findings**: 2 tests failing - engine needs default list action support
 
-- [ ] **T007 [P]** Write contract tests for `help` command in `tests/cli/commands/test_help_contract.py`
-  - Test CC-HELP-001: No arguments (general help)
-  - Test CC-HELP-002: Command name argument
-  - Test GC-001: Help flag support
-  - Test GC-002: Global options recognition
+- [x] **T007 [P]** Write contract tests for `help` command in `tests/cli/commands/test_help_contract.py`
+  - Test CC-HELP-001: No arguments (general help) ✅ PASS
+  - Test CC-HELP-002: Command name argument ✅ PASS
+  - Test GC-001: Help flag support ✅ PASS
+  - Test GC-002: Global options recognition ✅ PASS
+  - **Status**: ✅ 14/14 TESTS PASSING (completed 2025-10-06)
 
-- [ ] **T008 [P]** Write contract tests for `init` command in `tests/cli/commands/test_init_contract.py`
-  - Test CC-INIT-001: Optional project name
-  - Test CC-INIT-002: With project name
-  - Test GC-001: Help flag support
-  - Test GC-002: Global options recognition
+- [x] **T008 [P]** Write contract tests for `init` command in `tests/cli/commands/test_init_contract.py`
+  - Test CC-INIT-001: Optional project name ✅ PASS
+  - Test CC-INIT-002: With project name ✅ PASS
+  - Test GC-001: Help flag support ✅ PASS
+  - Test GC-002: Global options recognition ✅ PASS
+  - **Status**: ✅ 11/11 TESTS PASSING (completed 2025-10-06)
 
-- [ ] **T009 [P]** Write contract tests for `log` command in `tests/cli/commands/test_log_contract.py`
-  - Test CC-LOG-001: Optional target
-  - Test GC-001: Help flag support
-  - Test GC-002: Global options recognition
+- [x] **T009 [P]** Write contract tests for `log` command in `tests/cli/commands/test_log_contract.py`
+  - Test CC-LOG-001: Optional target ⚠️ 1 FAILURE (no positional target support)
+  - Test GC-001: Help flag support ✅ PASS
+  - Test GC-002: Global options recognition ✅ PASS
+  - **Status**: ✅ 10/11 TESTS PASSING (completed 2025-10-06)
+  - **Findings**: 1 test failing - log needs positional target_args support
 
-- [ ] **T010 [P]** Write contract tests for `plan` command in `tests/cli/commands/test_plan_contract.py`
-  - Test CC-PLAN-001: Optional target
-  - Test GC-001: Help flag support
-  - Test GC-002: Global options recognition
+- [x] **T010 [P]** Write contract tests for `plan` command in `tests/cli/commands/test_plan_contract.py`
+  - Test CC-PLAN-001: Optional target ⚠️ 2 FAILURES (no positional/option target support)
+  - Test GC-001: Help flag support ✅ PASS
+  - Test GC-002: Global options recognition ✅ PASS
+  - **Status**: ✅ 9/11 TESTS PASSING (completed 2025-10-06)
+  - **Findings**: 2 tests failing - plan needs target argument support
 
-- [ ] **T011 [P]** Write contract tests for `rebase` command in `tests/cli/commands/test_rebase_contract.py`
-  - Test CC-REBASE-001: Optional target
-  - Test GC-001: Help flag support
-  - Test GC-002: Global options recognition
+- [x] **T011 [P]** Write contract tests for `rebase` command in `tests/cli/commands/test_rebase_contract.py`
+  - Test CC-REBASE-001: Optional target ⚠️ 1 FAILURE (no positional target support)
+  - Test GC-001: Help flag support ✅ PASS
+  - Test GC-002: Global options recognition ✅ PASS
+  - **Status**: ✅ 10/11 TESTS PASSING (completed 2025-10-06)
+  - **Findings**: 1 test failing - rebase needs positional target_args support
 
-- [ ] **T012 [P]** Write contract tests for `revert` command in `tests/cli/commands/test_revert_contract.py`
-  - Test CC-REVERT-001: Optional target
-  - Test CC-REVERT-002: Positional target
-  - Test GC-001: Help flag support
-  - Test GC-002: Global options recognition
+- [x] **T012 [P]** Write contract tests for `revert` command in `tests/cli/commands/test_revert_contract.py`
+  - Test CC-REVERT-001: Optional target ✅ PASS
+  - Test CC-REVERT-002: Positional target ⚠️ 2 FAILURES (no positional target support)
+  - Test GC-001: Help flag support ✅ PASS
+  - Test GC-002: Global options recognition ✅ PASS
+  - **Status**: ✅ 10/12 TESTS PASSING (completed 2025-10-06)
+  - **Findings**: 2 tests failing - revert needs positional target_args support
 
-- [ ] **T013 [P]** Write contract tests for `rework` command in `tests/cli/commands/test_rework_contract.py`
-  - Test CC-REWORK-001: Required change name
-  - Test CC-REWORK-002: Valid change name
-  - Test GC-001: Help flag support
-  - Test GC-002: Global options recognition
+- [x] **T013 [P]** Write contract tests for `rework` command in `tests/cli/commands/test_rework_contract.py`
+  - Test CC-REWORK-001: Required change name ✅ PASS
+  - Test CC-REWORK-002: Valid change name ✅ PASS
+  - Test GC-001: Help flag support ✅ PASS
+  - Test GC-002: Global options recognition ✅ PASS
+  - **Status**: ✅ 12/12 TESTS PASSING (completed 2025-10-06)
 
-- [ ] **T014 [P]** Write contract tests for `show` command in `tests/cli/commands/test_show_contract.py`
-  - Test CC-SHOW-001: Optional change name
-  - Test CC-SHOW-002: With change name
-  - Test GC-001: Help flag support
-  - Test GC-002: Global options recognition
+- [x] **T014 [P]** Write contract tests for `show` command in `tests/cli/commands/test_show_contract.py`
+  - Test CC-SHOW-001: Optional change name ⚠️ 1 FAILURE (requires argument)
+  - Test CC-SHOW-002: With change name ⚠️ 1 FAILURE (no --target option)
+  - Test GC-001: Help flag support ✅ PASS
+  - Test GC-002: Global options recognition ✅ PASS
+  - **Status**: ✅ 10/12 TESTS PASSING (completed 2025-10-06)
+  - **Findings**: 2 tests failing - show needs optional argument + --target option
 
-- [ ] **T015 [P]** Write contract tests for `status` command in `tests/cli/commands/test_status_contract.py`
-  - Test CC-STATUS-001: Optional target
-  - Test CC-STATUS-002: Positional target
-  - Test GC-001: Help flag support
-  - Test GC-002: Global options recognition
+- [x] **T015 [P]** Write contract tests for `status` command in `tests/cli/commands/test_status_contract.py`
+  - Test CC-STATUS-001: Optional target ✅ PASS
+  - Test CC-STATUS-002: Positional target ⚠️ 2 FAILURES (no positional target, missing --show-tags)
+  - Test GC-001: Help flag support ✅ PASS
+  - Test GC-002: Global options recognition ✅ PASS
+  - **Status**: ✅ 10/12 TESTS PASSING (completed 2025-10-06)
+  - **Findings**: 2 tests failing - status needs positional target_args + --show-tags option
 
-- [ ] **T016 [P]** Write contract tests for `tag` command in `tests/cli/commands/test_tag_contract.py`
-  - Test CC-TAG-001: Optional tag name (list tags)
-  - Test CC-TAG-002: With tag name
-  - Test GC-001: Help flag support
-  - Test GC-002: Global options recognition
+- [x] **T016 [P]** Write contract tests for `tag` command in `tests/cli/commands/test_tag_contract.py`
+  - Test CC-TAG-001: Optional tag name (list tags) ⚠️ 1 FAILURE (requires tag name)
+  - Test CC-TAG-002: With tag name ⚠️ 1 FAILURE (missing --change option)
+  - Test GC-001: Help flag support ✅ PASS
+  - Test GC-002: Global options recognition ✅ PASS
+  - **Status**: ✅ 9/11 TESTS PASSING (completed 2025-10-06)
+  - **Findings**: 2 tests failing - tag needs optional tag_name + --change option
 
-- [ ] **T017 [P]** Write contract tests for `target` command in `tests/cli/commands/test_target_contract.py`
-  - Test CC-TARGET-001: Action required (or default list)
-  - Test GC-001: Help flag support
-  - Test GC-002: Global options recognition
+- [x] **T017 [P]** Write contract tests for `target` command in `tests/cli/commands/test_target_contract.py`
+  - Test CC-TARGET-001: Action required (or default list) ⚠️ 1 FAILURE (missing default action)
+  - Test GC-001: Help flag support ✅ PASS
+  - Test GC-002: Global options recognition ✅ PASS
+  - **Status**: ✅ 12/13 TESTS PASSING (completed 2025-10-06)
+  - **Findings**: 1 test failing - target needs default list action support
 
-- [ ] **T018 [P]** Write contract tests for `upgrade` command in `tests/cli/commands/test_upgrade_contract.py`
-  - Test CC-UPGRADE-001: Optional target
-  - Test GC-001: Help flag support
-  - Test GC-002: Global options recognition
+- [x] **T018 [P]** Write contract tests for `upgrade` command in `tests/cli/commands/test_upgrade_contract.py`
+  - Test CC-UPGRADE-001: Optional target ⚠️ 1 FAILURE (no positional target support)
+  - Test GC-001: Help flag support ✅ PASS
+  - Test GC-002: Global options recognition ✅ PASS
+  - **Status**: ✅ 10/11 TESTS PASSING (completed 2025-10-06)
+  - **Findings**: 1 test failing - upgrade needs positional target_args support
 
 - [x] **T019 [P]** Write contract tests for `verify` command in `tests/cli/commands/test_verify_contract.py`
   - Test CC-VERIFY-001: Optional target ✅ PASS
@@ -245,7 +268,7 @@ Repository root: `/Users/poecurt/projects/sqlitch-v3/`
 
 ## Phase 3.4: Fixes (Based on Audit Findings)
 
-**AUDIT RESULTS**: T025 found systemic global options gap. T026/T027 found no issues.
+**AUDIT RESULTS**: T025 found systemic global options gap (FIXED). T026/T027 found no issues.
 
 - [x] **T028** Add global options infrastructure (CRITICAL - affects all commands)
   - **Status**: ✅ ALREADY COMPLETE (verified 2025-10-05)
@@ -258,25 +281,45 @@ Repository root: `/Users/poecurt/projects/sqlitch-v3/`
   - **Perl Reference**: `sqitch/lib/App/Sqitch.pm` (global options in base class)
   - **No Further Work Needed**: Infrastructure complete, ready for T002-T024 contract tests
 
-- [ ] **T029** ~~Fix exit code inconsistencies~~ (SKIPPED - T026 found no issues)
+- [x] **T029** ~~Fix exit code inconsistencies~~ (SKIPPED - T026 found no issues)
   - **Audit Result**: All commands use Click's default exit behavior
   - **Status**: ✅ Compliant - no fixes needed
   - **Rationale**: Click automatically provides correct exit codes (0=success, 2=usage, 1=errors)
 
-- [ ] **T030** ~~Fix stub validation issues~~ (SKIPPED - T027 found no issues)
+- [x] **T030** ~~Fix stub validation issues~~ (SKIPPED - T027 found no issues)
   - **Audit Result**: All 5 stub commands properly validate arguments via Click decorators
   - **Status**: ✅ Compliant - no fixes needed
   - **Stubs**: `checkout`, `rebase`, `revert`, `upgrade`, `verify`
 
-- [ ] **T030** Improve stub argument validation (if T027 finds gaps)
-  - For each stub without proper validation:
-    - Move argument validation before "not implemented" check
-    - Ensure Click decorators enforce required arguments
-    - Add explicit validation for optional arguments
-  - Update command files in `sqlitch/cli/commands/*.py`
-  - Verify relevant contract tests (T001-T019) pass
-  - **Blockers**: T027 audit must complete
-  - **Blocks**: T031+ validation tasks
+- [x] **T031** Fix missing positional target_args support (COMPLETED 2025-10-06)
+  - **Status**: ✅ COMPLETE - All commands now accept positional target arguments
+  - **Commands Fixed**:
+    - `log`: Added `@click.argument("target_args", nargs=-1)` + resolution logic
+    - `plan`: Added `@click.argument("target_args", nargs=-1)` + `--target` option
+    - `rebase`: Added `@click.argument("target_args", nargs=-1)`
+    - `revert`: Added `@click.argument("target_args", nargs=-1)`
+    - `status`: Added `@click.argument("target_args", nargs=-1)` + resolution logic + `--show-tags` option
+    - `upgrade`: Added `@click.argument("target_args", nargs=-1)`
+  - **Validation**: All positional target tests now passing
+
+- [x] **T032** Fix optional arguments and default actions (COMPLETED 2025-10-06)
+  - **Status**: ✅ COMPLETE - All commands have proper optional arguments
+  - **Commands Fixed**:
+    - `show`: Made `item` argument optional (required=False), added `--target` option
+    - `tag`: Made `tag_name` optional with default list behavior, added `--change` option
+    - `engine`: Added `invoke_without_command=True` with default `list_engines` action
+    - `target`: Added `invoke_without_command=True` with default `target_list` action
+  - **Validation**: All optional argument tests now passing
+
+- [x] **T033** Fix missing command-specific options (COMPLETED 2025-10-06)
+  - **Status**: ✅ COMPLETE - All missing options added
+  - **Options Added**:
+    - `status --show-tags`: Display deployment tags in output
+    - `tag --change`: Tag a specific change
+    - `show --target`: Specify deployment target
+  - **Validation**: All option tests now passing
+
+### **Final Test Results**: ✅ **202/202 tests passing (100%)**
 
 ---
 

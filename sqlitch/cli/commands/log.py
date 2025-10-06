@@ -35,6 +35,7 @@ class LogEvent:
 
 
 @click.command("log")
+@click.argument("target_args", nargs=-1)
 @click.option("--target", "target_option", help="Deployment target URI or database path.")
 @click.option("--limit", type=int, default=None, help="Limit the number of events returned.")
 @click.option(
@@ -60,6 +61,7 @@ class LogEvent:
 def log_command(
     ctx: click.Context,
     *,
+    target_args: tuple[str, ...],
     target_option: str | None,
     limit: int | None,
     skip: int,
@@ -115,7 +117,17 @@ def log_command(
     if normalized_format not in {"human", "json"}:
         raise CommandError(f'Unknown format "{output_format}"')
 
-    target_value = target_option or cli_context.target
+    # Resolve target from positional args, --target option, or config
+    target_value = None
+    if target_args:
+        if len(target_args) > 1:
+            raise CommandError("Only one target may be specified")
+        target_value = target_args[0]
+    elif target_option:
+        target_value = target_option
+    else:
+        target_value = cli_context.target
+        
     if not target_value:
         raise CommandError("A target must be provided via --target or configuration.")
 

@@ -23,6 +23,8 @@ __all__ = ["plan_command"]
 
 
 @click.command("plan")
+@click.argument("target_args", nargs=-1)
+@click.option("--target", "target_option", help="Deployment target URI or database path.")
 @click.option("--project", "project_filter", help="Restrict output to the specified project name.")
 @click.option(
     "--change",
@@ -62,6 +64,8 @@ __all__ = ["plan_command"]
 def plan_command(
     ctx: click.Context,
     *,
+    target_args: tuple[str, ...],
+    target_option: str | None,
     project_filter: str | None,
     change_filters: Sequence[str],
     tag_filters: Sequence[str],

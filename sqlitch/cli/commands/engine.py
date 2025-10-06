@@ -37,7 +37,7 @@ class EngineDefinition:
     plan: str | None
 
 
-@click.group("engine")
+@click.group("engine", invoke_without_command=True)
 @global_sqitch_options
 @global_output_options
 @click.pass_context
@@ -50,6 +50,10 @@ def engine_group(
     """Manage engine definitions for SQLitch deployments."""
 
     require_cli_context(ctx)
+    
+    # If no subcommand was invoked, run the 'list' command by default
+    if ctx.invoked_subcommand is None:
+        ctx.invoke(list_engines)
 
 
 @engine_group.command("add")

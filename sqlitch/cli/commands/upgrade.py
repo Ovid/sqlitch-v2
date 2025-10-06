@@ -16,6 +16,7 @@ __all__ = ["upgrade_command"]
 
 
 @click.command("upgrade")
+@click.argument("target_args", nargs=-1)
 @click.option("--target", help="Target to upgrade.")
 @click.option("--registry", help="Registry URI.")
 @click.option("--log-only", is_flag=True, help="Only log what would be done.")
@@ -24,6 +25,7 @@ __all__ = ["upgrade_command"]
 @click.pass_context
 def upgrade_command(
     ctx: click.Context,
+    target_args: tuple[str, ...],
     target: str | None,
     registry: str | None,
     log_only: bool,

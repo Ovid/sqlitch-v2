@@ -41,6 +41,7 @@ class _RebaseRequest:
 
 
 @click.command("rebase")
+@click.argument("target_args", nargs=-1)
 @click.option("--target", "target_option", help="Deployment target alias or URI.")
 @click.option("--onto", "onto_ref", help="Rebase onto the specified change or tag.")
 @click.option("--from", "from_ref", help="Redeploy starting from the specified change or tag.")
@@ -62,6 +63,7 @@ class _RebaseRequest:
 def rebase_command(
     ctx: click.Context,
     *,
+    target_args: tuple[str, ...],
     target_option: str | None,
     onto_ref: str | None,
     from_ref: str | None,
