@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sqlite3
 from pathlib import Path
 
 import click
@@ -20,6 +21,18 @@ from ._plan_utils import resolve_default_engine, resolve_plan_path
 from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["verify_command"]
+
+
+def _execute_sqlite_verify_script(cursor: sqlite3.Cursor, script_sql: str) -> None:
+    """Execute verification SQL statements."""
+    buffer = ""
+    for line in script_sql.splitlines():
+        buffer += line + "\n"
+        if sqlite3.complete_statement(buffer):
+            statement = buffer.strip()
+            if statement:
+                cursor.execute(statement)
+            buffer = ""
 
 
 def _resolve_sqlite_workspace_uri(
@@ -130,6 +143,18 @@ def verify_command(
 ) -> None:
     """Execute verification scripts against deployed changes."""
 
+    # Check for unimplemented features
+    if log_only:
+        raise CommandError("--log-only is not implemented yet.")
+    if to_change:
+        raise CommandError("--to-change is not implemented yet.")
+    if to_tag:
+        raise CommandError("--to-tag is not implemented yet.")
+    if event:
+        raise CommandError("--event is not implemented yet.")
+    if mode:
+        raise CommandError("--mode is not implemented yet.")
+
     cli_context = require_cli_context(ctx)
     project_root = cli_context.project_root
     environment = cli_context.env
@@ -191,7 +216,9 @@ def verify_command(
         workspace_path = workspace_uri
     
     registry_uri = engine_target.registry_uri
-    if registry_uri.startswith("sqlite:"):
+    if registry_uri.startswith("db:sqlite:"):
+        registry_path = registry_uri[10:]  # Remove "db:sqlite:"
+    elif registry_uri.startswith("sqlite:"):
         registry_path = registry_uri[7:]  # Remove "sqlite:"
     else:
         registry_path = registry_uri
@@ -219,6 +246,8 @@ def verify_command(
 
     # Execute verify scripts
     verification_failed = False
+    cursor = connection.cursor()
+    
     for change_name in deployed_changes:
         # Find verify script
         verify_script_path = project_root / "verify" / f"{change_name}.sql"
@@ -230,20 +259,14 @@ def verify_command(
         try:
             # Load and execute verify script
             script = Script.load(verify_script_path)
-            result = engine.execute_script(script.content, verify_script_path)
-            
-            if result.success:
-                click.echo(f"* {change_name} .. ok")
-            else:
-                click.echo(f"# {change_name} .. NOT OK")
-                if result.error_message:
-                    click.echo(f"  Error: {result.error_message}", err=True)
-                verification_failed = True
+            _execute_sqlite_verify_script(cursor, script.content)
+            click.echo(f"* {change_name} .. ok")
         except Exception as e:
             click.echo(f"# {change_name} .. NOT OK")
             click.echo(f"  Error: {e}", err=True)
             verification_failed = True
     
+    cursor.close()
     connection.close()
 
     # Exit with appropriate code

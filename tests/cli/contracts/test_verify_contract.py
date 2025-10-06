@@ -16,7 +16,7 @@ def runner() -> CliRunner:
 
 
 def test_verify_no_changes(runner: CliRunner) -> None:
-    """sqlitch verify reports when no changes to verify."""
+    """sqlitch verify reports when no target is provided."""
 
     with runner.isolated_filesystem():
         result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
@@ -24,7 +24,7 @@ def test_verify_no_changes(runner: CliRunner) -> None:
 
     result = runner.invoke(main, ["verify"])
     assert result.exit_code != 0
-    assert "not implemented" in result.output
+    assert "target must be provided" in result.output
 
 
 def test_verify_log_only_reports_unimplemented(runner: CliRunner) -> None:
