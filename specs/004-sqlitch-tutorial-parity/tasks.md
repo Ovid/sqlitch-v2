@@ -354,23 +354,31 @@
   - Resolve planner identity
 
 ### Init Command Finalization (1 day)
-- [ ] **T051** Write tests for init engine validation in `tests/cli/commands/test_init_functional.py`
+- [ ] **T051** Write tests for init directory and file creation in `tests/cli/commands/test_init_functional.py`
+  - Test creates sqitch.conf with correct engine setting
+  - Test creates sqitch.plan with project pragmas (%syntax-version, %project, %uri)
+  - Test creates deploy/, revert/, verify/ directories
+  - Test verifies directory structure matches FR-001 requirements
+  - Test validates file contents match Sqitch format
+  
+- [ ] **T052** Write tests for init engine validation in `tests/cli/commands/test_init_functional.py`
   - Test validates engine exists in ENGINE_REGISTRY
   - Test fails with clear error if engine invalid
   - Test defaults to sqlite if not specified
   
-- [ ] **T052** Complete init command in `sqlitch/cli/commands/init.py`
+- [ ] **T053** Complete init command in `sqlitch/cli/commands/init.py`
   - Add engine validation (check ENGINE_REGISTRY)
+  - Verify directory creation logic is complete
   - Improve error messages
   - Verify against Sqitch init output format
 
 ### Add Command Finalization (1 day)
-- [ ] **T053** Write tests for add dependency validation in `tests/cli/commands/test_add_functional.py`
+- [ ] **T054** Write tests for add dependency validation in `tests/cli/commands/test_add_functional.py`
   - Test validates --requires references exist in plan
   - Test validates --conflicts references exist in plan
   - Test fails with clear error if references invalid
   
-- [ ] **T054** Complete add command in `sqlitch/cli/commands/add.py`
+- [ ] **T055** Complete add command in `sqlitch/cli/commands/add.py`
   - Add dependency validation before adding to plan
   - Validate change name via validate_change_name()
   - Improve error messages
@@ -382,40 +390,40 @@
 **Purpose**: Validate complete tutorial workflows  
 **Estimated Time**: 3 days
 
-- [ ] **T055** [P] Integration test: Scenario 1 - Project initialization in `tests/integration/test_tutorial_workflows.py`
+- [ ] **T056** [P] Integration test: Scenario 1 - Project initialization in `tests/integration/test_tutorial_workflows.py`
   - Test init creates proper structure
   - Test config get/set works
   - Test files have correct content
   
-- [ ] **T056** [P] Integration test: Scenario 2 - First change (users table) in `tests/integration/test_tutorial_workflows.py`
+- [ ] **T057** [P] Integration test: Scenario 2 - First change (users table) in `tests/integration/test_tutorial_workflows.py`
   - Test add creates scripts
   - Test deploy creates registry
   - Test verify passes
   - Test status shows deployed
   
-- [ ] **T057** [P] Integration test: Scenario 3 - Dependent change (flips table) in `tests/integration/test_tutorial_workflows.py`
+- [ ] **T058** [P] Integration test: Scenario 3 - Dependent change (flips table) in `tests/integration/test_tutorial_workflows.py`
   - Test add with --requires
   - Test deploy validates dependency
   - Test deployment succeeds
   
-- [ ] **T058** [P] Integration test: Scenario 4 - View creation (userflips) in `tests/integration/test_tutorial_workflows.py`
+- [ ] **T059** [P] Integration test: Scenario 4 - View creation (userflips) in `tests/integration/test_tutorial_workflows.py`
   - Test add with multiple dependencies
   - Test deploy executes in correct order
   
-- [ ] **T059** [P] Integration test: Scenario 5 - Tag release (v1.0.0-dev1) in `tests/integration/test_tutorial_workflows.py`
+- [ ] **T060** [P] Integration test: Scenario 5 - Tag release (v1.0.0-dev1) in `tests/integration/test_tutorial_workflows.py`
   - Test tag adds to plan
   - Test deploy after tag works
   
-- [ ] **T060** [P] Integration test: Scenario 6 - Revert changes in `tests/integration/test_tutorial_workflows.py`
+- [ ] **T061** [P] Integration test: Scenario 6 - Revert changes in `tests/integration/test_tutorial_workflows.py`
   - Test revert --to removes changes
   - Test revert executes scripts in reverse
   - Test registry updated correctly
   
-- [ ] **T061** [P] Integration test: Scenario 7 - View history with log in `tests/integration/test_tutorial_workflows.py`
+- [ ] **T062** [P] Integration test: Scenario 7 - View history with log in `tests/integration/test_tutorial_workflows.py`
   - Test log shows all events
   - Test log filtering by change
   
-- [ ] **T062** [P] Integration test: Scenario 8 - Rework change in `tests/integration/test_tutorial_workflows.py`
+- [ ] **T063** [P] Integration test: Scenario 8 - Rework change in `tests/integration/test_tutorial_workflows.py`
   - Test rework creates @tag suffixed scripts
   - Test rework updates plan
   - Test deploy uses new version
@@ -426,38 +434,38 @@
 **Purpose**: Ensure output matches Sqitch byte-for-byte  
 **Estimated Time**: 2 days
 
-- [ ] **T063** [P] Regression test: Init output parity in `tests/regression/test_tutorial_parity.py`
+- [ ] **T064** [P] Regression test: Init output parity in `tests/regression/test_tutorial_parity.py`
   - Compare sqlitch init vs sqitch init output
   - Validate file contents match
   
-- [ ] **T064** [P] Regression test: Add output parity in `tests/regression/test_tutorial_parity.py`
+- [ ] **T065** [P] Regression test: Add output parity in `tests/regression/test_tutorial_parity.py`
   - Compare sqlitch add vs sqitch add output
   - Validate script headers match
   
-- [ ] **T065** [P] Regression test: Deploy output parity in `tests/regression/test_tutorial_parity.py`
+- [ ] **T066** [P] Regression test: Deploy output parity in `tests/regression/test_tutorial_parity.py`
   - Compare sqlitch deploy vs sqitch deploy output
   - Validate registry records match
   
-- [ ] **T066** [P] Regression test: Status output parity in `tests/regression/test_tutorial_parity.py`
+- [ ] **T067** [P] Regression test: Status output parity in `tests/regression/test_tutorial_parity.py`
   - Compare sqlitch status vs sqitch status output
   - Validate formatting matches
   
-- [ ] **T067** [P] Regression test: Log output parity in `tests/regression/test_tutorial_parity.py`
+- [ ] **T068** [P] Regression test: Log output parity in `tests/regression/test_tutorial_parity.py`
   - Compare sqlitch log vs sqitch log output
   - Validate event display matches
   
-- [ ] **T068** [P] Regression test: Verify output parity in `tests/regression/test_tutorial_parity.py`
+- [ ] **T069** [P] Regression test: Verify output parity in `tests/regression/test_tutorial_parity.py`
   - Compare sqlitch verify vs sqitch verify output
   - Validate exit codes match
   
-- [ ] **T069** [P] Regression test: Revert output parity in `tests/regression/test_tutorial_parity.py`
+- [ ] **T070** [P] Regression test: Revert output parity in `tests/regression/test_tutorial_parity.py`
   - Compare sqlitch revert vs sqitch revert output
   - Validate behavior matches
   
-- [ ] **T070** [P] Regression test: Tag output parity in `tests/regression/test_tutorial_parity.py`
+- [ ] **T071** [P] Regression test: Tag output parity in `tests/regression/test_tutorial_parity.py`
   - Compare sqlitch tag vs sqitch tag output
   
-- [ ] **T071** [P] Regression test: Rework output parity in `tests/regression/test_tutorial_parity.py`
+- [ ] **T072** [P] Regression test: Rework output parity in `tests/regression/test_tutorial_parity.py`
   - Compare sqlitch rework vs sqitch rework output
 
 ---
@@ -466,27 +474,27 @@
 **Purpose**: Final cleanup and documentation updates  
 **Estimated Time**: 2 days
 
-- [ ] **T072** [P] Update .github/copilot-instructions.md with Feature 004 completion
+- [ ] **T073** [P] Update .github/copilot-instructions.md with Feature 004 completion
   - Document command implementation status
   - Update known working commands
   - Add tutorial completion notes
   
-- [ ] **T073** [P] Update README.md with tutorial instructions
+- [ ] **T074** [P] Update README.md with tutorial instructions
   - Add "Complete SQLite Tutorial" section
   - Link to quickstart.md
   - Document new commands
   
-- [ ] **T074** Run full tutorial manually and capture output
+- [ ] **T075** Run full tutorial manually and capture output
   - Follow quickstart.md step-by-step
   - Document any deviations from Sqitch
   - Update quickstart.md with any corrections
   
-- [ ] **T075** Final coverage check
+- [ ] **T076** Final coverage check
   - Run pytest with coverage report
   - Ensure ≥90% coverage on all new modules
   - Add tests for any uncovered branches
   
-- [ ] **T076** Performance validation
+- [ ] **T077** Performance validation
   - Test deploy with 100 changes
   - Verify completes in <5 seconds
   - Profile any slow operations
@@ -499,7 +507,7 @@
 - All tasks in this phase can run in parallel (marked [P])
 - Must complete before any command implementation
 
-### Command Phase (T025-T054)
+### Command Phase (T025-T055)
 - **T025-T028** (config) - No dependencies, start first
 - **T029-T030** (status) - Requires T001-T006 (registry models)
 - **T031-T032** (log) - Requires T001-T006 (registry models)
@@ -508,20 +516,20 @@
 - **T041-T044** (revert) - Requires T001-T024 (all foundation), T033-T038 (deploy)
 - **T045-T047** (tag) - Requires T021-T022 (plan helpers)
 - **T048-T050** (rework) - Requires T021-T022 (plan helpers), T045-T047 (tag)
-- **T051-T052** (init finalize) - No dependencies
-- **T053-T054** (add finalize) - Requires T023-T024 (validation)
+- **T051-T053** (init finalize) - No dependencies
+- **T054-T055** (add finalize) - Requires T023-T024 (validation)
 
-### Integration Phase (T055-T062)
-- Requires T025-T054 (all commands implemented)
+### Integration Phase (T056-T063)
+- Requires T025-T055 (all commands implemented)
 - All integration tests can run in parallel (marked [P])
 
-### Parity Phase (T063-T071)
-- Requires T025-T054 (all commands implemented)
+### Parity Phase (T064-T072)
+- Requires T025-T055 (all commands implemented)
 - All parity tests can run in parallel (marked [P])
 
-### Polish Phase (T072-T076)
-- Requires T055-T071 (all tests passing)
-- Documentation tasks (T072-T073) can run in parallel
+### Polish Phase (T073-T077)
+- Requires T056-T072 (all tests passing)
+- Documentation tasks (T073-T074) can run in parallel
 
 ---
 
@@ -553,7 +561,7 @@ Task: "Write tests for validation functions in tests/plan/test_validation.py"
 
 ### Integration Tests (can run simultaneously after commands done)
 ```bash
-# Launch T055-T062 together:
+# Launch T056-T063 together:
 Task: "Integration test: Scenario 1 - Project initialization"
 Task: "Integration test: Scenario 2 - First change (users table)"
 Task: "Integration test: Scenario 3 - Dependent change (flips table)"
@@ -561,6 +569,22 @@ Task: "Integration test: Scenario 4 - View creation (userflips)"
 Task: "Integration test: Scenario 5 - Tag release"
 Task: "Integration test: Scenario 6 - Revert changes"
 Task: "Integration test: Scenario 7 - View history with log"
+Task: "Integration test: Scenario 8 - Rework change"
+```
+
+### Parity Validation (can run simultaneously after commands done)
+```bash
+# Launch T064-T072 together:
+Task: "Regression test: Init output parity"
+Task: "Regression test: Add output parity"
+Task: "Regression test: Deploy output parity"
+Task: "Regression test: Status output parity"
+Task: "Regression test: Log output parity"
+Task: "Regression test: Verify output parity"
+Task: "Regression test: Revert output parity"
+Task: "Regression test: Tag output parity"
+Task: "Regression test: Rework output parity"
+```
 Task: "Integration test: Scenario 8 - Rework change"
 ```
 
@@ -636,7 +660,7 @@ See `research.md` for:
 
 ---
 
-**Total Tasks**: 76  
+**Total Tasks**: 77  
 **Estimated Duration**: 4-5 weeks  
 **Parallel Opportunities**: ~40 tasks can run in parallel (marked [P])  
 **Sequential Critical Path**: Foundation → Config → Deploy → Verify/Revert → Integration
