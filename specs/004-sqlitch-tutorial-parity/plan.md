@@ -36,6 +36,8 @@ Feature 004 implements the minimum command functionality required to complete th
 
 **Primary Requirement**: Implement 10 tutorial-critical commands (init, config, add, deploy, verify, status, revert, log, tag, rework) with sufficient functionality to complete all tutorial workflows.
 
+**Configuration Management**: SQLitch must support hierarchical configuration (system/user/local scopes), INI format matching Sqitch conventions, and user identity resolution from config files with environment variable fallback (SQLITCH_* preferred over SQITCH_* for backward compatibility).
+
 **Technical Approach** (from research.md):
 - 80% of infrastructure already exists (plan parsing, config loading, registry schema, engine adapter, command scaffolding)
 - Need to implement command-specific business logic (~2,500 lines across 8 commands)
@@ -162,7 +164,7 @@ sqlitch/                      # Core implementation
 │       └── verify.py         # Need execution (~250 lines)
 ├── config/
 │   ├── __init__.py
-│   ├── loader.py             # 100% complete (config loading)
+│   ├── loader.py             # 100% complete (config loading with hierarchy)
 │   └── resolver.py           # Need config writing (~200 lines)
 ├── engine/
 │   ├── __init__.py
@@ -180,7 +182,7 @@ sqlitch/                      # Core implementation
 │   └── state.py              # NEW: Registry models (DeployedChange, DeploymentEvent, DeploymentStatus)
 └── utils/
     ├── __init__.py
-    ├── identity.py           # NEW: UserIdentity resolution
+    ├── identity.py           # NEW: UserIdentity resolution (config → env → fallback)
     └── time.py               # 100% complete
 
 tests/                        # Comprehensive test suite
@@ -225,8 +227,9 @@ specs/004-sqlitch-tutorial-parity/
 
 2. **Existing Infrastructure Assessment**:
    - Plan parsing/writing: 100% complete (parse_plan, write_plan)
-   - Config loading: 100% complete (load_config)
+   - Config loading: 100% complete (load_config with system/user/local hierarchy)
    - Config writing: Needs implementation (~200 lines)
+   - User identity resolution: Implemented with priority chain (config → SQLITCH_*/SQITCH_* → GIT_* → system → fallback)
    - SQLite engine adapter: 95% complete (well-tested)
    - Command scaffolding: 100% complete (all stubs registered)
 
@@ -245,7 +248,9 @@ specs/004-sqlitch-tutorial-parity/
 4. **Technical Decisions**:
    - Transaction management: Scripts manage own transactions by default, SQLitch wraps only if needed
    - Change ID generation: SHA1(project + change + timestamp) matching Sqitch
-   - Planner/committer identity: From config → env → defaults
+   - Planner/committer identity: From config → env → defaults (priority: config [user] section → SQLITCH_*/SQITCH_* env vars → GIT_* env vars → system USER/USERNAME → generated fallback)
+   - Environment variables: SQLITCH_* prefix preferred, SQITCH_* as fallback for Sqitch compatibility
+   - Configuration hierarchy: local (./sqitch.conf) overrides user (~/.sqitch/sqitch.conf) overrides system (/etc/sqitch/sqitch.conf)
    - Registry attachment: ATTACH DATABASE sibling sqitch.db
    - Dependency validation: Check registry before deploy
    - Tag management: In-memory plan updates, write to file
@@ -264,7 +269,8 @@ specs/004-sqlitch-tutorial-parity/
    - HIGH: Deploy complexity (transaction management, dependency validation)
    - HIGH: Rework complexity (plan manipulation, @tag suffix handling)
    - MEDIUM: Registry concurrency (SQLite locking)
-   - MEDIUM: Config precedence (system/user/local scopes)
+   - MEDIUM: Config precedence (system/user/local scopes, environment variable fallback)
+   - MEDIUM: User identity resolution (multiple fallback sources with precedence)
    - LOW: Script execution errors (well-tested engine adapter)
 
 **Key Findings**:
@@ -287,18 +293,18 @@ specs/004-sqlitch-tutorial-parity/
    - **New Models Defined**: 10 new dataclasses needed:
      - ProjectMetadata (paths and settings)
      - DeployedChange (registry change record)
-     - DeploymentEvent (registry event record)
+     - DeploymentEvent (registry event record with committer identity)
      - DeploymentStatus (status summary)
      - CommandResult (standardized results)
      - DeployOptions (deploy command options)
      - RevertOptions (revert command options)
      - Script (script file representation)
      - ScriptResult (script execution result)
-     - UserIdentity (user name and email)
+     - UserIdentity (user name and email from config/env with precedence chain)
    - **Helper Functions**: generate_change_id(), validate_change_name(), validate_dependencies(), validate_tag_name()
    - **Validation Rules**: All documented with examples
    - **Data Flow Diagrams**: Deploy, status, and add workflows visualized
-   - **Database Schema Reference**: All 6 registry tables documented
+   - **Database Schema Reference**: All 6 registry tables documented (events table stores committer name/email)
    - **Implementation Notes**: Clear guidance on which modules need new models
 
 2. **quickstart.md** (260 lines, 8 validation scenarios):
@@ -431,13 +437,13 @@ specs/004-sqlitch-tutorial-parity/
 - [x] Complexity deviations documented (none required - all justified by tutorial needs)
 
 **Artifact Status**:
-- [x] spec.md (465 lines, all clarifications resolved)
+- [x] spec.md (372 lines, all clarifications resolved, FR-001 through FR-021 defined)
 - [x] research.md (1,034 lines, comprehensive analysis)
 - [x] data-model.md (complete, 10 new models defined)
 - [x] quickstart.md (260 lines, 8 scenarios)
 - [x] README.md (212 lines)
 - [x] ROADMAP.md (252 lines)
-- [x] plan.md (this file - complete)
+- [x] plan.md (this file - complete, updated with config requirements)
 - [ ] tasks.md (next: /tasks command)
 
 **Next Action**: Run `/tasks` command to generate tasks.md from Phase 1 design artifacts

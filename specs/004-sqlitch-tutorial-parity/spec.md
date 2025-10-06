@@ -176,40 +176,72 @@ Database developers following the SQLite tutorial need to successfully complete 
 
 ### Functional Requirements
 
+**Configuration Management**:
+- **FR-001**: SQLitch MUST support hierarchical configuration with three scopes: system (/etc/sqitch/), user (~/.sqitch/), and local (project ./), where local overrides user, and user overrides system.
+
+- **FR-002**: Configuration files MUST use INI format with sections and key-value pairs, support multi-line values, and preserve comments.
+
+- **FR-003**: Config file format MUST match Sqitch conventions:
+  ```ini
+  [core]
+      engine = sqlite
+  
+  [user]
+      name = Marge N. O'Vera
+      email = marge@example.com
+  
+  [engine "sqlite"]
+      target = db:sqlite:flipr.db
+  ```
+
+- **FR-004**: User identity resolution MUST follow this priority order:
+  1. Config file `[user]` section (`user.name` and `user.email`)
+  2. Environment variables (in order of preference):
+     - `SQLITCH_USER_NAME` / `SQLITCH_USER_EMAIL` (preferred)
+     - `SQITCH_USER_NAME` / `SQITCH_USER_EMAIL` (fallback for Sqitch compatibility)
+     - `GIT_COMMITTER_NAME` / `GIT_COMMITTER_EMAIL`
+     - `GIT_AUTHOR_NAME` / `GIT_AUTHOR_EMAIL`
+  3. System environment (`USER`, `USERNAME` for name; `EMAIL` for email)
+  4. Generated fallback (sanitized username + `@example.invalid` domain)
+
+- **FR-005**: Environment variable handling MUST prefer `SQLITCH_*` prefixed variables over `SQITCH_*` prefixed variables for all configuration options, with `SQITCH_*` variables serving as fallback for backward compatibility with Sqitch.
+
+- **FR-006**: Deploy and revert operations MUST record the committer identity (name and email) in the registry `events` table, using the identity resolution defined in FR-004.
+
 **Core Commands (Tutorial-Critical)**:
-- **FR-001**: `sqitch init` MUST initialize a new SQLitch project with project name, URI, engine, creating sqitch.conf, sqitch.plan, and deploy/revert/verify directories.
+- **FR-007**: `sqitch init` MUST initialize a new SQLitch project with project name, URI, engine, creating sqitch.conf, sqitch.plan, and deploy/revert/verify directories.
 
-- **FR-002**: `sqitch config` MUST support get/set/list operations for project-local (sqitch.conf), user (~/.sqitch/sqitch.conf), and system configurations with proper precedence.
+- **FR-008**: `sqitch config` MUST support get/set/list operations for project-local (sqitch.conf), user (~/.sqitch/sqitch.conf), and system configurations with proper precedence.
 
-- **FR-003**: `sqitch add` MUST create deploy, revert, and verify script files with proper headers, add changes to the plan file, support dependency declarations (--requires, --conflicts), and accept change notes.
+- **FR-009**: `sqitch add` MUST create deploy, revert, and verify script files with proper headers, add changes to the plan file, support dependency declarations (--requires, --conflicts), and accept change notes.
 
-- **FR-004**: `sqitch deploy` MUST deploy pending changes to target database in plan order, execute deploy scripts within transactions (unless scripts manage their own), record deployments in registry database, validate dependencies, and skip already-deployed changes.
+- **FR-010**: `sqitch deploy` MUST deploy pending changes to target database in plan order, execute deploy scripts within transactions (unless scripts manage their own), record deployments in registry database, validate dependencies, and skip already-deployed changes.
 
-- **FR-005**: `sqitch verify` MUST execute verify scripts for deployed changes, report success/failure for each change, and exit with appropriate code (0=success, 1=failure).
+- **FR-011**: `sqitch verify` MUST execute verify scripts for deployed changes, report success/failure for each change, and exit with appropriate code (0=success, 1=failure).
 
-- **FR-006**: `sqitch revert` MUST revert deployed changes in reverse order, execute revert scripts, update registry to remove change records, support --to flag for partial reverts, and validate no dependent changes exist.
+- **FR-012**: `sqitch revert` MUST revert deployed changes in reverse order, execute revert scripts, update registry to remove change records, support --to flag for partial reverts, and validate no dependent changes exist.
 
-- **FR-007**: `sqitch status` MUST query registry database, display current deployment state, show deployed/pending changes, and indicate project/target information.
+- **FR-013**: `sqitch status` MUST query registry database, display current deployment state, show deployed/pending changes, and indicate project/target information.
 
-- **FR-008**: `sqitch log` MUST display change history from registry, show deploy/revert/fail events, support filtering by change name, and format output matching Sqitch conventions.
+- **FR-014**: `sqitch log` MUST display change history from registry, show deploy/revert/fail events, support filtering by change name, and format output matching Sqitch conventions.
 
-- **FR-009**: `sqitch tag` MUST add tags to plan file, support tag notes, allow tagging at specific changes, and enable script file naming with @tag suffixes.
+- **FR-015**: `sqitch tag` MUST add tags to plan file, support tag notes, allow tagging at specific changes, and enable script file naming with @tag suffixes.
 
-- **FR-010**: `sqitch rework` MUST create new script versions with @tag suffixes, update plan file with rework entries, copy existing scripts as starting point, and preserve original scripts.
+- **FR-016**: `sqitch rework` MUST create new script versions with @tag suffixes, update plan file with rework entries, copy existing scripts as starting point, and preserve original scripts.
 
 **Registry Management**:
-- **FR-011**: SQLitch MUST create registry database (sqitch.db) on first deploy, create all required tables (changes, dependencies, events, projects, releases, tags), and handle SQLite ATTACH DATABASE for registry access.
+- **FR-017**: SQLitch MUST create registry database (sqitch.db) on first deploy, create all required tables (changes, dependencies, events, projects, releases, tags), and handle SQLite ATTACH DATABASE for registry access.
 
-- **FR-012**: Registry operations MUST be atomic with deploy/revert operations, roll back registry changes if deploy fails, and maintain referential integrity.
+- **FR-018**: Registry operations MUST be atomic with deploy/revert operations, roll back registry changes if deploy fails, and maintain referential integrity.
 
 **Plan Management**:
-- **FR-013**: Plan file operations MUST preserve pragmas (%syntax-version, %project, %uri), maintain change order, validate change names are unique, support tags and dependencies, and detect conflicts.
+- **FR-019**: Plan file operations MUST preserve pragmas (%syntax-version, %project, %uri), maintain change order, validate change names are unique, support tags and dependencies, and detect conflicts.
 
 **Script Generation**:
-- **FR-014**: Generated scripts MUST include proper headers with project:change notation, include BEGIN/COMMIT transaction wrappers (for deploy/revert), provide TODO/XXX comments for user implementation, and follow naming conventions (deploy/change.sql, revert/change.sql, verify/change.sql).
+- **FR-020**: Generated scripts MUST include proper headers with project:change notation, include BEGIN/COMMIT transaction wrappers (for deploy/revert), provide TODO/XXX comments for user implementation, and follow naming conventions (deploy/change.sql, revert/change.sql, verify/change.sql).
 
 **Target Management**:
-- **FR-015**: SQLitch MUST parse database URIs (db:sqlite:path/to/db), resolve relative paths from project root, create target databases if they don't exist, and support in-memory databases (:memory:).
+- **FR-021**: SQLitch MUST parse database URIs (db:sqlite:path/to/db), resolve relative paths from project root, create target databases if they don't exist, and support in-memory databases (:memory:).
 
 ### Non-Functional Requirements
 

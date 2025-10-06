@@ -232,6 +232,44 @@
   
 **Tests**: 9 tests passing
 
+### User Identity Resolution (sqlitch/utils/identity.py) - Configuration Requirements
+- [X] **T024a** Write tests for basic user identity resolution in `tests/cli/commands/test_deploy_functional.py` ✅
+  - ✅ Test resolution from config file [user] section (highest priority)
+  - ✅ Test fallback to SQLITCH_USER_NAME / SQLITCH_USER_EMAIL environment variables
+  - ✅ Test fallback to system USER / USERNAME and EMAIL
+  - ✅ Test final fallback to generated identity (sanitized_username@example.invalid)
+  - **Status**: ✅ COMPLETE (2025-10-06)
+  - **Tests**: 2 tests in `TestDeployUserIdentity` class, all passing
+  - **Implementation**: `sqlitch/cli/commands/deploy.py` lines ~858-913, `_resolve_committer_identity()`
+
+- [ ] **T024b** Add tests for SQITCH_* environment variable fallback in `tests/cli/commands/test_deploy_functional.py`
+  - Test fallback to SQITCH_USER_NAME / SQITCH_USER_EMAIL (backward compatibility with Sqitch)
+  - Test fallback to GIT_COMMITTER_NAME / GIT_COMMITTER_EMAIL
+  - Test fallback to GIT_AUTHOR_NAME / GIT_AUTHOR_EMAIL
+  - Test SQLITCH_* variables take precedence over SQITCH_* variables (FR-005)
+  - **Spec Alignment**: Implements FR-004 (complete priority chain) and FR-005 (environment variable precedence)
+  - **Constitution**: Behavioral Parity - must match Sqitch's environment variable behavior
+
+- [ ] **T024c** Implement SQITCH_* environment variable fallback in `sqlitch/cli/commands/deploy.py`
+  - Update `_resolve_committer_identity()` to check SQITCH_USER_NAME / SQITCH_USER_EMAIL after SQLITCH_* but before GIT_*
+  - Ensure priority order: config → SQLITCH_* → SQITCH_* → GIT_COMMITTER_* → GIT_AUTHOR_* → system → fallback
+  - **Spec Alignment**: Implements FR-004 and FR-005
+  - **Implementation Location**: `sqlitch/cli/commands/deploy.py` lines ~858-913
+
+- [X] **T024d** Implement committer identity recording in deploy command in `sqlitch/cli/commands/deploy.py` ✅
+  - ✅ Resolve committer identity using priority chain (partial - missing SQITCH_* fallback)
+  - ✅ Pass committer_name and committer_email to engine.record_event()
+  - ✅ Store identity in registry events table (committer_name, committer_email columns)
+  - **Status**: ✅ COMPLETE (2025-10-06)
+  - **Spec Alignment**: Implements FR-006
+  - **Implementation**: Lines ~858-913 resolve identity, passed to `_record_event()` at line ~720
+
+**Tests**: 2 tests in `TestDeployUserIdentity` class (basic functionality), additional tests needed for SQITCH_* fallback
+**Constitution Alignment**: 
+- **Behavioral Parity** ⚠️: PARTIAL - Missing SQITCH_* fallback for full Sqitch compatibility (FR-005)
+- **Test-First Development** ✅: Tests written before implementation for completed parts
+- **Documented Interfaces** ✅: All requirements documented in spec.md FR-004, FR-005, FR-006
+
 ---
 
 ## Phase 3.2: Command Implementations
