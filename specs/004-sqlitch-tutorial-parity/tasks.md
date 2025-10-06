@@ -540,6 +540,28 @@
   - ✅ Quiet mode support
   - ✅ All 16 functional tests passing
 
+- [ ] **T055a** [CRITICAL] Fix plan formatter to output compact Sqitch format in `sqlitch/plan/formatter.py`
+  - ⚠️ **BLOCKING BUG**: Current formatter outputs verbose format which violates FR-019a
+  - Current output (WRONG):
+    ```
+    change users deploy/users.sql revert/users.sql verify=verify/users.sql planner=poecurt planned_at=2025-10-06T19:38:09Z notes='Creates table to track our users.'
+    ```
+  - Required output (Sqitch compact format):
+    ```
+    users 2025-10-06T19:38:09Z Test User <test@example.com> # Creates table to track our users.
+    ```
+  - Rewrite `_format_change()` to output: `name [dependencies] timestamp planner # note`
+  - Rewrite `_format_tag()` to output: `@name timestamp planner # note`
+  - Update tests in `tests/plan/test_formatter.py` to validate compact format
+  - Add regression test comparing formatter output to Sqitch tutorial examples
+  - Parser already supports both formats correctly (compact for Sqitch, verbose for legacy)
+  - **Success Criteria**: 
+    - All `add` commands write Sqitch-compatible plan files
+    - Plan files can be read by both Sqitch and SQLitch
+    - Tutorial workflow produces byte-identical plan format to Sqitch
+    - All existing tests updated and passing
+  - **Dependencies**: Must complete before T056 (integration tests) and T064 (parity validation)
+
 ---
 
 ## Phase 3.3: Integration Tests

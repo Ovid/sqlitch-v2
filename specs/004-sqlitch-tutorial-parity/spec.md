@@ -237,6 +237,86 @@ Database developers following the SQLite tutorial need to successfully complete 
 **Plan Management**:
 - **FR-019**: Plan file operations MUST preserve pragmas (%syntax-version, %project, %uri), maintain change order, validate change names are unique, support tags and dependencies, and detect conflicts including: (a) circular require/conflicts chains, (b) duplicate change names, (c) dependencies on non-existent changes, (d) conflicts declarations creating cycles.
 
+- **FR-019a**: Plan files MUST use Sqitch-compatible compact format by default for maximum interoperability. The plan file format consists of:
+  
+  **Header Section** (pragmas starting with `%`):
+  ```
+  %syntax-version=1.0.0
+  %project=<project_name>
+  %uri=<project_uri>
+  %default_engine=<engine_name>  # SQLitch extension (Sqitch uses engine.sqlite.target)
+  ```
+  
+  **Change Entry Format** (compact Sqitch-compatible format):
+  ```
+  <change_name> [<dependencies>] <timestamp> <planner> # <note>
+  ```
+  
+  Where:
+  - `<change_name>`: Change identifier (alphanumeric, hyphens, underscores, colons)
+  - `[<dependencies>]`: Optional space-separated list of required changes in square brackets
+  - `<timestamp>`: ISO 8601 timestamp with timezone (e.g., `2025-10-06T19:38:09Z`)
+  - `<planner>`: Name and email in format `Name <email@example.com>` or just `email@example.com`
+  - `# <note>`: Optional comment describing the change
+  
+  **Example Change**:
+  ```
+  users 2025-10-06T19:38:09Z Test User <test@example.com> # Creates table to track our users.
+  flipruser [users] 2025-10-06T19:43:22Z Test User <test@example.com> # Creates flipr user.
+  ```
+  
+  **Tag Entry Format**:
+  ```
+  @<tag_name> <timestamp> <planner> # <note>
+  ```
+  
+  Where:
+  - `@<tag_name>`: Tag identifier prefixed with `@`
+  - Tag implicitly references the immediately preceding change
+  - Timestamp and planner follow same format as changes
+  
+  **Example Tag**:
+  ```
+  @v1.0.0 2025-10-06T20:00:00Z Test User <test@example.com> # Release 1.0
+  ```
+  
+  **Formal Grammar** (EBNF-style):
+  ```
+  plan_file      = header_section blank_line entry_list
+  header_section = pragma+
+  pragma         = "%" key "=" value NEWLINE
+  blank_line     = NEWLINE
+  entry_list     = (change_entry | tag_entry)*
+  
+  change_entry   = change_name [dependencies] timestamp planner [note] NEWLINE
+  change_name    = identifier
+  dependencies   = "[" identifier_list "]"
+  identifier_list= identifier (SPACE identifier)*
+  timestamp      = ISO8601_WITH_TZ  ; e.g., "2025-10-06T19:38:09Z"
+  planner        = name_email | email
+  name_email     = name SPACE "<" email ">"
+  note           = "#" text_to_eol
+  
+  tag_entry      = "@" tag_name timestamp planner [note] NEWLINE
+  tag_name       = identifier
+  
+  identifier     = [a-zA-Z0-9_:-]+
+  email          = [^ \t]+@[^ \t]+
+  name           = [^<]+  ; any characters except '<'
+  text_to_eol    = [^\n]+
+  ```
+  
+  **Verbose Format Support** (for internal use only):
+  SQLitch parser MUST also support a verbose metadata format for backward compatibility:
+  ```
+  change <name> <deploy_path> <revert_path> [verify=<verify_path>] planner=<planner> planned_at=<timestamp> [notes=<note>] [depends=<dep1>,<dep2>] [change_id=<uuid>]
+  tag <name> <change_ref> planner=<planner> tagged_at=<timestamp>
+  ```
+  
+  However, all SQLitch commands that write plan files (init, add, tag, rework) MUST output the compact Sqitch-compatible format to maintain interoperability. The verbose format exists only for parsing legacy SQLitch files.
+  
+  **Critical Implementation Note**: The current `sqlitch.plan.formatter` module outputs the **verbose format**, which violates this requirement. The formatter MUST be updated to output the compact format. The parser correctly supports both formats (compact for Sqitch compatibility, verbose for legacy SQLitch files).
+
 **Script Generation**:
 - **FR-020**: Generated scripts MUST include proper headers with project:change notation, include BEGIN/COMMIT transaction wrappers (for deploy/revert), provide TODO/XXX comments for user implementation, and follow naming conventions (deploy/change.sql, revert/change.sql, verify/change.sql).
 
