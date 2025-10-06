@@ -51,6 +51,7 @@ __all__ = ["deploy_command"]
 @dataclass(frozen=True, slots=True)
 class _DeployRequest:
     project_root: Path
+    config_root: Path
     env: Mapping[str, str]
     plan_path: Path
     plan: Plan
@@ -115,6 +116,7 @@ def deploy_command(
 
     request = _build_request(
         project_root=project_root,
+        config_root=cli_context.config_root,
         env=env,
         plan_override=plan_override,
         to_change=to_change,
@@ -133,6 +135,7 @@ def deploy_command(
 def _build_request(
     *,
     project_root: Path,
+    config_root: Path,
     env: Mapping[str, str],
     plan_override: Path | None,
     to_change: str | None,
@@ -152,6 +155,7 @@ def _build_request(
 
     return _DeployRequest(
         project_root=project_root,
+        config_root=config_root,
         env=env,
         plan_path=plan_path,
         plan=plan,
@@ -233,7 +237,11 @@ def _execute_deploy(request: _DeployRequest) -> None:
         )
         return
 
-    committer_name, committer_email = _resolve_committer_identity(request.env)
+    committer_name, committer_email = _resolve_committer_identity(
+        request.env,
+        request.config_root,
+        request.project_root,
+    )
 
     engine, connection = _create_engine_connection(engine_target)
 
@@ -848,11 +856,39 @@ def _compute_script_hash(script_body: str) -> str:
     return hashlib.sha1(script_body.encode("utf-8")).hexdigest()
 
 
-def _resolve_committer_identity(env: Mapping[str, str]) -> tuple[str, str]:
-    """Resolve the committer name and email from environment variables."""
+def _resolve_committer_identity(
+    env: Mapping[str, str],
+    config_root: Path,
+    project_root: Path,
+) -> tuple[str, str]:
+    """Resolve the committer name and email from config and environment variables.
+    
+    Resolution order:
+    1. Config file (user.name and user.email)
+    2. Environment variables (SQLITCH_USER_*, GIT_*, etc.)
+    3. System defaults
+    """
+    from sqlitch.config.resolver import resolve_config
+    
+    # Try to load config to get user.name and user.email
+    config_name = None
+    config_email = None
+    try:
+        config = resolve_config(
+            root_dir=project_root,
+            config_root=config_root,
+            env=env,
+        )
+        user_section = config.settings.get("user", {})
+        config_name = user_section.get("name")
+        config_email = user_section.get("email")
+    except Exception:
+        # If config loading fails, fall back to environment variables
+        pass
 
     name = (
-        env.get("SQLITCH_USER_NAME")
+        config_name
+        or env.get("SQLITCH_USER_NAME")
         or env.get("GIT_COMMITTER_NAME")
         or env.get("GIT_AUTHOR_NAME")
         or env.get("USER")
@@ -861,7 +897,8 @@ def _resolve_committer_identity(env: Mapping[str, str]) -> tuple[str, str]:
     )
 
     email = (
-        env.get("SQLITCH_USER_EMAIL")
+        config_email
+        or env.get("SQLITCH_USER_EMAIL")
         or env.get("GIT_COMMITTER_EMAIL")
         or env.get("GIT_AUTHOR_EMAIL")
         or env.get("EMAIL")

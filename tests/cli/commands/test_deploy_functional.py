@@ -1143,6 +1143,155 @@ class TestDeployScriptExecution:
         conn.close()
 
 
+class TestDeployUserIdentity:
+    """Test that deploy correctly reads user identity from config."""
+
+    def test_uses_user_identity_from_config_file(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Deploy should read user.name and user.email from config file."""
+        # Setup: Create a project with user identity in config
+        project_dir = tmp_path / "test_project"
+        project_dir.mkdir()
+        
+        # Create sqitch.conf with user identity
+        conf_file = project_dir / "sqitch.conf"
+        conf_file.write_text(
+            "[core]\n"
+            "    engine = sqlite\n"
+            "[user]\n"
+            "    name = Config User\n"
+            "    email = config.user@example.com\n"
+        )
+        
+        # Create sqitch.plan (note: planner identity in plan doesn't matter for deploy)
+        plan_file = project_dir / "sqitch.plan"
+        plan_file.write_text(
+            "%syntax-version=1.0.0\n"
+            "%project=test_project\n"
+            "\n"
+            "users 2025-01-01T00:00:00Z Plan User <plan@example.com> # Add users table\n"
+        )
+        
+        # Create deploy script
+        deploy_dir = project_dir / "deploy"
+        deploy_dir.mkdir()
+        deploy_script = deploy_dir / "users.sql"
+        deploy_script.write_text(
+            "-- Deploy test_project:users to sqlite\n"
+            "\n"
+            "BEGIN;\n"
+            "CREATE TABLE users (id INTEGER PRIMARY KEY);\n"
+            "COMMIT;\n"
+        )
+        
+        # Target databases
+        target_db = tmp_path / "test.db"
+        registry_db = tmp_path / "sqitch.db"
+        
+        # Execute: Deploy with config file present
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result = runner.invoke(
+                main,
+                ["deploy", f"db:sqlite:{target_db}"],
+            )
+        finally:
+            os.chdir(original_cwd)
+        
+        assert result.exit_code == 0, f"Deploy should succeed\nOutput: {result.output}"
+        
+        # Verify: Check that the event record has the correct deployer identity from config
+        conn = sqlite3.connect(registry_db)
+        cursor = conn.cursor()
+        
+        cursor.execute(
+            "SELECT committer_name, committer_email FROM events WHERE change = 'users'"
+        )
+        row = cursor.fetchone()
+        assert row is not None, "Event record should exist"
+        
+        deployer_name, deployer_email = row
+        assert deployer_name == "Config User", (
+            f"Deployer name should come from config file, got: {deployer_name}"
+        )
+        assert deployer_email == "config.user@example.com", (
+            f"Deployer email should come from config file, got: {deployer_email}"
+        )
+        
+        conn.close()
+
+    def test_falls_back_to_env_when_no_config(self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Deploy should fall back to environment variables when config has no user section."""
+        # Setup: Create a project without user identity in config
+        project_dir = tmp_path / "test_project"
+        project_dir.mkdir()
+        
+        # Create sqitch.conf WITHOUT user section
+        conf_file = project_dir / "sqitch.conf"
+        conf_file.write_text("[core]\n    engine = sqlite\n")
+        
+        # Create sqitch.plan
+        plan_file = project_dir / "sqitch.plan"
+        plan_file.write_text(
+            "%syntax-version=1.0.0\n"
+            "%project=test_project\n"
+            "\n"
+            "users 2025-01-01T00:00:00Z Plan User <plan@example.com> # Add users\n"
+        )
+        
+        # Create deploy script
+        deploy_dir = project_dir / "deploy"
+        deploy_dir.mkdir()
+        deploy_script = deploy_dir / "users.sql"
+        deploy_script.write_text(
+            "-- Deploy test_project:users to sqlite\n"
+            "BEGIN;\n"
+            "CREATE TABLE users (id INTEGER PRIMARY KEY);\n"
+            "COMMIT;\n"
+        )
+        
+        # Target databases
+        target_db = tmp_path / "test.db"
+        registry_db = tmp_path / "sqitch.db"
+        
+        # Set environment variables for user identity
+        monkeypatch.setenv("SQLITCH_USER_NAME", "Env User")
+        monkeypatch.setenv("SQLITCH_USER_EMAIL", "env.user@example.com")
+        
+        # Execute: Deploy
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result = runner.invoke(
+                main,
+                ["deploy", f"db:sqlite:{target_db}"],
+            )
+        finally:
+            os.chdir(original_cwd)
+        
+        assert result.exit_code == 0, f"Deploy should succeed\nOutput: {result.output}"
+        
+        # Verify: Check that the event record has identity from environment
+        conn = sqlite3.connect(registry_db)
+        cursor = conn.cursor()
+        
+        cursor.execute(
+            "SELECT committer_name, committer_email FROM events WHERE change = 'users'"
+        )
+        row = cursor.fetchone()
+        assert row is not None, "Event record should exist"
+        
+        deployer_name, deployer_email = row
+        assert deployer_name == "Env User", (
+            f"Deployer name should come from environment, got: {deployer_name}"
+        )
+        assert deployer_email == "env.user@example.com", (
+            f"Deployer email should come from environment, got: {deployer_email}"
+        )
+        
+        conn.close()
+
+
 @pytest.fixture
 def runner() -> CliRunner:
     """Provide a Click test runner."""

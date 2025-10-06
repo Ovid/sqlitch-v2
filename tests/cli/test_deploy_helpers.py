@@ -143,6 +143,7 @@ def test_render_log_only_deploy_respects_quiet(
     plan = _make_plan((_make_change("one"),))
     request = deploy_module._DeployRequest(
         project_root=tmp_path,
+        config_root=tmp_path,
         env={},
         plan_path=tmp_path / "sqlitch.plan",
         plan=plan,
@@ -169,6 +170,7 @@ def test_render_log_only_deploy_outputs_messages(
     plan = _make_plan((_make_change("one"),))
     request = deploy_module._DeployRequest(
         project_root=tmp_path,
+        config_root=tmp_path,
         env={},
         plan_path=tmp_path / "sqlitch.plan",
         plan=plan,
