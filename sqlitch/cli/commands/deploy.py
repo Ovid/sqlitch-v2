@@ -862,14 +862,14 @@ def _resolve_committer_identity(
     project_root: Path,
 ) -> tuple[str, str]:
     """Resolve the committer name and email from config and environment variables.
-    
+
     Resolution order:
     1. Config file (user.name and user.email)
     2. Environment variables (SQLITCH_USER_*, GIT_*, etc.)
     3. System defaults
     """
     from sqlitch.config.resolver import resolve_config
-    
+
     # Try to load config to get user.name and user.email
     config_name = None
     config_email = None

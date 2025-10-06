@@ -20,10 +20,10 @@ class TestStatusWithNoRegistry:
         # Setup: Create a minimal project
         project_dir = tmp_path / "flipr"
         project_dir.mkdir()
-        
+
         conf_file = project_dir / "sqitch.conf"
         conf_file.write_text("[core]\n    engine = sqlite\n")
-        
+
         plan_file = project_dir / "sqitch.plan"
         plan_file.write_text(
             "%syntax-version=1.0.0\n"
@@ -31,9 +31,9 @@ class TestStatusWithNoRegistry:
             "\n"
             "users 2025-01-01T00:00:00Z Test User <test@example.com> # Add users\n"
         )
-        
+
         target_db = tmp_path / "flipr_test.db"
-        
+
         # Execute: Check status before any deployment
         original_cwd = os.getcwd()
         try:
@@ -44,10 +44,12 @@ class TestStatusWithNoRegistry:
             )
         finally:
             os.chdir(original_cwd)
-        
+
         # Verify: Exit code should be 1 (not deployed)
-        assert result.exit_code == 1, f"Status should exit 1 when not deployed\nOutput: {result.output}"
-        
+        assert (
+            result.exit_code == 1
+        ), f"Status should exit 1 when not deployed\nOutput: {result.output}"
+
         # Verify: Output indicates nothing deployed
         assert "flipr" in result.output.lower(), "Should mention project name"
 
@@ -60,10 +62,10 @@ class TestStatusWithDeployedChanges:
         # Setup: Create project and deploy a change
         project_dir = tmp_path / "flipr"
         project_dir.mkdir()
-        
+
         conf_file = project_dir / "sqitch.conf"
         conf_file.write_text("[core]\n    engine = sqlite\n")
-        
+
         plan_file = project_dir / "sqitch.plan"
         plan_file.write_text(
             "%syntax-version=1.0.0\n"
@@ -71,7 +73,7 @@ class TestStatusWithDeployedChanges:
             "\n"
             "users 2025-01-01T00:00:00Z Test User <test@example.com> # Add users\n"
         )
-        
+
         deploy_dir = project_dir / "deploy"
         deploy_dir.mkdir()
         deploy_script = deploy_dir / "users.sql"
@@ -81,9 +83,9 @@ class TestStatusWithDeployedChanges:
             "CREATE TABLE users (id INTEGER PRIMARY KEY);\n"
             "COMMIT;\n"
         )
-        
+
         target_db = tmp_path / "flipr_test.db"
-        
+
         # Deploy first
         original_cwd = os.getcwd()
         try:
@@ -94,9 +96,11 @@ class TestStatusWithDeployedChanges:
             )
         finally:
             os.chdir(original_cwd)
-        
-        assert deploy_result.exit_code == 0, f"Deploy should succeed\nOutput: {deploy_result.output}"
-        
+
+        assert (
+            deploy_result.exit_code == 0
+        ), f"Deploy should succeed\nOutput: {deploy_result.output}"
+
         # Execute: Check status after deployment
         try:
             os.chdir(project_dir)
@@ -106,24 +110,26 @@ class TestStatusWithDeployedChanges:
             )
         finally:
             os.chdir(original_cwd)
-        
+
         # Verify: Exit code should be 0 (up to date)
-        assert status_result.exit_code == 0, \
-            f"Status should exit 0 when up-to-date\nOutput: {status_result.output}"
-        
+        assert (
+            status_result.exit_code == 0
+        ), f"Status should exit 0 when up-to-date\nOutput: {status_result.output}"
+
         # Verify: Output shows deployed change
-        assert "users" in status_result.output, \
-            f"Should show deployed change 'users'\nOutput: {status_result.output}"
+        assert (
+            "users" in status_result.output
+        ), f"Should show deployed change 'users'\nOutput: {status_result.output}"
 
     def test_exit_code_zero_when_up_to_date(self, runner: CliRunner, tmp_path: Path) -> None:
         """Status should exit 0 when all changes deployed."""
         # Setup
         project_dir = tmp_path / "flipr"
         project_dir.mkdir()
-        
+
         conf_file = project_dir / "sqitch.conf"
         conf_file.write_text("[core]\n    engine = sqlite\n")
-        
+
         plan_file = project_dir / "sqitch.plan"
         plan_file.write_text(
             "%syntax-version=1.0.0\n"
@@ -132,10 +138,10 @@ class TestStatusWithDeployedChanges:
             "users 2025-01-01T00:00:00Z Test User <test@example.com> # Add users\n"
             "posts 2025-01-02T00:00:00Z Test User <test@example.com> # Add posts\n"
         )
-        
+
         deploy_dir = project_dir / "deploy"
         deploy_dir.mkdir()
-        
+
         (deploy_dir / "users.sql").write_text(
             "-- Deploy flipr:users to sqlite\n"
             "BEGIN;\n"
@@ -148,9 +154,9 @@ class TestStatusWithDeployedChanges:
             "CREATE TABLE posts (id INTEGER PRIMARY KEY);\n"
             "COMMIT;\n"
         )
-        
+
         target_db = tmp_path / "flipr_test.db"
-        
+
         # Deploy all changes
         original_cwd = os.getcwd()
         try:
@@ -161,9 +167,9 @@ class TestStatusWithDeployedChanges:
             )
         finally:
             os.chdir(original_cwd)
-        
+
         assert deploy_result.exit_code == 0, "Deploy should succeed"
-        
+
         # Execute: Check status
         try:
             os.chdir(project_dir)
@@ -173,10 +179,11 @@ class TestStatusWithDeployedChanges:
             )
         finally:
             os.chdir(original_cwd)
-        
+
         # Verify: Exit code 0 when all changes deployed
-        assert status_result.exit_code == 0, \
-            "Status should exit 0 when all plan changes are deployed"
+        assert (
+            status_result.exit_code == 0
+        ), "Status should exit 0 when all plan changes are deployed"
 
 
 class TestStatusWithPendingChanges:
@@ -187,10 +194,10 @@ class TestStatusWithPendingChanges:
         # Setup: Deploy one change, but have two in plan
         project_dir = tmp_path / "flipr"
         project_dir.mkdir()
-        
+
         conf_file = project_dir / "sqitch.conf"
         conf_file.write_text("[core]\n    engine = sqlite\n")
-        
+
         plan_file = project_dir / "sqitch.plan"
         plan_file.write_text(
             "%syntax-version=1.0.0\n"
@@ -198,7 +205,7 @@ class TestStatusWithPendingChanges:
             "\n"
             "users 2025-01-01T00:00:00Z Test User <test@example.com> # Add users\n"
         )
-        
+
         deploy_dir = project_dir / "deploy"
         deploy_dir.mkdir()
         (deploy_dir / "users.sql").write_text(
@@ -207,9 +214,9 @@ class TestStatusWithPendingChanges:
             "CREATE TABLE users (id INTEGER PRIMARY KEY);\n"
             "COMMIT;\n"
         )
-        
+
         target_db = tmp_path / "flipr_test.db"
-        
+
         # Deploy first change
         original_cwd = os.getcwd()
         try:
@@ -220,9 +227,9 @@ class TestStatusWithPendingChanges:
             )
         finally:
             os.chdir(original_cwd)
-        
+
         assert deploy_result.exit_code == 0, "Deploy should succeed"
-        
+
         # Now add a second change to the plan
         plan_file.write_text(
             "%syntax-version=1.0.0\n"
@@ -231,14 +238,14 @@ class TestStatusWithPendingChanges:
             "users 2025-01-01T00:00:00Z Test User <test@example.com> # Add users\n"
             "posts 2025-01-02T00:00:00Z Test User <test@example.com> # Add posts\n"
         )
-        
+
         (deploy_dir / "posts.sql").write_text(
             "-- Deploy flipr:posts to sqlite\n"
             "BEGIN;\n"
             "CREATE TABLE posts (id INTEGER PRIMARY KEY);\n"
             "COMMIT;\n"
         )
-        
+
         # Execute: Check status
         try:
             os.chdir(project_dir)
@@ -248,25 +255,27 @@ class TestStatusWithPendingChanges:
             )
         finally:
             os.chdir(original_cwd)
-        
+
         # Verify: Exit code should be 1 (pending changes)
-        assert status_result.exit_code == 1, \
-            f"Status should exit 1 when pending changes exist\nOutput: {status_result.output}"
-        
+        assert (
+            status_result.exit_code == 1
+        ), f"Status should exit 1 when pending changes exist\nOutput: {status_result.output}"
+
         # Verify: Output mentions pending change
         output_lower = status_result.output.lower()
-        assert "posts" in output_lower or "pending" in output_lower, \
-            f"Should indicate pending changes\nOutput: {status_result.output}"
+        assert (
+            "posts" in output_lower or "pending" in output_lower
+        ), f"Should indicate pending changes\nOutput: {status_result.output}"
 
     def test_shows_deployed_and_pending_counts(self, runner: CliRunner, tmp_path: Path) -> None:
         """Status should show counts of deployed and pending changes."""
         # Setup: Deploy one of two changes
         project_dir = tmp_path / "flipr"
         project_dir.mkdir()
-        
+
         conf_file = project_dir / "sqitch.conf"
         conf_file.write_text("[core]\n    engine = sqlite\n")
-        
+
         plan_file = project_dir / "sqitch.plan"
         plan_file.write_text(
             "%syntax-version=1.0.0\n"
@@ -276,10 +285,10 @@ class TestStatusWithPendingChanges:
             "posts 2025-01-02T00:00:00Z Test User <test@example.com> # Add posts\n"
             "comments 2025-01-03T00:00:00Z Test User <test@example.com> # Add comments\n"
         )
-        
+
         deploy_dir = project_dir / "deploy"
         deploy_dir.mkdir()
-        
+
         (deploy_dir / "users.sql").write_text(
             "-- Deploy flipr:users to sqlite\n"
             "BEGIN;\n"
@@ -298,15 +307,15 @@ class TestStatusWithPendingChanges:
             "CREATE TABLE comments (id INTEGER PRIMARY KEY);\n"
             "COMMIT;\n"
         )
-        
+
         target_db = tmp_path / "flipr_test.db"
-        
+
         # Deploy only first change (by temporarily having only one change in plan)
         original_cwd = os.getcwd()
-        
+
         # Save the full plan
         full_plan_content = plan_file.read_text()
-        
+
         # Write temporary plan with only first change
         plan_file.write_text(
             "%syntax-version=1.0.0\n"
@@ -314,17 +323,17 @@ class TestStatusWithPendingChanges:
             "\n"
             "users 2025-01-01T00:00:00Z Test User <test@example.com> # Add users\n"
         )
-        
+
         try:
             os.chdir(project_dir)
             # Deploy just users
             runner.invoke(main, ["deploy", f"db:sqlite:{target_db}"])
         finally:
             os.chdir(original_cwd)
-        
+
         # Restore full plan with all three changes
         plan_file.write_text(full_plan_content)
-        
+
         # Execute: Check status
         try:
             os.chdir(project_dir)
@@ -334,7 +343,7 @@ class TestStatusWithPendingChanges:
             )
         finally:
             os.chdir(original_cwd)
-        
+
         # Verify: Shows counts or mentions both deployed and pending
         output = status_result.output
         # Should show deployed change

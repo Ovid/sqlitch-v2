@@ -72,7 +72,7 @@ def _resolve_engine_target(
     registry_override: str | None,
 ) -> tuple[EngineTarget, str]:
     """Return an EngineTarget for the requested target."""
-    
+
     candidate = target.strip()
     if candidate.startswith("db:"):
         remainder = candidate[3:]
@@ -198,15 +198,15 @@ def verify_command(
 
     # Get deployed changes from registry
     engine = create_engine(engine_target)
-    
+
     # Connect to target database and attach registry
     import sqlite3
     from sqlitch.engine.sqlite import SQLiteEngine
-    
+
     # Check engine type by name instead of isinstance to avoid test isolation issues
     if engine_target.engine != "sqlite":
         raise CommandError("Only SQLite engine is supported for verify in this milestone")
-    
+
     # Parse URIs to get paths - strip db: and sqlite: prefixes
     workspace_uri = engine_target.uri
     if workspace_uri.startswith("db:sqlite:"):
@@ -215,7 +215,7 @@ def verify_command(
         workspace_path = workspace_uri[7:]  # Remove "sqlite:"
     else:
         workspace_path = workspace_uri
-    
+
     registry_uri = engine_target.registry_uri
     if registry_uri.startswith("db:sqlite:"):
         registry_path = registry_uri[10:]  # Remove "db:sqlite:"
@@ -223,12 +223,12 @@ def verify_command(
         registry_path = registry_uri[7:]  # Remove "sqlite:"
     else:
         registry_path = registry_uri
-    
+
     # Connect to workspace and attach registry
     connection = sqlite3.connect(workspace_path)
     try:
         connection.execute(f"ATTACH DATABASE '{registry_path}' AS sqitch")
-        
+
         # Query deployed changes
         cursor = connection.execute(
             "SELECT change FROM sqitch.changes WHERE project = ? ORDER BY committed_at",
@@ -248,11 +248,11 @@ def verify_command(
     # Execute verify scripts
     verification_failed = False
     cursor = connection.cursor()
-    
+
     for change_name in deployed_changes:
         # Find verify script
         verify_script_path = project_root / "verify" / f"{change_name}.sql"
-        
+
         if not verify_script_path.exists():
             click.echo(f"# {change_name} .. SKIP (no verify script)")
             continue
@@ -266,7 +266,7 @@ def verify_command(
             click.echo(f"# {change_name} .. NOT OK")
             click.echo(f"  Error: {e}", err=True)
             verification_failed = True
-    
+
     cursor.close()
     connection.close()
 
