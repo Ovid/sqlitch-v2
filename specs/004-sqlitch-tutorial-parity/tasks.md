@@ -60,6 +60,7 @@
 ### CHECKPOINT 5: Revert & Log (Tutorial Lines 284-327)
 **Commands**: `sqitch revert`, `sqitch log`  
 **Tasks**: T041-T044 (revert), T031-T032 (log)  
+**Status**: ⏳ PARTIAL - Log complete (T031-T032 ✅), Revert pending (T041-T044)  
 **UAT**: Run `sqlitch revert db:sqlite:flipr_test.db` and `sqlitch log db:sqlite:flipr_test.db`  
 **Expected**: Revert shows "- users .. ok", log shows both deploy and revert events
 
@@ -311,18 +312,32 @@
   - **Discovery**: Verified by 5 functional tests, all passing
 
 ### Log Command (Simple - 2 days)
-- [ ] **T031** Write tests for log display in `tests/cli/commands/test_log_functional.py`
-  - Test display all events
-  - Test filter by change name
-  - Test reverse chronological order
-  - Test event type display (deploy/revert/fail)
-  - Test output format matches Sqitch
+- [X] **T031** Write tests for log display in `tests/cli/commands/test_log_functional.py`
+  - Test display all events ✅
+  - Test filter by change name ✅
+  - Test filter by event type ✅
+  - Test reverse chronological order ✅
+  - Test pagination (--limit, --skip) ✅
+  - Test JSON format output ✅
+  - Test empty registry handling ✅
+  - Test output format matches Sqitch ✅
+  - **Status**: ✅ COMPLETE (2025-10-06) - 9 functional tests passing
+  - **Discovery**: Log command already implemented in Feature 002
+  - **Files Created**: `tests/cli/commands/test_log_functional.py` (479 lines, 9 tests)
+  - **Coverage**: log.py improved from 20% → 79% with both functional and contract tests
   
-- [ ] **T032** Implement log command in `sqlitch/cli/commands/log.py` (~250 lines)
-  - Query registry events table via engine.get_events()
-  - Filter by change name if provided
-  - Format output matching Sqitch log display
-  - Show committer, timestamp, note for each event
+- [X] **T032** Implement log command in `sqlitch/cli/commands/log.py` (~250 lines)
+  - Query registry events table via _load_log_events() ✅
+  - Filter by change name (--change flag) ✅
+  - Filter by event type (--event flag) ✅
+  - Filter by project (--project flag) ✅
+  - Pagination via --limit and --skip ✅
+  - Format output matching Sqitch log display ✅
+  - JSON format support (--format json) ✅
+  - Show committer, timestamp, note, tags for each event ✅
+  - **Status**: ✅ COMPLETE (2025-10-06) - Already implemented, validated by 9 functional + 11 contract tests
+  - **Discovery**: Implementation more comprehensive than spec (includes tags, JSON format, pagination)
+  - **Note**: Missing coverage (21%) is error handling edge cases, acceptable for tutorial scope
 
 ### Deploy Command (Complex - 4 days)
 - [X] **T033** Write tests for deploy with no registry in `tests/cli/commands/test_deploy_functional.py`

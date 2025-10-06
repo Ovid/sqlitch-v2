@@ -13,7 +13,7 @@ import pytest
 from sqlitch.cli.main import main
 from sqlitch.cli.commands import CommandError
 from sqlitch.cli.commands.status import (
-    RegistryRow,
+    CurrentChange,
     _build_json_payload,
     _calculate_pending,
     _determine_status,
@@ -296,13 +296,13 @@ def test_render_human_output_includes_ahead_marker() -> None:
     """Human rendering should report ahead status when applicable."""
 
     rows = (
-        RegistryRow(
+        CurrentChange(
             project="widgets",
             change_id="abc",
             change_name="users",
             deployed_at="2025-01-01T00:00:00Z",
-            deployer_name="Ada",
-            deployer_email="ada@example.com",
+            committer_name="Ada",
+            committer_email="ada@example.com",
             tag=None,
         ),
     )
@@ -337,13 +337,13 @@ def test_render_human_output_lists_pending_changes() -> None:
     """Behind status should enumerate pending change names."""
 
     rows = (
-        RegistryRow(
+        CurrentChange(
             project="widgets",
             change_id="abc",
             change_name="users",
             deployed_at="2025-01-01T00:00:00Z",
-            deployer_name="Ada",
-            deployer_email="ada@example.com",
+            committer_name="Ada",
+            committer_email="ada@example.com",
             tag=None,
         ),
     )
@@ -365,13 +365,13 @@ def test_render_human_output_reports_in_sync() -> None:
     """Default branch should report that nothing remains to deploy."""
 
     rows = (
-        RegistryRow(
+        CurrentChange(
             project="widgets",
             change_id="abc",
             change_name="users",
             deployed_at="2025-01-01T00:00:00Z",
-            deployer_name="Ada",
-            deployer_email="ada@example.com",
+            committer_name="Ada",
+            committer_email="ada@example.com",
             tag="v1.0",
         ),
     )
@@ -420,13 +420,13 @@ def test_build_json_payload_with_registry_rows(tmp_path: Path) -> None:
         plan_path=tmp_path / "sqlitch.plan",
     )
     rows = (
-        RegistryRow(
+        CurrentChange(
             project="widgets",
             change_id="abc",
             change_name="users",
             deployed_at="2025-01-01T00:00:00Z",
-            deployer_name="Ada",
-            deployer_email="ada@example.com",
+            committer_name="Ada",
+            committer_email="ada@example.com",
             tag="v1.0",
         ),
     )
