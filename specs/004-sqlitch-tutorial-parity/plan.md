@@ -43,6 +43,13 @@ Feature 004 implements the minimum command functionality required to complete th
 - Foundation provides excellent patterns to follow
 - Estimated 4-5 weeks total implementation time
 
+**Implementation Order** (tutorial-driven):
+- Follow command sequence from `sqitch/lib/sqitchtutorial-sqlite.pod` (1,253 lines)
+- Implement in tutorial order: init → config → add → deploy → verify/status → revert/log → tag/rework
+- Manual UAT validation after each checkpoint before proceeding
+- Ensures behavioral parity with real Sqitch usage patterns
+- See tasks.md "Tutorial Implementation Order" section for detailed checkpoints
+
 ## Technical Context
 **Language/Version**: Python 3.11  
 **Primary Dependencies**: Click (CLI framework), sqlite3 (stdlib database), pytest (testing)  

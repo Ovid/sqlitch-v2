@@ -3,33 +3,83 @@
 **Input**: Design documents from `/specs/004-sqlitch-tutorial-parity/`
 **Prerequisites**: plan.md ✅, research.md ✅, data-model.md ✅, quickstart.md ✅
 
-## Execution Flow (main)
+## Execution Flow (Tutorial-Driven Implementation)
 ```
 1. ✅ Loaded plan.md - Python 3.11, Click, pytest, sqlite3
 2. ✅ Loaded data-model.md - 10 new models + 4 helpers + Plan methods
 3. ✅ Loaded research.md - Technical decisions, existing code analysis
 4. ✅ Loaded quickstart.md - 8 validation scenarios
-5. Generating tasks by category:
-   → Foundation: New models, helpers, Plan methods
-   → Commands: 10 commands (2 finalize, 8 implement)
-   → Integration: 8 quickstart scenarios
-   → Observability: Default Sqitch-parity output validation
-6. Task ordering: Foundation → Config → Status/Log → Deploy/Verify/Revert → Tag/Rework → Integration
-7. Parallel marking: Different files get [P], same file sequential
+5. ✅ Loaded sqitchtutorial-sqlite.pod - Tutorial command sequence
+6. Task ordering follows tutorial flow (sqitch/lib/sqitchtutorial-sqlite.pod):
+   → CHECKPOINT 1: Init + Config (lines 66-108 in tutorial)
+   → CHECKPOINT 2: Add (lines 149-165)
+   → CHECKPOINT 3: Deploy (lines 200-220) - requires Foundation models
+   → CHECKPOINT 4: Verify + Status (lines 238-282)
+   → CHECKPOINT 5: Revert + Log (lines 284-327)
+   → CHECKPOINT 6: Tag + Rework (later sections)
+   → CHECKPOINT 7: Integration tests + Parity validation
+7. UAT validation after each checkpoint before proceeding
 8. TDD: Tests before implementation for all new code
 ```
 
 ## Format: `[ID] [P?] Description`
 - **[P]**: Can run in parallel (different files, no dependencies)
+- **[UAT]**: Manual user acceptance testing checkpoint
 - All paths are absolute from repository root
 
 ---
 
-## Phase 3.1: Foundation Models & Helpers
-**Purpose**: Create all data structures needed by commands  
-**Estimated Time**: 3-4 days
+## Tutorial Implementation Order
 
-### Registry Models (sqlitch/registry/state.py)
+**IMPORTANT**: Tasks are implemented following the tutorial command sequence from `sqitch/lib/sqitchtutorial-sqlite.pod`. After each checkpoint, perform manual UAT validation before proceeding.
+
+### CHECKPOINT 1: Project Setup (Tutorial Lines 66-108)
+**Commands**: `sqitch init`, `sqitch config`  
+**Tasks**: T051-T053 (init), T025-T028 (config)  
+**UAT**: Run `sqlitch init flipr --engine sqlite` and `sqlitch config --user user.name "Your Name"`  
+**Expected**: Creates sqitch.conf, sqitch.plan, deploy/, revert/, verify/ directories; config sets user.name
+
+### CHECKPOINT 2: Adding Changes (Tutorial Lines 149-165)
+**Commands**: `sqitch add`  
+**Tasks**: T054-T055 (add finalization)  
+**UAT**: Run `sqlitch add users -n 'Creates table to track our users.'`  
+**Expected**: Creates deploy/users.sql, revert/users.sql, verify/users.sql with proper headers
+
+### CHECKPOINT 3: Deployment (Tutorial Lines 200-220)
+**Commands**: `sqitch deploy`  
+**Tasks**: T001-T024 (foundation models - MUST complete first), T033-T038 (deploy)  
+**UAT**: Run `sqlitch deploy db:sqlite:flipr_test.db`  
+**Expected**: Creates sqitch.db registry, deploys users table, outputs "+ users .. ok"
+
+### CHECKPOINT 4: Verification & Status (Tutorial Lines 238-282)
+**Commands**: `sqitch verify`, `sqitch status`  
+**Tasks**: T039-T040 (verify), T029-T030 (status)  
+**UAT**: Run `sqlitch verify db:sqlite:flipr_test.db` and `sqlitch status db:sqlite:flipr_test.db`  
+**Expected**: Verify shows "* users .. ok", status shows deployed change with timestamp
+
+### CHECKPOINT 5: Revert & Log (Tutorial Lines 284-327)
+**Commands**: `sqitch revert`, `sqitch log`  
+**Tasks**: T041-T044 (revert), T031-T032 (log)  
+**UAT**: Run `sqlitch revert db:sqlite:flipr_test.db` and `sqlitch log db:sqlite:flipr_test.db`  
+**Expected**: Revert shows "- users .. ok", log shows both deploy and revert events
+
+### CHECKPOINT 6: Tags & Rework (Tutorial Later Sections)
+**Commands**: `sqitch tag`, `sqitch rework`  
+**Tasks**: T045-T047 (tag), T048-T050 (rework)  
+**UAT**: Run `sqlitch tag v1.0.0-dev1 -n 'First release'` and `sqlitch rework users`  
+**Expected**: Tag added to plan, rework creates @v1.0.0-dev1 suffixed scripts
+
+### CHECKPOINT 7: Integration & Polish (Full Tutorial)
+**Commands**: All commands together  
+**Tasks**: T056-T063 (integration tests), T064-T072 (parity validation), T073-T077 (polish)  
+**UAT**: Follow complete tutorial workflow end-to-end  
+**Expected**: All tutorial scenarios pass, output matches Sqitch byte-for-byte
+
+---
+
+## Task Details (Organized by Technical Phase)
+
+### Phase 3.1: Foundation Models & Helpers
 - [ ] **T001** [P] Write tests for DeployedChange model in `tests/registry/test_state.py`
   - Test from_registry_row() with valid data
   - Test from_registry_row() with NULL script_hash
