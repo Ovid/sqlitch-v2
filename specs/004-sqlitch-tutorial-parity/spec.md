@@ -318,7 +318,16 @@ Database developers following the SQLite tutorial need to successfully complete 
   **Critical Implementation Note**: The current `sqlitch.plan.formatter` module outputs the **verbose format**, which violates this requirement. The formatter MUST be updated to output the compact format. The parser correctly supports both formats (compact for Sqitch compatibility, verbose for legacy SQLitch files).
 
 **Script Generation**:
-- **FR-020**: Generated scripts MUST include proper headers with project:change notation, include BEGIN/COMMIT transaction wrappers (for deploy/revert), provide TODO/XXX comments for user implementation, and follow naming conventions (deploy/change.sql, revert/change.sql, verify/change.sql).
+- **FR-020**: Script templates MUST match Sqitch templates exactly and include proper headers with project:change notation. Templates MUST include BEGIN/COMMIT transaction wrappers (deploy/revert) or BEGIN/ROLLBACK (verify) as placeholders for user modification. SQLitch MUST NOT add or modify transaction control in user scripts - users are responsible for transaction management within their scripts. Templates MUST provide XXX TODO comments for user implementation and follow naming conventions (deploy/change.sql, revert/change.sql, verify/change.sql).
+
+  **Template Alignment** (Constitutional Principle VI - Behavioral Parity):
+  SQLitch script templates MUST be byte-identical to Sqitch templates from `sqitch/etc/templates/{deploy,revert,verify}/{engine}.tmpl`. For SQLite:
+  
+  - **Deploy template**: Includes `BEGIN;` / `COMMIT;` wrapper with `-- XXX Add DDLs here.` placeholder
+  - **Revert template**: Includes `BEGIN;` / `COMMIT;` wrapper with `-- XXX Add DDLs here.` placeholder  
+  - **Verify template**: Includes `BEGIN;` / `ROLLBACK;` wrapper with `-- XXX Add verifications here.` placeholder
+  
+  Templates are discovered in order: project templates → user config templates → system /etc/sqitch templates. Users may customize templates by placing modified versions in these locations. SQLitch renders templates using the same Template Toolkit-style syntax as Sqitch (`[% variable %]`, `[% FOREACH ... %]`).
 
 **Target Management**:
 - **FR-021**: SQLitch MUST parse database URIs (db:sqlite:path/to/db), resolve relative paths from project root, create target databases if they don't exist, and support in-memory databases (:memory:).

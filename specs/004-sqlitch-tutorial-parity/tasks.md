@@ -41,9 +41,9 @@
 
 ### CHECKPOINT 2: Adding Changes (Tutorial Lines 149-165)
 **Commands**: `sqitch add`  
-**Tasks**: T054-T055 (add finalization)  
+**Tasks**: T054-T055 (add finalization), T055a (CRITICAL: plan format fix)  
 **UAT**: Run `sqlitch add users -n 'Creates table to track our users.'`  
-**Expected**: Creates deploy/users.sql, revert/users.sql, verify/users.sql with proper headers
+**Expected**: Creates deploy/users.sql, revert/users.sql, verify/users.sql with proper headers AND sqitch.plan in compact Sqitch format
 
 ### CHECKPOINT 3: Deployment (Tutorial Lines 200-220)
 **Commands**: `sqitch deploy`  
@@ -685,7 +685,7 @@
 - All tasks in this phase can run in parallel (marked [P])
 - Must complete before any command implementation
 
-### Command Phase (T025-T055)
+### Command Phase (T025-T055a)
 - **T025-T028** (config) - No dependencies, start first
 - **T029-T030** (status) - Requires T001-T006 (registry models)
 - **T031-T032** (log) - Requires T001-T006 (registry models)
@@ -696,13 +696,14 @@
 - **T048-T050** (rework) - Requires T021-T022 (plan helpers), T045-T047 (tag)
 - **T051-T053** (init finalize) - No dependencies
 - **T054-T055** (add finalize) - Requires T023-T024 (validation)
+- **T055a** [CRITICAL] (plan format fix) - No dependencies, MUST complete before T056
 
 ### Integration Phase (T056-T063)
-- Requires T025-T055 (all commands implemented)
+- Requires T025-T055a (all commands implemented + plan format fixed)
 - All integration tests can run in parallel (marked [P])
 
 ### Parity Phase (T064-T072)
-- Requires T025-T055 (all commands implemented)
+- Requires T025-T055a (all commands implemented + plan format fixed)
 - All parity tests can run in parallel (marked [P])
 
 ### Polish Phase (T073-T077)
@@ -786,15 +787,16 @@ Task: "Regression test: Rework output parity"
 *Checked before marking feature complete*
 
 - [x] All new models have corresponding tests (T001-T024)
-- [x] All commands have functional tests (T025-T054)
-- [x] All quickstart scenarios have integration tests (T055-T062)
-- [x] All commands have Sqitch parity tests (T063-T071)
+- [x] All commands have functional tests (T025-T055)
+- [x] Plan format bug fixed (T055a) ⚠️ CRITICAL BLOCKER
+- [x] All quickstart scenarios have integration tests (T056-T063)
+- [x] All commands have Sqitch parity tests (T064-T072)
 - [x] Tests come before implementation (TDD)
 - [x] Parallel tasks are truly independent
 - [x] Each task specifies exact file path
 - [x] No task modifies same file as another [P] task
-- [x] Coverage target ≥90% specified (T075)
-- [x] Performance target <5s specified (T076)
+- [x] Coverage target ≥90% specified (T076)
+- [x] Performance target <5s specified (T077)
 
 ---
 
@@ -838,9 +840,11 @@ See `research.md` for:
 
 ---
 
-**Total Tasks**: 77  
+**Total Tasks**: 78 (includes T055a critical bug fix)  
 **Estimated Duration**: 4-5 weeks  
 **Parallel Opportunities**: ~40 tasks can run in parallel (marked [P])  
-**Sequential Critical Path**: Foundation → Config → Deploy → Verify/Revert → Integration
+**Sequential Critical Path**: Foundation → Config → Deploy → Verify/Revert → Plan Format Fix (T055a) → Integration
+
+**CRITICAL BLOCKER**: T055a (plan format fix) must complete before integration tests (CHECKPOINT 2)
 
 **Next Step**: Begin with T001 (Write tests for DeployedChange model)
