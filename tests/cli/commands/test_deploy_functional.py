@@ -893,6 +893,256 @@ class TestDeployWithMultipleChanges:
         assert not table_exists, "Table from failed transaction should not exist (rollback should have occurred)"
 
 
+class TestDeployDependencyValidation:
+    """Test deploy dependency validation."""
+
+    def test_validates_dependencies_before_deploy(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Deploy should validate that required dependencies are deployed first."""
+        # Setup
+        project_dir = tmp_path / "flipr"
+        project_dir.mkdir()
+        
+        conf_file = project_dir / "sqitch.conf"
+        conf_file.write_text("[core]\n    engine = sqlite\n")
+        
+        # Create plan with posts depending on users
+        plan_file = project_dir / "sqitch.plan"
+        plan_file.write_text(
+            "%syntax-version=1.0.0\n"
+            "%project=flipr\n"
+            "\n"
+            "users 2025-01-01T00:00:00Z Test User <test@example.com> # Add users\n"
+            "posts [users] 2025-01-02T00:00:00Z Test User <test@example.com> # Add posts\n"
+        )
+        
+        deploy_dir = project_dir / "deploy"
+        deploy_dir.mkdir()
+        
+        (deploy_dir / "users.sql").write_text(
+            "-- Deploy flipr:users to sqlite\n"
+            "BEGIN;\n"
+            "CREATE TABLE users (id INTEGER PRIMARY KEY);\n"
+            "COMMIT;\n"
+        )
+        (deploy_dir / "posts.sql").write_text(
+            "-- Deploy flipr:posts to sqlite\n"
+            "BEGIN;\n"
+            "CREATE TABLE posts (id INTEGER PRIMARY KEY, user_id INTEGER REFERENCES users(id));\n"
+            "COMMIT;\n"
+        )
+        
+        target_db = tmp_path / "flipr_test.db"
+        registry_db = tmp_path / "sqitch.db"
+        
+        # Execute: Deploy both changes
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result = runner.invoke(
+                main,
+                ["deploy", f"db:sqlite:{target_db}"],
+            )
+        finally:
+            os.chdir(original_cwd)
+        
+        assert result.exit_code == 0, f"Deploy should succeed when dependencies deployed\nOutput: {result.output}"
+        
+        # Verify: Both changes deployed
+        conn = sqlite3.connect(registry_db)
+        cursor = conn.cursor()
+        cursor.execute("SELECT change FROM changes ORDER BY committed_at")
+        changes = [row[0] for row in cursor.fetchall()]
+        
+        assert changes == ["users", "posts"], "Both changes should be deployed in dependency order"
+        
+        # Verify: Dependency recorded in registry
+        cursor.execute(
+            "SELECT dependency FROM dependencies WHERE change_id = "
+            "(SELECT change_id FROM changes WHERE change = 'posts')"
+        )
+        dependencies = [row[0] for row in cursor.fetchall()]
+        
+        assert "users" in dependencies, "posts dependency on users should be recorded"
+        
+        conn.close()
+
+    def test_fails_if_required_dependency_not_deployed(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Deploy should fail if a required dependency has not been deployed yet."""
+        # Setup: Create project with posts but try to deploy only posts (missing users dependency)
+        project_dir = tmp_path / "flipr"
+        project_dir.mkdir()
+        
+        conf_file = project_dir / "sqitch.conf"
+        conf_file.write_text("[core]\n    engine = sqlite\n")
+        
+        # Plan has posts depending on users, but we'll deploy users first, then manually
+        # try to deploy only a change that depends on something not yet deployed
+        plan_file = project_dir / "sqitch.plan"
+        plan_file.write_text(
+            "%syntax-version=1.0.0\n"
+            "%project=flipr\n"
+            "\n"
+            "users 2025-01-01T00:00:00Z Test User <test@example.com> # Add users\n"
+            "posts [users] 2025-01-02T00:00:00Z Test User <test@example.com> # Add posts\n"
+            "comments [posts nonexistent] 2025-01-03T00:00:00Z Test User <test@example.com> # Add comments\n"
+        )
+        
+        deploy_dir = project_dir / "deploy"
+        deploy_dir.mkdir()
+        
+        (deploy_dir / "users.sql").write_text(
+            "-- Deploy flipr:users to sqlite\n"
+            "BEGIN;\n"
+            "CREATE TABLE users (id INTEGER PRIMARY KEY);\n"
+            "COMMIT;\n"
+        )
+        (deploy_dir / "posts.sql").write_text(
+            "-- Deploy flipr:posts to sqlite\n"
+            "BEGIN;\n"
+            "CREATE TABLE posts (id INTEGER PRIMARY KEY);\n"
+            "COMMIT;\n"
+        )
+        (deploy_dir / "comments.sql").write_text(
+            "-- Deploy flipr:comments to sqlite\n"
+            "BEGIN;\n"
+            "CREATE TABLE comments (id INTEGER PRIMARY KEY);\n"
+            "COMMIT;\n"
+        )
+        
+        target_db = tmp_path / "flipr_test.db"
+        registry_db = tmp_path / "sqitch.db"
+        
+        # Execute: Deploy all changes (comments depends on nonexistent change)
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result = runner.invoke(
+                main,
+                ["deploy", f"db:sqlite:{target_db}"],
+            )
+        finally:
+            os.chdir(original_cwd)
+        
+        # Verify: Deploy should fail due to missing dependency
+        assert result.exit_code != 0, f"Deploy should fail with missing dependency\nOutput: {result.output}"
+        assert "nonexistent" in result.output.lower() or "dependency" in result.output.lower(), \
+            f"Error message should mention missing dependency\nOutput: {result.output}"
+        
+        # Verify: Comments was not deployed
+        conn = sqlite3.connect(registry_db)
+        cursor = conn.cursor()
+        cursor.execute("SELECT change FROM changes")
+        changes = [row[0] for row in cursor.fetchall()]
+        
+        assert "comments" not in changes, "Change with missing dependency should not be deployed"
+        
+        conn.close()
+
+
+class TestDeployScriptExecution:
+    """Test deploy script execution and transaction management."""
+
+    def test_wraps_script_in_transaction_when_needed(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Deploy should wrap script in transaction if it doesn't manage its own."""
+        # Setup
+        project_dir = tmp_path / "flipr"
+        project_dir.mkdir()
+        
+        conf_file = project_dir / "sqitch.conf"
+        conf_file.write_text("[core]\n    engine = sqlite\n")
+        
+        plan_file = project_dir / "sqitch.plan"
+        plan_file.write_text(
+            "%syntax-version=1.0.0\n"
+            "%project=flipr\n"
+            "\n"
+            "users 2025-01-01T00:00:00Z Test User <test@example.com> # Add users\n"
+        )
+        
+        deploy_dir = project_dir / "deploy"
+        deploy_dir.mkdir()
+        
+        # Create script WITHOUT BEGIN/COMMIT (engine should wrap it)
+        (deploy_dir / "users.sql").write_text(
+            "-- Deploy flipr:users to sqlite\n"
+            "\n"
+            "CREATE TABLE users (id INTEGER PRIMARY KEY);\n"
+        )
+        
+        target_db = tmp_path / "flipr_test.db"
+        
+        # Execute
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result = runner.invoke(
+                main,
+                ["deploy", f"db:sqlite:{target_db}"],
+            )
+        finally:
+            os.chdir(original_cwd)
+        
+        assert result.exit_code == 0, f"Deploy should succeed\nOutput: {result.output}"
+        
+        # Verify: Table was created (script executed successfully)
+        conn = sqlite3.connect(target_db)
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+        assert cursor.fetchone() is not None, "Table should be created even without explicit transaction"
+        conn.close()
+
+    def test_respects_script_managed_transactions(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Deploy should not wrap script if it manages its own transactions."""
+        # Setup
+        project_dir = tmp_path / "flipr"
+        project_dir.mkdir()
+        
+        conf_file = project_dir / "sqitch.conf"
+        conf_file.write_text("[core]\n    engine = sqlite\n")
+        
+        plan_file = project_dir / "sqitch.plan"
+        plan_file.write_text(
+            "%syntax-version=1.0.0\n"
+            "%project=flipr\n"
+            "\n"
+            "users 2025-01-01T00:00:00Z Test User <test@example.com> # Add users\n"
+        )
+        
+        deploy_dir = project_dir / "deploy"
+        deploy_dir.mkdir()
+        
+        # Create script WITH BEGIN/COMMIT (script manages own transaction)
+        (deploy_dir / "users.sql").write_text(
+            "-- Deploy flipr:users to sqlite\n"
+            "\n"
+            "BEGIN;\n"
+            "CREATE TABLE users (id INTEGER PRIMARY KEY);\n"
+            "COMMIT;\n"
+        )
+        
+        target_db = tmp_path / "flipr_test.db"
+        
+        # Execute
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result = runner.invoke(
+                main,
+                ["deploy", f"db:sqlite:{target_db}"],
+            )
+        finally:
+            os.chdir(original_cwd)
+        
+        assert result.exit_code == 0, f"Deploy should succeed\nOutput: {result.output}"
+        
+        # Verify: Table was created (script with own transactions works)
+        conn = sqlite3.connect(target_db)
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+        assert cursor.fetchone() is not None, "Table should be created with script-managed transaction"
+        conn.close()
+
+
 @pytest.fixture
 def runner() -> CliRunner:
     """Provide a Click test runner."""
