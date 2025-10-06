@@ -37,3 +37,11 @@ notes.md
 temp/
 REPORT.md
 REPORT-TASKS.md
+
+# Test artifacts (should be cleaned up by tests, but added as safety)
+/sqitch.conf
+/sqitch.plan
+/bundle/
+/deploy/
+/revert/
+/verify/

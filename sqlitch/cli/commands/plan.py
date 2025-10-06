@@ -17,11 +17,14 @@ from sqlitch.utils.fs import ArtifactConflictError, resolve_plan_file
 from . import CommandError, register_command
 from ._plan_utils import resolve_default_engine, resolve_plan_path
 from ._context import environment_from, plan_override_from, project_root_from, require_cli_context
+from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["plan_command"]
 
 
 @click.command("plan")
+@click.argument("target_args", nargs=-1)
+@click.option("--target", "target_option", help="Deployment target URI or database path.")
 @click.option("--project", "project_filter", help="Restrict output to the specified project name.")
 @click.option(
     "--change",
@@ -55,16 +58,23 @@ __all__ = ["plan_command"]
     is_flag=True,
     help="Omit plan header pragmas from human-readable output.",
 )
+@global_sqitch_options
+@global_output_options
 @click.pass_context
 def plan_command(
     ctx: click.Context,
     *,
+    target_args: tuple[str, ...],
+    target_option: str | None,
     project_filter: str | None,
     change_filters: Sequence[str],
     tag_filters: Sequence[str],
     output_format: str,
     short_output: bool,
     suppress_headers: bool,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
 ) -> None:
     """Render the deployment plan content using Sqitch-compatible ergonomics."""
 

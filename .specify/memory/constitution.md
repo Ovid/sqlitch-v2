@@ -1,15 +1,17 @@
 <!--
 - Sync Impact Report
-- Version change: 1.6.0 → 1.7.0
+- Version change: 1.9.0 → 1.10.0 (MINOR bump)
 - Modified sections:
-  • V. Observability and Determinism — Clarified opt-in structured logging and registry-only audit trail requirements.
-  • Additional Constraints — Added default logging confinement rule and removed redundant advisory guidance.
-- Added sections: None
+  • I. Test-First Development — Added "Test Isolation and Cleanup" requirement
+- Added sections:
+  • Test Isolation and Cleanup principle (mandatory use of isolated filesystem for all CLI tests)
 - Removed sections: None
-- Templates requiring updates:
-  ✅ .specify/templates/plan-template.md
-  ✅ .specify/templates/spec-template.md
-  ✅ .specify/templates/tasks-template.md
+- Rationale: Restored critical test discipline requirement that was lost from earlier versions.
+  Tests must not pollute the repository with artifacts. All CLI tests must use Click's
+  `isolated_filesystem()` context manager or equivalent isolation to ensure automatic cleanup.
+  This prevents test artifacts (sqitch.conf, sqitch.plan, deploy/, revert/, verify/, bundle/)
+  from being left in the repository root.
+- Templates requiring updates: None (enforcement rule, not template change)
 - Follow-up TODOs: None
 -->
 
@@ -22,13 +24,24 @@
 - Every new feature/bugfix PR MUST include failing tests that define behavior.
 - Contract/integration tests MUST cover user-visible flows and CLI contracts.
 - Unused or untested code MUST NOT be merged.
+- **All tests in the codebase MUST pass**. Unimplemented features MUST be marked with
+  pytest skip markers (`@pytest.mark.skip(reason="Pending: ...")`), not committed as
+  failing tests.
 Rationale: Defining behavior in tests first creates living specifications and prevents
-regressions while enabling safe refactors.
+regressions while enabling safe refactors. A clean test suite (all passing or explicitly
+skipped) ensures confidence in the codebase state at any commit.
+
+**Test Failure Validation Protocol (MANDATORY)**:
+When encountering test failures during implementation or refactoring:
+1. **Consult Perl Reference**: Check `sqitch/` implementation to confirm expected behavior
+2. **Validate Test Correctness**: Verify the test accurately reflects Sqitch's behavior
+3. **Fix Code, Not Tests**: If test is correct per Perl reference, fix implementation to pass
+4. **Only Modify Tests**: If Perl reference contradicts test, update test with justification
 
 - Before writing new tests or altering existing tests, contributors MUST consult the
   upstream Perl implementation under `sqitch/` to confirm the intended public-facing
   behavior and document any deliberate deviations.
-- When implementing fixes or new features, assume existing tests are correct. If a
+- **When implementing fixes or new features, assume existing tests are correct**. If a
   change appears to require modifying tests, first verify parity with the Perl Sqitch
   behavior; only adjust tests after confirming the upstream semantics truly differ.
 - The default expectation is to expand test coverage while leaving current tests
@@ -42,6 +55,19 @@ regressions while enabling safe refactors.
   confined behind clear abstraction seams.
 - Prefer invoking the actual CLI with temp directories and verifying stdout,
   stderr, and exit codes for end-to-end realism.
+
+**Test Isolation and Cleanup (MANDATORY)**:
+- All tests that invoke CLI commands or create filesystem artifacts MUST use Click's
+  `runner.isolated_filesystem()` context manager or equivalent isolation mechanisms.
+- Tests MUST NOT leave artifacts (config files, plan files, script directories, or any
+  other generated content) in the repository working directory after execution.
+- The `isolated_filesystem()` context creates a temporary directory that is automatically
+  cleaned up when the test completes, ensuring zero pollution of the repository.
+- Any test creating files outside an isolated context is a constitution violation and
+  MUST be fixed immediately.
+Rationale: Test pollution makes the repository state non-deterministic, can interfere
+with other tests, and creates confusion about what is intentional project structure
+versus accidental leftovers. Isolated filesystems guarantee clean test runs.
 
 ### II. CLI-First, Text I/O Contracts
 - All functionality MUST be accessible via CLI commands (thin wrappers over libs).
@@ -198,4 +224,4 @@ by making behavior discoverable without reverse-engineering the implementation.
 - Compliance: All specs, plans, tasks, and PRs MUST reference and adhere to this
   document. Non-compliance is a change request, not a discretionary choice.
 
-**Version**: 1.7.0 | **Ratified**: 2025-10-03 | **Last Amended**: 2025-10-05
+**Version**: 1.10.0 | **Ratified**: 2025-10-03 | **Last Amended**: 2025-10-05

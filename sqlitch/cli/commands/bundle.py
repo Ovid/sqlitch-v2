@@ -12,6 +12,7 @@ import click
 from . import CommandError, register_command
 from ._context import environment_from, plan_override_from, project_root_from, quiet_mode_enabled
 from ._plan_utils import resolve_plan_path
+from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["bundle_command"]
 
@@ -28,6 +29,8 @@ _SCRIPT_DIRECTORIES: tuple[str, ...] = ("deploy", "revert", "verify")
     help="Destination directory for the bundle output.",
 )
 @click.option("--no-plan", is_flag=True, help="Skip copying the plan file into the bundle.")
+@global_sqitch_options
+@global_output_options
 @click.pass_context
 def bundle_command(
     ctx: click.Context,
@@ -35,6 +38,9 @@ def bundle_command(
     *,
     dest_option: Path | None,
     no_plan: bool,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
 ) -> None:
     """Bundle the current project for distribution."""
 

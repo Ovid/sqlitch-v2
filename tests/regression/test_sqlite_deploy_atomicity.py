@@ -52,6 +52,4 @@ def test_failed_deploy_does_not_persist_workspace_mutations(tmp_path) -> None:
         )
         tables = {row[0] for row in cursor.fetchall()}
 
-    assert (
-        not tables
-    ), "Failed deploy must not leave change tables behind in the workspace database"
+    assert not tables, "Failed deploy must not leave change tables behind in the workspace database"

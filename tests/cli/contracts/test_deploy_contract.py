@@ -223,14 +223,14 @@ def test_deploy_executes_scripts_and_updates_registry(
             cursor.execute(
                 "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'events'"
             )
-            assert cursor.fetchone() is None, "Workspace database should not contain registry tables"
+            assert (
+                cursor.fetchone() is None
+            ), "Workspace database should not contain registry tables"
             cursor.close()
 
         with closing(sqlite3.connect("sqitch.db")) as registry:
             cursor = registry.cursor()
-            cursor.execute(
-                "SELECT change, event FROM events ORDER BY committed_at, change_id"
-            )
+            cursor.execute("SELECT change, event FROM events ORDER BY committed_at, change_id")
             events = cursor.fetchall()
             assert events == [
                 ("core:init", "deploy"),

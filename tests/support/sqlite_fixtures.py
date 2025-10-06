@@ -84,9 +84,7 @@ def create_sqlite_project(tmp_path: Path, *, changes: Iterable[ChangeScript]) ->
             script_paths={
                 "deploy": deploy_path.relative_to(project_root),
                 "revert": revert_path.relative_to(project_root),
-                "verify": (
-                    verify_entry.relative_to(project_root) if verify_entry else None
-                ),
+                "verify": (verify_entry.relative_to(project_root) if verify_entry else None),
             },
             planner="Test User <tester@example.com>",
             planned_at=datetime.now(timezone.utc),

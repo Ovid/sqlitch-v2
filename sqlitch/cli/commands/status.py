@@ -19,6 +19,7 @@ from sqlitch.plan.parser import PlanParseError, parse_plan
 from . import CommandError, register_command
 from ._context import require_cli_context
 from ._plan_utils import resolve_default_engine, resolve_plan_path
+from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["status_command"]
 
@@ -37,8 +38,10 @@ class RegistryRow:
 
 
 @click.command("status")
+@click.argument("target_args", nargs=-1)
 @click.option("--target", "target_option", help="Deployment target URI or database path.")
 @click.option("--project", "project_filter", help="Restrict output to the specified project.")
+@click.option("--show-tags", is_flag=True, help="Show deployment tags in the output.")
 @click.option(
     "--format",
     "output_format",
@@ -47,13 +50,20 @@ class RegistryRow:
     show_default=True,
     help="Select the output format (human or json).",
 )
+@global_sqitch_options
+@global_output_options
 @click.pass_context
 def status_command(
     ctx: click.Context,
     *,
+    target_args: tuple[str, ...],
     target_option: str | None,
     project_filter: str | None,
+    show_tags: bool,
     output_format: str,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
 ) -> None:
     """Report the current deployment status for the requested target."""
 
@@ -61,7 +71,17 @@ def status_command(
     project_root = cli_context.project_root
     environment = cli_context.env
 
-    target_value = target_option or cli_context.target
+    # Resolve target from positional args, --target option, or config
+    target_value = None
+    if target_args:
+        if len(target_args) > 1:
+            raise CommandError("Only one target may be specified")
+        target_value = target_args[0]
+    elif target_option:
+        target_value = target_option
+    else:
+        target_value = cli_context.target
+        
     if not target_value:
         raise CommandError("A target must be provided via --target or configuration.")
 
@@ -219,15 +239,9 @@ def _resolve_registry_target(
         )
     else:
         workspace_uri = (
-            target
-            if target.startswith("db:")
-            else f"db:{engine_name}:{workspace_payload}"
+            target if target.startswith("db:") else f"db:{engine_name}:{workspace_payload}"
         )
-        registry_uri = (
-            registry_override
-            if registry_override is not None
-            else workspace_uri
-        )
+        registry_uri = registry_override if registry_override is not None else workspace_uri
 
     engine_target = EngineTarget(
         name=display_target,

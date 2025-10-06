@@ -18,6 +18,7 @@ from ._context import (
     require_cli_context,
 )
 from ._plan_utils import resolve_plan_path
+from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["checkout_command"]
 
@@ -48,6 +49,8 @@ class _CheckoutRequest:
 @click.option(
     "--log-only", is_flag=True, help="Describe the checkout pipeline without executing it."
 )
+@global_sqitch_options
+@global_output_options
 @click.pass_context
 def checkout_command(
     ctx: click.Context,
@@ -56,6 +59,9 @@ def checkout_command(
     mode: str,
     to_change: str | None,
     log_only: bool,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
 ) -> None:
     """Coordinate revert, VCS checkout, and redeploy operations."""
 

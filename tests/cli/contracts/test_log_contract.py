@@ -21,7 +21,9 @@ def _runner() -> CliRunner:
     return CliRunner()
 
 
-def _seed_events(registry_path: Path, rows: Iterable[tuple[str, str, str, str, str, str, str]]) -> None:
+def _seed_events(
+    registry_path: Path, rows: Iterable[tuple[str, str, str, str, str, str, str]]
+) -> None:
     registry_path.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(registry_path)
     try:

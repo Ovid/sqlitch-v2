@@ -79,7 +79,9 @@ def _redact_value(value: Any, *, key: str | None = None) -> Any:
         return REDACTED_PLACEHOLDER
 
     if isinstance(value, Mapping):
-        return {sub_key: _redact_value(sub_value, key=sub_key) for sub_key, sub_value in value.items()}
+        return {
+            sub_key: _redact_value(sub_value, key=sub_key) for sub_key, sub_value in value.items()
+        }
 
     if isinstance(value, list):
         return [_redact_value(item) for item in value]

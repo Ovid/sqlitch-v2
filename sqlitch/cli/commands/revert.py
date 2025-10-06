@@ -21,6 +21,7 @@ from ._context import (
     require_cli_context,
 )
 from ._plan_utils import resolve_default_engine, resolve_plan_path
+from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["revert_command"]
 
@@ -39,6 +40,7 @@ class _RevertRequest:
 
 
 @click.command("revert")
+@click.argument("target_args", nargs=-1)
 @click.option("--target", "target_option", help="Deployment target alias or URI.")
 @click.option("--to-change", "to_change", help="Revert through the specified change (inclusive).")
 @click.option("--to-tag", "to_tag", help="Revert through the specified tag (inclusive).")
@@ -47,14 +49,20 @@ class _RevertRequest:
     is_flag=True,
     help="Show the revert actions without executing any scripts.",
 )
+@global_sqitch_options
+@global_output_options
 @click.pass_context
 def revert_command(
     ctx: click.Context,
     *,
+    target_args: tuple[str, ...],
     target_option: str | None,
     to_change: str | None,
     to_tag: str | None,
     log_only: bool,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
 ) -> None:
     """Revert deployed plan changes on the requested target."""
 

@@ -250,9 +250,7 @@ def _resolve_credential_field(
     return None
 
 
-def _cli_override_value(
-    overrides: "CredentialOverrides" | None, field: str
-) -> str | None:
+def _cli_override_value(overrides: "CredentialOverrides" | None, field: str) -> str | None:
     if overrides is None:
         return None
     value = getattr(overrides, field, None)

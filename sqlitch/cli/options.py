@@ -153,6 +153,32 @@ def global_output_options(func: F) -> F:
     return cast(F, func)
 
 
+def global_sqitch_options(func: F) -> F:
+    """Apply global Sqitch-compatible options to a Click command.
+
+    These options are accepted by all Sqitch commands and should be
+    available on all SQLitch commands for parity.
+    """
+    func = click.option(
+        "-C",
+        "--chdir",
+        "chdir_path",
+        type=click.Path(exists=True, file_okay=False, dir_okay=True),
+        help="Change to directory before executing command.",
+        expose_value=False,  # Handled at group level
+        is_eager=True,
+    )(func)
+    func = click.option(
+        "--no-pager",
+        is_flag=True,
+        help="Do not pipe output into a pager.",
+        expose_value=False,  # Stored in context
+        is_eager=True,
+    )(func)
+    # Note: --quiet and --verbose are already in global_output_options
+    return cast(F, func)
+
+
 __all__ = [
     "RUN_IDENTIFIER_ENV_VAR",
     "DEFAULT_LOG_DESTINATION",
@@ -161,4 +187,5 @@ __all__ = [
     "build_log_configuration",
     "generate_run_identifier",
     "global_output_options",
+    "global_sqitch_options",
 ]

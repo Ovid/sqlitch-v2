@@ -11,13 +11,26 @@ from sqlitch.utils.fs import ArtifactConflictError, resolve_config_file
 
 from . import CommandError, register_command
 from ._context import quiet_mode_enabled, require_cli_context
+from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["target_command"]
 
 
-@click.group("target")
-def target_command() -> None:
+@click.group("target", invoke_without_command=True)
+@global_sqitch_options
+@global_output_options
+@click.pass_context
+def target_command(
+    ctx: click.Context,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
+) -> None:
     """Manage target aliases that map to deployment URIs."""
+    
+    # If no subcommand was invoked, run the 'list' command by default
+    if ctx.invoked_subcommand is None:
+        ctx.invoke(target_list)
 
 
 @target_command.command("add")

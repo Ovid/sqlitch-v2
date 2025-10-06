@@ -60,9 +60,7 @@ class SQLiteEngine(Engine):
                 split = _split_file_uri(self._registry_path)
                 path = _filesystem_path_from_split(split)
                 return path
-            raise SQLiteEngineError(
-                "SQLite registry attachments only support file: URIs."
-            )
+            raise SQLiteEngineError("SQLite registry attachments only support file: URIs.")
         return Path(self._registry_path)
 
     def _build_connect_arguments(self, uri: str) -> ConnectArguments:

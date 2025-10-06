@@ -14,6 +14,7 @@ from sqlitch.plan.parser import PlanParseError, parse_plan
 from . import CommandError, register_command
 from ._context import require_cli_context
 from ._plan_utils import resolve_default_engine, resolve_plan_path
+from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["tag_command"]
 
@@ -43,27 +44,39 @@ def _resolve_planner(env: dict[str, str]) -> str:
 
 @click.command("tag")
 @click.argument("tag_name", required=False)
-@click.argument("change_name", required=False)
+@click.argument("change_name_arg", required=False)
+@click.option("--change", "-c", "change_option", help="Tag the specified change.")
 @click.option("--list", "list_tags", is_flag=True, help="List all tags in the plan.")
-@click.option("--note", "note", help="Note to associate with the tag.")
+@click.option("--note", "-n", "note", help="Note to associate with the tag.")
+@global_sqitch_options
+@global_output_options
 @click.pass_context
 def tag_command(
     ctx: click.Context,
     tag_name: str | None,
-    change_name: str | None,
+    change_name_arg: str | None,
+    change_option: str | None,
     list_tags: bool,
     note: str | None,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
 ) -> None:
     """Add or list tags in the deployment plan."""
 
     if list_tags:
-        if tag_name or change_name or note:
+        if tag_name or change_name_arg or change_option or note:
             raise click.UsageError("--list cannot be combined with other arguments")
         _list_tags(ctx)
         return
 
+    # If no tag name provided, default to listing tags (Sqitch behavior)
     if not tag_name:
-        raise click.UsageError("A tag name must be provided when not using --list")
+        _list_tags(ctx)
+        return
+
+    # Resolve change name from positional arg or option
+    change_name = change_name_arg or change_option
 
     _add_tag(ctx, tag_name, change_name, note)
 

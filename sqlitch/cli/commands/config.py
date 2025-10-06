@@ -23,6 +23,7 @@ from ._context import (
     quiet_mode_enabled,
     require_cli_context,
 )
+from ..options import global_sqitch_options
 
 __all__ = ["config_command"]
 
@@ -50,8 +51,11 @@ _CONFIG_FILENAME = "sqitch.conf"
 )
 @click.option("--list", "list_flag", is_flag=True, help="List all configuration values.")
 @click.option("--json", "json_flag", is_flag=True, help="Render --list output as JSON.")
+@click.option("--verbose", "-v", count=True, help="Increase output verbosity.")
+@click.option("--quiet", "-q", is_flag=True, help="Suppress informational messages.")
 @click.argument("name", required=False)
 @click.argument("value", required=False)
+@global_sqitch_options
 @click.pass_context
 def config_command(
     ctx: click.Context,
@@ -64,6 +68,8 @@ def config_command(
     unset_flag: bool,
     list_flag: bool,
     json_flag: bool,
+    verbose: int,
+    quiet: bool,
     name: str | None,
     value: str | None,
 ) -> None:

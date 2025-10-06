@@ -29,7 +29,9 @@ def test_structured_logger_suppresses_output_without_opt_in() -> None:
 
 
 def test_structured_logger_emits_human_readable_lines_when_verbose() -> None:
-    log_config = LogConfiguration(run_identifier="run-verbose", verbosity=1, quiet=False, json_mode=False)
+    log_config = LogConfiguration(
+        run_identifier="run-verbose", verbosity=1, quiet=False, json_mode=False
+    )
     console = Console(record=True, width=120, color_system=None)
     logger = StructuredLogger(log_config, console=console, json_stream=io.StringIO(), clock=_clock)
 
@@ -92,8 +94,12 @@ def test_structured_logger_quiet_mode_records_errors_without_emit() -> None:
 
 def test_structured_logger_respects_quiet_mode_with_json_output() -> None:
     stream = io.StringIO()
-    log_config = LogConfiguration(run_identifier="run-quiet-json", verbosity=0, quiet=True, json_mode=True)
-    logger = StructuredLogger(log_config, console=Console(width=120, color_system=None), json_stream=stream, clock=_clock)
+    log_config = LogConfiguration(
+        run_identifier="run-quiet-json", verbosity=0, quiet=True, json_mode=True
+    )
+    logger = StructuredLogger(
+        log_config, console=Console(width=120, color_system=None), json_stream=stream, clock=_clock
+    )
 
     record = logger.error("command.fail", "Failure occurred", payload={"reason": "boom"})
 

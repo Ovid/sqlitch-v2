@@ -21,6 +21,7 @@ from ._context import (
     require_cli_context,
 )
 from ._plan_utils import resolve_default_engine, resolve_plan_path
+from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["rebase_command"]
 
@@ -40,6 +41,7 @@ class _RebaseRequest:
 
 
 @click.command("rebase")
+@click.argument("target_args", nargs=-1)
 @click.option("--target", "target_option", help="Deployment target alias or URI.")
 @click.option("--onto", "onto_ref", help="Rebase onto the specified change or tag.")
 @click.option("--from", "from_ref", help="Redeploy starting from the specified change or tag.")
@@ -55,15 +57,21 @@ class _RebaseRequest:
     is_flag=True,
     help="Show the rebase actions without executing any scripts.",
 )
+@global_sqitch_options
+@global_output_options
 @click.pass_context
 def rebase_command(
     ctx: click.Context,
     *,
+    target_args: tuple[str, ...],
     target_option: str | None,
     onto_ref: str | None,
     from_ref: str | None,
     mode: str,
     log_only: bool,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
 ) -> None:
     """Rebase deployed plan changes to align with the current plan state."""
 

@@ -21,12 +21,14 @@ from ._context import (
 )
 from ._plan_utils import resolve_default_engine, resolve_plan_path
 from .add import _format_display_path
+from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["show_command"]
 
 
 @click.command("show")
-@click.argument("target")
+@click.argument("item", required=False)
+@click.option("--target", "target_option", help="Deployment target URI or database path.")
 @click.option(
     "--format",
     "output_format",
@@ -46,15 +48,21 @@ __all__ = ["show_command"]
     "project_filter",
     help="Assert the plan project name matches this value.",
 )
+@global_sqitch_options
+@global_output_options
 @click.pass_context
 def show_command(
     ctx: click.Context,
-    target: str,
+    item: str | None,
+    target_option: str | None,
     output_format: str,
     script_kind: str | None,
     project_filter: str | None,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
 ) -> None:
-    """Display plan metadata or scripts for ``target`` change or tag."""
+    """Display plan metadata or scripts for ``item`` change or tag."""
 
     cli_context = require_cli_context(ctx)
     project_root = project_root_from(ctx)
@@ -83,7 +91,10 @@ def show_command(
             f"Plan project '{plan.project_name}' does not match requested project '{project_filter}'."
         )
 
-    change = _resolve_change(plan, target)
+    if not item:
+        raise CommandError("Change or tag name must be specified")
+        
+    change = _resolve_change(plan, item)
 
     if script_kind:
         _emit_script(change=change, project_root=project_root, kind=script_kind.lower())
