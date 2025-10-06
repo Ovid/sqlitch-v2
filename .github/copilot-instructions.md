@@ -1,4 +1,4 @@
-# SQLitch Agent Onboarding (Updated 2025-10-05)
+# SQLitch Agent Onboarding (Updated 2025-10-06)
 
 ## Architecture Snapshot
 - `sqlitch/plan/` owns plan parsing (`parser.py`) and immutable domain models (`model.py`). Parsers demand project/default-engine headers and normalize timestamps via `sqlitch.utils.time`.
@@ -15,6 +15,23 @@
 - Template discovery in `cli/commands/add.py` searches project, config, and `/etc/{sqlitch,sqitch}`; reuse `_discover_template_directories` when introducing new script generators.
 - Golden fixtures under `tests/support/golden/` are compared byte-for-byte; never normalize whitespace when loading them.
 - Many tests assert timezone awareness—use `sqlitch.utils.time.ensure_timezone`/`parse_iso_datetime` instead of `datetime.fromisoformat` directly.
+
+## CLI Command Parity (Feature 003)
+**Status**: ✅ COMPLETE (2025-10-06)
+- All 19 Sqitch commands have full CLI signature parity with Perl Sqitch
+- Commands accept positional target arguments: `sqlitch deploy db:sqlite:test.db`
+- All commands support global options: `--quiet`, `--verbose`, `--chdir`, `--no-pager`
+- Help text follows Sqitch structure and conventions
+- Contract tests validate CLI signatures (213 tests in `tests/cli/commands/`)
+- Regression tests validate cross-command consistency (18 tests in `tests/regression/`)
+- Exit codes follow conventions: 0 (success), 1 (user error), 2 (parsing error)
+- Stub commands properly validate arguments before showing "not implemented"
+
+### Command Signature Reference
+- **Positional targets**: `deploy`, `log`, `plan`, `rebase`, `revert`, `status`, `upgrade`, `verify`
+- **Optional arguments**: `show [item]`, `tag [tag_name] [change_name]`, `init [project_name]`
+- **Default actions**: `engine` (lists engines), `target` (lists targets), `tag` (lists tags)
+- **Subcommands**: `config`, `engine`, `target`, `help`
 
 ## Core Workflows
 - Install tooling from the repo root:
