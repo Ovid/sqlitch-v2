@@ -364,21 +364,26 @@
   - **Discovery**: Deploy command fully implemented in Feature 002 (SQLite), verified by 18 functional tests
 
 ### Verify Command (Medium - 2 days)
-- [ ] **T039** Write tests for verify execution in `tests/cli/commands/test_verify_functional.py`
-  - Test executes verify scripts for deployed changes
-  - Test reports success for each change
-  - Test reports failure with error details
-  - Test exit code 0 if all pass, 1 if any fail
-  - Test output format matches Sqitch
+- [X] **T039** Write tests for verify execution in `tests/cli/commands/test_verify_functional.py`
+  - Test executes verify scripts for deployed changes ✅
+  - Test reports success for each change ✅
+  - Test reports failure with error details ✅
+  - Test exit code 0 if all pass, 1 if any fail ✅
+  - Test output format matches Sqitch ✅
+  - **Status**: ✅ COMPLETE (2025-10-06) - 5 functional tests passing
+  - **Note**: Added 2 contract tests for CLI parity
   
-- [ ] **T040** Implement verify command in `sqlitch/cli/commands/verify.py` (~250 lines)
-  - Query registry for deployed changes
+- [X] **T040** Implement verify command in `sqlitch/cli/commands/verify.py` (~250 lines)
+  - Query registry for deployed changes ✅
   - For each change:
-    * Load verify script via Script.load()
-    * Execute via engine.execute_script()
-    * Capture result in ScriptResult
-  - Display results (OK/NOT OK for each change)
-  - Exit with code 1 if any verification fails
+    * Load verify script via Script.load() ✅
+    * Execute via _execute_sqlite_verify_script() ✅
+    * Capture and report success/failure ✅
+  - Display results (OK/NOT OK for each change) ✅
+  - Exit with code 1 if any verification fails ✅
+  - **Status**: ✅ COMPLETE (2025-10-06) - All tests passing
+  - **Implementation**: Direct SQL execution with cursor.execute()
+  - **Discovery**: Used _execute_sqlite_verify_script helper (similar to deploy pattern)
 
 ### Revert Command (Complex - 3 days)
 - [ ] **T041** Write tests for revert to tag in `tests/cli/commands/test_revert_functional.py`
