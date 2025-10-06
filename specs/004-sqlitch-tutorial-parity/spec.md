@@ -179,9 +179,9 @@ Database developers following the SQLite tutorial need to successfully complete 
 **Configuration Management**:
 - **FR-001**: SQLitch MUST support hierarchical configuration with three scopes: system (/etc/sqitch/), user (~/.sqitch/), and local (project ./), where local overrides user, and user overrides system.
 
-- **FR-002**: Configuration files MUST use INI format with sections and key-value pairs, support multi-line values, and preserve comments.
+- **FR-002**: Configuration files MUST use INI format with sections and key-value pairs, support multi-line values (using backslash continuation per Git config format), and preserve comments.
 
-- **FR-003**: Config file format MUST match Sqitch conventions:
+- **FR-003**: Config file format MUST match Sqitch conventions with 4-space indentation for values:
   ```ini
   [core]
       engine = sqlite
@@ -230,12 +230,12 @@ Database developers following the SQLite tutorial need to successfully complete 
 - **FR-016**: `sqitch rework` MUST create new script versions with @tag suffixes, update plan file with rework entries, copy existing scripts as starting point, and preserve original scripts.
 
 **Registry Management**:
-- **FR-017**: SQLitch MUST create registry database (sqitch.db) on first deploy, create all required tables (changes, dependencies, events, projects, releases, tags), and handle SQLite ATTACH DATABASE for registry access.
+- **FR-017**: SQLitch MUST create registry database (sqitch.db) as a sibling to the target database on first deploy, create all required tables (changes, dependencies, events, projects, releases, tags), and handle SQLite ATTACH DATABASE for registry access.
 
 - **FR-018**: Registry operations MUST be atomic with deploy/revert operations, roll back registry changes if deploy fails, and maintain referential integrity.
 
 **Plan Management**:
-- **FR-019**: Plan file operations MUST preserve pragmas (%syntax-version, %project, %uri), maintain change order, validate change names are unique, support tags and dependencies, and detect conflicts.
+- **FR-019**: Plan file operations MUST preserve pragmas (%syntax-version, %project, %uri), maintain change order, validate change names are unique, support tags and dependencies, and detect conflicts including: (a) circular require/conflicts chains, (b) duplicate change names, (c) dependencies on non-existent changes, (d) conflicts declarations creating cycles.
 
 **Script Generation**:
 - **FR-020**: Generated scripts MUST include proper headers with project:change notation, include BEGIN/COMMIT transaction wrappers (for deploy/revert), provide TODO/XXX comments for user implementation, and follow naming conventions (deploy/change.sql, revert/change.sql, verify/change.sql).
@@ -249,7 +249,7 @@ Database developers following the SQLite tutorial need to successfully complete 
 
 - **NFR-002**: Command execution MUST maintain ≥90% test coverage across all implemented commands.
 
-- **NFR-003**: Deploy operations MUST complete in <5 seconds for plans with <100 changes on typical hardware.
+- **NFR-003**: Deploy operations SHOULD complete in <5 seconds for plans with <100 changes on developer hardware (4+ cores, SSD storage, local database).
 
 - **NFR-004**: Default CLI output MUST match Sqitch byte-for-byte (excluding timestamps/user-specific data), structured logging only appears with explicit flags.
 

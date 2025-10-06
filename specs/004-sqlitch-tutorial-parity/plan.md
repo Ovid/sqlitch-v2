@@ -251,6 +251,7 @@ specs/004-sqlitch-tutorial-parity/
    - Planner/committer identity: From config → env → defaults (priority: config [user] section → SQLITCH_*/SQITCH_* env vars → GIT_* env vars → system USER/USERNAME → generated fallback)
    - Environment variables: SQLITCH_* prefix preferred, SQITCH_* as fallback for Sqitch compatibility
    - Configuration hierarchy: local (./sqitch.conf) overrides user (~/.sqitch/sqitch.conf) overrides system (/etc/sqitch/sqitch.conf)
+   - Configuration format: Git config format (INI-style) with 4-space indentation, backslash continuation for multi-line values
    - Registry attachment: ATTACH DATABASE sibling sqitch.db
    - Dependency validation: Check registry before deploy
    - Tag management: In-memory plan updates, write to file
