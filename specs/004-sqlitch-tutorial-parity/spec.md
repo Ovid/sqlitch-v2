@@ -135,17 +135,17 @@ The Sqitch SQLite tutorial demonstrates a complete workflow for managing databas
 
 ### Session 2025-10-06
 - Q: Should Feature 004 implement all commands or just tutorial-critical ones?
-  → A: [NEEDS CLARIFICATION]
+  → A: **Implement all 10 tutorial commands in the order they appear in the tutorial**
 - Q: What level of config command functionality is required (just get/set or full subcommands)?
-  → A: [NEEDS CLARIFICATION]
+  → A: **Just enough to complete the tutorial** (get/set operations for user.name, user.email, engine.sqlite.client)
 - Q: Should target management be functional or can it use in-memory targets only?
-  → A: [NEEDS CLARIFICATION]
+  → A: **URI-based targets as demonstrated in tutorial** (db:sqlite:path/to/db)
 - Q: For rework command, what is the minimum viable implementation?
-  → A: [NEEDS CLARIFICATION]
+  → A: **Just enough to complete the tutorial** (create @tag suffixed scripts, update plan)
 - Q: Should we support Git integration or manual plan editing only?
-  → A: [NEEDS CLARIFICATION]
+  → A: **Manual workflow** (user handles git commands separately)
 - Q: What registry operations beyond deploy/revert are required?
-  → A: [NEEDS CLARIFICATION]
+  → A: **Enough to complete the tutorial, aligned with Sqitch behavior** (deploy, revert, verify events; status queries; log display)
 
 ---
 
@@ -245,11 +245,11 @@ Database developers following the SQLite tutorial need to successfully complete 
 - [x] All mandatory sections completed
 
 ### Requirement Completeness
-- [ ] No [NEEDS CLARIFICATION] markers remain
-- [ ] Requirements are testable and unambiguous  
-- [ ] Success criteria are measurable
-- [ ] Scope is clearly bounded
-- [ ] Dependencies and assumptions identified
+- [x] No [NEEDS CLARIFICATION] markers remain
+- [x] Requirements are testable and unambiguous  
+- [x] Success criteria are measurable
+- [x] Scope is clearly bounded
+- [x] Dependencies and assumptions identified
 
 ---
 
@@ -261,12 +261,59 @@ Database developers following the SQLite tutorial need to successfully complete 
 - [x] Commands catalogued
 - [x] Workflows identified
 - [x] Requirements drafted
-- [ ] Clarifications resolved
-- [ ] Review checklist passed
+- [x] Clarifications resolved
+- [x] Review checklist passed
 
 ---
 
 ## Notes
+
+### Implementation Order (Tutorial Sequence)
+
+Based on the Sqitch SQLite tutorial, commands appear in this order:
+
+1. **`sqitch init`** - Section: "Starting a New Project" (line 58)
+   - Initialize project with name, URI, engine
+   - Creates sqitch.conf, sqitch.plan, deploy/, revert/, verify/
+
+2. **`sqitch config`** - Section: "Starting a New Project" (line 95)
+   - User-level config: user.name, user.email
+   - Engine-level config: engine.sqlite.client
+
+3. **`sqitch add`** - Section: "Our First Change" (line 144)
+   - Create change with deploy/revert/verify scripts
+   - Update plan file
+
+4. **`sqitch deploy`** - Section: "Our First Change" (line 202)
+   - Create registry database
+   - Execute deploy scripts
+   - Record in registry
+
+5. **`sqitch verify`** - Section: "Trust, But Verify" (line 240)
+   - Execute verify scripts
+   - Report success/failure
+
+6. **`sqitch status`** - Section: "Status, Revert, Log, Repeat" (line 274)
+   - Query registry
+   - Display deployment state
+
+7. **`sqitch revert`** - Section: "Status, Revert, Log, Repeat" (line ~300)
+   - Revert changes in reverse order
+   - Update registry
+
+8. **`sqitch log`** - Section: "Status, Revert, Log, Repeat" (line ~350)
+   - Display deployment history
+   - Show events from registry
+
+9. **`sqitch tag`** - Section: "Ship It!" (line ~600)
+   - Add release tags to plan
+   - Enable @tag suffixes in scripts
+
+10. **`sqitch rework`** - Section: "In Place Changes" (line ~1150)
+    - Create new versions of changes
+    - Copy scripts with @tag suffixes
+
+This order suggests a phased implementation approach where each command builds on the previous ones.
 
 ### Implementation Priority
 Given the tutorial's structure, the recommended implementation order is:
