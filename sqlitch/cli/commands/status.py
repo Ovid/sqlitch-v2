@@ -24,16 +24,16 @@ from ..options import global_output_options, global_sqitch_options
 __all__ = ["status_command"]
 
 
-@dataclass(frozen=True, slots=True)
-class RegistryRow:
-    """Represents a deployment entry sourced from the registry."""
+@dataclass(frozen=True)
+class CurrentChange:
+    """Represents the currently deployed change for a project."""
 
     project: str
     change_id: str
     change_name: str
     deployed_at: str
-    deployer_name: str
-    deployer_email: str
+    committer_name: str
+    committer_email: str
     tag: str | None
 
 
@@ -255,7 +255,7 @@ def _resolve_registry_target(
 def _load_registry_rows(
     engine_target: EngineTarget,
     expected_project: str,
-) -> tuple[RegistryRow, ...]:
+) -> tuple[CurrentChange, ...]:
     try:
         engine = create_engine(engine_target)
     except UnsupportedEngineError as exc:
@@ -340,18 +340,18 @@ def _load_registry_rows(
             )
         return {columns[index]: row[index] for index in range(min(len(columns), len(row)))}
 
-    registry_rows: list[RegistryRow] = []
+    registry_rows: list[CurrentChange] = []
     for raw in rows:
         mapping = _row_mapping(raw)
         tag_value = mapping.get("latest_tag")
         registry_rows.append(
-            RegistryRow(
+            CurrentChange(
                 project=str(mapping.get("project", "")),
                 change_id=str(mapping.get("change_id", "")),
                 change_name=str(mapping.get("change_name", "")),
                 deployed_at=str(mapping.get("committed_at", mapping.get("deployed_at", ""))),
-                deployer_name=str(mapping.get("committer_name", mapping.get("deployer_name", ""))),
-                deployer_email=str(
+                committer_name=str(mapping.get("committer_name", mapping.get("deployer_name", ""))),
+                committer_email=str(
                     mapping.get("committer_email", mapping.get("deployer_email", ""))
                 ),
                 tag=str(tag_value) if tag_value is not None else None,
@@ -412,7 +412,7 @@ def _render_human_output(
     *,
     project: str,
     target: str,
-    rows: Sequence[RegistryRow],
+    rows: Sequence[CurrentChange],
     status: str,
     pending_changes: Sequence[str],
 ) -> str:
@@ -434,7 +434,7 @@ def _render_human_output(
         lines.extend(
             [
                 f"# Deployed: {current.deployed_at}",
-                f"# By:       {current.deployer_name} <{current.deployer_email}>",
+                f"# By:       {current.committer_name} <{current.committer_email}>",
             ]
         )
     else:
@@ -469,7 +469,7 @@ def _build_json_payload(
     target: str,
     status: str,
     plan: Plan,
-    rows: Sequence[RegistryRow],
+    rows: Sequence[CurrentChange],
     pending_changes: Sequence[str],
 ) -> dict[str, object]:
     change_payload: dict[str, object] | None = None
@@ -480,8 +480,8 @@ def _build_json_payload(
             "deploy_id": current.change_id,
             "deployed_at": current.deployed_at,
             "by": {
-                "name": current.deployer_name,
-                "email": current.deployer_email,
+                "name": current.committer_name,
+                "email": current.committer_email,
             },
             "tag": current.tag,
         }

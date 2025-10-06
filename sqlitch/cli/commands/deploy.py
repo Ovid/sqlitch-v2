@@ -865,8 +865,13 @@ def _resolve_committer_identity(
 
     Resolution order:
     1. Config file (user.name and user.email)
-    2. Environment variables (SQLITCH_USER_*, GIT_*, etc.)
-    3. System defaults
+    2. Environment variables:
+       - SQLITCH_USER_NAME / SQLITCH_USER_EMAIL (preferred)
+       - SQITCH_USER_NAME / SQITCH_USER_EMAIL (Sqitch compatibility fallback)
+       - GIT_COMMITTER_NAME / GIT_COMMITTER_EMAIL
+       - GIT_AUTHOR_NAME / GIT_AUTHOR_EMAIL
+    3. System defaults (USER, USERNAME, EMAIL)
+    4. Generated fallback
     """
     from sqlitch.config.resolver import resolve_config
 
@@ -889,6 +894,7 @@ def _resolve_committer_identity(
     name = (
         config_name
         or env.get("SQLITCH_USER_NAME")
+        or env.get("SQITCH_USER_NAME")  # Sqitch backward compatibility
         or env.get("GIT_COMMITTER_NAME")
         or env.get("GIT_AUTHOR_NAME")
         or env.get("USER")
@@ -899,6 +905,7 @@ def _resolve_committer_identity(
     email = (
         config_email
         or env.get("SQLITCH_USER_EMAIL")
+        or env.get("SQITCH_USER_EMAIL")  # Sqitch backward compatibility
         or env.get("GIT_COMMITTER_EMAIL")
         or env.get("GIT_AUTHOR_EMAIL")
         or env.get("EMAIL")
