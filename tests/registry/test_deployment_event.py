@@ -35,9 +35,9 @@ class TestDeploymentEventFromRegistryRow:
             "Ada Lovelace",  # planner_name
             "ada@example.com",  # planner_email
         )
-        
+
         event = DeploymentEvent.from_registry_row(row)
-        
+
         assert event.event == "deploy"
         assert event.change_id == "abc123"
         assert event.change == "users"
@@ -57,12 +57,21 @@ class TestDeploymentEventFromRegistryRow:
         """Should handle 'revert' event type."""
         row = (
             "revert",  # event type
-            "abc123", "users", "flipr", "Reverting users",
-            "", "", "",
-            "2025-01-15T10:30:00Z", "Ada", "ada@example.com",
-            "2025-01-14T18:00:00Z", "Ada", "ada@example.com",
+            "abc123",
+            "users",
+            "flipr",
+            "Reverting users",
+            "",
+            "",
+            "",
+            "2025-01-15T10:30:00Z",
+            "Ada",
+            "ada@example.com",
+            "2025-01-14T18:00:00Z",
+            "Ada",
+            "ada@example.com",
         )
-        
+
         event = DeploymentEvent.from_registry_row(row)
         assert event.event == "revert"
 
@@ -70,12 +79,21 @@ class TestDeploymentEventFromRegistryRow:
         """Should handle 'fail' event type."""
         row = (
             "fail",  # event type
-            "abc123", "users", "flipr", "Deploy failed",
-            "", "", "",
-            "2025-01-15T10:30:00Z", "Ada", "ada@example.com",
-            "2025-01-14T18:00:00Z", "Ada", "ada@example.com",
+            "abc123",
+            "users",
+            "flipr",
+            "Deploy failed",
+            "",
+            "",
+            "",
+            "2025-01-15T10:30:00Z",
+            "Ada",
+            "ada@example.com",
+            "2025-01-14T18:00:00Z",
+            "Ada",
+            "ada@example.com",
         )
-        
+
         event = DeploymentEvent.from_registry_row(row)
         assert event.event == "fail"
 
@@ -83,13 +101,21 @@ class TestDeploymentEventFromRegistryRow:
         """Should store comma-separated requires list."""
         row = (
             "deploy",
-            "abc123", "posts", "flipr", "",
+            "abc123",
+            "posts",
+            "flipr",
+            "",
             "users,profiles",  # multiple requires
-            "", "",
-            "2025-01-15T10:30:00Z", "Ada", "ada@example.com",
-            "2025-01-14T18:00:00Z", "Ada", "ada@example.com",
+            "",
+            "",
+            "2025-01-15T10:30:00Z",
+            "Ada",
+            "ada@example.com",
+            "2025-01-14T18:00:00Z",
+            "Ada",
+            "ada@example.com",
         )
-        
+
         event = DeploymentEvent.from_registry_row(row)
         assert event.requires == "users,profiles"
 
@@ -97,14 +123,21 @@ class TestDeploymentEventFromRegistryRow:
         """Should store comma-separated conflicts list."""
         row = (
             "deploy",
-            "abc123", "new_users", "flipr", "",
+            "abc123",
+            "new_users",
+            "flipr",
+            "",
             "",
             "old_users,legacy_users",  # multiple conflicts
             "",
-            "2025-01-15T10:30:00Z", "Ada", "ada@example.com",
-            "2025-01-14T18:00:00Z", "Ada", "ada@example.com",
+            "2025-01-15T10:30:00Z",
+            "Ada",
+            "ada@example.com",
+            "2025-01-14T18:00:00Z",
+            "Ada",
+            "ada@example.com",
         )
-        
+
         event = DeploymentEvent.from_registry_row(row)
         assert event.conflicts == "old_users,legacy_users"
 
@@ -112,13 +145,21 @@ class TestDeploymentEventFromRegistryRow:
         """Should store comma-separated tags list."""
         row = (
             "deploy",
-            "abc123", "users", "flipr", "",
-            "", "",
+            "abc123",
+            "users",
+            "flipr",
+            "",
+            "",
+            "",
             "v1.0,beta,release",  # multiple tags
-            "2025-01-15T10:30:00Z", "Ada", "ada@example.com",
-            "2025-01-14T18:00:00Z", "Ada", "ada@example.com",
+            "2025-01-15T10:30:00Z",
+            "Ada",
+            "ada@example.com",
+            "2025-01-14T18:00:00Z",
+            "Ada",
+            "ada@example.com",
         )
-        
+
         event = DeploymentEvent.from_registry_row(row)
         assert event.tags == "v1.0,beta,release"
 
@@ -126,16 +167,23 @@ class TestDeploymentEventFromRegistryRow:
         """Should ensure datetime fields are timezone-aware."""
         row = (
             "deploy",
-            "abc123", "users", "flipr", "",
-            "", "", "",
+            "abc123",
+            "users",
+            "flipr",
+            "",
+            "",
+            "",
+            "",
             "2025-01-15T10:30:00+00:00",
-            "Ada", "ada@example.com",
+            "Ada",
+            "ada@example.com",
             "2025-01-14T18:00:00+00:00",
-            "Ada", "ada@example.com",
+            "Ada",
+            "ada@example.com",
         )
-        
+
         event = DeploymentEvent.from_registry_row(row)
-        
+
         # Both datetime fields should be timezone-aware
         assert event.committed_at.tzinfo is not None
         assert event.planned_at.tzinfo is not None
@@ -150,13 +198,22 @@ class TestDeploymentEventValidation:
         """Should be immutable (frozen dataclass)."""
         row = (
             "deploy",
-            "abc123", "users", "flipr", "",
-            "", "", "",
-            "2025-01-15T10:30:00Z", "Ada", "ada@example.com",
-            "2025-01-14T18:00:00Z", "Ada", "ada@example.com",
+            "abc123",
+            "users",
+            "flipr",
+            "",
+            "",
+            "",
+            "",
+            "2025-01-15T10:30:00Z",
+            "Ada",
+            "ada@example.com",
+            "2025-01-14T18:00:00Z",
+            "Ada",
+            "ada@example.com",
         )
         event = DeploymentEvent.from_registry_row(row)
-        
+
         # Should not be able to modify
         with pytest.raises(Exception):  # FrozenInstanceError or AttributeError
             event.event = "revert"  # type: ignore
@@ -165,13 +222,22 @@ class TestDeploymentEventValidation:
         """Should use __slots__ for memory efficiency."""
         row = (
             "deploy",
-            "abc123", "users", "flipr", "",
-            "", "", "",
-            "2025-01-15T10:30:00Z", "Ada", "ada@example.com",
-            "2025-01-14T18:00:00Z", "Ada", "ada@example.com",
+            "abc123",
+            "users",
+            "flipr",
+            "",
+            "",
+            "",
+            "",
+            "2025-01-15T10:30:00Z",
+            "Ada",
+            "ada@example.com",
+            "2025-01-14T18:00:00Z",
+            "Ada",
+            "ada@example.com",
         )
         event = DeploymentEvent.from_registry_row(row)
-        
+
         # Should have __slots__, not __dict__
-        assert not hasattr(event, '__dict__')
-        assert hasattr(event, '__slots__')
+        assert not hasattr(event, "__dict__")
+        assert hasattr(event, "__slots__")

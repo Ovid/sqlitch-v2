@@ -79,8 +79,10 @@ class TestCommandResultValidation:
         ok_result = CommandResult(success=True, exit_code=0, message="", data=MappingProxyType({}))
         assert ok_result.success is True
         assert ok_result.exit_code == 0
-        
-        error_result = CommandResult(success=False, exit_code=1, message="", data=MappingProxyType({}))
+
+        error_result = CommandResult(
+            success=False, exit_code=1, message="", data=MappingProxyType({})
+        )
         assert error_result.success is False
         assert error_result.exit_code != 0
 
@@ -176,4 +178,3 @@ class TestRevertOptionsValidation:
         """RevertOptions should use __slots__ for memory efficiency."""
         options = RevertOptions(to_change="users")
         assert not hasattr(options, "__dict__")
-

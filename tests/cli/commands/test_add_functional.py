@@ -40,12 +40,12 @@ class TestAddCreatesScripts:
         with runner.isolated_filesystem():
             # Initialize project
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
-            
+
             # Add a change
             result = runner.invoke(main, ["add", "users", "-n", "Creates users table"])
-            
+
             assert result.exit_code == 0, f"Add failed: {result.output}"
-            
+
             # Verify scripts were created
             assert Path("deploy/users.sql").exists(), "Should create deploy script"
             assert Path("revert/users.sql").exists(), "Should create revert script"
@@ -56,35 +56,35 @@ class TestAddCreatesScripts:
         with runner.isolated_filesystem():
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
             result = runner.invoke(main, ["add", "users"])
-            
+
             assert result.exit_code == 0, f"Add failed: {result.output}"
-            
+
             # Check deploy script has header
             deploy_content = Path("deploy/users.sql").read_text()
-            assert "-- Deploy flipr:users to sqlite" in deploy_content, (
-                "Deploy script should have Sqitch header"
-            )
-            
+            assert (
+                "-- Deploy flipr:users to sqlite" in deploy_content
+            ), "Deploy script should have Sqitch header"
+
             # Check revert script has header
             revert_content = Path("revert/users.sql").read_text()
-            assert "-- Revert flipr:users from sqlite" in revert_content, (
-                "Revert script should have Sqitch header"
-            )
-            
+            assert (
+                "-- Revert flipr:users from sqlite" in revert_content
+            ), "Revert script should have Sqitch header"
+
             # Check verify script has header
             verify_content = Path("verify/users.sql").read_text()
-            assert "-- Verify flipr:users on sqlite" in verify_content, (
-                "Verify script should have Sqitch header"
-            )
+            assert (
+                "-- Verify flipr:users on sqlite" in verify_content
+            ), "Verify script should have Sqitch header"
 
     def test_adds_change_to_plan(self, runner):
         """Add should append the change to sqitch.plan."""
         with runner.isolated_filesystem():
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
             result = runner.invoke(main, ["add", "users", "-n", "Creates users table"])
-            
+
             assert result.exit_code == 0, f"Add failed: {result.output}"
-            
+
             # Verify plan was updated
             plan_content = Path("sqitch.plan").read_text()
             assert "users " in plan_content, "Plan should contain change name"
@@ -95,7 +95,7 @@ class TestAddCreatesScripts:
         with runner.isolated_filesystem():
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
             result = runner.invoke(main, ["add", "users"])
-            
+
             assert result.exit_code == 0, f"Add failed: {result.output}"
             assert "Created deploy script" in result.output, "Should report deploy creation"
             assert "Created revert script" in result.output, "Should report revert creation"
@@ -108,11 +108,11 @@ class TestAddCreatesScripts:
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
             # --quiet is a global option and must come before subcommand
             result = runner.invoke(main, ["--quiet", "add", "users"])
-            
+
             assert result.exit_code == 0, f"Add --quiet failed: {result.output}"
-            assert result.output == "" or result.output.strip() == "", (
-                "Quiet mode should suppress output"
-            )
+            assert (
+                result.output == "" or result.output.strip() == ""
+            ), "Quiet mode should suppress output"
 
 
 class TestAddChangeNaming:
@@ -123,26 +123,24 @@ class TestAddChangeNaming:
         with runner.isolated_filesystem():
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
             result = runner.invoke(main, ["add", "users-table", "-n", "User management"])
-            
+
             assert result.exit_code == 0, f"Add failed: {result.output}"
-            
+
             # Should use slug for filenames
-            assert Path("deploy/users-table.sql").exists(), (
-                "Should create deploy script with slugified name"
-            )
+            assert Path(
+                "deploy/users-table.sql"
+            ).exists(), "Should create deploy script with slugified name"
 
     def test_preserves_original_name_in_plan(self, runner):
         """Add should preserve original change name in plan."""
         with runner.isolated_filesystem():
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
             result = runner.invoke(main, ["add", "users-table"])
-            
+
             assert result.exit_code == 0, f"Add failed: {result.output}"
-            
+
             plan_content = Path("sqitch.plan").read_text()
-            assert "users-table" in plan_content, (
-                "Plan should use original change name"
-            )
+            assert "users-table" in plan_content, "Plan should use original change name"
 
 
 class TestAddDependencies:
@@ -152,13 +150,13 @@ class TestAddDependencies:
         """Add should accept --requires for existing changes."""
         with runner.isolated_filesystem():
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
-            
+
             # Add first change
             runner.invoke(main, ["add", "users"])
-            
+
             # Add second change that requires first
             result = runner.invoke(main, ["add", "posts", "--requires", "users"])
-            
+
             # Note: Current implementation may not validate dependencies
             # This test documents expected behavior for T054
             assert result.exit_code == 0, f"Add with valid --requires failed: {result.output}"
@@ -169,14 +167,12 @@ class TestAddDependencies:
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
             runner.invoke(main, ["add", "users"])
             runner.invoke(main, ["add", "roles"])
-            
+
             # Add change requiring both
-            result = runner.invoke(main, [
-                "add", "user_roles",
-                "--requires", "users",
-                "--requires", "roles"
-            ])
-            
+            result = runner.invoke(
+                main, ["add", "user_roles", "--requires", "users", "--requires", "roles"]
+            )
+
             assert result.exit_code == 0, f"Add with multiple --requires failed: {result.output}"
 
 
@@ -188,42 +184,42 @@ class TestAddErrorHandling:
         with runner.isolated_filesystem():
             # Don't initialize - no plan exists
             result = runner.invoke(main, ["add", "users"])
-            
+
             assert result.exit_code != 0, "Should fail without plan"
-            assert "plan" in result.output.lower() or "init" in result.output.lower(), (
-                "Should mention missing plan or suggest init"
-            )
+            assert (
+                "plan" in result.output.lower() or "init" in result.output.lower()
+            ), "Should mention missing plan or suggest init"
 
     def test_fails_if_change_already_exists(self, runner):
         """Add should fail if change name already exists in plan."""
         with runner.isolated_filesystem():
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
             runner.invoke(main, ["add", "users"])
-            
+
             # Try to add the same change again
             result = runner.invoke(main, ["add", "users"])
-            
+
             assert result.exit_code != 0, "Should fail for duplicate change name"
-            assert "already exists" in result.output or "exists" in result.output.lower(), (
-                "Should report that change already exists"
-            )
+            assert (
+                "already exists" in result.output or "exists" in result.output.lower()
+            ), "Should report that change already exists"
 
     def test_fails_if_script_already_exists(self, runner):
         """Add should fail if script file already exists."""
         with runner.isolated_filesystem():
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
-            
+
             # Create a deploy script manually
             Path("deploy").mkdir(parents=True, exist_ok=True)
             Path("deploy/users.sql").write_text("-- Existing script\n")
-            
+
             # Try to add change with same name
             result = runner.invoke(main, ["add", "users"])
-            
+
             assert result.exit_code != 0, "Should fail if script exists"
-            assert "already exists" in result.output or "exists" in result.output.lower(), (
-                "Should report that script already exists"
-            )
+            assert (
+                "already exists" in result.output or "exists" in result.output.lower()
+            ), "Should report that script already exists"
 
 
 class TestAddWithNote:
@@ -234,13 +230,11 @@ class TestAddWithNote:
         with runner.isolated_filesystem():
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
             result = runner.invoke(main, ["add", "users", "-n", "Creates users table"])
-            
+
             assert result.exit_code == 0, f"Add with note failed: {result.output}"
-            
+
             plan_content = Path("sqitch.plan").read_text()
-            assert "Creates users table" in plan_content, (
-                "Plan should include the note"
-            )
+            assert "Creates users table" in plan_content, "Plan should include the note"
 
     def test_note_with_special_characters(self, runner):
         """Add should handle notes with special characters."""
@@ -248,14 +242,14 @@ class TestAddWithNote:
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
             note = "User's table: creates & manages users"
             result = runner.invoke(main, ["add", "users", "-n", note])
-            
+
             assert result.exit_code == 0, f"Add with special chars failed: {result.output}"
-            
+
             plan_content = Path("sqitch.plan").read_text()
             # Note should be in plan (exact format may vary)
-            assert "users" in plan_content and "User" in plan_content, (
-                "Plan should include change with note"
-            )
+            assert (
+                "users" in plan_content and "User" in plan_content
+            ), "Plan should include change with note"
 
 
 class TestAddTutorialScenario:
@@ -266,20 +260,19 @@ class TestAddTutorialScenario:
         with runner.isolated_filesystem():
             # Tutorial step 1: Initialize
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
-            
+
             # Tutorial step 2: Add users change
-            result = runner.invoke(main, [
-                "add", "users",
-                "-n", "Creates table to track our users."
-            ])
-            
+            result = runner.invoke(
+                main, ["add", "users", "-n", "Creates table to track our users."]
+            )
+
             assert result.exit_code == 0, f"Tutorial add failed: {result.output}"
-            
+
             # Verify all expected files exist
             assert Path("deploy/users.sql").exists()
             assert Path("revert/users.sql").exists()
             assert Path("verify/users.sql").exists()
-            
+
             # Verify plan updated
             plan_content = Path("sqitch.plan").read_text()
             assert "users " in plan_content
@@ -289,20 +282,20 @@ class TestAddTutorialScenario:
         """Replicate tutorial: add multiple related changes."""
         with runner.isolated_filesystem():
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
-            
+
             # Add users table
             result1 = runner.invoke(main, ["add", "users"])
             assert result1.exit_code == 0
-            
+
             # Add posts table (could depend on users)
             result2 = runner.invoke(main, ["add", "posts", "--requires", "users"])
             assert result2.exit_code == 0
-            
+
             # Verify both in plan
             plan_content = Path("sqitch.plan").read_text()
             assert "users" in plan_content
             assert "posts" in plan_content
-            
+
             # Verify all scripts created
             assert Path("deploy/posts.sql").exists()
             assert Path("revert/posts.sql").exists()

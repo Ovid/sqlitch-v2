@@ -47,7 +47,9 @@ class TestReworkRequiredChangeName:
     def test_rework_without_change_name_fails(self, runner):
         """Rework without change name must fail with exit code 2."""
         result = runner.invoke(main, ["rework"])
-        assert result.exit_code == 2, f"Expected exit 2 for missing argument, got {result.exit_code}"
+        assert (
+            result.exit_code == 2
+        ), f"Expected exit 2 for missing argument, got {result.exit_code}"
         # Error should mention missing argument
         assert "missing" in result.output.lower() or "required" in result.output.lower()
 
@@ -64,7 +66,9 @@ class TestReworkValidChangeName:
 
     def test_rework_with_note_option(self, runner):
         """Rework with --note option must be accepted."""
-        result = runner.invoke(main, ["rework", "my_change", "--note", "Reworking for improvements"])
+        result = runner.invoke(
+            main, ["rework", "my_change", "--note", "Reworking for improvements"]
+        )
         # Should accept (not a parsing error)
         assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
 

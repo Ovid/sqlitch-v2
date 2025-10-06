@@ -81,7 +81,7 @@ def status_command(
         target_value = target_option
     else:
         target_value = cli_context.target
-        
+
     if not target_value:
         raise CommandError("A target must be provided via --target or configuration.")
 

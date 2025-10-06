@@ -24,11 +24,11 @@ __all__ = [
 @dataclass(frozen=True, slots=True)
 class DeployedChange:
     """Represents a change currently deployed to the database.
-    
+
     This model corresponds to rows from the registry `changes` table and is used
     to track which changes have been deployed to a target database.
     """
-    
+
     change_id: str
     script_hash: str | None
     change: str  # change name
@@ -40,17 +40,17 @@ class DeployedChange:
     planned_at: datetime
     planner_name: str
     planner_email: str
-    
+
     @classmethod
     def from_registry_row(cls, row: tuple) -> DeployedChange:
         """Create DeployedChange from database row.
-        
+
         Args:
             row: Database row tuple with 11 elements:
                 (change_id, script_hash, change, project, note,
                  committed_at, committer_name, committer_email,
                  planned_at, planner_name, planner_email)
-        
+
         Returns:
             DeployedChange instance with timezone-aware datetimes.
         """
@@ -72,11 +72,11 @@ class DeployedChange:
 @dataclass(frozen=True, slots=True)
 class DeploymentEvent:
     """Represents a deployment event in the registry.
-    
+
     This model corresponds to rows from the registry `events` table and is used
     to track all deployment operations (deploy, revert, fail, merge).
     """
-    
+
     event: str  # 'deploy', 'revert', 'fail', 'merge'
     change_id: str
     change: str  # change name
@@ -91,18 +91,18 @@ class DeploymentEvent:
     planned_at: datetime
     planner_name: str
     planner_email: str
-    
+
     @classmethod
     def from_registry_row(cls, row: tuple) -> DeploymentEvent:
         """Create DeploymentEvent from database row.
-        
+
         Args:
             row: Database row tuple with 14 elements:
                 (event, change_id, change, project, note,
                  requires, conflicts, tags,
                  committed_at, committer_name, committer_email,
                  planned_at, planner_name, planner_email)
-        
+
         Returns:
             DeploymentEvent instance with timezone-aware datetimes.
         """
@@ -127,22 +127,22 @@ class DeploymentEvent:
 @dataclass(frozen=True, slots=True)
 class DeploymentStatus:
     """Represents the deployment status of a project target.
-    
+
     Tracks which changes are deployed, which are pending, and provides
     convenience properties for checking deployment state.
     """
-    
+
     project: str
     deployed_changes: tuple[str, ...]
     pending_changes: tuple[str, ...]
     deployed_tags: tuple[str, ...]
     last_deployed_change: str | None
-    
+
     @property
     def is_up_to_date(self) -> bool:
         """True if there are no pending changes to deploy."""
         return len(self.pending_changes) == 0
-    
+
     @property
     def deployment_count(self) -> int:
         """Number of changes currently deployed."""

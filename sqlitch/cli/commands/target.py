@@ -27,7 +27,7 @@ def target_command(
     quiet: bool,
 ) -> None:
     """Manage target aliases that map to deployment URIs."""
-    
+
     # If no subcommand was invoked, run the 'list' command by default
     if ctx.invoked_subcommand is None:
         ctx.invoke(target_list)

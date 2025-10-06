@@ -26,7 +26,7 @@ class TestValidateChangeName:
         """Should reject names with whitespace."""
         with pytest.raises(ValueError, match="Change name cannot contain whitespace"):
             validate_change_name("add users")
-        
+
         with pytest.raises(ValueError, match="Change name cannot contain whitespace"):
             validate_change_name("users\ttable")
 

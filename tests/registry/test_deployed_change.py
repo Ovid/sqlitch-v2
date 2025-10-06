@@ -32,9 +32,9 @@ class TestDeployedChangeFromRegistryRow:
             "Ada Lovelace",  # planner_name
             "ada@example.com",  # planner_email
         )
-        
+
         deployed = DeployedChange.from_registry_row(row)
-        
+
         assert deployed.change_id == "abc123"
         assert deployed.script_hash == "deadbeef"
         assert deployed.change == "users"
@@ -62,9 +62,9 @@ class TestDeployedChangeFromRegistryRow:
             "Ada Lovelace",
             "ada@example.com",
         )
-        
+
         deployed = DeployedChange.from_registry_row(row)
-        
+
         assert deployed.script_hash is None
         assert deployed.change_id == "abc123"
 
@@ -83,9 +83,9 @@ class TestDeployedChangeFromRegistryRow:
             "Ada",
             "ada@example.com",
         )
-        
+
         deployed = DeployedChange.from_registry_row(row)
-        
+
         # Both datetime fields should be timezone-aware
         assert deployed.committed_at.tzinfo is not None
         assert deployed.planned_at.tzinfo is not None
@@ -99,12 +99,20 @@ class TestDeployedChangeValidation:
     def test_is_frozen_dataclass(self):
         """Should be immutable (frozen dataclass)."""
         row = (
-            "abc123", "deadbeef", "users", "flipr", "",
-            "2025-01-15T10:30:00Z", "Ada", "ada@example.com",
-            "2025-01-14T18:00:00Z", "Ada", "ada@example.com",
+            "abc123",
+            "deadbeef",
+            "users",
+            "flipr",
+            "",
+            "2025-01-15T10:30:00Z",
+            "Ada",
+            "ada@example.com",
+            "2025-01-14T18:00:00Z",
+            "Ada",
+            "ada@example.com",
         )
         deployed = DeployedChange.from_registry_row(row)
-        
+
         # Should not be able to modify
         with pytest.raises(Exception):  # FrozenInstanceError or AttributeError
             deployed.change_id = "new_id"  # type: ignore
@@ -112,12 +120,20 @@ class TestDeployedChangeValidation:
     def test_has_slots(self):
         """Should use __slots__ for memory efficiency."""
         row = (
-            "abc123", "deadbeef", "users", "flipr", "",
-            "2025-01-15T10:30:00Z", "Ada", "ada@example.com",
-            "2025-01-14T18:00:00Z", "Ada", "ada@example.com",
+            "abc123",
+            "deadbeef",
+            "users",
+            "flipr",
+            "",
+            "2025-01-15T10:30:00Z",
+            "Ada",
+            "ada@example.com",
+            "2025-01-14T18:00:00Z",
+            "Ada",
+            "ada@example.com",
         )
         deployed = DeployedChange.from_registry_row(row)
-        
+
         # Should have __slots__, not __dict__
-        assert not hasattr(deployed, '__dict__')
-        assert hasattr(deployed, '__slots__')
+        assert not hasattr(deployed, "__dict__")
+        assert hasattr(deployed, "__slots__")

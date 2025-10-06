@@ -50,7 +50,7 @@ def engine_group(
     """Manage engine definitions for SQLitch deployments."""
 
     require_cli_context(ctx)
-    
+
     # If no subcommand was invoked, run the 'list' command by default
     if ctx.invoked_subcommand is None:
         ctx.invoke(list_engines)

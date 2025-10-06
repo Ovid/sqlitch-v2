@@ -50,9 +50,10 @@ class TestTargetAction:
         # - Exit 0 and list targets (implemented behavior)
         # - Exit 1 with "not implemented" (stub behavior)
         # - Exit 2 only if there's a parsing error (not expected)
-        assert result.exit_code in (0, 1), (
-            f"Expected exit 0 (success/list) or 1 (not implemented), got {result.exit_code}"
-        )
+        assert result.exit_code in (
+            0,
+            1,
+        ), f"Expected exit 0 (success/list) or 1 (not implemented), got {result.exit_code}"
 
     def test_list_action_accepted(self, runner):
         """Target command must accept 'list' action."""

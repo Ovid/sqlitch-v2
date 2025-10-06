@@ -5,7 +5,7 @@ tutorial workflows (lines 92-108).
 
 Tests for T025: Config get operation
 Tests for T026: Config set operation
-Tests for T027: Config list operation  
+Tests for T027: Config list operation
 Tests for T028: Config implementation (validation)
 """
 
@@ -31,17 +31,18 @@ def isolated_env(tmp_path, monkeypatch):
     # Create a fake home directory in the temp path
     fake_home = tmp_path / "home"
     fake_home.mkdir()
-    
+
     # Mock HOME environment variable to point to our fake home
     monkeypatch.setenv("HOME", str(fake_home))
-    
+
     # Also mock XDG_CONFIG_HOME to ensure consistent behavior
     monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
-    
+
     # Mock Path.home() to return our fake home
     from pathlib import Path
+
     monkeypatch.setattr(Path, "home", lambda: fake_home)
-    
+
     return fake_home
 
 
@@ -53,9 +54,9 @@ class TestConfigGetOperation:
         with runner.isolated_filesystem():
             # Create project config
             Path("sqitch.conf").write_text("[core]\n\tengine = sqlite\n")
-            
+
             result = runner.invoke(main, ["config", "core.engine"])
-            
+
             assert result.exit_code == 0, f"Config get failed: {result.output}"
             assert "sqlite" in result.output, "Should return sqlite engine value"
 
@@ -67,10 +68,11 @@ class TestConfigGetOperation:
             user_dir.mkdir(parents=True, exist_ok=True)
             user_config = user_dir / "sqitch.conf"
             user_config.write_text("[user]\n\tname = Test User\n")
-            
-            result = runner.invoke(main, ["config", "--user", "user.name"],
-                                 env={"HOME": str(isolated_env)})
-            
+
+            result = runner.invoke(
+                main, ["config", "--user", "user.name"], env={"HOME": str(isolated_env)}
+            )
+
             # Should read from user config
             assert result.exit_code == 0, f"Config get --user failed: {result.output}"
             assert "Test User" in result.output, "Should return user name"
@@ -83,11 +85,12 @@ class TestConfigGetOperation:
             user_dir.mkdir(parents=True, exist_ok=True)
             user_config = user_dir / "sqitch.conf"
             user_config.write_text("[user]\n\tname = Global Test User\n")
-            
+
             # --global should be accepted as alias for --user
-            result = runner.invoke(main, ["config", "--global", "user.name"],
-                                 env={"HOME": str(isolated_env)})
-            
+            result = runner.invoke(
+                main, ["config", "--global", "user.name"], env={"HOME": str(isolated_env)}
+            )
+
             assert result.exit_code == 0, f"Config get --global failed: {result.output}"
             assert "Global Test User" in result.output, "Should return user name via --global"
 
@@ -96,16 +99,15 @@ class TestConfigGetOperation:
         with runner.isolated_filesystem():
             # Create project config with engine = sqlite
             Path("sqitch.conf").write_text("[core]\n\tengine = sqlite\n")
-            
+
             # Create user config with engine = pg in our isolated home
             user_dir = isolated_env / ".sqitch"
             user_dir.mkdir(parents=True, exist_ok=True)
             user_config = user_dir / "sqitch.conf"
             user_config.write_text("[core]\n\tengine = pg\n")
-            
-            result = runner.invoke(main, ["config", "core.engine"],
-                                 env={"HOME": str(isolated_env)})
-            
+
+            result = runner.invoke(main, ["config", "core.engine"], env={"HOME": str(isolated_env)})
+
             # Should use project config (sqlite), not user config (pg)
             assert result.exit_code == 0, f"Config get failed: {result.output}"
             assert "sqlite" in result.output, "Should prefer project config over user"
@@ -114,13 +116,11 @@ class TestConfigGetOperation:
         """Config get should exit with code 1 for missing keys."""
         with runner.isolated_filesystem():
             Path("sqitch.conf").write_text("[core]\n\tengine = sqlite\n")
-            
+
             result = runner.invoke(main, ["config", "nonexistent.key"])
-            
+
             # Should fail with exit code 1 (user error)
-            assert result.exit_code == 1, (
-                f"Should exit 1 for missing key, got {result.exit_code}"
-            )
+            assert result.exit_code == 1, f"Should exit 1 for missing key, got {result.exit_code}"
 
 
 class TestConfigSetOperation:
@@ -131,27 +131,30 @@ class TestConfigSetOperation:
         with runner.isolated_filesystem():
             # Initialize a project
             runner.invoke(main, ["init", "test", "--engine", "sqlite"])
-            
+
             # Set a value
             result = runner.invoke(main, ["config", "user.name", "Test User"])
-            
+
             assert result.exit_code == 0, f"Config set failed: {result.output}"
-            
+
             # Verify it was written to project config
             config_content = Path("sqitch.conf").read_text()
-            assert "name = Test User" in config_content or "name=Test User" in config_content, (
-                "Should write to project sqitch.conf"
-            )
+            assert (
+                "name = Test User" in config_content or "name=Test User" in config_content
+            ), "Should write to project sqitch.conf"
 
     def test_set_in_user_config_with_flag(self, runner, isolated_env):
         """Config set --user should write to ~/.config/sqlitch/sqitch.conf."""
         with runner.isolated_filesystem():
             # Pass environment to runner.invoke so it sees our fake HOME
-            result = runner.invoke(main, ["config", "--user", "user.name", "Test User"],
-                                 env={"HOME": str(isolated_env)})
-            
+            result = runner.invoke(
+                main,
+                ["config", "--user", "user.name", "Test User"],
+                env={"HOME": str(isolated_env)},
+            )
+
             assert result.exit_code == 0, f"Config set --user failed: {result.output}"
-            
+
             # Verify user config was created/updated (default location is ~/.config/sqlitch/)
             user_config = isolated_env / ".config" / "sqlitch" / "sqitch.conf"
             assert user_config.exists(), f"Should create user config file at {user_config}"
@@ -162,14 +165,19 @@ class TestConfigSetOperation:
         """Config set --global should work as alias for --user."""
         with runner.isolated_filesystem():
             # Pass environment to runner.invoke so it sees our fake HOME
-            result = runner.invoke(main, ["config", "--global", "user.name", "Global User"],
-                                 env={"HOME": str(isolated_env)})
-            
+            result = runner.invoke(
+                main,
+                ["config", "--global", "user.name", "Global User"],
+                env={"HOME": str(isolated_env)},
+            )
+
             assert result.exit_code == 0, f"Config set --global failed: {result.output}"
-            
+
             # Verify user config was created/updated (default location is ~/.config/sqlitch/)
             user_config = isolated_env / ".config" / "sqlitch" / "sqitch.conf"
-            assert user_config.exists(), f"Should create user config file at {user_config} via --global"
+            assert (
+                user_config.exists()
+            ), f"Should create user config file at {user_config} via --global"
             config_content = user_config.read_text()
             assert "Global User" in config_content, "Should write to user config via --global"
 
@@ -178,35 +186,35 @@ class TestConfigSetOperation:
         with runner.isolated_filesystem():
             # Don't initialize - no sqitch.conf exists
             result = runner.invoke(main, ["config", "core.engine", "sqlite"])
-            
+
             assert result.exit_code == 0, f"Config set failed: {result.output}"
-            
+
             # Verify config file was created
             assert Path("sqitch.conf").exists(), "Should create sqitch.conf"
             config_content = Path("sqitch.conf").read_text()
-            assert "engine = sqlite" in config_content or "engine=sqlite" in config_content, (
-                "Should write engine setting"
-            )
+            assert (
+                "engine = sqlite" in config_content or "engine=sqlite" in config_content
+            ), "Should write engine setting"
 
     def test_updates_existing_value(self, runner):
         """Config set should update existing values in config."""
         with runner.isolated_filesystem():
             # Create initial config
             Path("sqitch.conf").write_text("[core]\n\tengine = pg\n")
-            
+
             # Update the value
             result = runner.invoke(main, ["config", "core.engine", "sqlite"])
-            
+
             assert result.exit_code == 0, f"Config set failed: {result.output}"
-            
+
             # Verify value was updated
             config_content = Path("sqitch.conf").read_text()
             assert "sqlite" in config_content, "Should update to sqlite"
             # Should not have both values
             pg_count = config_content.count("pg")
-            assert pg_count == 0 or "[engine \"pg\"]" in config_content, (
-                "Should replace old value, not duplicate"
-            )
+            assert (
+                pg_count == 0 or '[engine "pg"]' in config_content
+            ), "Should replace old value, not duplicate"
 
 
 class TestConfigListOperation:
@@ -219,58 +227,60 @@ class TestConfigListOperation:
             Path("sqitch.conf").write_text(
                 "[core]\n\tengine = sqlite\n\turi = https://example.com\n"
             )
-            
+
             result = runner.invoke(main, ["config", "--list"])
-            
+
             assert result.exit_code == 0, f"Config --list failed: {result.output}"
-            assert "engine" in result.output or "sqlite" in result.output, (
-                "Should show engine setting"
-            )
-            assert "uri" in result.output or "https://example.com" in result.output, (
-                "Should show uri setting"
-            )
+            assert (
+                "engine" in result.output or "sqlite" in result.output
+            ), "Should show engine setting"
+            assert (
+                "uri" in result.output or "https://example.com" in result.output
+            ), "Should show uri setting"
 
     def test_list_with_user_shows_user_config_only(self, runner, isolated_env):
         """Config --list --user should show only user config."""
         with runner.isolated_filesystem():
             # Create project config
             Path("sqitch.conf").write_text("[core]\n\tengine = sqlite\n")
-            
+
             # Create user config in our isolated home
             user_dir = isolated_env / ".sqitch"
             user_dir.mkdir(parents=True, exist_ok=True)
             user_config = user_dir / "sqitch.conf"
             user_config.write_text("[user]\n\tname = Test User\n")
-            
-            result = runner.invoke(main, ["config", "--list", "--user"],
-                                 env={"HOME": str(isolated_env)})
-            
+
+            result = runner.invoke(
+                main, ["config", "--list", "--user"], env={"HOME": str(isolated_env)}
+            )
+
             assert result.exit_code == 0, f"Config --list --user failed: {result.output}"
             # Should show user config
-            assert "Test User" in result.output or "user.name" in result.output, (
-                "Should show user config"
-            )
+            assert (
+                "Test User" in result.output or "user.name" in result.output
+            ), "Should show user config"
 
     def test_list_with_global_shows_user_config(self, runner, isolated_env):
         """Config --list --global should show user config (global is alias for user)."""
         with runner.isolated_filesystem():
             # Create project config
             Path("sqitch.conf").write_text("[core]\n\tengine = sqlite\n")
-            
+
             # Create user config in our isolated home
             user_dir = isolated_env / ".sqitch"
             user_dir.mkdir(parents=True, exist_ok=True)
             user_config = user_dir / "sqitch.conf"
             user_config.write_text("[user]\n\tname = Global User\n")
-            
+
             # --global should be accepted as alias for --user
-            result = runner.invoke(main, ["config", "--list", "--global"],
-                                 env={"HOME": str(isolated_env)})
-            
-            assert result.exit_code == 0, f"Config --list --global failed: {result.output}"
-            assert "Global User" in result.output or "user.name" in result.output, (
-                "Should show user config via --global"
+            result = runner.invoke(
+                main, ["config", "--list", "--global"], env={"HOME": str(isolated_env)}
             )
+
+            assert result.exit_code == 0, f"Config --list --global failed: {result.output}"
+            assert (
+                "Global User" in result.output or "user.name" in result.output
+            ), "Should show user config via --global"
 
 
 class TestConfigOutputFormat:
@@ -280,9 +290,9 @@ class TestConfigOutputFormat:
         """Config get should output only the value, no labels."""
         with runner.isolated_filesystem():
             Path("sqitch.conf").write_text("[core]\n\tengine = sqlite\n")
-            
+
             result = runner.invoke(main, ["config", "core.engine"])
-            
+
             assert result.exit_code == 0, f"Config get failed: {result.output}"
             # Output should be just the value
             output_lines = result.output.strip().split("\n")
@@ -293,9 +303,9 @@ class TestConfigOutputFormat:
         """Config with --quiet should suppress non-essential output."""
         with runner.isolated_filesystem():
             Path("sqitch.conf").write_text("[core]\n\tengine = sqlite\n")
-            
+
             result = runner.invoke(main, ["--quiet", "config", "core.engine"])
-            
+
             assert result.exit_code == 0, f"Config --quiet failed: {result.output}"
             # Should still show the value but no extra messages
             assert "sqlite" in result.output, "Should show value even in quiet mode"
@@ -308,23 +318,25 @@ class TestConfigErrorHandling:
         """Config should handle conflicting operations gracefully."""
         with runner.isolated_filesystem():
             Path("sqitch.conf").write_text("[core]\n\tengine = sqlite\n")
-            
+
             # Both name and value provided but also --list
             result = runner.invoke(main, ["config", "--list", "core.engine", "pg"])
-            
+
             # Should either ignore extra args or error clearly
             # Accept either behavior as long as it doesn't crash
-            assert result.exit_code in (0, 1, 2), (
-                f"Should handle conflict gracefully, got {result.exit_code}"
-            )
+            assert result.exit_code in (
+                0,
+                1,
+                2,
+            ), f"Should handle conflict gracefully, got {result.exit_code}"
 
     def test_set_without_value_fails(self, runner):
         """Config set requires both name and value."""
         with runner.isolated_filesystem():
             Path("sqitch.conf").write_text("[core]\n\tengine = sqlite\n")
-            
+
             result = runner.invoke(main, ["config", "core.engine"])
-            
+
             # This is actually a get, so it should succeed
             assert result.exit_code == 0, "Get should work with just name"
 
@@ -332,11 +344,12 @@ class TestConfigErrorHandling:
         """Config should handle invalid section.key formats gracefully."""
         with runner.isolated_filesystem():
             Path("sqitch.conf").write_text("[core]\n\tengine = sqlite\n")
-            
+
             # Try to get a malformed key
             result = runner.invoke(main, ["config", "invalidsectionkey"])
-            
+
             # Should fail with clear error (exit 1) not crash
-            assert result.exit_code in (0, 1), (
-                f"Should handle invalid keys gracefully, got {result.exit_code}"
-            )
+            assert result.exit_code in (
+                0,
+                1,
+            ), f"Should handle invalid keys gracefully, got {result.exit_code}"

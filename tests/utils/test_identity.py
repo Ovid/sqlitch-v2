@@ -47,19 +47,19 @@ class TestGenerateChangeId:
     def test_deterministic_same_inputs(self) -> None:
         """Same inputs should produce same output."""
         timestamp = datetime(2025, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
-        
+
         id1 = generate_change_id("flipr", "users", timestamp)
         id2 = generate_change_id("flipr", "users", timestamp)
-        
+
         assert id1 == id2
 
     def test_different_inputs_different_outputs(self) -> None:
         """Different inputs should produce different outputs."""
         timestamp = datetime(2025, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
-        
+
         id1 = generate_change_id("flipr", "users", timestamp)
         id2 = generate_change_id("flipr", "schema", timestamp)
-        
+
         assert id1 != id2
 
     def test_matches_sqitch_format(self) -> None:
@@ -67,10 +67,10 @@ class TestGenerateChangeId:
         project = "flipr"
         change = "users"
         timestamp = datetime(2025, 1, 1, 12, 30, 45, tzinfo=timezone.utc)
-        
+
         # Sqitch uses ISO 8601 format: project:change:YYYY-MM-DDTHH:MM:SSZ
         expected_input = f"{project}:{change}:{timestamp.isoformat()}"
         expected_hash = hashlib.sha1(expected_input.encode("utf-8")).hexdigest()
-        
+
         result = generate_change_id(project, change, timestamp)
         assert result == expected_hash

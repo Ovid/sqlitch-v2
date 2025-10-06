@@ -29,13 +29,13 @@ class TestInitDirectoryCreation:
         """Init must create sqitch.conf with correct engine setting."""
         with runner.isolated_filesystem():
             result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
-            
+
             assert result.exit_code == 0, f"Init failed: {result.output}"
-            
+
             # Verify sqitch.conf exists
             config_path = Path("sqitch.conf")
             assert config_path.exists(), "sqitch.conf was not created"
-            
+
             # Verify engine setting
             config_content = config_path.read_text()
             assert "[core]" in config_content, "Missing [core] section"
@@ -44,38 +44,44 @@ class TestInitDirectoryCreation:
     def test_creates_sqitch_plan_with_pragmas(self, runner):
         """Init must create sqitch.plan with project pragmas."""
         with runner.isolated_filesystem():
-            result = runner.invoke(main, [
-                "init", "flipr",
-                "--engine", "sqlite",
-                "--uri", "https://github.com/sqitchers/sqitch-sqlite-intro/"
-            ])
-            
+            result = runner.invoke(
+                main,
+                [
+                    "init",
+                    "flipr",
+                    "--engine",
+                    "sqlite",
+                    "--uri",
+                    "https://github.com/sqitchers/sqitch-sqlite-intro/",
+                ],
+            )
+
             assert result.exit_code == 0, f"Init failed: {result.output}"
-            
+
             # Verify sqitch.plan exists
             plan_path = Path("sqitch.plan")
             assert plan_path.exists(), "sqitch.plan was not created"
-            
+
             # Verify pragmas
             plan_content = plan_path.read_text()
             assert "%syntax-version=" in plan_content, "Missing %syntax-version pragma"
             assert "%project=flipr" in plan_content, "Missing %project pragma"
-            assert "%uri=https://github.com/sqitchers/sqitch-sqlite-intro/" in plan_content, (
-                "Missing %uri pragma"
-            )
+            assert (
+                "%uri=https://github.com/sqitchers/sqitch-sqlite-intro/" in plan_content
+            ), "Missing %uri pragma"
 
     def test_creates_script_directories(self, runner):
         """Init must create deploy/, revert/, and verify/ directories."""
         with runner.isolated_filesystem():
             result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
-            
+
             assert result.exit_code == 0, f"Init failed: {result.output}"
-            
+
             # Verify directories exist
             deploy_dir = Path("deploy")
             revert_dir = Path("revert")
             verify_dir = Path("verify")
-            
+
             assert deploy_dir.exists() and deploy_dir.is_dir(), "deploy/ directory not created"
             assert revert_dir.exists() and revert_dir.is_dir(), "revert/ directory not created"
             assert verify_dir.exists() and verify_dir.is_dir(), "verify/ directory not created"
@@ -84,9 +90,9 @@ class TestInitDirectoryCreation:
         """Init must create complete directory structure per FR-001."""
         with runner.isolated_filesystem():
             result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
-            
+
             assert result.exit_code == 0, f"Init failed: {result.output}"
-            
+
             # Verify all required artifacts
             required_files = [
                 Path("sqitch.conf"),
@@ -97,46 +103,46 @@ class TestInitDirectoryCreation:
                 Path("revert"),
                 Path("verify"),
             ]
-            
+
             for file_path in required_files:
-                assert file_path.exists() and file_path.is_file(), (
-                    f"Required file {file_path} missing"
-                )
-            
+                assert (
+                    file_path.exists() and file_path.is_file()
+                ), f"Required file {file_path} missing"
+
             for dir_path in required_dirs:
-                assert dir_path.exists() and dir_path.is_dir(), (
-                    f"Required directory {dir_path}/ missing"
-                )
+                assert (
+                    dir_path.exists() and dir_path.is_dir()
+                ), f"Required directory {dir_path}/ missing"
 
     def test_file_contents_match_sqitch_format(self, runner):
         """Init must create files with Sqitch-compatible format."""
         with runner.isolated_filesystem():
-            result = runner.invoke(main, [
-                "init", "flipr",
-                "--engine", "sqlite",
-                "--uri", "https://github.com/sqitchers/sqitch-sqlite-intro/"
-            ])
-            
+            result = runner.invoke(
+                main,
+                [
+                    "init",
+                    "flipr",
+                    "--engine",
+                    "sqlite",
+                    "--uri",
+                    "https://github.com/sqitchers/sqitch-sqlite-intro/",
+                ],
+            )
+
             assert result.exit_code == 0, f"Init failed: {result.output}"
-            
+
             # Verify sqitch.conf format
             config_content = Path("sqitch.conf").read_text()
-            assert config_content.startswith("[core]"), (
-                "sqitch.conf must start with [core] section"
-            )
-            assert "\tengine = sqlite" in config_content, (
-                "Engine setting must use tab indentation"
-            )
-            
+            assert config_content.startswith("[core]"), "sqitch.conf must start with [core] section"
+            assert "\tengine = sqlite" in config_content, "Engine setting must use tab indentation"
+
             # Verify sqitch.plan format
             plan_content = Path("sqitch.plan").read_text()
-            assert plan_content.startswith("%syntax-version="), (
-                "sqitch.plan must start with %syntax-version pragma"
-            )
+            assert plan_content.startswith(
+                "%syntax-version="
+            ), "sqitch.plan must start with %syntax-version pragma"
             # Plan should end with blank line after pragmas
-            assert plan_content.endswith("\n"), (
-                "sqitch.plan should end with newline"
-            )
+            assert plan_content.endswith("\n"), "sqitch.plan should end with newline"
 
 
 class TestInitEngineValidation:
@@ -153,29 +159,27 @@ class TestInitEngineValidation:
         """Init must fail with clear error message for invalid engine."""
         with runner.isolated_filesystem():
             result = runner.invoke(main, ["init", "test", "--engine", "notarealengine"])
-            
+
             # Should fail (exit code 1 for user error)
-            assert result.exit_code == 1, (
-                f"Should reject invalid engine, got exit {result.exit_code}"
-            )
-            
+            assert (
+                result.exit_code == 1
+            ), f"Should reject invalid engine, got exit {result.exit_code}"
+
             # Error message should mention the invalid engine
-            assert "notarealengine" in result.output.lower() or "unsupported" in result.output.lower(), (
-                f"Error message should mention invalid engine: {result.output}"
-            )
+            assert (
+                "notarealengine" in result.output.lower() or "unsupported" in result.output.lower()
+            ), f"Error message should mention invalid engine: {result.output}"
 
     def test_defaults_to_sqlite_when_not_specified(self, runner):
         """Init must default to sqlite engine when --engine not provided."""
         with runner.isolated_filesystem():
             result = runner.invoke(main, ["init", "test"])
-            
+
             assert result.exit_code == 0, f"Init without engine failed: {result.output}"
-            
+
             # Verify sqlite is set as default
             config_content = Path("sqitch.conf").read_text()
-            assert "engine = sqlite" in config_content, (
-                "Should default to sqlite engine"
-            )
+            assert "engine = sqlite" in config_content, "Should default to sqlite engine"
 
 
 class TestInitOutputFormat:
@@ -185,9 +189,9 @@ class TestInitOutputFormat:
         """Init should output 'Created' messages for each artifact."""
         with runner.isolated_filesystem():
             result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
-            
+
             assert result.exit_code == 0, f"Init failed: {result.output}"
-            
+
             # Should mention created artifacts
             assert "Created sqitch.conf" in result.output, "Missing sqitch.conf creation message"
             assert "Created sqitch.plan" in result.output, "Missing sqitch.plan creation message"
@@ -200,13 +204,13 @@ class TestInitOutputFormat:
         with runner.isolated_filesystem():
             # --quiet is a global option and must come before the subcommand
             result = runner.invoke(main, ["--quiet", "init", "flipr", "--engine", "sqlite"])
-            
+
             assert result.exit_code == 0, f"Init failed: {result.output}"
-            
+
             # Output should be empty or minimal
-            assert len(result.output.strip()) == 0, (
-                f"--quiet should suppress output, got: {result.output}"
-            )
+            assert (
+                len(result.output.strip()) == 0
+            ), f"--quiet should suppress output, got: {result.output}"
 
 
 class TestInitErrorHandling:
@@ -217,36 +221,30 @@ class TestInitErrorHandling:
         with runner.isolated_filesystem():
             # Create existing config
             Path("sqitch.conf").write_text("[core]\n")
-            
+
             result = runner.invoke(main, ["init", "test"])
-            
+
             assert result.exit_code == 1, "Should fail when sqitch.conf exists"
-            assert "sqitch.conf" in result.output.lower(), (
-                "Error should mention sqitch.conf"
-            )
+            assert "sqitch.conf" in result.output.lower(), "Error should mention sqitch.conf"
 
     def test_fails_if_sqitch_plan_exists(self, runner):
         """Init must fail if sqitch.plan already exists."""
         with runner.isolated_filesystem():
             # Create existing plan
             Path("sqitch.plan").write_text("%syntax-version=1.0.0\n")
-            
+
             result = runner.invoke(main, ["init", "test"])
-            
+
             assert result.exit_code == 1, "Should fail when sqitch.plan exists"
-            assert "sqitch.plan" in result.output.lower(), (
-                "Error should mention sqitch.plan"
-            )
+            assert "sqitch.plan" in result.output.lower(), "Error should mention sqitch.plan"
 
     def test_fails_if_deploy_directory_exists(self, runner):
         """Init must fail if deploy/ directory already exists."""
         with runner.isolated_filesystem():
             # Create existing directory
             Path("deploy").mkdir()
-            
+
             result = runner.invoke(main, ["init", "test"])
-            
+
             assert result.exit_code == 1, "Should fail when deploy/ exists"
-            assert "deploy" in result.output.lower(), (
-                "Error should mention deploy directory"
-            )
+            assert "deploy" in result.output.lower(), "Error should mention deploy directory"

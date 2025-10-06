@@ -93,7 +93,7 @@ def show_command(
 
     if not item:
         raise CommandError("Change or tag name must be specified")
-        
+
     change = _resolve_change(plan, item)
 
     if script_kind:

@@ -15,7 +15,7 @@ class TestScriptLoad:
         """load() should read script content from file."""
         script_file = tmp_path / "deploy.sql"
         script_file.write_text("-- Deploy users\nCREATE TABLE users (id INTEGER);")
-        
+
         script = Script.load(script_file)
         assert script.path == script_file
         assert script.content == "-- Deploy users\nCREATE TABLE users (id INTEGER);"
@@ -31,7 +31,7 @@ class TestScriptLoad:
         script_file = tmp_path / "test.sql"
         script_file.write_text("SELECT 1;")
         script = Script.load(script_file)
-        
+
         with pytest.raises(AttributeError):
             script.content = "changed"  # type: ignore[misc]
 
@@ -40,7 +40,7 @@ class TestScriptLoad:
         script_file = tmp_path / "test.sql"
         script_file.write_text("SELECT 1;")
         script = Script.load(script_file)
-        
+
         assert not hasattr(script, "__dict__")
 
 
