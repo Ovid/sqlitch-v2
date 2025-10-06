@@ -203,7 +203,8 @@ def verify_command(
     import sqlite3
     from sqlitch.engine.sqlite import SQLiteEngine
     
-    if not isinstance(engine, SQLiteEngine):
+    # Check engine type by name instead of isinstance to avoid test isolation issues
+    if engine_target.engine != "sqlite":
         raise CommandError("Only SQLite engine is supported for verify in this milestone")
     
     # Parse URIs to get paths - strip db: and sqlite: prefixes
