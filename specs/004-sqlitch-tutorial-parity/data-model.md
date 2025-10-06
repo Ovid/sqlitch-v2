@@ -540,56 +540,102 @@ class ScriptResult:
 
 ### 6.1 User Identity
 
-**NEW**: Represents user identity for commits
+**Status**: ✅ Implemented (2025-10-06)
+
+**Implementation**: Function `_resolve_committer_identity()` in `sqlitch/cli/commands/deploy.py`
 
 ```python
-@dataclass(frozen=True, slots=True)
-class UserIdentity:
-    """User identity for recording changes."""
+def _resolve_committer_identity(
+    env: Mapping[str, str],
+    config_root: Path,
+    project_root: Path,
+) -> tuple[str, str]:
+    """Resolve the committer name and email from config and environment variables.
     
-    name: str
-    email: str | None = None
+    Resolution order:
+    1. Config file (user.name and user.email)
+    2. Environment variables (SQLITCH_USER_*, GIT_*, etc.)
+    3. System defaults
     
-    def __post_init__(self) -> None:
-        if not self.name:
-            raise ValueError("User name is required")
+    Returns:
+        Tuple of (name, email)
+    """
+    from sqlitch.config.resolver import resolve_config
     
-    def format(self) -> str:
-        """Format as 'Name <email>' or just 'Name'."""
-        if self.email:
-            return f"{self.name} <{self.email}>"
-        return self.name
-    
-    @classmethod
-    def from_env(cls, env: Mapping[str, str]) -> UserIdentity:
-        """Resolve from environment variables."""
-        name = (
-            env.get("SQLITCH_USER_NAME")
-            or env.get("GIT_AUTHOR_NAME")
-            or env.get("USER")
-            or env.get("USERNAME")
-            or "SQLitch User"
+    # Try to load config to get user.name and user.email
+    config_name = None
+    config_email = None
+    try:
+        config = resolve_config(
+            root_dir=project_root,
+            config_root=config_root,
+            env=env,
         )
-        email = (
-            env.get("SQLITCH_USER_EMAIL")
-            or env.get("GIT_AUTHOR_EMAIL")
-            or env.get("EMAIL")
-        )
-        return cls(name=name, email=email)
-    
-    @classmethod
-    def from_config(cls, config: ConfigProfile) -> UserIdentity:
-        """Resolve from config file."""
         user_section = config.settings.get("user", {})
-        name = user_section.get("name", "SQLitch User")
-        email = user_section.get("email")
-        return cls(name=name, email=email)
+        config_name = user_section.get("name")
+        config_email = user_section.get("email")
+    except Exception:
+        pass
+
+    name = (
+        config_name
+        or env.get("SQLITCH_USER_NAME")
+        or env.get("GIT_COMMITTER_NAME")
+        or env.get("GIT_AUTHOR_NAME")
+        or env.get("USER")
+        or env.get("USERNAME")
+        or "SQLitch User"
+    )
+
+    email = (
+        config_email
+        or env.get("SQLITCH_USER_EMAIL")
+        or env.get("GIT_COMMITTER_EMAIL")
+        or env.get("GIT_AUTHOR_EMAIL")
+        or env.get("EMAIL")
+    )
+
+    if not email:
+        sanitized = "".join(ch for ch in name.lower() if ch.isalnum() or ch in {".", "_"})
+        sanitized = sanitized or "sqlitch"
+        email = f"{sanitized}@example.invalid"
+
+    return name, email
+```
+
+**Resolution Priority**:
+1. **Config file** `[user]` section:
+   - `user.name` - Full name (e.g., "Marge N. O'Vera")
+   - `user.email` - Email address (e.g., "marge@example.com")
+   - Config precedence: local → user → system
+   
+2. **Environment variables**:
+   - `SQLITCH_USER_NAME` / `SQLITCH_USER_EMAIL` (SQLitch-specific)
+   - `GIT_COMMITTER_NAME` / `GIT_COMMITTER_EMAIL` (Git committer)
+   - `GIT_AUTHOR_NAME` / `GIT_AUTHOR_EMAIL` (Git author)
+   - `USER` / `USERNAME` (system username)
+   - `EMAIL` (system email)
+
+3. **Generated fallback**:
+   - Name: "SQLitch User"
+   - Email: Sanitized username + "@example.invalid"
+
+**Config File Format**:
+```ini
+[user]
+    name = Test User
+    email = test@example.com
 ```
 
 **Usage**:
-- Resolve for planner identity (add, tag, rework)
-- Resolve for committer identity (deploy, revert)
-- Store in registry records
+- Called by deploy command before recording to registry
+- Identity stored in `events.committer_name` and `events.committer_email`
+- Displayed in `sqlitch status` and `sqlitch log` outputs
+
+**Test Coverage**:
+- `tests/cli/commands/test_deploy_functional.py::TestDeployUserIdentity`
+- `test_uses_user_identity_from_config_file` - verifies config file reading
+- `test_falls_back_to_env_when_no_config` - verifies environment fallback
 
 ### 6.2 Change Identifier
 
