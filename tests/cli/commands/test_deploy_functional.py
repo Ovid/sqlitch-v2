@@ -284,6 +284,615 @@ class TestDeployWithNoRegistry:
             f"Should mention registry database name\nOutput: {result.output}"
 
 
+class TestDeployWithSingleChange:
+    """Test deploy functionality for a single change."""
+
+    def test_loads_and_executes_deploy_script(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Deploy should load and execute the deploy script."""
+        # Setup
+        project_dir = tmp_path / "flipr"
+        project_dir.mkdir()
+        
+        conf_file = project_dir / "sqitch.conf"
+        conf_file.write_text("[core]\n    engine = sqlite\n")
+        
+        plan_file = project_dir / "sqitch.plan"
+        plan_file.write_text(
+            "%syntax-version=1.0.0\n"
+            "%project=flipr\n"
+            "\n"
+            "users 2025-01-01T00:00:00Z Test User <test@example.com> # Add users table\n"
+        )
+        
+        deploy_dir = project_dir / "deploy"
+        deploy_dir.mkdir()
+        deploy_script = deploy_dir / "users.sql"
+        deploy_script.write_text(
+            "-- Deploy flipr:users to sqlite\n"
+            "\n"
+            "BEGIN;\n"
+            "CREATE TABLE users (\n"
+            "    id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+            "    name TEXT NOT NULL,\n"
+            "    email TEXT NOT NULL UNIQUE\n"
+            ");\n"
+            "COMMIT;\n"
+        )
+        
+        target_db = tmp_path / "flipr_test.db"
+        
+        # Execute
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result = runner.invoke(
+                main,
+                ["deploy", f"db:sqlite:{target_db}"],
+            )
+        finally:
+            os.chdir(original_cwd)
+        
+        assert result.exit_code == 0, f"Deploy should succeed\nOutput: {result.output}"
+        
+        # Verify: Table was actually created in target database
+        conn = sqlite3.connect(target_db)
+        cursor = conn.cursor()
+        
+        # Check table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+        assert cursor.fetchone() is not None, "users table should exist in target database"
+        
+        # Check table structure
+        cursor.execute("PRAGMA table_info(users)")
+        columns = {row[1]: row[2] for row in cursor.fetchall()}  # name: type
+        assert "id" in columns, "Should have id column"
+        assert "name" in columns, "Should have name column"
+        assert "email" in columns, "Should have email column"
+        
+        conn.close()
+
+    def test_inserts_change_record_in_registry(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Deploy should insert change record into registry changes table."""
+        # Setup
+        project_dir = tmp_path / "flipr"
+        project_dir.mkdir()
+        
+        conf_file = project_dir / "sqitch.conf"
+        conf_file.write_text("[core]\n    engine = sqlite\n")
+        
+        plan_file = project_dir / "sqitch.plan"
+        plan_file.write_text(
+            "%syntax-version=1.0.0\n"
+            "%project=flipr\n"
+            "\n"
+            "users 2025-01-01T12:34:56Z Alice <alice@example.com> # Add users table\n"
+        )
+        
+        deploy_dir = project_dir / "deploy"
+        deploy_dir.mkdir()
+        deploy_script = deploy_dir / "users.sql"
+        deploy_script.write_text(
+            "-- Deploy flipr:users to sqlite\n"
+            "BEGIN;\n"
+            "CREATE TABLE users (id INTEGER PRIMARY KEY);\n"
+            "COMMIT;\n"
+        )
+        
+        target_db = tmp_path / "flipr_test.db"
+        registry_db = tmp_path / "sqitch.db"
+        
+        # Execute
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result = runner.invoke(
+                main,
+                ["deploy", f"db:sqlite:{target_db}"],
+            )
+        finally:
+            os.chdir(original_cwd)
+        
+        assert result.exit_code == 0, f"Deploy should succeed\nOutput: {result.output}"
+        
+        # Verify: Change record exists in registry
+        conn = sqlite3.connect(registry_db)
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT change_id, change, project, note, planner_name, planner_email, script_hash "
+            "FROM changes WHERE change = 'users'"
+        )
+        change_record = cursor.fetchone()
+        
+        assert change_record is not None, "Should have change record for 'users'"
+        change_id, change_name, project, note, planner_name, planner_email, script_hash = change_record
+        
+        assert change_name == "users", f"Change name should be 'users', got {change_name}"
+        assert project == "flipr", f"Project should be 'flipr', got {project}"
+        assert note == "Add users table", f"Note should match plan, got {note}"
+        assert planner_name == "Alice", f"Planner name should be 'Alice', got {planner_name}"
+        assert planner_email == "alice@example.com", f"Planner email should match, got {planner_email}"
+        assert script_hash is not None, "Script hash should be calculated and stored"
+        assert len(script_hash) > 0, "Script hash should not be empty"
+        
+        conn.close()
+
+    def test_inserts_event_record(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Deploy should insert event record into registry events table."""
+        # Setup
+        project_dir = tmp_path / "flipr"
+        project_dir.mkdir()
+        
+        conf_file = project_dir / "sqitch.conf"
+        conf_file.write_text("[core]\n    engine = sqlite\n")
+        
+        plan_file = project_dir / "sqitch.plan"
+        plan_file.write_text(
+            "%syntax-version=1.0.0\n"
+            "%project=flipr\n"
+            "\n"
+            "users 2025-01-01T00:00:00Z Test User <test@example.com> # Add users\n"
+        )
+        
+        deploy_dir = project_dir / "deploy"
+        deploy_dir.mkdir()
+        deploy_script = deploy_dir / "users.sql"
+        deploy_script.write_text(
+            "-- Deploy flipr:users to sqlite\n"
+            "BEGIN;\n"
+            "CREATE TABLE users (id INTEGER PRIMARY KEY);\n"
+            "COMMIT;\n"
+        )
+        
+        target_db = tmp_path / "flipr_test.db"
+        registry_db = tmp_path / "sqitch.db"
+        
+        # Execute
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result = runner.invoke(
+                main,
+                ["deploy", f"db:sqlite:{target_db}"],
+            )
+        finally:
+            os.chdir(original_cwd)
+        
+        assert result.exit_code == 0, f"Deploy should succeed\nOutput: {result.output}"
+        
+        # Verify: Event record exists
+        conn = sqlite3.connect(registry_db)
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT event, change, project, note, committer_name, committer_email "
+            "FROM events WHERE change = 'users' AND event = 'deploy'"
+        )
+        event_record = cursor.fetchone()
+        
+        assert event_record is not None, "Should have deploy event record for 'users'"
+        event, change, project, note, committer_name, committer_email = event_record
+        
+        assert event == "deploy", f"Event type should be 'deploy', got {event}"
+        assert change == "users", f"Change should be 'users', got {change}"
+        assert project == "flipr", f"Project should be 'flipr', got {project}"
+        assert note == "Add users", f"Note should match plan, got {note}"
+        assert committer_name is not None, "Committer name should be set"
+        assert committer_email is not None, "Committer email should be set"
+        
+        conn.close()
+
+    def test_calculates_script_hash(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Deploy should calculate and store script hash for the deploy script."""
+        # Setup
+        project_dir = tmp_path / "flipr"
+        project_dir.mkdir()
+        
+        conf_file = project_dir / "sqitch.conf"
+        conf_file.write_text("[core]\n    engine = sqlite\n")
+        
+        plan_file = project_dir / "sqitch.plan"
+        plan_file.write_text(
+            "%syntax-version=1.0.0\n"
+            "%project=flipr\n"
+            "\n"
+            "users 2025-01-01T00:00:00Z Test User <test@example.com> # Add users\n"
+        )
+        
+        deploy_dir = project_dir / "deploy"
+        deploy_dir.mkdir()
+        
+        # Create a specific script with known content
+        deploy_script = deploy_dir / "users.sql"
+        script_content = (
+            "-- Deploy flipr:users to sqlite\n"
+            "BEGIN;\n"
+            "CREATE TABLE users (id INTEGER PRIMARY KEY);\n"
+            "COMMIT;\n"
+        )
+        deploy_script.write_text(script_content)
+        
+        target_db = tmp_path / "flipr_test.db"
+        registry_db = tmp_path / "sqitch.db"
+        
+        # Execute
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result = runner.invoke(
+                main,
+                ["deploy", f"db:sqlite:{target_db}"],
+            )
+        finally:
+            os.chdir(original_cwd)
+        
+        assert result.exit_code == 0, f"Deploy should succeed\nOutput: {result.output}"
+        
+        # Verify: Script hash is stored and is a valid SHA-1 hash
+        conn = sqlite3.connect(registry_db)
+        cursor = conn.cursor()
+        cursor.execute("SELECT script_hash FROM changes WHERE change = 'users'")
+        result_row = cursor.fetchone()
+        
+        assert result_row is not None, "Should have change record"
+        script_hash = result_row[0]
+        
+        assert script_hash is not None, "Script hash should not be NULL"
+        # SHA-1 hash should be 40 hex characters
+        assert len(script_hash) == 40, f"Script hash should be 40 chars, got {len(script_hash)}"
+        assert all(c in "0123456789abcdef" for c in script_hash.lower()), \
+            "Script hash should be valid hex"
+        
+        conn.close()
+
+    def test_outputs_deployment_success_message(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Deploy should output success message for deployed change."""
+        # Setup
+        project_dir = tmp_path / "flipr"
+        project_dir.mkdir()
+        
+        conf_file = project_dir / "sqitch.conf"
+        conf_file.write_text("[core]\n    engine = sqlite\n")
+        
+        plan_file = project_dir / "sqitch.plan"
+        plan_file.write_text(
+            "%syntax-version=1.0.0\n"
+            "%project=flipr\n"
+            "\n"
+            "users 2025-01-01T00:00:00Z Test User <test@example.com> # Add users\n"
+        )
+        
+        deploy_dir = project_dir / "deploy"
+        deploy_dir.mkdir()
+        deploy_script = deploy_dir / "users.sql"
+        deploy_script.write_text(
+            "-- Deploy flipr:users to sqlite\n"
+            "BEGIN;\n"
+            "CREATE TABLE users (id INTEGER PRIMARY KEY);\n"
+            "COMMIT;\n"
+        )
+        
+        target_db = tmp_path / "flipr_test.db"
+        
+        # Execute
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result = runner.invoke(
+                main,
+                ["deploy", f"db:sqlite:{target_db}"],
+            )
+        finally:
+            os.chdir(original_cwd)
+        
+        assert result.exit_code == 0, f"Deploy should succeed\nOutput: {result.output}"
+        
+        # Verify: Output shows successful deployment
+        assert "+ users" in result.output, \
+            f"Should show '+ users' for deployed change\nOutput: {result.output}"
+        assert "Deployment complete" in result.output or "Applied" in result.output, \
+            f"Should show deployment completion message\nOutput: {result.output}"
+
+
+class TestDeployWithMultipleChanges:
+    """Test deploy functionality with multiple changes."""
+
+    def test_deploys_changes_in_plan_order(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Deploy should apply changes in the order they appear in the plan."""
+        # Setup
+        project_dir = tmp_path / "flipr"
+        project_dir.mkdir()
+        
+        conf_file = project_dir / "sqitch.conf"
+        conf_file.write_text("[core]\n    engine = sqlite\n")
+        
+        plan_file = project_dir / "sqitch.plan"
+        plan_file.write_text(
+            "%syntax-version=1.0.0\n"
+            "%project=flipr\n"
+            "\n"
+            "users 2025-01-01T00:00:00Z Test User <test@example.com> # Add users\n"
+            "posts 2025-01-02T00:00:00Z Test User <test@example.com> # Add posts\n"
+            "comments 2025-01-03T00:00:00Z Test User <test@example.com> # Add comments\n"
+        )
+        
+        deploy_dir = project_dir / "deploy"
+        deploy_dir.mkdir()
+        
+        # Create deploy scripts
+        (deploy_dir / "users.sql").write_text(
+            "-- Deploy flipr:users to sqlite\n"
+            "BEGIN;\n"
+            "CREATE TABLE users (id INTEGER PRIMARY KEY);\n"
+            "COMMIT;\n"
+        )
+        (deploy_dir / "posts.sql").write_text(
+            "-- Deploy flipr:posts to sqlite\n"
+            "BEGIN;\n"
+            "CREATE TABLE posts (id INTEGER PRIMARY KEY, user_id INTEGER REFERENCES users(id));\n"
+            "COMMIT;\n"
+        )
+        (deploy_dir / "comments.sql").write_text(
+            "-- Deploy flipr:comments to sqlite\n"
+            "BEGIN;\n"
+            "CREATE TABLE comments (id INTEGER PRIMARY KEY, post_id INTEGER REFERENCES posts(id));\n"
+            "COMMIT;\n"
+        )
+        
+        target_db = tmp_path / "flipr_test.db"
+        registry_db = tmp_path / "sqitch.db"
+        
+        # Execute
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result = runner.invoke(
+                main,
+                ["deploy", f"db:sqlite:{target_db}"],
+            )
+        finally:
+            os.chdir(original_cwd)
+        
+        assert result.exit_code == 0, f"Deploy should succeed\nOutput: {result.output}"
+        
+        # Verify: All three changes were deployed in order
+        conn = sqlite3.connect(registry_db)
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT change, committed_at FROM changes ORDER BY committed_at"
+        )
+        changes = [row[0] for row in cursor.fetchall()]
+        
+        assert changes == ["users", "posts", "comments"], \
+            f"Changes should be deployed in plan order, got {changes}"
+        
+        # Verify: All tables exist in target database
+        target_conn = sqlite3.connect(target_db)
+        target_cursor = target_conn.cursor()
+        target_cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+        tables = {row[0] for row in target_cursor.fetchall()}
+        
+        assert "users" in tables, "users table should exist"
+        assert "posts" in tables, "posts table should exist"
+        assert "comments" in tables, "comments table should exist"
+        
+        target_conn.close()
+        conn.close()
+
+    def test_skips_already_deployed_changes(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Deploy should skip changes that are already deployed."""
+        # Setup
+        project_dir = tmp_path / "flipr"
+        project_dir.mkdir()
+        
+        conf_file = project_dir / "sqitch.conf"
+        conf_file.write_text("[core]\n    engine = sqlite\n")
+        
+        plan_file = project_dir / "sqitch.plan"
+        plan_file.write_text(
+            "%syntax-version=1.0.0\n"
+            "%project=flipr\n"
+            "\n"
+            "users 2025-01-01T00:00:00Z Test User <test@example.com> # Add users\n"
+            "posts 2025-01-02T00:00:00Z Test User <test@example.com> # Add posts\n"
+        )
+        
+        deploy_dir = project_dir / "deploy"
+        deploy_dir.mkdir()
+        
+        (deploy_dir / "users.sql").write_text(
+            "-- Deploy flipr:users to sqlite\n"
+            "BEGIN;\n"
+            "CREATE TABLE users (id INTEGER PRIMARY KEY);\n"
+            "COMMIT;\n"
+        )
+        (deploy_dir / "posts.sql").write_text(
+            "-- Deploy flipr:posts to sqlite\n"
+            "BEGIN;\n"
+            "CREATE TABLE posts (id INTEGER PRIMARY KEY);\n"
+            "COMMIT;\n"
+        )
+        
+        target_db = tmp_path / "flipr_test.db"
+        registry_db = tmp_path / "sqitch.db"
+        
+        # Execute: First deploy (both changes)
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result1 = runner.invoke(
+                main,
+                ["deploy", f"db:sqlite:{target_db}"],
+            )
+        finally:
+            os.chdir(original_cwd)
+        
+        assert result1.exit_code == 0, f"First deploy should succeed\nOutput: {result1.output}"
+        assert "+ users" in result1.output, "Should deploy users"
+        assert "+ posts" in result1.output, "Should deploy posts"
+        
+        # Get deployment count after first deploy
+        conn = sqlite3.connect(registry_db)
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM events WHERE event = 'deploy'")
+        first_deploy_count = cursor.fetchone()[0]
+        conn.close()
+        
+        # Execute: Second deploy (should skip both changes)
+        try:
+            os.chdir(project_dir)
+            result2 = runner.invoke(
+                main,
+                ["deploy", f"db:sqlite:{target_db}"],
+            )
+        finally:
+            os.chdir(original_cwd)
+        
+        assert result2.exit_code == 0, f"Second deploy should succeed\nOutput: {result2.output}"
+        
+        # Verify: No new deploy events were created
+        conn = sqlite3.connect(registry_db)
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM events WHERE event = 'deploy'")
+        second_deploy_count = cursor.fetchone()[0]
+        conn.close()
+        
+        assert second_deploy_count == first_deploy_count, \
+            "No new deploy events should be created when all changes already deployed"
+
+    def test_stops_on_script_failure(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Deploy should stop processing changes if a script fails."""
+        # Setup
+        project_dir = tmp_path / "flipr"
+        project_dir.mkdir()
+        
+        conf_file = project_dir / "sqitch.conf"
+        conf_file.write_text("[core]\n    engine = sqlite\n")
+        
+        plan_file = project_dir / "sqitch.plan"
+        plan_file.write_text(
+            "%syntax-version=1.0.0\n"
+            "%project=flipr\n"
+            "\n"
+            "users 2025-01-01T00:00:00Z Test User <test@example.com> # Add users\n"
+            "bad_change 2025-01-02T00:00:00Z Test User <test@example.com> # Bad SQL\n"
+            "posts 2025-01-03T00:00:00Z Test User <test@example.com> # Add posts\n"
+        )
+        
+        deploy_dir = project_dir / "deploy"
+        deploy_dir.mkdir()
+        
+        (deploy_dir / "users.sql").write_text(
+            "-- Deploy flipr:users to sqlite\n"
+            "BEGIN;\n"
+            "CREATE TABLE users (id INTEGER PRIMARY KEY);\n"
+            "COMMIT;\n"
+        )
+        # Create a script with invalid SQL
+        (deploy_dir / "bad_change.sql").write_text(
+            "-- Deploy flipr:bad_change to sqlite\n"
+            "BEGIN;\n"
+            "THIS IS INVALID SQL THAT WILL FAIL;\n"
+            "COMMIT;\n"
+        )
+        (deploy_dir / "posts.sql").write_text(
+            "-- Deploy flipr:posts to sqlite\n"
+            "BEGIN;\n"
+            "CREATE TABLE posts (id INTEGER PRIMARY KEY);\n"
+            "COMMIT;\n"
+        )
+        
+        target_db = tmp_path / "flipr_test.db"
+        registry_db = tmp_path / "sqitch.db"
+        
+        # Execute
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result = runner.invoke(
+                main,
+                ["deploy", f"db:sqlite:{target_db}"],
+            )
+        finally:
+            os.chdir(original_cwd)
+        
+        # Verify: Deploy should fail
+        assert result.exit_code != 0, f"Deploy should fail on bad SQL\nOutput: {result.output}"
+        
+        # Verify: Only first change was deployed
+        conn = sqlite3.connect(registry_db)
+        cursor = conn.cursor()
+        cursor.execute("SELECT change FROM changes ORDER BY committed_at")
+        deployed_changes = [row[0] for row in cursor.fetchall()]
+        
+        assert "users" in deployed_changes, "First change should be deployed"
+        assert "bad_change" not in deployed_changes, "Failed change should not be in registry"
+        assert "posts" not in deployed_changes, "Changes after failure should not be deployed"
+        
+        conn.close()
+
+    def test_rollback_on_error(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Deploy should roll back change if script execution fails."""
+        # Setup
+        project_dir = tmp_path / "flipr"
+        project_dir.mkdir()
+        
+        conf_file = project_dir / "sqitch.conf"
+        conf_file.write_text("[core]\n    engine = sqlite\n")
+        
+        plan_file = project_dir / "sqitch.plan"
+        plan_file.write_text(
+            "%syntax-version=1.0.0\n"
+            "%project=flipr\n"
+            "\n"
+            "bad_change 2025-01-01T00:00:00Z Test User <test@example.com> # Bad SQL\n"
+        )
+        
+        deploy_dir = project_dir / "deploy"
+        deploy_dir.mkdir()
+        
+        # Create a script that creates a table then fails
+        (deploy_dir / "bad_change.sql").write_text(
+            "-- Deploy flipr:bad_change to sqlite\n"
+            "BEGIN;\n"
+            "CREATE TABLE users (id INTEGER PRIMARY KEY);\n"
+            "INVALID SQL HERE;\n"
+            "COMMIT;\n"
+        )
+        
+        target_db = tmp_path / "flipr_test.db"
+        registry_db = tmp_path / "sqitch.db"
+        
+        # Execute
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result = runner.invoke(
+                main,
+                ["deploy", f"db:sqlite:{target_db}"],
+            )
+        finally:
+            os.chdir(original_cwd)
+        
+        # Verify: Deploy should fail
+        assert result.exit_code != 0, f"Deploy should fail\nOutput: {result.output}"
+        
+        # Verify: No change record in registry
+        conn = sqlite3.connect(registry_db)
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM changes WHERE change = 'bad_change'")
+        change_count = cursor.fetchone()[0]
+        assert change_count == 0, "Failed change should not be in registry"
+        conn.close()
+        
+        # Verify: Table was not created in target (rollback worked)
+        target_conn = sqlite3.connect(target_db)
+        target_cursor = target_conn.cursor()
+        target_cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+        table_exists = target_cursor.fetchone() is not None
+        target_conn.close()
+        
+        assert not table_exists, "Table from failed transaction should not exist (rollback should have occurred)"
+
+
 @pytest.fixture
 def runner() -> CliRunner:
     """Provide a Click test runner."""
