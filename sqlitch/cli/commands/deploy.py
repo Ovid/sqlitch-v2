@@ -250,6 +250,8 @@ def _execute_deploy(request: _DeployRequest) -> None:
             plan=request.plan,
             committer_name=committer_name,
             committer_email=committer_email,
+            emitter=emitter,
+            registry_uri=engine_target.registry_uri,
         )
 
         deployed = _load_deployed_state(
@@ -566,6 +568,8 @@ def _initialise_registry_state(
     plan: Plan,
     committer_name: str,
     committer_email: str,
+    emitter: Callable[[str], None],
+    registry_uri: str,
 ) -> None:
     """Prepare the attached registry schema inside an immediate transaction."""
 
@@ -578,6 +582,8 @@ def _initialise_registry_state(
             plan=plan,
             committer_name=committer_name,
             committer_email=committer_email,
+            emitter=emitter,
+            registry_uri=registry_uri,
         )
     except Exception:
         try:
@@ -597,11 +603,14 @@ def _ensure_registry_ready(
     plan: Plan,
     committer_name: str,
     committer_email: str,
+    emitter: Callable[[str], None],
+    registry_uri: str,
 ) -> None:
     """Initialise registry schema and project metadata if required."""
 
     try:
         if not _registry_tables_exist(connection, registry_schema):
+            emitter(f"Adding registry tables to {registry_uri}")
             _apply_registry_baseline(connection, registry_schema)
 
         _ensure_release_entry(

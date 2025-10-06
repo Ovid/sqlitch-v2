@@ -300,11 +300,16 @@
   - Show committer, timestamp, note for each event
 
 ### Deploy Command (Complex - 4 days)
-- [ ] **T033** Write tests for deploy with no registry in `tests/cli/commands/test_deploy_functional.py`
-  - Test creates sqitch.db on first run
-  - Test creates all registry tables
-  - Test inserts project record
-  - Test inserts release record
+- [X] **T033** Write tests for deploy with no registry in `tests/cli/commands/test_deploy_functional.py`
+  - Test creates sqitch.db on first run ✅
+  - Test creates all registry tables ✅
+  - Test inserts project record ✅
+  - Test inserts release record ✅
+  - Test outputs "Adding registry tables" message ✅
+  - **Status**: ✅ COMPLETE (2025-10-06) - 5 tests passing
+  - **Discovery**: Deploy command ~80% implemented already, only needed output message
+  - **Files Created**: `tests/cli/commands/test_deploy_functional.py`
+  - **Files Modified**: `sqlitch/cli/commands/deploy.py` (added registry initialization message)
   
 - [ ] **T034** Write tests for deploy with single change in `tests/cli/commands/test_deploy_functional.py`
   - Test loads deploy script
