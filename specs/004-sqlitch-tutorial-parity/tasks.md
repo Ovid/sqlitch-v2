@@ -421,6 +421,11 @@
   - **Implementation**: Direct SQL execution with cursor.execute()
   - **Discovery**: Used _execute_sqlite_verify_script helper (similar to deploy pattern)
 
+- [ ] **T083** Add regression coverage for verify multi-failure reporting in `tests/cli/commands/test_verify_functional.py`
+  - Arrange two deployed changes whose verify scripts both fail and assert both failure comments are emitted before the summary report.
+  - Assert exit code 1 is returned only after all targeted changes are processed, matching Sqitch's behavior (FR-011a).
+  - Capture expected output fixture updates as needed for `tests/support/golden/tutorial_parity/verify/`.
+
 ### Revert Command (Complex - 3 days)
 - [X] **T041** Write tests for revert to tag in `tests/cli/commands/test_revert_functional.py` ✅
   - Test reverts changes after tag in reverse order ✅
@@ -458,6 +463,11 @@
   - **Status**: ✅ COMPLETE (2025-10-06) - All tests passing
   - **Implementation**: Uses engine.connect_workspace() for registry attachment
   - **Implementation**: Statement-by-statement execution (not executescript)
+
+- [ ] **T084** Write functional tests for revert confirmation prompt in `tests/cli/commands/test_revert_functional.py`
+  - Assert interactive runs emit the Sqitch-style confirmation message and wait for user input before executing when no affirmative flag is provided.
+  - Assert passing `--yes` (or `-y`) suppresses the prompt and proceeds immediately, preserving FR-012a parity.
+  - Use Click runner with patched input to simulate acceptance/decline flows and ensure decline aborts without touching the registry.
   - **Pattern**: Copied identity resolution and target handling from deploy.py
   
 **Tests**: 10 functional tests passing (all revert scenarios covered)
@@ -688,6 +698,11 @@
 - [ ] **T072** [P] Regression test: Rework output parity in `tests/regression/test_tutorial_parity.py`
   - Compare sqlitch rework vs sqitch rework output
 
+- [ ] **T082** Capture parity fixtures for deploy/status/log/verify/revert/tag/rework in `tests/support/golden/tutorial_parity/`
+  - Run Sqitch tutorial commands to record golden outputs (stdout/stderr) and registry snapshots
+  - Store results as plain-text fixtures for comparison in regression tests
+  - Document fixture refresh procedure in `tests/support/golden/README.md`
+
 ---
 
 ## Phase 3.5: Polish & Documentation
@@ -849,6 +864,11 @@ Task: "Regression test: Revert output parity"
 Task: "Regression test: Tag output parity"
 Task: "Regression test: Rework output parity"
 ```
+
+- [ ] **T085** Author Sqitch-parity error message regression tests in `tests/regression/test_error_messages.py`
+  - Capture representative negative scenarios (missing change in plan/registry, unknown target/engine, invalid dependency) and record Sqitch’s canonical stderr output as golden fixtures.
+  - Assert SQLitch emits byte-identical wording (formatting, capitalization, punctuation) for each scenario, providing fast feedback on NFR-005 compliance.
+  - Ensure the suite integrates with existing regression harness and documents any intentionally divergent messaging for stakeholder review.
 
 ---
 

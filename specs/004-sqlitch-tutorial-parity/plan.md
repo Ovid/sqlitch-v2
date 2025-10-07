@@ -1,7 +1,7 @@
 
 # Implementation Plan: SQLite Tutorial Parity
 
-**Branch**: `004-sqlitch-tutorial-parity` | **Date**: 2025-10-07 | **Spec**: `/Users/poecurt/projects/sqlitch-v3/specs/004-sqlitch-tutorial-parity/spec.md`
+**Branch**: `004-sqlitch-tutorial-parity` | **Date**: 2025-10-07 | **Spec**: [Feature Spec](spec.md)
 **Input**: Feature specification from `/specs/004-sqlitch-tutorial-parity/spec.md`
 
 ## Execution Flow (/plan command scope)
@@ -31,108 +31,108 @@
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-UAT Step 14 exposed a Sqitch parity defect: `sqlitch engine add sqlite flipr_test` rejects target aliases that Sqitch resolves through configuration (`target.<name>.uri`). This plan captures the incremental work to adopt Sqitch’s alias resolution in the engine command family, update documentation and contracts, and ensure tests enforce the new requirement (**FR-022**).
+Implement the full SQLite tutorial workflow with SQLitch by finishing the remaining command behaviors (`config`, `deploy`, `verify`, `status`, `revert`, `log`, `tag`, `rework`, `engine`) so every step matches Sqitch byte-for-byte. We will leverage the existing registry schema, plan parser, and CLI scaffolding discovered during research to wire commands to real registry operations, identity resolution, and template handling.
 
 ## Technical Context
-**Language/Version**: Python 3.11+ (per `requires-python >=3.11`)  
-**Primary Dependencies**: Click 8.x CLI stack, SQLAlchemy 2.x registry helpers, Pydantic 2.x for config validation  
-**Storage**: SQLite registry + file-based config hierarchy  
-**Testing**: Pytest 8.x with Click’s `CliRunner` and coverage gating ≥90%  
-**Target Platform**: macOS/Linux terminals (CLI)  
-**Project Type**: Single Python package (`sqlitch`) with CLI focus  
-**Performance Goals**: Tutorial deploy/revert flows complete in <5 seconds (NFR-003)  
-**Constraints**: Human output must remain byte-parity with Sqitch; default logging silent; adopt FR-022 alias rule without regressing existing commands  
-**Scale/Scope**: Scope limited to tutorial parity workflows (single developer, local SQLite targets)
+**Language/Version**: Python 3.11
+**Primary Dependencies**: Click CLI framework, SQLAlchemy (SQLite engine), python-dateutil, Pydantic, standard library `sqlite3`
+**Storage**: SQLite databases for both target schema and Sqitch-compatible registry
+**Testing**: pytest with Click `CliRunner`, pytest-randomly, coverage ≥90%
+**Target Platform**: Cross-platform CLI (macOS & Linux developers)
+**Project Type**: Single Python CLI project with supporting library modules
+**Performance Goals**: NFR-003 — `sqlitch deploy` completes <5s for plans under 100 changes on dev hardware
+**Constraints**: Behavioral parity with Sqitch (outputs, exit codes, prompts), compact plan format, registry schema identical to Sqitch, silent config writes by default, confirmation required before every revert unless `--yes`
+**Scale/Scope**: Tutorial-scale Flipr project (dozens of changes max) plus regression coverage for future parity
 
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- **Test-First Development:** Engine alias parity will be codified via new contract/functional tests before adjusting the CLI implementation; plan keeps tests as the forcing function.
-- **Observability & Determinism:** No new logging paths introduced; engine command output remains human-readable and quiet in default mode, preserving determinism.
-- **Behavioral Parity:** Sqitch’s `_target` alias resolution is the golden source; no deviations planned, and FR-022 documents the parity requirement.
-- **Simplicity-First:** Implementation will reuse existing config loaders and avoid duplicating alias resolution logic—extend existing helpers instead of new abstractions.
-- **Documented Interfaces:** Contracts README, quickstart scenario, and spec clarifications already updated; plan tracks docstring/help text adjustments alongside code changes.
+- **Test-First Development:** Phase planning sequences every command enhancement behind new or unskipped contract/integration tests (e.g., tutorial walkthrough scenarios in `tests/cli/commands/`), ensuring we start Red before implementing.
+- **Observability & Determinism:** Commands continue to emit human output only unless `--json`/verbosity flags are set; any registry instrumentation stays within SQLite tables with no new log sinks.
+- **Behavioral Parity:** All command behaviors are cross-checked against `sqitch/` POD docs and Perl source; deviations (e.g., engine alias handling) are documented in spec clarifications and research notes.
+- **Simplicity-First:** Implementation focuses on reusing existing registry + plan modules rather than introducing new abstractions; no additional engines, flags, or output modes beyond tutorial requirements.
+- **Documented Interfaces:** Public CLI entry points and helper modules will gain/refresh docstrings as part of implementation, and quickstart plus contracts capture user-facing expectations.
 
 ## Project Structure
 
 ### Documentation (this feature)
 ```
- specs/004-sqlitch-tutorial-parity/
-├── plan.md              # /plan command output (this file)
-├── research.md          # Phase 0 research log (updated 2025-10-07)
-├── data-model.md        # Phase 1 data definitions
-├── quickstart.md        # Phase 1 validation script (Scenario 9 added)
-├── contracts/           # CLI contract summaries (engine alias note)
-└── tasks.md             # /tasks command output (existing, to be regenerated)
+specs/004-sqlitch-tutorial-parity/
+├── plan.md              # Implementation plan (this file)
+├── research.md          # Phase 0 findings (registry parity, engine alias, etc.)
+├── data-model.md        # Phase 1 entity/state design
+├── quickstart.md        # End-to-end tutorial validation steps
+├── contracts/           # CLI contract summaries and references to tests
+└── tasks.md             # Generated by /tasks command (not modified here)
 ```
-
 
 ### Source Code (repository root)
-ios/ or android/
 ```
 sqlitch/
+├── __init__.py
 ├── cli/
+│   ├── __init__.py
 │   ├── commands/
-│   │   ├── engine.py
-│   │   ├── target.py
-│   │   └── __init__.py
 │   ├── main.py
 │   └── options.py
 ├── config/
-│   ├── loader.py
-│   └── resolver.py
+├── engine/
 ├── plan/
-│   ├── parser.py
-│   └── model.py
+├── registry/
 └── utils/
-      └── fs.py
 
 tests/
 ├── cli/
 │   ├── commands/
-│   │   ├── test_engine_contract.py
-│   │   └── test_target_contract.py
 │   └── contracts/
-│       └── test_engine_contract.py
-└── engine/
-      └── test_base.py
+├── integration/
+├── registry/
+├── regression/
+├── support/
+└── utils/
+
+sqitch/
+├── bin/
+└── lib/
+
+docs/
+└── architecture/
 ```
 
-**Structure Decision**: Single-package CLI project; engine/target behavior lives under `sqlitch/cli/commands/` with pytest coverage in `tests/cli/commands/` and supporting registry logic in `sqlitch/config/` and `sqlitch/utils/`.
+**Structure Decision**: Single-project Python CLI codebase; feature work lives in `sqlitch/` modules with corresponding tests under `tests/`. Upstream Sqitch fixtures remain under `sqitch/` for parity validation.
 
 ## Phase 0: Outline & Research
-1. Captured the new ambiguity (engine alias handling) and confirmed Sqitch reference behavior via `App::Sqitch::Command::engine::_target`.
-2. Logged the parity requirement and decision trail in `research.md` under “Update 2025-10-07 — Engine Alias Parity”.
+1. Clarified outstanding parity questions (registry schema mirroring, revert confirmation, verify failure flow, engine alias resolution) using Sqitch POD docs and perl implementation; outcomes recorded in `research.md` and the spec clarifications.
+2. Validated supporting infrastructure (plan parser, config resolver, registry migrations) to avoid duplicating logic and confirmed required extension points for command implementations.
+3. Documented research decisions using the template format (Decision / Rationale / Alternatives) with emphasis on registry operations, identity resolution, and command sequencing. No unresolved clarifications remain.
 
-**Output**: `/specs/004-sqlitch-tutorial-parity/research.md` now records the alias decision and upstream source.
+**Output**: `research.md` (complete — last updated 2025-10-07) capturing parity decisions and remaining implementation gaps.
 
 ## Phase 1: Design & Contracts
 *Prerequisites: research.md complete*
 
-1. Documented the new tutorial validation flow in `quickstart.md` (Scenario 9) covering target alias and engine registration parity.
-2. Extended `contracts/README.md` with the 2025-10-07 engine alias requirement to guide contract and functional test updates.
-3. Plan to add failing tests in `tests/cli/contracts/test_engine_contract.py` (and, if needed, functional coverage) that assert alias-based engine additions succeed and unknown aliases raise Sqitch-grade errors before modifying implementation.
-4. Run `.specify/scripts/bash/update-agent-context.sh copilot` after updating docs to ensure agent brief includes the alias requirement.
+1. `data-model.md` enumerates the key domain entities (Project, Change, Tag, Dependency, Target, Registry Event, DeployOptions) with attributes, relationships, and lifecycle notes mapped from research + spec.
+2. CLI contracts are documented in `contracts/README.md`, pointing to the Click command signatures, expected options, and existing contract tests ensuring Sqitch parity.
+3. Quickstart scenarios map the complete tutorial flow (init → add → deploy → verify → status → revert → log → tag → rework) into reproducible validation steps referenced by future integration tests.
+4. Agent context (`.github/copilot-instructions.md`) has been refreshed via `.specify/scripts/bash/update-agent-context.sh copilot` after plan updates to ensure tooling awareness of new dependencies and constraints.
 
-**Output**: Quickstart and contracts artifacts updated with alias workflow; tests scheduled to encode the requirement.
+**Output**: `data-model.md`, `contracts/README.md`, `quickstart.md`, updated Copilot context — all present under `specs/004-sqlitch-tutorial-parity/`.
 
 ## Phase 2: Task Planning Approach
 *This section describes what the /tasks command will do - DO NOT execute during /plan*
 
 **Task Generation Strategy**:
-- Load `.specify/templates/tasks-template.md` as base
-- Generate tasks from Phase 1 design docs (contracts, data model, quickstart)
-- Each contract → contract test task [P]
-- Each entity → model creation task [P] 
-- Each user story → integration test task
-- Implementation tasks to make tests pass
+- Use `.specify/templates/tasks-template.md` to structure tasks anchored to failing tests first (e.g., tutorial walkthrough integration tests, contract updates for config/revert/log/tag).
+- Derive contract-test tasks from `contracts/README.md` gaps (e.g., config get/set, revert prompt, verify failure handling, engine alias acceptance).
+- Map each entity/operation in `data-model.md` to implementation tasks (registry mutations, plan formatter updates, script generation behavior).
+- Include follow-up tasks for docs/tests (quickstart validation, registry schema assertions) before implementation tasks that satisfy them.
 
 **Ordering Strategy**:
-- TDD order: Tests before implementation 
-- Dependency order: Models before services before UI
-- Mark [P] for parallel execution (independent files)
+- Maintain Red→Green sequence: add/activate tests per command before coding behavior.
+- Respect dependency order: registry model + plan updates precede CLI command wiring; CLI implementations precede documentation polish.
+- Use `[P]` markers for independent command tasks (e.g., log vs verify) to highlight parallelizable workstreams.
 
-**Estimated Output**: 25-30 numbered, ordered tasks in tasks.md
+**Estimated Output**: ~25 ordered tasks balancing test additions, command implementations, and documentation alignment.
 
 **IMPORTANT**: This phase is executed by the /tasks command, NOT by /plan
 
@@ -169,4 +169,4 @@ tests/
 - [x] Complexity deviations documented
 
 ---
-*Based on Constitution v1.10.1 - See `/memory/constitution.md`*
+*Based on Constitution v1.10.1 - See `.specify/memory/constitution.md`*
