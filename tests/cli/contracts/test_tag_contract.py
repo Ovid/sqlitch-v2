@@ -36,7 +36,8 @@ def test_tag_adds_to_plan(runner: CliRunner) -> None:
 
         # Verify plan file
         plan_content = Path("sqitch.plan").read_text(encoding="utf-8")
-        assert "tag v1.0" in plan_content
+        # Compact format: @v1.0 <timestamp> <planner>
+        assert "@v1.0" in plan_content
         assert "users_table" in plan_content
 
 
@@ -129,7 +130,10 @@ def test_tag_defaults_to_latest_change_when_change_missing(runner: CliRunner) ->
         assert "Tagged change2 with @release" in result.output
 
         plan_content = Path("sqitch.plan").read_text(encoding="utf-8")
-        assert "tag release change2" in plan_content
+        # Compact format: @release <timestamp> <planner>
+        # Tag should appear after change2 in the plan
+        assert "@release" in plan_content
+        assert "change2" in plan_content
 
 
 def test_tag_reports_error_when_no_changes_exist(runner: CliRunner) -> None:

@@ -45,7 +45,7 @@ def _seed_plan(plan_path: Path) -> tuple[Change, Change, Tag]:
         planned_at=datetime(2025, 1, 2, 0, 0, tzinfo=timezone.utc),
         notes="Adds widgets table",
         dependencies=("core:init",),
-        tags=("v1.0",),
+        # Note: tags field is not used in compact format - tags are separate entries
     )
 
     tag = Tag(
@@ -125,8 +125,10 @@ def test_plan_supports_json_format(runner: CliRunner) -> None:
         assert first["type"] == "change"
         assert first["scripts"]["deploy"].endswith("core_init.sql")
         assert second["dependencies"] == ["core:init"]
-        assert second["tags"] == ["v1.0"]
+        # Note: compact format doesn't embed tags in change entries
+        assert second["tags"] == []
         assert third["type"] == "tag"
+        assert third["name"] == "v1.0"
         assert third["change"] == change_two.name
 
 

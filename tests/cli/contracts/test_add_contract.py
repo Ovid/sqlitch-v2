@@ -108,15 +108,12 @@ def test_add_appends_change_and_creates_scripts(monkeypatch: pytest.MonkeyPatch)
         assert verify_path.read_text(encoding="utf-8") == expected_verify
 
         plan_content = plan_path.read_text(encoding="utf-8")
-        assert "change widgets" in plan_content
-        assert deploy_name in plan_content
-        assert revert_name in plan_content
-        assert verify_name in plan_content
-        assert "planner='Ada Lovelace <ada@example.com>'" in plan_content
-        assert "planned_at=2025-01-02T03:04:05Z" in plan_content
-        assert "notes='Adds widgets'" in plan_content
-        assert "depends=roles,users" in plan_content
-        assert "tags=feature" in plan_content
+        # Compact format: widgets [roles users] 2025-01-02T03:04:05Z Ada Lovelace <ada@example.com> # Adds widgets
+        assert "widgets" in plan_content
+        assert "[roles users]" in plan_content
+        assert "2025-01-02T03:04:05Z" in plan_content
+        assert "Ada Lovelace <ada@example.com>" in plan_content
+        assert "# Adds widgets" in plan_content
 
 
 def test_add_rejects_duplicate_change(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -166,9 +163,8 @@ def test_add_uses_explicit_plan_override(monkeypatch: pytest.MonkeyPatch) -> Non
         assert not Path("sqlitch.plan").exists()
 
         plan_content = override_plan.read_text(encoding="utf-8")
-        assert "change reports" in plan_content
-        assert "deploy/reports.sql" in plan_content
-        assert "verify/reports.sql" in plan_content
+        # Compact format: reports 2025-07-08T09:10:11Z Katherine Johnson
+        assert "reports 2025-07-08T09:10:11Z Katherine Johnson" in plan_content
 
 
 def test_add_honours_project_templates(monkeypatch: pytest.MonkeyPatch) -> None:

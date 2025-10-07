@@ -3,18 +3,12 @@
 from __future__ import annotations
 
 import hashlib
-import os
-import shlex
 from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
 
 from .model import Change, Plan, PlanEntry, Tag
 from sqlitch.utils.time import isoformat_utc
-
-_SHELL_SAFE_CHARS = frozenset(
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._:@+-/,:"
-)
 
 
 def compute_checksum(content: str) -> str:
@@ -91,66 +85,50 @@ def write_plan(
 
 
 def _format_change(change: Change, base_path: Path) -> str:
-    tokens = [
-        "change",
-        change.name,
-        _format_script_path(change.script_paths["deploy"], base_path),
-        _format_script_path(change.script_paths["revert"], base_path),
-    ]
-
-    verify_path = change.script_paths.get("verify")
-    metadata: list[str] = []
-    if verify_path is not None:
-        metadata.append(_metadata("verify", _format_script_path(verify_path, base_path)))
-    metadata.append(_metadata("planner", change.planner))
-    metadata.append(_metadata("planned_at", _format_timestamp(change.planned_at)))
-    if change.notes:
-        metadata.append(_metadata("notes", change.notes))
+    """Format a change entry in compact Sqitch format.
+    
+    Format: <name> [<dependencies>] <timestamp> <planner> # <note>
+    Example: users [appschema] 2025-10-06T19:38:09Z Test User <test@example.com> # Creates table
+    """
+    tokens = [change.name]
+    
+    # Add dependencies in square brackets if present
     if change.dependencies:
-        metadata.append(_metadata("depends", ",".join(change.dependencies)))
-    if change.tags:
-        metadata.append(_metadata("tags", ",".join(change.tags)))
-    if change.change_id is not None:
-        metadata.append(_metadata("change_id", str(change.change_id)))
-
-    tokens.extend(metadata)
+        deps = " ".join(change.dependencies)
+        tokens.append(f"[{deps}]")
+    
+    # Add timestamp
+    tokens.append(_format_timestamp(change.planned_at))
+    
+    # Add planner (name/email or just email)
+    tokens.append(change.planner)
+    
+    # Add note with # prefix if present
+    if change.notes:
+        tokens.append(f"# {change.notes}")
+    
     return " ".join(tokens)
 
 
 def _format_tag(tag: Tag) -> str:
-    tokens = [
-        "tag",
-        tag.name,
-        tag.change_ref,
-        _metadata("planner", tag.planner),
-        _metadata("tagged_at", _format_timestamp(tag.tagged_at)),
-    ]
+    """Format a tag entry in compact Sqitch format.
+    
+    Format: @<name> <timestamp> <planner> # <note>
+    Example: @v1.0.0 2025-10-06T20:00:00Z Test User <test@example.com> # Release 1.0
+    """
+    tokens = [f"@{tag.name}"]
+    
+    # Add timestamp
+    tokens.append(_format_timestamp(tag.tagged_at))
+    
+    # Add planner
+    tokens.append(tag.planner)
+    
+    # Add note with # prefix if present
+    if tag.note:
+        tokens.append(f"# {tag.note}")
+    
     return " ".join(tokens)
-
 
 def _format_timestamp(value: datetime) -> str:
     return isoformat_utc(value, drop_microseconds=True, use_z_suffix=True)
-
-
-def _format_script_path(value: Path | None, base_path: Path) -> str:
-    if value is None:
-        return ""
-    path = Path(value)
-    if path.is_absolute():
-        try:
-            return path.relative_to(base_path).as_posix()
-        except ValueError:
-            return os.path.relpath(path, base_path).replace(os.sep, "/")
-    return path.as_posix()
-
-
-def _metadata(key: str, value: str) -> str:
-    return f"{key}={_quote_value(value)}"
-
-
-def _quote_value(value: str) -> str:
-    if not value:
-        return value
-    if set(value).issubset(_SHELL_SAFE_CHARS):
-        return value
-    return shlex.quote(value)
