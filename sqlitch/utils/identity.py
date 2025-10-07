@@ -54,27 +54,78 @@ class UserIdentity:
     email: str
 
 
-def generate_change_id(project: str, change: str, timestamp: datetime) -> str:
-    """Generate a unique change ID using SHA1 hash.
+def generate_change_id(
+    project: str,
+    change: str,
+    timestamp: datetime,
+    planner_name: str,
+    planner_email: str,
+    note: str = "",
+    requires: tuple[str, ...] = (),
+    conflicts: tuple[str, ...] = (),
+) -> str:
+    """Generate a unique change ID using Git-style SHA1 hash.
 
-    Follows Sqitch's format: SHA1(project:change:ISO8601_timestamp)
+    Follows Sqitch's format: SHA1 of Git object containing change metadata.
+    Sqitch uses Git's object format: 'change <length>\0<content>'
 
     Args:
         project: Project name
         change: Change name
         timestamp: Timestamp when change was planned (must be timezone-aware)
+        planner_name: Name of person who planned the change
+        planner_email: Email of person who planned the change
+        note: Optional note/description
+        requires: Tuple of required change names
+        conflicts: Tuple of conflicting change names
 
     Returns:
         40-character SHA1 hex digest string
 
     Examples:
         >>> from datetime import datetime, timezone
-        >>> generate_change_id("flipr", "users", datetime(2025, 1, 1, tzinfo=timezone.utc))
+        >>> generate_change_id(
+        ...     "flipr", "users", datetime(2025, 1, 1, tzinfo=timezone.utc),
+        ...     "Test User", "test@example.com", "Add users table"
+        ... )
         'a1b2c3...'  # 40-character hex string
     """
-    # Sqitch format: project:change:ISO8601_timestamp
-    input_string = f"{project}:{change}:{timestamp.isoformat()}"
-    return hashlib.sha1(input_string.encode("utf-8")).hexdigest()
+    from sqlitch.utils.time import isoformat_utc
+
+    # Format timestamp in Sqitch format (ISO 8601 with Z suffix)
+    timestamp_str = isoformat_utc(timestamp, drop_microseconds=True, use_z_suffix=True)
+
+    # Build info string in Sqitch's format
+    info_parts = [
+        f"project {project}",
+        f"change {change}",
+        f"planner {planner_name} <{planner_email}>",
+        f"date {timestamp_str}",
+    ]
+
+    # Add requires/conflicts if present
+    if requires:
+        info_parts.append("requires")
+        for req in requires:
+            info_parts.append(f"  + {req}")
+
+    if conflicts:
+        info_parts.append("conflicts")
+        for conf in conflicts:
+            info_parts.append(f"  - {conf}")
+
+    # Add note if present (empty line before note)
+    if note:
+        info_parts.append("")
+        info_parts.append(note)
+
+    info = "\n".join(info_parts)
+
+    # Use Git's object format: 'change <length>\0<content>'
+    info_bytes = info.encode("utf-8")
+    git_object = f"change {len(info_bytes)}\x00".encode("utf-8") + info_bytes
+
+    return hashlib.sha1(git_object).hexdigest()
 
 
 def resolve_planner_identity(

@@ -51,6 +51,9 @@ class TestGenerateChangeId:
             project="flipr",
             change="users",
             timestamp=datetime(2025, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
+            planner_name="Test User",
+            planner_email="test@example.com",
+            note="Add users table",
         )
         # SHA1 produces 40-character hex string
         assert len(change_id) == 40
@@ -60,8 +63,12 @@ class TestGenerateChangeId:
         """Same inputs should produce same output."""
         timestamp = datetime(2025, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
 
-        id1 = generate_change_id("flipr", "users", timestamp)
-        id2 = generate_change_id("flipr", "users", timestamp)
+        id1 = generate_change_id(
+            "flipr", "users", timestamp, "Test User", "test@example.com", "Add users"
+        )
+        id2 = generate_change_id(
+            "flipr", "users", timestamp, "Test User", "test@example.com", "Add users"
+        )
 
         assert id1 == id2
 
@@ -69,23 +76,41 @@ class TestGenerateChangeId:
         """Different inputs should produce different outputs."""
         timestamp = datetime(2025, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
 
-        id1 = generate_change_id("flipr", "users", timestamp)
-        id2 = generate_change_id("flipr", "schema", timestamp)
+        id1 = generate_change_id(
+            "flipr", "users", timestamp, "Test User", "test@example.com", "Add users"
+        )
+        id2 = generate_change_id(
+            "flipr", "schema", timestamp, "Test User", "test@example.com", "Add schema"
+        )
 
         assert id1 != id2
 
-    def test_matches_sqitch_format(self) -> None:
-        """Should match Sqitch's SHA1(project + change + timestamp) format."""
-        project = "flipr"
+    def test_matches_sqitch_git_format(self) -> None:
+        """Should match Sqitch's Git-style SHA1 object hash format."""
+        project = "test"
         change = "users"
-        timestamp = datetime(2025, 1, 1, 12, 30, 45, tzinfo=timezone.utc)
+        timestamp = datetime(2025, 10, 7, 5, 50, 4, tzinfo=timezone.utc)
+        planner_name = "Test User"
+        planner_email = "test@example.com"
+        note = "Add users"
 
-        # Sqitch uses ISO 8601 format: project:change:YYYY-MM-DDTHH:MM:SSZ
-        expected_input = f"{project}:{change}:{timestamp.isoformat()}"
-        expected_hash = hashlib.sha1(expected_input.encode("utf-8")).hexdigest()
+        # Build Sqitch's info string format
+        info = f"""project {project}
+change {change}
+planner {planner_name} <{planner_email}>
+date 2025-10-07T05:50:04Z
 
-        result = generate_change_id(project, change, timestamp)
+{note}"""
+
+        # Git object format: 'change <length>\0<content>'
+        info_bytes = info.encode("utf-8")
+        git_object = f"change {len(info_bytes)}\x00".encode("utf-8") + info_bytes
+        expected_hash = hashlib.sha1(git_object).hexdigest()
+
+        result = generate_change_id(project, change, timestamp, planner_name, planner_email, note)
         assert result == expected_hash
+        # Verify against known Sqitch output
+        assert result == "997c365004e72463491fd6fd25c96b64a9ee1763"
 
 
 class TestResolvePlannerIdentity:

@@ -642,15 +642,59 @@ def _resolve_committer_identity(
 **NEW**: Generate unique change IDs
 
 ```python
-def generate_change_id(project: str, change: str, timestamp: datetime) -> str:
-    """Generate unique change ID using SHA1 hash.
+def generate_change_id(
+    project: str,
+    change: str,
+    timestamp: datetime,
+    planner_name: str,
+    planner_email: str,
+    note: str = "",
+    requires: tuple[str, ...] = (),
+    conflicts: tuple[str, ...] = (),
+) -> str:
+    """Generate unique change ID using Git-style SHA1 hash.
     
-    Matches Sqitch behavior: hash of project + change + timestamp.
+    Matches Sqitch behavior: Git object format hash.
+    Sqitch uses Git's object format: 'change <length>\0<content>'
+    where content is the change info string.
     """
-    import hashlib
+    from sqlitch.utils.time import isoformat_utc
     
-    content = f"{project} {change} {timestamp.isoformat()}"
-    return hashlib.sha1(content.encode("utf-8")).hexdigest()
+    # Format timestamp in Sqitch format (ISO 8601 with Z suffix)
+    timestamp_str = isoformat_utc(timestamp, drop_microseconds=True, use_z_suffix=True)
+    
+    # Build info string in Sqitch's format
+    info_parts = [
+        f"project {project}",
+        f"change {change}",
+        f"planner {planner_name} <{planner_email}>",
+        f"date {timestamp_str}",
+    ]
+    
+    # Add requires/conflicts if present
+    if requires:
+        info_parts.append("requires")
+        for req in requires:
+            info_parts.append(f"  + {req}")
+    
+    if conflicts:
+        info_parts.append("conflicts")
+        for conf in conflicts:
+            info_parts.append(f"  - {conf}")
+    
+    # Add note if present (empty line before note)
+    if note:
+        info_parts.append("")
+        info_parts.append(note)
+    
+    info = "\n".join(info_parts)
+    
+    # Use Git's object format: 'change <length>\0<content>'
+    import hashlib
+    info_bytes = info.encode("utf-8")
+    git_object = f"change {len(info_bytes)}\x00".encode("utf-8") + info_bytes
+    
+    return hashlib.sha1(git_object).hexdigest()
 ```
 
 **Usage**:

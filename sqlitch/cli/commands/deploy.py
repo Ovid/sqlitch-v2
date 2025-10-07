@@ -29,6 +29,7 @@ from sqlitch.engine.sqlite import (
 from sqlitch.plan.model import Change, Plan
 from sqlitch.plan.parser import PlanParseError, parse_plan
 from sqlitch.registry import LATEST_REGISTRY_VERSION, get_registry_migrations
+from sqlitch.utils.identity import generate_change_id
 from sqlitch.utils.logging import StructuredLogger
 from sqlitch.utils.time import isoformat_utc
 
@@ -787,7 +788,6 @@ def _apply_change(
     script_body = script_path.read_text(encoding="utf-8")
     script_hash = _compute_script_hash(script_body)
     manages_transactions = script_manages_transactions(script_body)
-    change_id = str(change.change_id) if change.change_id is not None else script_hash
 
     dependency_lookup = {name: data["change_id"] for name, data in deployed.items()}
     _validate_dependencies(change, dependency_lookup)
@@ -797,6 +797,22 @@ def _apply_change(
         env,
         committer_email,
     )
+
+    # Compute change_id using Sqitch's Git-style algorithm if not already set
+    if change.change_id is not None:
+        change_id = str(change.change_id)
+    else:
+        note = change.notes or ""
+        change_id = generate_change_id(
+            project=project,
+            change=change.name,
+            timestamp=change.planned_at,
+            planner_name=planner_name,
+            planner_email=planner_email,
+            note=note,
+            requires=change.dependencies,
+            conflicts=(),  # SQLitch doesn't support conflicts yet
+        )
 
     committed_at = isoformat_utc(datetime.now(timezone.utc), drop_microseconds=False)
     planned_at = isoformat_utc(change.planned_at, drop_microseconds=False)
