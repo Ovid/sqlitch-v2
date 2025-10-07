@@ -269,10 +269,10 @@ def add_command(
         if not quiet:
             click.echo(message)
 
-    _echo(f"Created deploy script {_format_display_path(deploy_target, project_root)}")
-    _echo(f"Created revert script {_format_display_path(revert_target, project_root)}")
-    _echo(f"Created verify script {_format_display_path(verify_target, project_root)}")
-    _echo(f"Added {change_name} to sqitch.plan")
+    _echo(f"Created {_format_display_path(deploy_target, project_root)}")
+    _echo(f"Created {_format_display_path(revert_target, project_root)}")
+    _echo(f"Created {_format_display_path(verify_target, project_root)}")
+    _echo(f"Added \"{change_name}\" to sqitch.plan")
 
 
 @register_command("add")

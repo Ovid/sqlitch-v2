@@ -97,10 +97,10 @@ class TestAddCreatesScripts:
             result = runner.invoke(main, ["add", "users"])
 
             assert result.exit_code == 0, f"Add failed: {result.output}"
-            assert "Created deploy script" in result.output, "Should report deploy creation"
-            assert "Created revert script" in result.output, "Should report revert creation"
-            assert "Created verify script" in result.output, "Should report verify creation"
-            assert "Added users to sqitch.plan" in result.output, "Should report plan update"
+            assert "Created deploy/users.sql" in result.output, "Should report deploy creation"
+            assert "Created revert/users.sql" in result.output, "Should report revert creation"
+            assert "Created verify/users.sql" in result.output, "Should report verify creation"
+            assert 'Added "users" to sqitch.plan' in result.output, "Should report plan update"
 
     def test_quiet_mode_suppresses_output(self, runner):
         """Add with --quiet should suppress informational messages."""

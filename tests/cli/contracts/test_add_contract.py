@@ -98,10 +98,10 @@ def test_add_appends_change_and_creates_scripts(monkeypatch: pytest.MonkeyPatch)
         revert_name = "revert/widgets.sql"
         verify_name = "verify/widgets.sql"
 
-        assert f"Created deploy script {deploy_name}" in result.stdout
-        assert f"Created revert script {revert_name}" in result.stdout
-        assert f"Created verify script {verify_name}" in result.stdout
-        assert "Added widgets" in result.stdout
+        assert f"Created {deploy_name}" in result.stdout
+        assert f"Created {revert_name}" in result.stdout
+        assert f"Created {verify_name}" in result.stdout
+        assert 'Added "widgets" to sqitch.plan' in result.stdout
 
         deploy_path = Path(deploy_name)
         revert_path = Path(revert_name)

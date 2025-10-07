@@ -661,7 +661,7 @@
   - Compare sqlitch init vs sqitch init output
   - Validate file contents match
   
-- [ ] **T065** [P] Regression test: Add output parity in `tests/regression/test_tutorial_parity.py`
+- [X] **T065** [P] Regression test: Add output parity in `tests/regression/test_tutorial_parity.py`
   - Compare sqlitch add vs sqitch add output
   - Validate script headers match
   
