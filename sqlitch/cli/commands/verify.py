@@ -211,7 +211,8 @@ def verify_command(
     except sqlite3.Error as exc:
         raise CommandError(f"Failed to connect to workspace database: {exc}") from exc
 
-    verification_failed = False
+    processed_changes = 0
+    error_count = 0
     with closing(connection):
         try:
             connection.execute("ATTACH DATABASE ? AS sqitch", (registry_path,))
@@ -235,6 +236,7 @@ def verify_command(
 
         with closing(connection.cursor()) as cursor:
             for change_name in deployed_changes:
+                processed_changes += 1
                 verify_script_path = project_root / "verify" / f"{change_name}.sql"
 
                 if not verify_script_path.exists():
@@ -248,10 +250,18 @@ def verify_command(
                 except Exception as exc:
                     click.echo(f"# {change_name} .. NOT OK")
                     click.echo(f"  Error: {exc}", err=True)
-                    verification_failed = True
+                    error_count += 1
 
-    if verification_failed:
-        raise click.exceptions.Exit(1)
+    if error_count:
+        click.echo()
+        summary_title = "Verify Summary Report"
+        click.echo(summary_title)
+        click.echo("-" * len(summary_title))
+        click.echo(f"Changes: {processed_changes}")
+        click.echo(f"Errors:  {error_count}")
+        raise CommandError("Verify failed")
+
+    click.echo("Verify successful")
 
 
 def _load_plan(plan_path: Path, default_engine: str) -> Plan:

@@ -421,10 +421,11 @@
   - **Implementation**: Direct SQL execution with cursor.execute()
   - **Discovery**: Used _execute_sqlite_verify_script helper (similar to deploy pattern)
 
-- [ ] **T083** Add regression coverage for verify multi-failure reporting in `tests/cli/commands/test_verify_functional.py`
-  - Arrange two deployed changes whose verify scripts both fail and assert both failure comments are emitted before the summary report.
-  - Assert exit code 1 is returned only after all targeted changes are processed, matching Sqitch's behavior (FR-011a).
-  - Capture expected output fixture updates as needed for `tests/support/golden/tutorial_parity/verify/`.
+- [X] **T083** Add regression coverage for verify multi-failure reporting in `tests/cli/commands/test_verify_functional.py`
+  - Arrange two deployed changes whose verify scripts both fail and assert both failure comments are emitted before the summary report. ✅
+  - Assert exit code 1 is returned only after all targeted changes are processed, matching Sqitch's behavior (FR-011a). ✅
+  - Capture expected output fixture updates as needed for `tests/support/golden/tutorial_parity/verify/`. ✅ (no fixture changes required)
+  - **Status**: ✅ COMPLETE (2025-10-07) – `test_reports_all_failures_before_summary` exercises FR-011a semantics.
 
 ### Revert Command (Complex - 3 days)
 - [X] **T041** Write tests for revert to tag in `tests/cli/commands/test_revert_functional.py` ✅
@@ -464,11 +465,12 @@
   - **Implementation**: Uses engine.connect_workspace() for registry attachment
   - **Implementation**: Statement-by-statement execution (not executescript)
 
-- [ ] **T084** Write functional tests for revert confirmation prompt in `tests/cli/commands/test_revert_functional.py`
-  - Assert interactive runs emit the Sqitch-style confirmation message and wait for user input before executing when no affirmative flag is provided.
-  - Assert passing `--yes` (or `-y`) suppresses the prompt and proceeds immediately, preserving FR-012a parity.
-  - Use Click runner with patched input to simulate acceptance/decline flows and ensure decline aborts without touching the registry.
+- [X] **T084** Write functional tests for revert confirmation prompt in `tests/cli/commands/test_revert_functional.py`
+  - Assert interactive runs emit the Sqitch-style confirmation message and wait for user input before executing when no affirmative flag is provided. ✅
+  - Assert passing `--yes` (or `-y`) suppresses the prompt and proceeds immediately, preserving FR-012a parity. ✅
+  - Use Click runner with patched input to simulate acceptance/decline flows and ensure decline aborts without touching the registry. ✅
   - **Pattern**: Copied identity resolution and target handling from deploy.py
+  - **Status**: ✅ COMPLETE (2025-10-07) – new `TestRevertConfirmationPrompt` scenarios cover prompt + bypass flows.
   
 **Tests**: 10 functional tests passing (all revert scenarios covered)
   

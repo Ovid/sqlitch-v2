@@ -401,16 +401,79 @@ class TestRevertScriptExecution:
         conn = sqlite3.connect(registry_db)
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT event, change FROM events WHERE event = 'revert' ORDER BY committed_at DESC"
+            "SELECT event, change FROM events WHERE event = 'revert' ORDER BY committed_at ASC"
         )
         rows = cursor.fetchall()
         conn.close()
 
         assert len(rows) == 3
-        # Should be in reverse order: comments, posts, users
-        assert rows[0][1] == "users"
-        assert rows[1][1] == "posts"
-        assert rows[2][1] == "comments"
+        # Changes should be reverted in reverse order: comments, posts, users
+        assert [row[1] for row in rows] == ["comments", "posts", "users"]
+
+
+class TestRevertConfirmationPrompt:
+    """Ensure revert prompts the user unless bypassed."""
+
+    def test_prompts_and_aborts_when_declined(
+        self, project_with_deployed_changes: Path
+    ) -> None:
+        runner = CliRunner()
+        project_dir = project_with_deployed_changes
+        target_db = project_dir / "test.db"
+
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result = runner.invoke(
+                main,
+                [
+                    "revert",
+                    f"db:sqlite:{target_db}",
+                ],
+                input="n\n",
+            )
+        finally:
+            os.chdir(original_cwd)
+
+        assert result.exit_code == 1, result.output
+        assert "[y/N]:" in result.output
+        assert "Error: Revert aborted by user." in result.output
+
+        conn = sqlite3.connect(target_db)
+        try:
+            cursor = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='comments'"
+            )
+            assert cursor.fetchone() is not None, "Comments table should still exist"
+        finally:
+            conn.close()
+
+    def test_yes_flag_skips_prompt_and_executes(
+        self, project_with_deployed_changes: Path
+    ) -> None:
+        runner = CliRunner()
+        project_dir = project_with_deployed_changes
+        target_db = project_dir / "test.db"
+
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result = runner.invoke(
+                main,
+                [
+                    "revert",
+                    f"db:sqlite:{target_db}",
+                    "-y",
+                ],
+            )
+        finally:
+            os.chdir(original_cwd)
+
+        assert result.exit_code == 0, result.output
+        assert "[y/N]:" not in result.output
+        assert "- comments" in result.output
+        assert "- posts" in result.output
+        assert "- users" in result.output
 
     def test_revert_removes_from_registry(self, project_with_deployed_changes: Path) -> None:
         """Test that revert removes change from registry changes table."""

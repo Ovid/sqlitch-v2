@@ -157,6 +157,8 @@ class TestVerifyExecution:
         assert (
             "users" in verify_result.output
         ), f"Should show verified change\nOutput: {verify_result.output}"
+        assert "Verify successful" in verify_result.output
+
     def test_reports_success_for_each_change(self, runner: CliRunner, tmp_path: Path) -> None:
         """Verify should report OK for each successfully verified change."""
         # Setup
@@ -232,6 +234,7 @@ class TestVerifyExecution:
         assert "users" in output, "Should show users verified"
         assert "posts" in output, "Should show posts verified"
         assert verify_result.exit_code == 0, "Should exit 0 when all pass"
+        assert "Verify successful" in output
 
     def test_reports_failure_with_error_details(self, runner: CliRunner, tmp_path: Path) -> None:
         """Verify should report NOT OK with details when a verify script fails."""
@@ -299,6 +302,10 @@ class TestVerifyExecution:
         assert (
             "users" in verify_result.output.lower()
         ), f"Should mention failed change\nOutput: {verify_result.output}"
+        assert "Verify Summary Report" in verify_result.output
+        assert "Changes: 1" in verify_result.output
+        assert "Errors:  1" in verify_result.output
+        assert "Verify failed" in verify_result.output
 
     def test_exit_code_zero_if_all_pass(self, runner: CliRunner, tmp_path: Path) -> None:
         """Verify should exit 0 when all verify scripts pass."""
@@ -359,6 +366,7 @@ class TestVerifyExecution:
 
         # Verify: Exit code 0 when all pass
         assert verify_result.exit_code == 0, "Verify should exit 0 when all verify scripts pass"
+        assert "Verify successful" in verify_result.output
 
     def test_exit_code_one_if_any_fail(self, runner: CliRunner, tmp_path: Path) -> None:
         """Verify should exit 1 if any verify script fails."""
@@ -433,8 +441,46 @@ class TestVerifyExecution:
         finally:
             os.chdir(original_cwd)
 
-        # Verify: Exit code 1 if any fail
+        # Verify: Exit code 1 if any fail and summary is printed
+        output = verify_result.output
         assert verify_result.exit_code == 1, "Verify should exit 1 if any verification fails"
+        assert "* users .. ok" in output
+        assert "# posts .. NOT OK" in output
+        assert "Verify Summary Report" in output
+        assert "Changes: 2" in output
+        assert "Errors:  1" in output
+        assert "Verify failed" in output
+
+    def test_reports_all_failures_before_summary(
+        self, runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """Verify should continue through all failures and report a summary."""
+
+        project_dir, target_db = setup_project(tmp_path, changes=("users", "posts"))
+
+        # Overwrite verify scripts so both fail
+        for change in ("users", "posts"):
+            (project_dir / "verify" / f"{change}.sql").write_text(
+                f"-- Verify flipr:{change} on sqlite\n"
+                "BEGIN;\n"
+                f"SELECT nonexistent_column FROM {change};\n"
+                "ROLLBACK;\n"
+            )
+
+        deploy_project(runner, project_dir, f"db:sqlite:{target_db}")
+
+        with pushd(project_dir):
+            result = runner.invoke(main, ["verify", f"db:sqlite:{target_db}"])
+
+        output = result.output
+        assert result.exit_code == 1, output
+        assert "# users .. NOT OK" in output
+        assert "# posts .. NOT OK" in output
+        assert output.index("# users .. NOT OK") < output.index("# posts .. NOT OK")
+        assert "Verify Summary Report" in output
+        assert "Changes: 2" in output
+        assert "Errors:  2" in output
+        assert "Verify failed" in output
 
 
 class TestVerifyUnimplementedOptions:
@@ -475,6 +521,7 @@ class TestVerifyAdditionalScenarios:
 
         assert result.exit_code == 0, result.output
         assert "# users .. SKIP (no verify script)" in result.output
+        assert "Verify successful" in result.output
 
     def test_handles_absence_of_deployed_changes(
         self, runner: CliRunner, tmp_path: Path
