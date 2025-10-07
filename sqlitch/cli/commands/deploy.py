@@ -23,6 +23,7 @@ from sqlitch.engine.base import UnsupportedEngineError
 from sqlitch.engine.sqlite import (
     REGISTRY_ATTACHMENT_ALIAS,
     SQLiteEngine,
+    extract_sqlite_statements,
     resolve_sqlite_filesystem_path,
     script_manages_transactions,
 )
@@ -879,15 +880,17 @@ def _resolve_committer_identity(
 ) -> tuple[str, str]:
     """Resolve the committer name and email from config and environment variables.
 
-    Resolution order:
-    1. Config file (user.name and user.email)
-    2. Environment variables:
-       - SQLITCH_USER_NAME / SQLITCH_USER_EMAIL (preferred)
-       - SQITCH_USER_NAME / SQITCH_USER_EMAIL (Sqitch compatibility fallback)
-       - GIT_COMMITTER_NAME / GIT_COMMITTER_EMAIL
-       - GIT_AUTHOR_NAME / GIT_AUTHOR_EMAIL
-    3. System defaults (USER, USERNAME, EMAIL)
+    Resolution order for the name:
+    1. SQLITCH_USER_NAME / SQITCH_USER_NAME / Git committer or author values
+    2. Config file (``user.name``)
+    3. System defaults (``USER`` / ``USERNAME``)
     4. Generated fallback
+
+    Resolution order for the email:
+    1. SQLITCH_USER_EMAIL / SQITCH_USER_EMAIL / Git committer or author values
+    2. Config file (``user.email``)
+    3. EMAIL environment variable
+    4. Generated fallback based on the resolved name
     """
     from sqlitch.config.resolver import resolve_config
 
@@ -908,22 +911,22 @@ def _resolve_committer_identity(
         pass
 
     name = (
-        config_name
-        or env.get("SQLITCH_USER_NAME")
+        env.get("SQLITCH_USER_NAME")
         or env.get("SQITCH_USER_NAME")  # Sqitch backward compatibility
         or env.get("GIT_COMMITTER_NAME")
         or env.get("GIT_AUTHOR_NAME")
+        or config_name
         or env.get("USER")
         or env.get("USERNAME")
         or "SQLitch User"
     )
 
     email = (
-        config_email
-        or env.get("SQLITCH_USER_EMAIL")
+        env.get("SQLITCH_USER_EMAIL")
         or env.get("SQITCH_USER_EMAIL")  # Sqitch backward compatibility
         or env.get("GIT_COMMITTER_EMAIL")
         or env.get("GIT_AUTHOR_EMAIL")
+        or config_email
         or env.get("EMAIL")
     )
 
@@ -1083,19 +1086,8 @@ def _release_savepoint(
 
 def _execute_sqlite_script(cursor: sqlite3.Cursor, script_sql: str) -> None:
     """Execute ``script_sql`` statement-by-statement against ``cursor``."""
-
-    buffer = ""
-    for line in script_sql.splitlines():
-        buffer += line + "\n"
-        if sqlite3.complete_statement(buffer):
-            statement = buffer.strip()
-            if statement:
-                cursor.execute(statement)
-            buffer = ""
-
-    remainder = buffer.strip()
-    if remainder:
-        cursor.execute(remainder)
+    for statement in extract_sqlite_statements(script_sql):
+        cursor.execute(statement)
 
 
 def _record_deployment_entries(

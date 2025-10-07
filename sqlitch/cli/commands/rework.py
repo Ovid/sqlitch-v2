@@ -78,7 +78,7 @@ def _replace_change(
 @click.command("rework")
 @click.argument("change_name")
 @click.option("--requires", "requires", multiple=True, help="Override change dependencies.")
-@click.option("--note", "note", help="Update the change note.")
+@click.option("-n", "--note", "note", help="Update the change note.")
 @click.option("--deploy", "deploy_override", help="Explicit path for the reworked deploy script.")
 @click.option("--revert", "revert_override", help="Explicit path for the reworked revert script.")
 @click.option("--verify", "verify_override", help="Explicit path for the reworked verify script.")

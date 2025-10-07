@@ -14,6 +14,7 @@ import click
 
 from sqlitch.engine.sqlite import (
     derive_sqlite_registry_uri,
+    extract_sqlite_statements,
     resolve_sqlite_filesystem_path,
     script_manages_transactions,
 )
@@ -432,24 +433,27 @@ def _execute_change_transaction(
 
 def _execute_sqlite_script(cursor: sqlite3.Cursor, script_sql: str) -> None:
     """Execute script SQL statement-by-statement against cursor."""
-    buffer = ""
-    for line in script_sql.splitlines():
-        buffer += line + "\n"
-        if sqlite3.complete_statement(buffer):
-            statement = buffer.strip()
-            if statement:
-                cursor.execute(statement)
-            buffer = ""
-
-    remainder = buffer.strip()
-    if remainder:
-        cursor.execute(remainder)
+    for statement in extract_sqlite_statements(script_sql):
+        cursor.execute(statement)
 
 
 def _resolve_committer_identity(
     env: Mapping[str, str], config_root: Path, project_root: Path
 ) -> tuple[str, str]:
-    """Resolve committer identity from environment or config."""
+    """Resolve committer identity from environment or config.
+
+    Resolution order for the name:
+    1. SQLITCH_USER_NAME / SQITCH_USER_NAME / Git committer or author values
+    2. Config file (``user.name``)
+    3. System defaults (``USER`` / ``USERNAME``)
+    4. Generated fallback
+
+    Resolution order for the email:
+    1. SQLITCH_USER_EMAIL / SQITCH_USER_EMAIL / Git committer or author values
+    2. Config file (``user.email``)
+    3. EMAIL environment variable
+    4. Generated fallback based on the resolved name
+    """
     from sqlitch.config.resolver import resolve_config
 
     # Try to load config to get user.name and user.email
@@ -468,22 +472,22 @@ def _resolve_committer_identity(
         pass
 
     name = (
-        config_name
-        or env.get("SQLITCH_USER_NAME")
+        env.get("SQLITCH_USER_NAME")
         or env.get("SQITCH_USER_NAME")
         or env.get("GIT_COMMITTER_NAME")
         or env.get("GIT_AUTHOR_NAME")
+        or config_name
         or env.get("USER")
         or env.get("USERNAME")
         or "SQLitch User"
     )
 
     email = (
-        config_email
-        or env.get("SQLITCH_USER_EMAIL")
+        env.get("SQLITCH_USER_EMAIL")
         or env.get("SQITCH_USER_EMAIL")
         or env.get("GIT_COMMITTER_EMAIL")
         or env.get("GIT_AUTHOR_EMAIL")
+        or config_email
         or env.get("EMAIL")
     )
 
