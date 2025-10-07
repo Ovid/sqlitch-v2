@@ -625,31 +625,28 @@
   - **Status**: ✅ COMPLETE (2025-10-07) - 1 test passing
   
 - [X] **T060** [P] Integration test: Scenario 5 - Tag release (v1.0.0-dev1) in `tests/integration/test_tutorial_workflows.py`
-  - ⚠️ Test tag adds to plan
-  - ⚠️ Test deploy after tag works
-  - **Status**: ⚠️ PARTIAL (2025-10-07) - Test written, has issue with re-deploy after tag
-  - **Issue**: "You can only execute one statement at a time" error when re-deploying after tag
-  - **Root Cause**: Test uses BEGIN/COMMIT blocks, but deploy command may not handle them correctly in all cases
+  - ✅ Test tag adds to plan
+  - ✅ Test deploy after tag works
+  - ✅ Registry tag recorded and status displays `@` prefix
+  - **Status**: ✅ COMPLETE (2025-10-07) - Verified fixed deploy noop + tag sync behavior
   
 - [X] **T061** [P] Integration test: Scenario 6 - Revert changes in `tests/integration/test_tutorial_workflows.py`
-  - ⚠️ Test revert --to removes changes
-  - ⚠️ Test revert executes scripts in reverse
-  - ⚠️ Test registry updated correctly
-  - **Status**: ⚠️ PARTIAL (2025-10-07) - Test written, deploy not recording changes
-  - **Issue**: Deploy not recording changes in registry properly
+  - ✅ Test revert --to removes changes
+  - ✅ Test revert executes scripts in reverse
+  - ✅ Test registry updated correctly before/after revert
+  - **Status**: ✅ COMPLETE (2025-10-07) - Registry assertions now pass after tag synchronization work
   
 - [X] **T062** [P] Integration test: Scenario 7 - View history with log in `tests/integration/test_tutorial_workflows.py`
-  - ⚠️ Test log shows all events
-  - ⚠️ Test log filtering by change
-  - **Status**: ⚠️ PARTIAL (2025-10-07) - Test written, log shows no events
-  - **Issue**: Events not being recorded in registry during deploy
+  - ✅ Test log shows all events
+  - ✅ Test log filtering by change
+  - ✅ Validates revert then deploy order matches tutorial expectations
+  - **Status**: ✅ COMPLETE (2025-10-07) - Event feed populated via deploy tag sync fixes
   
 - [X] **T063** [P] Integration test: Scenario 8 - Rework change in `tests/integration/test_tutorial_workflows.py`
-  - ⚠️ Test rework creates @tag suffixed scripts
-  - ⚠️ Test rework updates plan
-  - ⚠️ Test deploy uses new version
-  - **Status**: ⚠️ PARTIAL (2025-10-07) - Test written, wrong flag used
-  - **Issue**: Test uses `-n` flag, should be `--note` for rework command
+  - ✅ Test rework creates @tag suffixed scripts
+  - ✅ Test rework updates plan
+  - ✅ Test deploy uses new version
+  - **Status**: ✅ COMPLETE (2025-10-07) - Updated to use `--note` flag and pass end-to-end
 
 ---
 

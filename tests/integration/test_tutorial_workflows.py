@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import configparser
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 import pytest
@@ -450,7 +451,7 @@ class TestScenario5TaggingRelease:
             assert result.exit_code == 0, f"Deploy after tag failed: {result.output}"
 
             # Registry should record the tag
-            with sqlite3.connect("sqitch.db") as registry:
+            with closing(sqlite3.connect("sqitch.db")) as registry:
                 tags = registry.execute("SELECT tag FROM tags").fetchall()
             assert tags == [("v1.0.0-dev1",)], f"Tags table mismatch: {tags!r}"
 
@@ -498,7 +499,7 @@ class TestScenario6RevertChanges:
             deploy_result = runner.invoke(main, ["deploy", "db:sqlite:flipr_test.db"])
             assert deploy_result.exit_code == 0, deploy_result.output
 
-            with sqlite3.connect("sqitch.db") as registry:
+            with closing(sqlite3.connect("sqitch.db")) as registry:
                 deployed = [row[0] for row in registry.execute("SELECT change FROM changes ORDER BY committed_at").fetchall()]
             assert deployed == ["users", "flips"], deployed
             
@@ -523,7 +524,7 @@ class TestScenario6RevertChanges:
             assert cursor.fetchone() is not None, "users table should still exist"
             conn.close()
             
-            with sqlite3.connect("sqitch.db") as registry:
+            with closing(sqlite3.connect("sqitch.db")) as registry:
                 deployed_after_revert = [row[0] for row in registry.execute("SELECT change FROM changes ORDER BY committed_at").fetchall()]
             assert deployed_after_revert == ["users"], deployed_after_revert
 
@@ -538,7 +539,7 @@ class TestScenario6RevertChanges:
             )
             assert result.exit_code == 0, f"Re-deploy failed: {result.output}"
             
-            with sqlite3.connect("sqitch.db") as registry:
+            with closing(sqlite3.connect("sqitch.db")) as registry:
                 redeployed = [row[0] for row in registry.execute("SELECT change FROM changes ORDER BY committed_at").fetchall()]
             assert redeployed == ["users", "flips"], redeployed
 
