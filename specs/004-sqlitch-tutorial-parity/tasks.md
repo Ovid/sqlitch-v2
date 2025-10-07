@@ -683,9 +683,10 @@
   - Compare sqlitch status vs sqitch status output ✅
   - Validate formatting matches ✅
   
-- [ ] **T068** [P] Regression test: Log output parity in `tests/regression/test_tutorial_parity.py`
-  - Compare sqlitch log vs sqitch log output
-  - Validate event display matches
+- [X] **T068** [P] Regression test: Log output parity in `tests/regression/test_tutorial_parity.py`
+  - ✅ `test_log_output_matches_sqitch` compares SQLitch CLI output against Sqitch fixture `log_users_revert.txt`
+  - ✅ Seeds registry snapshot to mirror tutorial revert + deploy history and asserts byte-for-byte match (stdout only)
+  - **Status**: ✅ COMPLETE (2025-10-07) – Added parity regression and executed full pytest suite to satisfy coverage gate (91.95%)
   
 - [ ] **T069** [P] Regression test: Verify output parity in `tests/regression/test_tutorial_parity.py`
   - Compare sqlitch verify vs sqitch verify output

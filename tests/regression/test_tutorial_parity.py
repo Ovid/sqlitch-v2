@@ -361,3 +361,118 @@ def test_status_output_matches_sqitch(tmp_path: Path) -> None:
             encoding="utf-8"
         )
         assert result.output == expected_output
+
+
+def test_log_output_matches_sqitch(tmp_path: Path) -> None:
+    """`sqlitch log` should emit Sqitch-identical history for recent events."""
+
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        planned_at = datetime(2013, 12, 31, 18, 26, 59, tzinfo=timezone.utc)
+        change = Change.create(
+            name="users",
+            script_paths={
+                "deploy": Path("deploy/20131231182659_users_deploy.sql"),
+                "revert": Path("revert/20131231182659_users_revert.sql"),
+            },
+            planner="Marge N. O’Vera <marge@example.com>",
+            planned_at=planned_at,
+            notes="Creates table to track our users.",
+        )
+
+        write_plan(
+            project_name="flipr",
+            default_engine="sqlite",
+            entries=[change],
+            plan_path=Path("sqitch.plan"),
+            uri=INIT_URI,
+        )
+
+        Path("sqitch.conf").write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
+
+        Path("deploy").mkdir(parents=True, exist_ok=True)
+        Path("revert").mkdir(parents=True, exist_ok=True)
+        Path("deploy/20131231182659_users_deploy.sql").touch()
+        Path("revert/20131231182659_users_revert.sql").touch()
+
+        workspace_db = Path("flipr_test.db")
+        workspace_db.touch()
+        workspace_uri = f"db:sqlite:{workspace_db.resolve().as_posix()}"
+        registry_uri = derive_sqlite_registry_uri(
+            workspace_uri=workspace_uri,
+            project_root=Path.cwd(),
+        )
+        registry_path = resolve_sqlite_filesystem_path(registry_uri)
+        registry_path.parent.mkdir(parents=True, exist_ok=True)
+
+        connection = sqlite3.connect(registry_path)
+        try:
+            cursor = connection.cursor()
+            cursor.executescript(
+                """
+                CREATE TABLE events (
+                    event TEXT NOT NULL,
+                    change_id TEXT NOT NULL,
+                    change TEXT NOT NULL,
+                    project TEXT NOT NULL,
+                    note TEXT NOT NULL,
+                    tags TEXT NOT NULL,
+                    committed_at TEXT NOT NULL,
+                    committer_name TEXT NOT NULL,
+                    committer_email TEXT NOT NULL
+                );
+                """
+            )
+
+            cursor.executemany(
+                """
+                INSERT INTO events (
+                    event,
+                    change_id,
+                    change,
+                    project,
+                    note,
+                    tags,
+                    committed_at,
+                    committer_name,
+                    committer_email
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                [
+                    (
+                        "revert",
+                        "f30fe47f5f99501fb8d481e910d9112c5ac0a676",
+                        "users",
+                        "flipr",
+                        "Creates table to track our users.",
+                        "",
+                        "2013-12-31 10:53:25 -0800",
+                        "Marge N. O’Vera",
+                        "marge@example.com",
+                    ),
+                    (
+                        "deploy",
+                        "f30fe47f5f99501fb8d481e910d9112c5ac0a676",
+                        "users",
+                        "flipr",
+                        "Creates table to track our users.",
+                        "",
+                        "2013-12-31 10:26:59 -0800",
+                        "Marge N. O’Vera",
+                        "marge@example.com",
+                    ),
+                ],
+            )
+
+            connection.commit()
+        finally:
+            connection.close()
+
+        result = runner.invoke(main, ["log", "db:sqlite:flipr_test.db"])
+
+        assert result.exit_code == 0, result.output
+
+        expected_output = (REGISTRY_GOLDEN_ROOT / "log_users_revert.txt").read_text(
+            encoding="utf-8"
+        )
+        assert result.output == expected_output
