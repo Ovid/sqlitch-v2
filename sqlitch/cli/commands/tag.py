@@ -7,9 +7,11 @@ from pathlib import Path
 
 import click
 
+from sqlitch.config.resolver import resolve_config
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Tag
 from sqlitch.plan.parser import PlanParseError, parse_plan
+from sqlitch.utils.identity import resolve_planner_identity
 
 from . import CommandError, register_command
 from ._context import require_cli_context
@@ -26,20 +28,6 @@ def _utcnow() -> datetime:
     """
 
     return datetime.now(timezone.utc)
-
-
-def _resolve_planner(env: dict[str, str]) -> str:
-    """Resolve the planner identity from available environment variables."""
-
-    name = (
-        env.get("SQLITCH_USER_NAME")
-        or env.get("GIT_AUTHOR_NAME")
-        or env.get("USER")
-        or env.get("USERNAME")
-        or "SQLitch User"
-    )
-    email = env.get("SQLITCH_USER_EMAIL") or env.get("GIT_AUTHOR_EMAIL") or env.get("EMAIL")
-    return f"{name} <{email}>" if email else name
 
 
 @click.command("tag")
@@ -126,6 +114,14 @@ def _add_tag(
     cli_context = require_cli_context(ctx)
     project_root = cli_context.project_root
     environment = cli_context.env
+
+    # Load configuration for planner identity resolution
+    config = resolve_config(
+        root_dir=project_root,
+        config_root=cli_context.config_root,
+        env=environment,
+    )
+
     plan_path = resolve_plan_path(
         project_root=project_root,
         override=cli_context.plan_file,
@@ -170,7 +166,7 @@ def _add_tag(
     tag = Tag(
         name=tag_name,
         change_ref=target_change,
-        planner=_resolve_planner(environment),
+        planner=resolve_planner_identity(environment, config),
         tagged_at=_utcnow(),
     )
 

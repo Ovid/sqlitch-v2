@@ -74,6 +74,16 @@ def test_rework_creates_rework_scripts_and_updates_plan(
     monkeypatch.setenv("SQLITCH_USER_NAME", "Grace Hopper")
     monkeypatch.setenv("SQLITCH_USER_EMAIL", "grace@example.com")
 
+    # Mock system functions to prevent system full name from taking precedence
+    monkeypatch.setattr("os.getlogin", lambda: "test")
+    try:
+        import pwd
+        import collections
+        MockPwRecord = collections.namedtuple('MockPwRecord', ['pw_name', 'pw_gecos'])
+        monkeypatch.setattr("pwd.getpwuid", lambda uid: MockPwRecord(pw_name="test", pw_gecos=""))
+    except ImportError:
+        pass
+
     with runner.isolated_filesystem():
         project_root = Path.cwd()
         plan_path = project_root / "sqlitch.plan"

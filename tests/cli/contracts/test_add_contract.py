@@ -40,6 +40,16 @@ def test_add_appends_change_and_creates_scripts(monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setenv("SQLITCH_USER_NAME", "Ada Lovelace")
     monkeypatch.setenv("SQLITCH_USER_EMAIL", "ada@example.com")
 
+    # Mock system functions to prevent system name from taking precedence
+    monkeypatch.setattr("os.getlogin", lambda: "test")
+    try:
+        import pwd
+        import collections
+        MockPwRecord = collections.namedtuple('MockPwRecord', ['pw_name', 'pw_gecos'])
+        monkeypatch.setattr("pwd.getpwuid", lambda uid: MockPwRecord(pw_name="test", pw_gecos=""))
+    except ImportError:
+        pass
+
     with runner.isolated_filesystem():
         plan_path = Path("sqlitch.plan")
         seed_changes = (
@@ -161,6 +171,17 @@ def test_add_uses_explicit_plan_override(monkeypatch: pytest.MonkeyPatch) -> Non
     timestamp = datetime(2025, 7, 8, 9, 10, 11, tzinfo=timezone.utc)
     monkeypatch.setattr(add_module, "_utcnow", lambda: timestamp)
     monkeypatch.setenv("SQLITCH_USER_NAME", "Katherine Johnson")
+    monkeypatch.setenv("SQLITCH_USER_EMAIL", "kjohnson@example.com")
+
+    # Mock system functions to prevent system name from taking precedence
+    monkeypatch.setattr("os.getlogin", lambda: "test")
+    try:
+        import pwd
+        import collections
+        MockPwRecord = collections.namedtuple('MockPwRecord', ['pw_name', 'pw_gecos'])
+        monkeypatch.setattr("pwd.getpwuid", lambda uid: MockPwRecord(pw_name="test", pw_gecos=""))
+    except ImportError:
+        pass
 
     with runner.isolated_filesystem():
         override_plan = Path("custom.plan")
@@ -172,8 +193,8 @@ def test_add_uses_explicit_plan_override(monkeypatch: pytest.MonkeyPatch) -> Non
         assert not Path("sqlitch.plan").exists()
 
         plan_content = override_plan.read_text(encoding="utf-8")
-        # Compact format: reports 2025-07-08T09:10:11Z Katherine Johnson
-        assert "reports 2025-07-08T09:10:11Z Katherine Johnson" in plan_content
+        # Compact format: reports 2025-07-08T09:10:11Z Katherine Johnson <kjohnson@example.com>
+        assert "reports 2025-07-08T09:10:11Z Katherine Johnson <kjohnson@example.com>" in plan_content
 
 
 def test_add_honours_project_templates(monkeypatch: pytest.MonkeyPatch) -> None:

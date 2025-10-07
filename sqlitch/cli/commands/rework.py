@@ -9,15 +9,17 @@ from typing import Callable
 
 import click
 
+from sqlitch.config.resolver import resolve_config
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change, PlanEntry
 from sqlitch.plan.parser import PlanParseError, parse_plan
 from sqlitch.plan.utils import slugify_change_name
+from sqlitch.utils.identity import resolve_planner_identity
 
 from . import CommandError, register_command
 from ._context import require_cli_context
 from ._plan_utils import resolve_default_engine, resolve_plan_path
-from .add import _ensure_script_path, _format_display_path, _resolve_planner
+from .add import _ensure_script_path, _format_display_path
 from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["rework_command"]
@@ -101,6 +103,13 @@ def rework_command(
     project_root = cli_context.project_root
     env = cli_context.env
 
+    # Load configuration for planner identity resolution
+    config = resolve_config(
+        root_dir=project_root,
+        config_root=cli_context.config_root,
+        env=env,
+    )
+
     plan_path = resolve_plan_path(
         project_root=project_root,
         override=cli_context.plan_file,
@@ -173,7 +182,7 @@ def rework_command(
     replacement = Change.create(
         name=original_change.name,
         script_paths=script_map,
-        planner=_resolve_planner(env),
+        planner=resolve_planner_identity(env, config),
         planned_at=timestamp,
         notes=new_notes,
         change_id=original_change.change_id,

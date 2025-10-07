@@ -9,11 +9,13 @@ from pathlib import Path
 
 import click
 
+from sqlitch.config.resolver import resolve_config
 from sqlitch.engine.base import UnsupportedEngineError, canonicalize_engine_name
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change
 from sqlitch.plan.parser import PlanParseError, parse_plan
 from sqlitch.plan.utils import slugify_change_name
+from sqlitch.utils.identity import resolve_planner_identity
 from sqlitch.utils.templates import default_template_body, render_template, resolve_template_path
 
 from . import CommandError, register_command
@@ -31,20 +33,6 @@ def _utcnow() -> datetime:
     """
 
     return datetime.now(timezone.utc)
-
-
-def _resolve_planner(env: Mapping[str, str]) -> str:
-    """Resolve the planner identity from available environment variables."""
-
-    name = (
-        env.get("SQLITCH_USER_NAME")
-        or env.get("GIT_AUTHOR_NAME")
-        or env.get("USER")
-        or env.get("USERNAME")
-        or "SQLitch User"
-    )
-    email = env.get("SQLITCH_USER_EMAIL") or env.get("GIT_AUTHOR_EMAIL") or env.get("EMAIL")
-    return f"{name} <{email}>" if email else name
 
 
 def _resolve_script_path(root: Path, value: str | None, default: Path) -> Path:
@@ -181,6 +169,13 @@ def add_command(
     )
     quiet = bool(cli_context.quiet)
 
+    # Load configuration for planner identity resolution
+    config = resolve_config(
+        root_dir=project_root,
+        config_root=cli_context.config_root,
+        env=environment,
+    )
+
     default_engine = resolve_default_engine(
         project_root=project_root,
         config_root=cli_context.config_root,
@@ -252,7 +247,7 @@ def add_command(
     change = Change.create(
         name=change_name,
         script_paths=script_map,
-        planner=_resolve_planner(environment),
+        planner=resolve_planner_identity(environment, config),
         planned_at=timestamp,
         notes=note,
         dependencies=tuple(requires) or None,
