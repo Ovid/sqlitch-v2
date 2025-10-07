@@ -15,6 +15,9 @@ from sqlitch.plan.model import Change
 from sqlitch.plan.parser import parse_plan
 
 
+TAG_NAME = "v1.0.0"
+
+
 @pytest.fixture()
 def runner() -> CliRunner:
     """Return a Click CLI runner configured for isolation."""
@@ -61,6 +64,14 @@ def _seed_change(
         notes=notes,
         dependencies=dependencies,
     )
+
+
+def _tag_latest_change(runner: CliRunner, note: str | None = None) -> None:
+    args = ["tag", TAG_NAME]
+    if note is not None:
+        args.extend(["-n", note])
+    result = runner.invoke(main, args, catch_exceptions=False)
+    assert result.exit_code == 0, result.output
 
 
 def test_rework_creates_rework_scripts_and_updates_plan(
@@ -118,13 +129,15 @@ def test_rework_creates_rework_scripts_and_updates_plan(
         config_path = plan_path.parent / "sqitch.conf"
         config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
 
+        _tag_latest_change(runner, note="Release tag")
+
         result = runner.invoke(main, ["rework", "widgets:add"])
 
         assert result.exit_code == 0, result.output
 
-        deploy_name = "deploy/widgets_add_rework.sql"
-        revert_name = "revert/widgets_add_rework.sql"
-        verify_name = "verify/widgets_add_rework.sql"
+        deploy_name = f"deploy/widgets_add@{TAG_NAME}.sql"
+        revert_name = f"revert/widgets_add@{TAG_NAME}.sql"
+        verify_name = f"verify/widgets_add@{TAG_NAME}.sql"
 
         assert f"Created rework deploy script {deploy_name}" in result.output
         assert f"Created rework revert script {revert_name}" in result.output
@@ -143,7 +156,6 @@ def test_rework_creates_rework_scripts_and_updates_plan(
         assert revert_path.read_text(encoding="utf-8") == "-- revert script\n"
         assert verify_path.read_text(encoding="utf-8") == "-- verify script\n"
 
-        # Parse plan with default_engine since it's no longer in the file (Sqitch stores in config)
         updated_plan = parse_plan(plan_path, default_engine="sqlite")
         updated_change = updated_plan.get_change("widgets:add")
 
@@ -151,11 +163,9 @@ def test_rework_creates_rework_scripts_and_updates_plan(
         relative_revert = updated_change.script_paths["revert"].relative_to(project_root).as_posix()
         relative_verify = updated_change.script_paths["verify"].relative_to(project_root).as_posix()
 
-        # TODO: Script discovery should prefer _rework files when they exist
-        # Currently it resolves to the original files
-        assert relative_deploy == "deploy/widgets_add.sql"  # Should be deploy_name
-        assert relative_revert == "revert/widgets_add.sql"  # Should be revert_name
-        assert relative_verify == "verify/widgets_add.sql"  # Should be verify_name
+        assert relative_deploy == deploy_name
+        assert relative_revert == revert_name
+        assert relative_verify == verify_name
         assert updated_change.notes == "Adds widgets"
         assert updated_change.dependencies == ("core:init",)
         assert updated_change.planner == "Grace Hopper <grace@example.com>"
@@ -209,6 +219,8 @@ def test_rework_applies_overrides(monkeypatch: pytest.MonkeyPatch, runner: CliRu
         # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
         config_path = plan_path.parent / "sqitch.conf"
         config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
+
+        _tag_latest_change(runner, note="Pre-rework tag")
 
         result = runner.invoke(
             main,

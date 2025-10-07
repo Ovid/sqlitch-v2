@@ -11,7 +11,7 @@ import click
 
 from sqlitch.config.resolver import resolve_config
 from sqlitch.plan.formatter import write_plan
-from sqlitch.plan.model import Change, PlanEntry
+from sqlitch.plan.model import Change, PlanEntry, Plan, Tag
 from sqlitch.plan.parser import PlanParseError, parse_plan
 from sqlitch.plan.utils import slugify_change_name
 from sqlitch.utils.identity import resolve_planner_identity
@@ -37,6 +37,7 @@ def _resolve_new_path(
     original: Path | None,
     override: str | None,
     slug: str,
+    suffix: str,
 ) -> Path | None:
     if override:
         candidate = Path(override)
@@ -45,8 +46,24 @@ def _resolve_new_path(
     if original is None:
         return None
 
-    filename = f"{slug}_rework{original.suffix}"
+    filename = f"{slug}{suffix}{original.suffix}"
     return original.parent / filename
+
+
+def _resolve_rework_suffix(plan: Plan, change_name: str) -> str:
+    """Return the suffix (``@tag``) used for reworked script filenames."""
+
+    latest_tag: str | None = None
+    for entry in plan.entries:
+        if isinstance(entry, Tag) and entry.change_ref == change_name:
+            latest_tag = entry.name
+
+    if latest_tag is None:
+        raise CommandError(
+            f'Change "{change_name}" has not been tagged. Tag the change before reworking it.'
+        )
+
+    return f"@{latest_tag}"
 
 
 def _copy_script(source: Path | None, target: Path | None) -> None:
@@ -141,6 +158,7 @@ def rework_command(
 
     timestamp = _utcnow()
     slug = slugify_change_name(change_name)
+    suffix = _resolve_rework_suffix(plan, change_name)
 
     deploy_source = original_change.script_paths.get("deploy")
     revert_source = original_change.script_paths.get("revert")
@@ -151,18 +169,21 @@ def rework_command(
         original=deploy_source,
         override=deploy_override,
         slug=slug,
+        suffix=suffix,
     )
     revert_target = _resolve_new_path(
         project_root=project_root,
         original=revert_source,
         override=revert_override,
         slug=slug,
+        suffix=suffix,
     )
     verify_target = _resolve_new_path(
         project_root=project_root,
         original=verify_source,
         override=verify_override,
         slug=slug,
+        suffix=suffix,
     )
 
     _copy_script(deploy_source, deploy_target)

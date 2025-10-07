@@ -64,14 +64,14 @@ The Sqitch SQLite tutorial demonstrates a complete workflow for managing databas
 - [ ] `sqitch log` - Show change history
 - [ ] `sqitch tag` - Tag releases
 - [ ] `sqitch rework` - Create in-place change modifications
+- [ ] `sqitch target` - Manage deployment targets (add/list/update/remove)
+- [ ] `sqitch engine` - Manage engine definitions (add/alter/list/remove)
 
 **Can Remain Stubs** (not used in tutorial):
 - [ ] `sqitch bundle` - Package changes for distribution
 - [ ] `sqitch checkout` - Switch between branches
 - [ ] `sqitch rebase` - Rebase changes
 - [ ] `sqitch upgrade` - Upgrade registry schema
-- [ ] `sqitch engine` - Manage engine configurations
-- [ ] `sqitch target` - Manage deployment targets
 - [ ] `sqitch plan` - Display plan
 - [ ] `sqitch show` - Show change details
 - [ ] `sqitch help` - Display help (already functional)
@@ -147,6 +147,10 @@ The Sqitch SQLite tutorial demonstrates a complete workflow for managing databas
 - Q: What registry operations beyond deploy/revert are required?
   → A: **Enough to complete the tutorial, aligned with Sqitch behavior** (deploy, revert, verify events; status queries; log display)
 
+### Session 2025-10-07
+- Q: Should `sqlitch config` echo a success message after setting a value, or stay silent like Sqitch?
+   → A: **Match Sqitch: no output on successful config set**
+
 ---
 
 ## User Scenarios & Testing *(mandatory)*
@@ -211,7 +215,7 @@ Database developers following the SQLite tutorial need to successfully complete 
 **Core Commands (Tutorial-Critical)**:
 - **FR-007**: `sqitch init` MUST initialize a new SQLitch project with project name, URI, engine, creating sqitch.conf, sqitch.plan, and deploy/revert/verify directories.
 
-- **FR-008**: `sqitch config` MUST support get/set/list operations for project-local (sqitch.conf), user (~/.sqitch/sqitch.conf), and system configurations with proper precedence.
+- **FR-008**: `sqitch config` MUST support get/set/list operations for project-local (sqitch.conf), user (~/.sqitch/sqitch.conf), and system configurations with proper precedence, and successful set operations MUST be silent by default (no output unless verbose flags are provided) to preserve Sqitch parity.
 
 - **FR-009**: `sqitch add` MUST create deploy, revert, and verify script files with proper headers, add changes to the plan file, support dependency declarations (--requires, --conflicts), and accept change notes.
 
@@ -331,6 +335,7 @@ Database developers following the SQLite tutorial need to successfully complete 
 
 **Target Management**:
 - **FR-021**: SQLitch MUST parse database URIs (db:sqlite:path/to/db), resolve relative paths from project root, create target databases if they don't exist, and support in-memory databases (:memory:).
+- **FR-022**: `sqitch engine` parity – the `engine add` and `engine alter` flows MUST accept either a full database URI (e.g., `db:sqlite:flipr_test.db`) or the name of an existing target defined via `target add`. When provided a target name, SQLitch MUST resolve `target.<name>.uri` from configuration and reuse that value. If the target name is unknown, SQLitch MUST emit the same "Unknown target" error as Sqitch. Rejecting a known target name **is a bug**.
 
 ### Non-Functional Requirements
 
@@ -388,6 +393,9 @@ Database developers following the SQLite tutorial need to successfully complete 
 ---
 
 ## Notes
+
+### Known Parity Gaps (2025-10-07)
+- UAT Step 14 (`sqlitch engine add sqlite flipr_test`) fails because SQLitch currently rejects target aliases when adding an engine. Sqitch accepts a previously defined target name and resolves its URI. This behavior is now captured in **FR-022** and must be implemented before closing Feature 004.
 
 ### Implementation Order (Tutorial Sequence)
 

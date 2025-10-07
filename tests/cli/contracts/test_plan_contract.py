@@ -129,8 +129,8 @@ def test_plan_supports_json_format(runner: CliRunner) -> None:
         assert first["type"] == "change"
         assert first["scripts"]["deploy"].endswith("core_init.sql")
         assert second["dependencies"] == ["core:init"]
-        # Note: compact format doesn't embed tags in change entries
-        assert second["tags"] == []
+        # Tags recorded on separate entries are surfaced in JSON metadata.
+        assert second["tags"] == ["v1.0"]
         assert third["type"] == "tag"
         assert third["name"] == "v1.0"
         assert third["change"] == change_two.name

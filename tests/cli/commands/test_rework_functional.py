@@ -11,11 +11,22 @@ from sqlitch.cli.main import main
 from sqlitch.plan.parser import parse_plan
 
 
+TAG_NAME = "v1.0.0"
+
+
+def _tag_latest_change(runner: CliRunner, note: str | None = None) -> None:
+    args = ["tag", TAG_NAME]
+    if note is not None:
+        args.extend(["-n", note])
+    result = runner.invoke(main, args, catch_exceptions=False)
+    assert result.exit_code == 0, result.output
+
+
 class TestReworkCommand:
     """Tests for reworking changes."""
 
-    def test_creates_scripts_with_rework_suffix(self, tmp_path: Path) -> None:
-        """Test rework creates scripts with _rework suffix."""
+    def test_creates_scripts_with_tag_suffix(self, tmp_path: Path) -> None:
+        """Rework should create scripts suffixed with the latest tag."""
         runner = CliRunner()
 
         with runner.isolated_filesystem(temp_dir=tmp_path) as td:
@@ -37,6 +48,8 @@ class TestReworkCommand:
             )
             assert result.exit_code == 0
 
+            _tag_latest_change(runner, note="Tag before rework")
+
             # Verify original scripts exist
             assert (project_dir / "deploy" / "users.sql").exists()
             assert (project_dir / "revert" / "users.sql").exists()
@@ -51,9 +64,13 @@ class TestReworkCommand:
             assert result.exit_code == 0
 
             # Verify rework scripts created
-            assert (project_dir / "deploy" / "users_rework.sql").exists()
-            assert (project_dir / "revert" / "users_rework.sql").exists()
-            assert (project_dir / "verify" / "users_rework.sql").exists()
+            deploy_path = project_dir / "deploy" / f"users@{TAG_NAME}.sql"
+            revert_path = project_dir / "revert" / f"users@{TAG_NAME}.sql"
+            verify_path = project_dir / "verify" / f"users@{TAG_NAME}.sql"
+
+            assert deploy_path.exists()
+            assert revert_path.exists()
+            assert verify_path.exists()
 
             # Verify output messages
             assert "Created rework deploy script" in result.output
@@ -89,6 +106,8 @@ class TestReworkCommand:
             original_content = "CREATE TABLE users (id INTEGER PRIMARY KEY);"
             deploy_script.write_text(original_content)
 
+            _tag_latest_change(runner)
+
             # Rework the change
             result = runner.invoke(
                 main,
@@ -98,7 +117,7 @@ class TestReworkCommand:
             assert result.exit_code == 0
 
             # Verify rework script contains original content
-            rework_script = project_dir / "deploy" / "users_rework.sql"
+            rework_script = project_dir / "deploy" / f"users@{TAG_NAME}.sql"
             assert rework_script.read_text() == original_content
 
     def test_updates_plan_with_rework_entry(self, tmp_path: Path) -> None:
@@ -129,6 +148,8 @@ class TestReworkCommand:
             original_plan = parse_plan(plan_path, default_engine="sqlite")
             original_change = original_plan.get_change("users")
 
+            _tag_latest_change(runner, note="Tag before rework")
+
             # Rework the change
             result = runner.invoke(
                 main,
@@ -149,9 +170,29 @@ class TestReworkCommand:
             assert updated_change.notes == "Updated users table"
 
             # Verify rework scripts exist
-            assert (project_dir / "deploy" / "users_rework.sql").exists()
-            assert (project_dir / "revert" / "users_rework.sql").exists()
-            assert (project_dir / "verify" / "users_rework.sql").exists()
+            assert (project_dir / "deploy" / f"users@{TAG_NAME}.sql").exists()
+            assert (project_dir / "revert" / f"users@{TAG_NAME}.sql").exists()
+            assert (project_dir / "verify" / f"users@{TAG_NAME}.sql").exists()
+
+            relative_deploy = (
+                updated_change.script_paths["deploy"].relative_to(project_dir).as_posix()
+            )
+            relative_revert = (
+                updated_change.script_paths["revert"].relative_to(project_dir).as_posix()
+            )
+            relative_verify = (
+                updated_change.script_paths["verify"].relative_to(project_dir).as_posix()
+            )
+
+            expected = {
+                "deploy": f"deploy/users@{TAG_NAME}.sql",
+                "revert": f"revert/users@{TAG_NAME}.sql",
+                "verify": f"verify/users@{TAG_NAME}.sql",
+            }
+
+            assert relative_deploy == expected["deploy"]
+            assert relative_revert == expected["revert"]
+            assert relative_verify == expected["verify"]
 
     def test_validates_change_exists(self, tmp_path: Path) -> None:
         """Test rework fails if change doesn't exist."""
@@ -174,6 +215,33 @@ class TestReworkCommand:
             )
             assert result.exit_code == 1
             assert 'Unknown change "users"' in result.output
+
+    def test_requires_tag_before_rework(self, tmp_path: Path) -> None:
+        """Rework should fail if the change has not been tagged."""
+        runner = CliRunner()
+
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            result = runner.invoke(
+                main,
+                ["init", "test_project", "--engine", "sqlite"],
+                catch_exceptions=False,
+            )
+            assert result.exit_code == 0
+
+            result = runner.invoke(
+                main,
+                ["add", "users"],
+                catch_exceptions=False,
+            )
+            assert result.exit_code == 0
+
+            result = runner.invoke(
+                main,
+                ["rework", "users"],
+                catch_exceptions=False,
+            )
+            assert result.exit_code == 1
+            assert "has not been tagged" in result.output
 
     def test_preserves_dependencies(self, tmp_path: Path) -> None:
         """Test rework preserves original dependencies by default."""
@@ -204,6 +272,8 @@ class TestReworkCommand:
                 catch_exceptions=False,
             )
             assert result.exit_code == 0
+
+            _tag_latest_change(runner, note="Tag posts")
 
             # Rework posts without specifying dependencies
             result = runner.invoke(
@@ -243,6 +313,8 @@ class TestReworkCommand:
                 )
                 assert result.exit_code == 0
 
+            _tag_latest_change(runner, note="Tag comments")
+
             # Rework comments with new dependencies
             result = runner.invoke(
                 main,
@@ -279,6 +351,8 @@ class TestReworkCommand:
                 catch_exceptions=False,
             )
             assert result.exit_code == 0
+
+            _tag_latest_change(runner)
 
             # Rework with custom paths
             result = runner.invoke(
@@ -326,6 +400,8 @@ class TestReworkCommand:
             )
             assert result.exit_code == 0
 
+            _tag_latest_change(runner)
+
             # Rework in quiet mode
             result = runner.invoke(
                 main,
@@ -359,6 +435,8 @@ class TestReworkCommand:
                 catch_exceptions=False,
             )
             assert result.exit_code == 0
+
+            _tag_latest_change(runner)
 
             # Delete the deploy script
             (project_dir / "deploy" / "users.sql").unlink()
@@ -401,12 +479,7 @@ class TestReworkWithTag:
             assert result.exit_code == 0
 
             # Tag it
-            result = runner.invoke(
-                main,
-                ["tag", "v1.0.0"],
-                catch_exceptions=False,
-            )
-            assert result.exit_code == 0
+            _tag_latest_change(runner)
 
             # Rework the change
             result = runner.invoke(
@@ -417,7 +490,7 @@ class TestReworkWithTag:
             assert result.exit_code == 0
 
             # Verify rework succeeded
-            assert (project_dir / "deploy" / "users_rework.sql").exists()
+            assert (project_dir / "deploy" / f"users@{TAG_NAME}.sql").exists()
 
     def test_preserves_change_id_after_rework(self, tmp_path: Path) -> None:
         """Test rework preserves the original change_id."""
@@ -446,6 +519,8 @@ class TestReworkWithTag:
             plan_path = project_dir / "sqitch.plan"
             original_plan = parse_plan(plan_path, default_engine="sqlite")
             original_change_id = original_plan.get_change("users").change_id
+
+            _tag_latest_change(runner)
 
             # Rework the change
             result = runner.invoke(

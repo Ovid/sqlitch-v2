@@ -10,6 +10,11 @@
 
 This research document analyzes the existing SQLitch codebase to understand what's already implemented and what needs to be built for Feature 004. Key findings:
 
+### Update 2025-10-07 — Engine Alias Parity
+- Sqitch allows `sqitch engine add <engine> <target-alias>` and resolves the alias via `target.<alias>.uri`. SQLitch currently rejects aliases and expects a URI, causing the UAT failure in Step 14.
+- Resolution: Extend SQLitch engine command handlers to reuse target URIs for known aliases, mirroring Sqitch's `_target` helper semantics. Unknown aliases must raise `Unknown target` errors.
+
+
 **Already Implemented** (≥80% done):
 - ✅ Registry schema (SQLite) - 100% complete
 - ✅ Plan parsing and formatting - 100% complete

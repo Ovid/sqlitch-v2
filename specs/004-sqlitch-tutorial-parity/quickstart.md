@@ -252,6 +252,34 @@ sqlite3 flipr_test.db '.schema userflips'  # Should show new column
 
 ---
 
+### Scenario 9: Target & Engine Configuration Parity
+**Goal**: Ensure engine commands accept target aliases like Sqitch
+
+```bash
+# Add a target alias for the tutorial database
+sqlitch target add flipr_test db:sqlite:flipr_test.db
+
+# Register an engine using the alias (Sqitch-compatible behavior)
+sqlitch engine add sqlite flipr_test
+
+# Confirm alias resolution persisted in config
+grep 'engine "sqlite"' -A3 sqitch.conf
+
+# Update engine to point at a raw URI to verify both forms work
+sqlitch engine update sqlite db:sqlite:flipr_test.db
+
+# Clean up engine definition
+sqlitch engine remove sqlite -y
+```
+
+**Success Criteria**:
+- ✅ `engine add` resolves target alias to stored URI
+- ✅ `engine update` accepts either alias or URI
+- ✅ Removal returns CLI output parity with Sqitch
+- ✅ Config file reflects expected sections
+
+---
+
 ## Full Tutorial Test Script
 
 ```bash

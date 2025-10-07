@@ -498,10 +498,11 @@
 
 ### Rework Command (Complex - 4 days)
 - [X] **T048** Write tests for rework with latest tag in `tests/cli/commands/test_rework_functional.py`
-  - ✅ Test creates scripts with _rework suffix
+  - ✅ Test creates scripts with @tag suffix
   - ✅ Test copies existing scripts as starting point
   - ✅ Test updates plan with rework entry
   - ✅ Test validates change exists
+  - ✅ Test rejects rework when change lacks a tag
   - ✅ Test preserves dependencies by default
   - ✅ Test allows overriding dependencies
   - ✅ Test quiet mode suppresses output
@@ -514,7 +515,7 @@
   
 - [X] **T050** Implement rework command in `sqlitch/cli/commands/rework.py` (~400 lines)
   - ✅ Find change in plan via Plan.get_change()
-  - ✅ Copy existing scripts to _rework suffixed files
+  - ✅ Copy existing scripts to @tag suffixed files when tag present
   - ✅ Update plan with rework entry (preserves original change_id)
   - ✅ Validate change name exists
   - ✅ Resolve planner identity
@@ -523,7 +524,7 @@
   - ✅ Support updating note (--note)
   - ✅ Handle missing source scripts gracefully
   - **Status**: ✅ COMPLETE (2025-10-07) - Already implemented, all 11 functional tests passing
-  - **Discovery**: Rework command already implemented, creates _rework suffix files (not @tag suffix)
+  - **Discovery**: Rework command now aligns with Sqitch, generating @tag suffixed scripts and requiring a preceding tag
 
 ### Init Command Finalization (1 day)
 - [X] **T051** Write tests for init directory and file creation in `tests/cli/commands/test_init_functional.py`
@@ -590,7 +591,6 @@
     - ✅ Tutorial workflow produces byte-identical plan format to Sqitch
     - ✅ All existing tests updated and passing
   - **Known Limitations** (documented with TODO comments):
-    - Rework script discovery doesn't prefer `_rework` suffix files
     - Custom script paths (--deploy) not stored in compact format
     - Show command auto-generates verify script paths even when None
 
@@ -729,6 +729,27 @@
 
 ---
 
+## Phase 3.6: Engine Alias Parity Fix (FR-022)
+**Purpose**: Restore Sqitch-equivalent behavior for `engine add/update` target aliases  
+**Estimated Time**: 1 day
+
+- [ ] **T078** Author failing CLI contract tests for engine alias resolution in `tests/cli/contracts/test_engine_contract.py`
+  - Add scenario where `target add flipr_test db:sqlite:flipr_test.db` precedes `engine add sqlite flipr_test`
+  - Assert alias resolves to stored URI and command exits 0 with silent output in quiet mode
+  - Capture expected "Unknown target" error for nonexistent alias to enforce parity messaging
+
+- [ ] **T079** [P] Extend tutorial integration suite with Scenario 9 (target + engine parity) in `tests/integration/test_tutorial_workflows.py`
+  - Automate quickstart Scenario 9 steps (target add, engine add alias, engine update, engine remove)
+  - Validate config file contents mirror Sqitch and commands exit with expected codes/output
+  - Ensure cleanup restores environment for subsequent scenarios
+
+- [ ] **T080** Implement alias-aware engine mutation in `sqlitch/cli/commands/engine.py`
+  - Allow `engine add/update` to resolve target aliases via config (`target.<name>.uri`) before URI validation
+  - Reuse existing config helpers to avoid duplicate parsing logic; preserve current error wording
+  - Add regression coverage for alias removal/listing paths and maintain quiet-mode silence on success
+
+---
+
 ## Dependencies
 
 ### Foundation Phase (T001-T024)
@@ -747,6 +768,7 @@
 - **T051-T053** (init finalize) - No dependencies
 - **T054-T055** (add finalize) - Requires T023-T024 (validation)
 - **T055a** [CRITICAL] (plan format fix) - No dependencies, MUST complete before T056
+- **T078-T080** (engine alias parity) - Requires T025-T028 (config) & T031-T032 (engine command scaffolding) to be stable; T080 blocked on T078/T079
 
 ### Integration Phase (T056-T063)
 - Requires T025-T055a (all commands implemented + plan format fixed)

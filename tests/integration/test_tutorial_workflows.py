@@ -582,7 +582,7 @@ class TestScenario8ReworkChange:
     
     Goal: Rework a change after tagging
     Success criteria:
-    - Rework creates _rework suffixed scripts
+    - Rework creates @tag suffixed scripts
     - Rework updates plan
     - Deploy uses new version
     """
@@ -612,10 +612,10 @@ class TestScenario8ReworkChange:
             )
             assert result.exit_code == 0, f"Rework failed: {result.output}"
             
-            # Verify _rework suffixed scripts created
-            assert Path("deploy/users_rework.sql").exists()
-            assert Path("revert/users_rework.sql").exists()
-            assert Path("verify/users_rework.sql").exists()
+            # Verify tagged rework scripts created
+            assert Path("deploy/users@v1.0.0.sql").exists()
+            assert Path("revert/users@v1.0.0.sql").exists()
+            assert Path("verify/users@v1.0.0.sql").exists()
             
             # Verify plan updated
             plan_content = Path("sqitch.plan").read_text()
