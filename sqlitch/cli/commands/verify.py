@@ -3,17 +3,16 @@
 from __future__ import annotations
 
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 import click
 
 from sqlitch.config import resolver as config_resolver
-from sqlitch.engine import EngineTarget, canonicalize_engine_name, create_engine
+from sqlitch.engine import EngineTarget, canonicalize_engine_name
 from sqlitch.engine.scripts import Script
 from sqlitch.plan.model import Plan
 from sqlitch.plan.parser import parse_plan
-from sqlitch.registry.state import DeployedChange
-from sqlitch.utils.logging import StructuredLogger
 
 from . import CommandError, register_command
 from ._context import require_cli_context
@@ -117,6 +116,14 @@ def _resolve_engine_target(
     raise CommandError(f"Engine '{engine_name}' verification is not supported yet.")
 
 
+def _strip_sqlite_uri_prefix(uri: str) -> str:
+    if uri.startswith("db:sqlite:"):
+        return uri[10:]
+    if uri.startswith("sqlite:"):
+        return uri[7:]
+    return uri
+
+
 @click.command("verify")
 @click.argument("target_args", nargs=-1)
 @click.option("--target", "target_option", help="Target to verify against.")
@@ -196,82 +203,55 @@ def verify_command(
         registry_override=cli_context.registry,
     )
 
-    # Get deployed changes from registry
-    engine = create_engine(engine_target)
+    workspace_path = _strip_sqlite_uri_prefix(engine_target.uri)
+    registry_path = _strip_sqlite_uri_prefix(engine_target.registry_uri)
 
-    # Connect to target database and attach registry
-    import sqlite3
-    from sqlitch.engine.sqlite import SQLiteEngine
-
-    # Check engine type by name instead of isinstance to avoid test isolation issues
-    if engine_target.engine != "sqlite":
-        raise CommandError("Only SQLite engine is supported for verify in this milestone")
-
-    # Parse URIs to get paths - strip db: and sqlite: prefixes
-    workspace_uri = engine_target.uri
-    if workspace_uri.startswith("db:sqlite:"):
-        workspace_path = workspace_uri[10:]  # Remove "db:sqlite:"
-    elif workspace_uri.startswith("sqlite:"):
-        workspace_path = workspace_uri[7:]  # Remove "sqlite:"
-    else:
-        workspace_path = workspace_uri
-
-    registry_uri = engine_target.registry_uri
-    if registry_uri.startswith("db:sqlite:"):
-        registry_path = registry_uri[10:]  # Remove "db:sqlite:"
-    elif registry_uri.startswith("sqlite:"):
-        registry_path = registry_uri[7:]  # Remove "sqlite:"
-    else:
-        registry_path = registry_uri
-
-    # Connect to workspace and attach registry
-    connection = sqlite3.connect(workspace_path)
     try:
-        connection.execute(f"ATTACH DATABASE '{registry_path}' AS sqitch")
+        connection = sqlite3.connect(workspace_path)
+    except sqlite3.Error as exc:
+        raise CommandError(f"Failed to connect to workspace database: {exc}") from exc
 
-        # Query deployed changes
-        cursor = connection.execute(
-            "SELECT change FROM sqitch.changes WHERE project = ? ORDER BY committed_at",
-            (plan.project_name,),
-        )
-        deployed_changes = [row[0] for row in cursor.fetchall()]
-        cursor.close()
-    except Exception as e:
-        connection.close()
-        raise CommandError(f"Failed to query registry: {e}") from e
-
-    if not deployed_changes:
-        connection.close()
-        click.echo("No changes to verify.")
-        return
-
-    # Execute verify scripts
     verification_failed = False
-    cursor = connection.cursor()
-
-    for change_name in deployed_changes:
-        # Find verify script
-        verify_script_path = project_root / "verify" / f"{change_name}.sql"
-
-        if not verify_script_path.exists():
-            click.echo(f"# {change_name} .. SKIP (no verify script)")
-            continue
+    with closing(connection):
+        try:
+            connection.execute("ATTACH DATABASE ? AS sqitch", (registry_path,))
+        except sqlite3.Error as exc:
+            raise CommandError(f"Failed to attach registry: {exc}") from exc
 
         try:
-            # Load and execute verify script
-            script = Script.load(verify_script_path)
-            _execute_sqlite_verify_script(cursor, script.content)
-            click.echo(f"* {change_name} .. ok")
-        except Exception as e:
-            click.echo(f"# {change_name} .. NOT OK")
-            click.echo(f"  Error: {e}", err=True)
-            verification_failed = True
+            with closing(
+                connection.execute(
+                    "SELECT change FROM sqitch.changes WHERE project = ? ORDER BY committed_at",
+                    (plan.project_name,),
+                )
+            ) as query_cursor:
+                deployed_changes = [row[0] for row in query_cursor.fetchall()]
+        except sqlite3.Error as exc:
+            raise CommandError(f"Failed to query registry: {exc}") from exc
 
-    cursor.close()
-    connection.close()
+        if not deployed_changes:
+            click.echo("No changes to verify.")
+            return
 
-    # Exit with appropriate code
-    ctx.exit(1 if verification_failed else 0)
+        with closing(connection.cursor()) as cursor:
+            for change_name in deployed_changes:
+                verify_script_path = project_root / "verify" / f"{change_name}.sql"
+
+                if not verify_script_path.exists():
+                    click.echo(f"# {change_name} .. SKIP (no verify script)")
+                    continue
+
+                try:
+                    script = Script.load(verify_script_path)
+                    _execute_sqlite_verify_script(cursor, script.content)
+                    click.echo(f"* {change_name} .. ok")
+                except Exception as exc:
+                    click.echo(f"# {change_name} .. NOT OK")
+                    click.echo(f"  Error: {exc}", err=True)
+                    verification_failed = True
+
+    if verification_failed:
+        raise click.exceptions.Exit(1)
 
 
 def _load_plan(plan_path: Path, default_engine: str) -> Plan:
