@@ -6,6 +6,7 @@ Tests complete end-to-end scenarios from quickstart.md
 
 from __future__ import annotations
 
+import configparser
 import sqlite3
 from pathlib import Path
 
@@ -621,6 +622,69 @@ class TestScenario8ReworkChange:
             plan_content = Path("sqitch.plan").read_text()
             # Should have original users and reworked users
             assert plan_content.count("users") >= 2
+
+
+class TestScenario9TargetEngineParity:
+    """Scenario 9: Target & Engine Configuration Parity
+
+    Goal: Ensure engine commands accept target aliases like Sqitch.
+    Success criteria:
+    - Engine add resolves target alias to stored URI
+    - Engine update accepts direct URI after alias-based add
+    - Engine remove cleans up engine definition
+    """
+
+    def test_engine_alias_workflow(self, tmp_path):
+        """Test engine alias resolution end-to-end."""
+
+        runner = CliRunner()
+
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            config_root = Path.cwd() / ".sqlitch-config"
+            env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
+
+            init_result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"], env=env)
+            assert init_result.exit_code == 0, init_result.output
+
+            target_result = runner.invoke(
+                main,
+                ["target", "add", "flipr_test", "db:sqlite:flipr_test.db"],
+                env=env,
+            )
+            assert target_result.exit_code == 0, target_result.output
+
+            add_result = runner.invoke(
+                main,
+                ["engine", "add", "sqlite", "flipr_test"],
+                env=env,
+            )
+            assert add_result.exit_code == 0, add_result.output
+
+            config_path = config_root / "sqitch.conf"
+            parser = configparser.ConfigParser(interpolation=None)
+            parser.optionxform = str
+            parser.read(config_path, encoding="utf-8")
+            assert parser.has_section('engine "sqlite"')
+            assert parser['engine "sqlite"']["uri"] == "db:sqlite:flipr_test.db"
+
+            update_result = runner.invoke(
+                main,
+                ["engine", "update", "sqlite", "db:sqlite:flipr_test.db"],
+                env=env,
+            )
+            assert update_result.exit_code == 0, update_result.output
+
+            remove_result = runner.invoke(
+                main,
+                ["engine", "remove", "sqlite", "--yes"],
+                env=env,
+            )
+            assert remove_result.exit_code == 0, remove_result.output
+
+            parser = configparser.ConfigParser(interpolation=None)
+            parser.optionxform = str
+            parser.read(config_path, encoding="utf-8")
+            assert not parser.has_section('engine "sqlite"')
 
 
 if __name__ == "__main__":

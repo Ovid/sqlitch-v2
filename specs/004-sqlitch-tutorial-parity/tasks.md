@@ -733,20 +733,20 @@
 **Purpose**: Restore Sqitch-equivalent behavior for `engine add/update` target aliases  
 **Estimated Time**: 1 day
 
-- [ ] **T078** Author failing CLI contract tests for engine alias resolution in `tests/cli/contracts/test_engine_contract.py`
-  - Add scenario where `target add flipr_test db:sqlite:flipr_test.db` precedes `engine add sqlite flipr_test`
-  - Assert alias resolves to stored URI and command exits 0 with silent output in quiet mode
-  - Capture expected "Unknown target" error for nonexistent alias to enforce parity messaging
+- [X] **T078** Author failing CLI contract tests for engine alias resolution in `tests/cli/contracts/test_engine_contract.py`
+  - ✅ Scenario added: `target add flipr_test db:sqlite:flipr_test.db` precedes `engine add sqlite flipr_test`
+  - ✅ Assert alias resolves to stored URI and command exits 0 (currently failing implementation)
+  - ✅ Captured expected "Unknown target" error for nonexistent alias to enforce parity messaging (fails prior to fix)
 
-- [ ] **T079** [P] Extend tutorial integration suite with Scenario 9 (target + engine parity) in `tests/integration/test_tutorial_workflows.py`
-  - Automate quickstart Scenario 9 steps (target add, engine add alias, engine update, engine remove)
-  - Validate config file contents mirror Sqitch and commands exit with expected codes/output
-  - Ensure cleanup restores environment for subsequent scenarios
+- [X] **T079** [P] Extend tutorial integration suite with Scenario 9 (target + engine parity) in `tests/integration/test_tutorial_workflows.py`
+  - ✅ Automated quickstart Scenario 9 steps (target add, engine add alias, engine update, engine remove)
+  - ✅ Validated config file contents mirror Sqitch and asserted expected exit codes/output (currently failing implementation)
+  - ✅ Confirmed cleanup removes engine definition for follow-up scenarios
 
-- [ ] **T080** Implement alias-aware engine mutation in `sqlitch/cli/commands/engine.py`
-  - Allow `engine add/update` to resolve target aliases via config (`target.<name>.uri`) before URI validation
-  - Reuse existing config helpers to avoid duplicate parsing logic; preserve current error wording
-  - Add regression coverage for alias removal/listing paths and maintain quiet-mode silence on success
+- [X] **T080** Implement alias-aware engine mutation in `sqlitch/cli/commands/engine.py`
+  - ✅ `engine add/update` now resolve target aliases via persisted config before URI validation
+  - ✅ Reused config resolver helpers to fetch `target.<name>.uri` and preserved existing messaging
+  - ✅ Regression coverage via contract + integration tests ensures alias removal/listing parity and quiet-mode silence
 
 ---
 

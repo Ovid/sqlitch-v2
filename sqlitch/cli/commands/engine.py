@@ -10,6 +10,7 @@ from pathlib import Path
 import click
 
 from sqlitch.cli.main import CLIContext
+from sqlitch.config.resolver import resolve_config
 from sqlitch.utils.fs import ArtifactConflictError, resolve_config_file
 
 from . import CommandError, register_command
@@ -82,12 +83,13 @@ def add_engine(
     """Create a new engine definition in the configuration root."""
 
     cli_context = require_cli_context(ctx)
-    _validate_engine_uri(uri)
+    resolved_uri = _resolve_engine_uri(cli_context=cli_context, candidate=uri)
+    _validate_engine_uri(resolved_uri)
 
     _mutate_engine_definition(
         cli_context=cli_context,
         name=name,
-        uri=uri,
+        uri=resolved_uri,
         registry=registry,
         client=client,
         plan_file=plan_file,
@@ -124,12 +126,13 @@ def update_engine(
     """Update an existing engine definition."""
 
     cli_context = require_cli_context(ctx)
-    _validate_engine_uri(uri)
+    resolved_uri = _resolve_engine_uri(cli_context=cli_context, candidate=uri)
+    _validate_engine_uri(resolved_uri)
 
     _mutate_engine_definition(
         cli_context=cli_context,
         name=name,
-        uri=uri,
+        uri=resolved_uri,
         registry=registry,
         client=client,
         plan_file=plan_file,
@@ -296,11 +299,39 @@ def _format_engine_table(entries: Iterable[EngineDefinition]) -> list[str]:
     return lines
 
 
-def _validate_engine_uri(uri: str) -> None:
+def _resolve_engine_uri(*, cli_context: CLIContext, candidate: str) -> str:
+    """Return the engine URI, resolving target aliases when necessary."""
+
+    if _is_supported_engine_uri(candidate):
+        return candidate
+
+    profile = resolve_config(
+        root_dir=cli_context.project_root,
+        config_root=cli_context.config_root,
+        env=cli_context.env,
+    )
+
+    section = f'target "{candidate}"'
+    data = profile.settings.get(section)
+    if data is not None:
+        target_uri = data.get("uri")
+        if target_uri:
+            return target_uri
+
+    raise CommandError(f'Unknown target "{candidate}"')
+
+
+def _is_supported_engine_uri(uri: str) -> bool:
     lowered = uri.lower()
-    for _, prefixes in _SUPPORTED_ENGINES.items():
-        if any(lowered.startswith(prefix) for prefix in prefixes):
-            return
+    return any(
+        any(lowered.startswith(prefix) for prefix in prefixes)
+        for prefixes in _SUPPORTED_ENGINES.values()
+    )
+
+
+def _validate_engine_uri(uri: str) -> None:
+    if _is_supported_engine_uri(uri):
+        return
     supported = ", ".join(sorted(_SUPPORTED_ENGINES))
     raise CommandError(f"Unsupported engine URI '{uri}'. Supported engines: {supported}.")
 

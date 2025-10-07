@@ -36,6 +36,52 @@ def _runner() -> CliRunner:
     return CliRunner()
 
 
+def test_engine_add_accepts_target_alias(tmp_path: Path) -> None:
+    """Engine definitions should resolve target aliases like Sqitch."""
+
+    runner = _runner()
+    config_root = tmp_path / "config-root"
+
+    with runner.isolated_filesystem():
+        env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
+        target_result = runner.invoke(
+            main,
+            ["target", "add", "flipr_test", "db:sqlite:flipr_test.db"],
+            env=env,
+        )
+        assert target_result.exit_code == 0, target_result.output
+
+        add_result = runner.invoke(
+            main,
+            ["engine", "add", "sqlite", "flipr_test"],
+            env=env,
+        )
+
+        assert add_result.exit_code == 0, add_result.output
+
+        config_path = config_root / "sqitch.conf"
+        contents = _read_engine_section(config_path, "sqlite")
+        assert contents["uri"] == "db:sqlite:flipr_test.db"
+
+
+def test_engine_add_unknown_target_alias_errors(tmp_path: Path) -> None:
+    """Using an unknown target alias should raise Sqitch-parity errors."""
+
+    runner = _runner()
+    config_root = tmp_path / "config-root"
+
+    with runner.isolated_filesystem():
+        env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
+        result = runner.invoke(
+            main,
+            ["engine", "add", "sqlite", "missing_alias"],
+            env=env,
+        )
+
+        assert result.exit_code != 0
+        assert 'Unknown target "missing_alias"' in result.output
+
+
 def test_engine_add_writes_definition(tmp_path: Path) -> None:
     """Adding an engine should persist the definition to the config root."""
 
