@@ -79,7 +79,8 @@ def test_rework_creates_rework_scripts_and_updates_plan(
     try:
         import pwd
         import collections
-        MockPwRecord = collections.namedtuple('MockPwRecord', ['pw_name', 'pw_gecos'])
+
+        MockPwRecord = collections.namedtuple("MockPwRecord", ["pw_name", "pw_gecos"])
         monkeypatch.setattr("pwd.getpwuid", lambda uid: MockPwRecord(pw_name="test", pw_gecos=""))
     except ImportError:
         pass
@@ -112,7 +113,7 @@ def test_rework_creates_rework_scripts_and_updates_plan(
             entries=(core_change, change),
             plan_path=plan_path,
         )
-        
+
         # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
         config_path = plan_path.parent / "sqitch.conf"
         config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
@@ -153,7 +154,7 @@ def test_rework_creates_rework_scripts_and_updates_plan(
         # TODO: Script discovery should prefer _rework files when they exist
         # Currently it resolves to the original files
         assert relative_deploy == "deploy/widgets_add.sql"  # Should be deploy_name
-        assert relative_revert == "revert/widgets_add.sql"  # Should be revert_name  
+        assert relative_revert == "revert/widgets_add.sql"  # Should be revert_name
         assert relative_verify == "verify/widgets_add.sql"  # Should be verify_name
         assert updated_change.notes == "Adds widgets"
         assert updated_change.dependencies == ("core:init",)
@@ -204,7 +205,7 @@ def test_rework_applies_overrides(monkeypatch: pytest.MonkeyPatch, runner: CliRu
             entries=(schema_change, users_change, change),
             plan_path=plan_path,
         )
-        
+
         # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
         config_path = plan_path.parent / "sqitch.conf"
         config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
@@ -246,7 +247,7 @@ def test_rework_unknown_change_errors(runner: CliRunner) -> None:
     with runner.isolated_filesystem():
         plan_path = Path("sqlitch.plan")
         write_plan(project_name="demo", default_engine="sqlite", entries=(), plan_path=plan_path)
-        
+
         # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
         config_path = plan_path.parent / "sqitch.conf"
         config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")

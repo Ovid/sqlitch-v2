@@ -187,7 +187,7 @@ def _execute_revert(request: _RevertRequest) -> None:
     # Build engine target
     from sqlitch.engine.sqlite import SQLiteEngine
     from sqlitch.engine.base import EngineTarget
-    
+
     # For SQLite, derive registry URI
     workspace_uri = request.target
     registry_uri = derive_sqlite_registry_uri(
@@ -195,7 +195,7 @@ def _execute_revert(request: _RevertRequest) -> None:
         project_root=request.project_root,
         registry_override=None,  # TODO: support registry override
     )
-    
+
     engine_target = EngineTarget(
         name=workspace_uri,
         engine="sqlite",
@@ -203,7 +203,7 @@ def _execute_revert(request: _RevertRequest) -> None:
         registry_uri=registry_uri,
     )
     engine = SQLiteEngine(engine_target)
-    
+
     emitter = _build_emitter(request.quiet)
     emitter(f"Reverting plan '{request.plan.project_name}' on target '{request.target}'.")
 
@@ -226,15 +226,15 @@ def _execute_revert(request: _RevertRequest) -> None:
 
     try:
         # Load currently deployed changes
-        deployed = _load_deployed_changes(
-            connection, registry_schema, request.plan.project_name
-        )
+        deployed = _load_deployed_changes(connection, registry_schema, request.plan.project_name)
 
         # Filter to only revert deployed changes in reverse order
         # If --to-change or --to-tag specified, `changes` contains the target point
         # We revert everything AFTER the target (in deployment order)
-        changes_to_keep_set = {c.name for c in changes} if (request.to_change or request.to_tag) else set()
-        
+        changes_to_keep_set = (
+            {c.name for c in changes} if (request.to_change or request.to_tag) else set()
+        )
+
         changes_to_revert = []
         for change in reversed(request.plan.changes):
             if change.name in deployed:
@@ -320,9 +320,7 @@ def _revert_change(
     change_id = change_metadata["change_id"]
 
     # Parse planner identity
-    planner_name, planner_email = _resolve_planner_identity(
-        change.planner, env, committer_email
-    )
+    planner_name, planner_email = _resolve_planner_identity(change.planner, env, committer_email)
 
     committed_at = isoformat_utc(datetime.now(timezone.utc), drop_microseconds=False)
     planned_at = isoformat_utc(change.planned_at, drop_microseconds=False)
@@ -331,7 +329,7 @@ def _revert_change(
     def _record(cursor: sqlite3.Cursor) -> None:
         # Delete from changes table
         cursor.execute(
-            f'DELETE FROM {registry_schema}.changes WHERE change_id = ?',
+            f"DELETE FROM {registry_schema}.changes WHERE change_id = ?",
             (change_id,),
         )
 

@@ -39,7 +39,7 @@ def runner() -> CliRunner:
 
 def _ensure_config(project_root: Path | None = None, engine: str = "sqlite") -> None:
     """Create minimal sqitch.conf if it doesn't exist.
-    
+
     Sqitch doesn't store engine in plan file - it comes from config.
     """
     if project_root is None:

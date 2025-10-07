@@ -7,14 +7,14 @@ from pathlib import Path
 
 def ensure_sqitch_config(project_root: Path, engine: str = "sqlite") -> Path:
     """Create a minimal sqitch.conf file if it doesn't exist.
-    
+
     Sqitch doesn't store engine in plan file - it comes from config.
     This helper ensures commands can find the engine configuration.
-    
+
     Args:
         project_root: Directory containing (or to contain) sqitch.conf
         engine: Database engine name (default: sqlite)
-        
+
     Returns:
         Path to the created config file
     """

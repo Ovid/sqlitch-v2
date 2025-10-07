@@ -99,7 +99,7 @@ def create_sqlite_project(tmp_path: Path, *, changes: Iterable[ChangeScript]) ->
         entries=tuple(change_models),
         plan_path=plan_path,
     )
-    
+
     # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
     config_path = project_root / "sqitch.conf"
     config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")

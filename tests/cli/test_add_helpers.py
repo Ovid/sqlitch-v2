@@ -27,8 +27,11 @@ def test_resolve_planner_prioritises_sqlitch_env(monkeypatch: pytest.MonkeyPatch
     try:
         import pwd
         import collections
-        MockPwRecord = collections.namedtuple('MockPwRecord', ['pw_name', 'pw_gecos'])
-        monkeypatch.setattr("pwd.getpwuid", lambda uid: MockPwRecord(pw_name="fallback", pw_gecos=""))
+
+        MockPwRecord = collections.namedtuple("MockPwRecord", ["pw_name", "pw_gecos"])
+        monkeypatch.setattr(
+            "pwd.getpwuid", lambda uid: MockPwRecord(pw_name="fallback", pw_gecos="")
+        )
     except ImportError:
         pass
 
@@ -45,12 +48,13 @@ def test_resolve_planner_fallbacks_when_no_email(monkeypatch: pytest.MonkeyPatch
     # Mock system functions to avoid using real user info
     monkeypatch.setattr("socket.gethostname", lambda: "testhost")
     monkeypatch.setattr("os.getlogin", lambda: "backup")
-    
+
     # Mock pwd module if it exists (Unix/macOS)
     try:
         import pwd
         import collections
-        MockPwRecord = collections.namedtuple('MockPwRecord', ['pw_name', 'pw_gecos'])
+
+        MockPwRecord = collections.namedtuple("MockPwRecord", ["pw_name", "pw_gecos"])
         monkeypatch.setattr("pwd.getpwuid", lambda uid: MockPwRecord(pw_name="backup", pw_gecos=""))
     except ImportError:
         pass

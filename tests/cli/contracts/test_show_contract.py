@@ -92,7 +92,7 @@ def _seed_project(project_root: Path) -> tuple[Path, Change]:
         entries=(core_change, core_tag, target_change, release_tag, tag),
         plan_path=plan_path,
     )
-    
+
     # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
     config_path = project_root / "sqitch.conf"
     config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
@@ -128,7 +128,7 @@ def _seed_minimal_project(project_root: Path) -> tuple[Path, Change]:
         entries=(minimal_change,),
         plan_path=plan_path,
     )
-    
+
     # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
     config_path = project_root / "sqitch.conf"
     config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
@@ -280,8 +280,7 @@ def test_show_reports_plan_parse_errors(runner: CliRunner) -> None:
         plan_path, change = _seed_project(project_root)
         # Write a plan with proper headers but invalid entry
         plan_path.write_text(
-            "%syntax-version=1.0.0\n%project=widgets\n\ninvalid-entry\n",
-            encoding="utf-8"
+            "%syntax-version=1.0.0\n%project=widgets\n\ninvalid-entry\n", encoding="utf-8"
         )
 
         result = runner.invoke(main, ["show", change.name])
@@ -333,7 +332,7 @@ def test_show_deduplicates_plan_and_change_tags(runner: CliRunner) -> None:
             entries=(duplicate_change, duplicate_tag),
             plan_path=plan_path,
         )
-        
+
         # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
         config_path = project_root / "sqitch.conf"
         config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
@@ -341,7 +340,9 @@ def test_show_deduplicates_plan_and_change_tags(runner: CliRunner) -> None:
         result = runner.invoke(main, ["show", duplicate_change.name])
 
         assert result.exit_code == 0, result.stderr
-        assert result.stdout.count("duplicate") == 5  # change line, tag line, deploy/revert/verify paths
+        assert (
+            result.stdout.count("duplicate") == 5
+        )  # change line, tag line, deploy/revert/verify paths
         assert "Tags: duplicate" in result.stdout
 
 

@@ -17,7 +17,7 @@ from sqlitch.utils.templates import default_template_body, render_template
 
 def _write_plan(path: Path, entries: tuple[Change, ...] = ()) -> None:
     """Write a plan file and minimal sqitch.conf for tests.
-    
+
     Sqitch doesn't store engine in plan file - it comes from config.
     """
     # Write plan file (without default_engine header)
@@ -27,7 +27,7 @@ def _write_plan(path: Path, entries: tuple[Change, ...] = ()) -> None:
         entries=entries,
         plan_path=path,
     )
-    
+
     # Write minimal config file so commands can find the engine
     config_path = path.parent / "sqitch.conf"
     config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
@@ -45,7 +45,8 @@ def test_add_appends_change_and_creates_scripts(monkeypatch: pytest.MonkeyPatch)
     try:
         import pwd
         import collections
-        MockPwRecord = collections.namedtuple('MockPwRecord', ['pw_name', 'pw_gecos'])
+
+        MockPwRecord = collections.namedtuple("MockPwRecord", ["pw_name", "pw_gecos"])
         monkeypatch.setattr("pwd.getpwuid", lambda uid: MockPwRecord(pw_name="test", pw_gecos=""))
     except ImportError:
         pass
@@ -178,7 +179,8 @@ def test_add_uses_explicit_plan_override(monkeypatch: pytest.MonkeyPatch) -> Non
     try:
         import pwd
         import collections
-        MockPwRecord = collections.namedtuple('MockPwRecord', ['pw_name', 'pw_gecos'])
+
+        MockPwRecord = collections.namedtuple("MockPwRecord", ["pw_name", "pw_gecos"])
         monkeypatch.setattr("pwd.getpwuid", lambda uid: MockPwRecord(pw_name="test", pw_gecos=""))
     except ImportError:
         pass
@@ -194,7 +196,9 @@ def test_add_uses_explicit_plan_override(monkeypatch: pytest.MonkeyPatch) -> Non
 
         plan_content = override_plan.read_text(encoding="utf-8")
         # Compact format: reports 2025-07-08T09:10:11Z Katherine Johnson <kjohnson@example.com>
-        assert "reports 2025-07-08T09:10:11Z Katherine Johnson <kjohnson@example.com>" in plan_content
+        assert (
+            "reports 2025-07-08T09:10:11Z Katherine Johnson <kjohnson@example.com>" in plan_content
+        )
 
 
 def test_add_honours_project_templates(monkeypatch: pytest.MonkeyPatch) -> None:

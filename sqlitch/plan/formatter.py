@@ -28,7 +28,7 @@ def format_plan(
     uri: str | None = None,
 ) -> str:
     """Render a plan file as text without writing it to disk.
-    
+
     Note: default_engine parameter is kept for backward compatibility but not written to plan.
     Sqitch stores engine in config file or target URIs, not in the plan file.
     """
@@ -89,49 +89,50 @@ def write_plan(
 
 def _format_change(change: Change, base_path: Path) -> str:
     """Format a change entry in compact Sqitch format.
-    
+
     Format: <name> [<dependencies>] <timestamp> <planner> # <note>
     Example: users [appschema] 2025-10-06T19:38:09Z Test User <test@example.com> # Creates table
     """
     tokens = [change.name]
-    
+
     # Add dependencies in square brackets if present
     if change.dependencies:
         deps = " ".join(change.dependencies)
         tokens.append(f"[{deps}]")
-    
+
     # Add timestamp
     tokens.append(_format_timestamp(change.planned_at))
-    
+
     # Add planner (name/email or just email)
     tokens.append(change.planner)
-    
+
     # Add note with # prefix if present
     if change.notes:
         tokens.append(f"# {change.notes}")
-    
+
     return " ".join(tokens)
 
 
 def _format_tag(tag: Tag) -> str:
     """Format a tag entry in compact Sqitch format.
-    
+
     Format: @<name> <timestamp> <planner> # <note>
     Example: @v1.0.0 2025-10-06T20:00:00Z Test User <test@example.com> # Release 1.0
     """
     tokens = [f"@{tag.name}"]
-    
+
     # Add timestamp
     tokens.append(_format_timestamp(tag.tagged_at))
-    
+
     # Add planner
     tokens.append(tag.planner)
-    
+
     # Add note with # prefix if present
     if tag.note:
         tokens.append(f"# {tag.note}")
-    
+
     return " ".join(tokens)
+
 
 def _format_timestamp(value: datetime) -> str:
     return isoformat_utc(value, drop_microseconds=True, use_z_suffix=True)

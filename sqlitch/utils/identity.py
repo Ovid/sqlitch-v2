@@ -333,4 +333,3 @@ def get_hostname() -> str:
         return socket.gethostname()
     except Exception:  # pragma: no cover
         return "localhost"
-
