@@ -448,13 +448,19 @@ class TestScenario5TaggingRelease:
                 ["deploy", "db:sqlite:flipr_test.db"],
             )
             assert result.exit_code == 0, f"Deploy after tag failed: {result.output}"
-            
+
+            # Registry should record the tag
+            with sqlite3.connect("sqitch.db") as registry:
+                tags = registry.execute("SELECT tag FROM tags").fetchall()
+            assert tags == [("v1.0.0-dev1",)], f"Tags table mismatch: {tags!r}"
+
             # Check status shows tag
             result = runner.invoke(
                 main,
                 ["status", "db:sqlite:flipr_test.db"],
             )
             assert result.exit_code == 0, f"Status failed: {result.output}"
+            assert "@v1.0.0-dev1" in result.output
 
 
 class TestScenario6RevertChanges:
@@ -488,8 +494,13 @@ class TestScenario6RevertChanges:
             Path("revert/flips.sql").write_text("BEGIN; DROP TABLE flips; COMMIT;")
             Path("verify/flips.sql").write_text("SELECT id FROM flips WHERE 0;")
             
-            # Deploy both
-            runner.invoke(main, ["deploy", "db:sqlite:flipr_test.db"])
+            # Deploy both changes
+            deploy_result = runner.invoke(main, ["deploy", "db:sqlite:flipr_test.db"])
+            assert deploy_result.exit_code == 0, deploy_result.output
+
+            with sqlite3.connect("sqitch.db") as registry:
+                deployed = [row[0] for row in registry.execute("SELECT change FROM changes ORDER BY committed_at").fetchall()]
+            assert deployed == ["users", "flips"], deployed
             
             # Check current status
             result = runner.invoke(main, ["status", "db:sqlite:flipr_test.db"])
@@ -512,6 +523,10 @@ class TestScenario6RevertChanges:
             assert cursor.fetchone() is not None, "users table should still exist"
             conn.close()
             
+            with sqlite3.connect("sqitch.db") as registry:
+                deployed_after_revert = [row[0] for row in registry.execute("SELECT change FROM changes ORDER BY committed_at").fetchall()]
+            assert deployed_after_revert == ["users"], deployed_after_revert
+
             # Check status shows only users
             result = runner.invoke(main, ["status", "db:sqlite:flipr_test.db"])
             assert "users" in result.output
@@ -523,6 +538,10 @@ class TestScenario6RevertChanges:
             )
             assert result.exit_code == 0, f"Re-deploy failed: {result.output}"
             
+            with sqlite3.connect("sqitch.db") as registry:
+                redeployed = [row[0] for row in registry.execute("SELECT change FROM changes ORDER BY committed_at").fetchall()]
+            assert redeployed == ["users", "flips"], redeployed
+
             # Verify restored
             result = runner.invoke(main, ["status", "db:sqlite:flipr_test.db"])
             assert "flips" in result.output
@@ -560,15 +579,22 @@ class TestScenario7ChangeHistory:
             Path("verify/flips.sql").write_text("SELECT id FROM flips WHERE 0;")
             runner.invoke(main, ["deploy", "db:sqlite:flipr_test.db"])
             
+            # Revert flips to generate history
+            revert_result = runner.invoke(
+                main,
+                ["revert", "db:sqlite:flipr_test.db", "--to-change", "users", "-y"],
+            )
+            assert revert_result.exit_code == 0, revert_result.output
+
             # Show all events
             result = runner.invoke(
                 main,
                 ["log", "db:sqlite:flipr_test.db"],
             )
             assert result.exit_code == 0, f"Log failed: {result.output}"
-            assert "users" in result.output
-            assert "flips" in result.output
-            
+            assert "Deploy" in result.output and "Revert" in result.output
+            assert result.output.index("Revert") < result.output.index("Deploy")
+
             # Filter by change name
             result = runner.invoke(
                 main,
@@ -609,7 +635,7 @@ class TestScenario8ReworkChange:
             # Rework the change
             result = runner.invoke(
                 main,
-                ["rework", "users", "-n", "Rework users table."],
+                ["rework", "users", "--note", "Rework users table."],
             )
             assert result.exit_code == 0, f"Rework failed: {result.output}"
             

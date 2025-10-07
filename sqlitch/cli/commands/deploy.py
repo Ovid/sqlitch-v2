@@ -271,6 +271,17 @@ def _execute_deploy(request: _DeployRequest) -> None:
         )
         pending = [change for change in changes if change.name not in deployed]
 
+        _synchronise_registry_tags(
+            connection=connection,
+            registry_schema=registry_schema,
+            project=request.plan.project_name,
+            plan=request.plan,
+            deployed=deployed,
+            env=request.env,
+            committer_name=committer_name,
+            committer_email=committer_email,
+        )
+
         if not pending:
             emitter("Nothing to deploy (up-to-date).")
             logger.info(
@@ -756,11 +767,25 @@ def _load_deployed_state(
     finally:
         cursor.close()
 
+    tag_cursor = connection.execute(
+        f"SELECT change_id, tag FROM {registry_schema}.tags WHERE project = ?",
+        (project,),
+    )
+    try:
+        tag_rows = tag_cursor.fetchall()
+    finally:
+        tag_cursor.close()
+
+    tag_lookup: dict[str, set[str]] = {}
+    for change_id, tag in tag_rows:
+        tag_lookup.setdefault(str(change_id), set()).add(str(tag))
+
     deployed: dict[str, dict[str, str]] = {}
     for change_name, change_id, script_hash in rows:
         deployed[str(change_name)] = {
             "change_id": str(change_id),
             "script_hash": str(script_hash) if script_hash is not None else "",
+            "tags": tag_lookup.get(str(change_id), set()),
         }
     return deployed
 
@@ -849,7 +874,11 @@ def _apply_change(
     except sqlite3.Error as exc:  # pragma: no cover - execution error propagated
         raise CommandError(f"Deploy failed for change '{change.name}': {exc}") from exc
 
-    deployed[change.name] = {"change_id": change_id, "script_hash": script_hash}
+    deployed[change.name] = {
+        "change_id": change_id,
+        "script_hash": script_hash,
+        "tags": set(change.tags),
+    }
 
     return "script-managed" if manages_transactions else "engine-managed"
 
@@ -1193,6 +1222,39 @@ def _record_deployment_entries(
             (change_id, dependency, dependency_id),
         )
 
+    _insert_registry_tags(
+        cursor=cursor,
+        registry_schema=registry_schema,
+        project=project,
+        change_id=change_id,
+        note=note,
+        committed_at=committed_at,
+        committer_name=committer_name,
+        committer_email=committer_email,
+        planned_at=planned_at,
+        planner_name=planner_name,
+        planner_email=planner_email,
+        tags=tags,
+    )
+
+
+def _insert_registry_tags(
+    *,
+    cursor: sqlite3.Cursor,
+    registry_schema: str,
+    project: str,
+    change_id: str,
+    note: str,
+    committed_at: str,
+    committer_name: str,
+    committer_email: str,
+    planned_at: str,
+    planner_name: str,
+    planner_email: str,
+    tags: Sequence[str],
+) -> None:
+    """Insert tag rows for ``tags`` referencing ``change_id`` into the registry."""
+
     for tag in tags:
         tag_id = hashlib.sha1(f"{change_id}:{tag}".encode("utf-8")).hexdigest()
         cursor.execute(
@@ -1225,6 +1287,70 @@ def _record_deployment_entries(
                 planner_email,
             ),
         )
+
+
+def _synchronise_registry_tags(
+    *,
+    connection: sqlite3.Connection,
+    registry_schema: str,
+    project: str,
+    plan: Plan,
+    deployed: dict[str, dict[str, str]],
+    env: Mapping[str, str],
+    committer_name: str,
+    committer_email: str,
+) -> None:
+    """Ensure registry tag entries mirror plan metadata for deployed changes."""
+
+    for change in plan.changes:
+        deployed_meta = deployed.get(change.name)
+        if not deployed_meta:
+            continue
+
+        recorded_tags = set(deployed_meta.get("tags") or ())
+        desired_tags = {str(tag) for tag in change.tags}
+        missing_tags = tuple(tag for tag in desired_tags if tag not in recorded_tags)
+        if not missing_tags:
+            continue
+
+        planner_name, planner_email = _resolve_planner_identity(
+            change.planner,
+            env,
+            committer_email,
+        )
+        committed_at = isoformat_utc(datetime.now(timezone.utc), drop_microseconds=False)
+        planned_at = isoformat_utc(change.planned_at, drop_microseconds=False)
+        note = change.notes or ""
+
+        cursor = connection.cursor()
+        try:
+            cursor.execute("BEGIN")
+            _insert_registry_tags(
+                cursor=cursor,
+                registry_schema=registry_schema,
+                project=project,
+                change_id=deployed_meta["change_id"],
+                note=note,
+                committed_at=committed_at,
+                committer_name=committer_name,
+                committer_email=committer_email,
+                planned_at=planned_at,
+                planner_name=planner_name,
+                planner_email=planner_email,
+                tags=missing_tags,
+            )
+            cursor.execute("COMMIT")
+        except sqlite3.Error as exc:  # pragma: no cover - defensive guard
+            try:
+                cursor.execute("ROLLBACK")
+            except sqlite3.Error:
+                pass
+            raise CommandError(f"Failed to record tags for change '{change.name}': {exc}") from exc
+        finally:
+            cursor.close()
+
+        recorded_tags.update(missing_tags)
+        deployed_meta["tags"] = recorded_tags
 
 
 def _render_log_only_deploy(request: _DeployRequest, changes: Sequence[Change]) -> None:

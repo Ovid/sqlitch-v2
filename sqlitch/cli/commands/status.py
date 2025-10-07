@@ -430,7 +430,8 @@ def _render_human_output(
             ]
         )
         if current.tag:
-            lines.append(f"# Tag:      {current.tag}")
+            tag_display = current.tag if current.tag.startswith("@") else f"@{current.tag}"
+            lines.append(f"# Tag:      {tag_display}")
         lines.extend(
             [
                 f"# Deployed: {current.deployed_at}",
