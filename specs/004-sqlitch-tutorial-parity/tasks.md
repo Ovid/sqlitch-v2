@@ -679,9 +679,9 @@
   - Validate registry records match ✅
   - **Status**: ✅ COMPLETE (2025-10-07) – Added `test_deploy_output_matches_sqitch` with normalized output and registry assertions using new golden fixture `deploy_users_output.txt`.
   
-- [ ] **T067** [P] Regression test: Status output parity in `tests/regression/test_tutorial_parity.py`
-  - Compare sqlitch status vs sqitch status output
-  - Validate formatting matches
+- [X] **T067** [P] Regression test: Status output parity in `tests/regression/test_tutorial_parity.py`
+  - Compare sqlitch status vs sqitch status output ✅
+  - Validate formatting matches ✅
   
 - [ ] **T068** [P] Regression test: Log output parity in `tests/regression/test_tutorial_parity.py`
   - Compare sqlitch log vs sqitch log output
