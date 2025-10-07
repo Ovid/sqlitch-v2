@@ -5,12 +5,16 @@ from __future__ import annotations
 import gc
 import re
 import sqlite3
-import pytest
+from datetime import datetime, timezone
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
+from sqlitch.engine.sqlite import derive_sqlite_registry_uri, resolve_sqlite_filesystem_path
+from sqlitch.plan.formatter import write_plan
+from sqlitch.plan.model import Change
 
 __all__ = []
 
@@ -18,6 +22,7 @@ GOLDEN_ROOT = Path(__file__).resolve().parents[1] / "support" / "golden"
 CLI_GOLDEN_ROOT = GOLDEN_ROOT / "cli"
 CONFIG_GOLDEN_ROOT = GOLDEN_ROOT / "config"
 PLANS_GOLDEN_ROOT = GOLDEN_ROOT / "plans"
+REGISTRY_GOLDEN_ROOT = GOLDEN_ROOT / "registry" / "sqlite"
 
 INIT_URI = "https://github.com/sqitchers/sqitch-sqlite-intro/"
 
@@ -209,3 +214,150 @@ SELECT user_id, username, email
 
         # Ensure any lingering SQLite connections are finalized to avoid resource warnings.
         gc.collect()
+
+
+def test_status_output_matches_sqitch(tmp_path: Path) -> None:
+    """`sqlitch status` should emit Sqitch-identical output after deploy."""
+
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        # Seed plan and config with deterministic tutorial metadata.
+        planned_at = datetime(2013, 12, 31, 18, 26, 59, tzinfo=timezone.utc)
+        change = Change.create(
+            name="users",
+            script_paths={
+                "deploy": Path("deploy/20131231182659_users_deploy.sql"),
+                "revert": Path("revert/20131231182659_users_revert.sql"),
+            },
+            planner="Marge N. O’Vera <marge@example.com>",
+            planned_at=planned_at,
+            notes="Creates table to track our users.",
+        )
+
+        write_plan(
+            project_name="flipr",
+            default_engine="sqlite",
+            entries=[change],
+            plan_path=Path("sqitch.plan"),
+            uri=INIT_URI,
+        )
+
+        Path("sqitch.conf").write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
+
+        # Ensure script directories exist to mirror tutorial layout.
+        Path("deploy").mkdir(parents=True, exist_ok=True)
+        Path("revert").mkdir(parents=True, exist_ok=True)
+        Path("deploy/20131231182659_users_deploy.sql").touch()
+        Path("revert/20131231182659_users_revert.sql").touch()
+
+        # Prepare registry database with Sqitch tutorial snapshot.
+        workspace_db = Path("flipr_test.db")
+        workspace_db.touch()
+        workspace_uri = f"db:sqlite:{workspace_db.resolve().as_posix()}"
+        registry_uri = derive_sqlite_registry_uri(
+            workspace_uri=workspace_uri,
+            project_root=Path.cwd(),
+        )
+        registry_path = resolve_sqlite_filesystem_path(registry_uri)
+        registry_path.parent.mkdir(parents=True, exist_ok=True)
+
+        connection = sqlite3.connect(registry_path)
+        try:
+            cursor = connection.cursor()
+            cursor.executescript(
+                """
+                CREATE TABLE projects (
+                    project         TEXT PRIMARY KEY,
+                    uri             TEXT,
+                    created_at      TEXT NOT NULL,
+                    creator_name    TEXT NOT NULL,
+                    creator_email   TEXT NOT NULL
+                );
+
+                CREATE TABLE changes (
+                    change_id       TEXT PRIMARY KEY,
+                    script_hash     TEXT,
+                    "change"        TEXT NOT NULL,
+                    project         TEXT NOT NULL,
+                    note            TEXT NOT NULL,
+                    committed_at    TEXT NOT NULL,
+                    committer_name  TEXT NOT NULL,
+                    committer_email TEXT NOT NULL,
+                    planned_at      TEXT NOT NULL,
+                    planner_name    TEXT NOT NULL,
+                    planner_email   TEXT NOT NULL
+                );
+
+                CREATE TABLE tags (
+                    tag_id          TEXT PRIMARY KEY,
+                    tag             TEXT NOT NULL,
+                    project         TEXT NOT NULL,
+                    change_id       TEXT NOT NULL,
+                    note            TEXT NOT NULL,
+                    committed_at    TEXT NOT NULL,
+                    committer_name  TEXT NOT NULL,
+                    committer_email TEXT NOT NULL,
+                    planned_at      TEXT NOT NULL,
+                    planner_name    TEXT NOT NULL,
+                    planner_email   TEXT NOT NULL
+                );
+                """
+            )
+
+            cursor.execute(
+                """
+                INSERT INTO projects (project, uri, created_at, creator_name, creator_email)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    "flipr",
+                    INIT_URI,
+                    "2013-12-31T00:00:00Z",
+                    "Marge N. O’Vera",
+                    "marge@example.com",
+                ),
+            )
+
+            cursor.execute(
+                """
+                INSERT INTO changes (
+                    change_id,
+                    script_hash,
+                    "change",
+                    project,
+                    note,
+                    committed_at,
+                    committer_name,
+                    committer_email,
+                    planned_at,
+                    planner_name,
+                    planner_email
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    "f30fe47f5f99501fb8d481e910d9112c5ac0a676",
+                    "f30fe47f5f99501fb8d481e910d9112c5ac0a676",
+                    "users",
+                    "flipr",
+                    "",
+                    "2013-12-31 10:26:59 -0800",
+                    "Marge N. O’Vera",
+                    "marge@example.com",
+                    "2013-12-31 10:26:59 -0800",
+                    "Marge N. O’Vera",
+                    "marge@example.com",
+                ),
+            )
+
+            connection.commit()
+        finally:
+            connection.close()
+
+        result = runner.invoke(main, ["status", "db:sqlite:flipr_test.db"])
+
+        assert result.exit_code == 0, result.output
+
+        expected_output = (REGISTRY_GOLDEN_ROOT / "status_after_users.txt").read_text(
+            encoding="utf-8"
+        )
+        assert result.output == expected_output
