@@ -657,7 +657,7 @@
 **Purpose**: Ensure output matches Sqitch byte-for-byte  
 **Estimated Time**: 2 days
 
-- [ ] **T064** [P] Regression test: Init output parity in `tests/regression/test_tutorial_parity.py`
+- [X] **T064** [P] Regression test: Init output parity in `tests/regression/test_tutorial_parity.py`
   - Compare sqlitch init vs sqitch init output
   - Validate file contents match
   
