@@ -1,0 +1,4 @@
+Deploying plan 'flipr' to target 'db:sqlite:flipr_test.db'.
+Adding registry tables to db:sqlite:./sqitch.db
+  + users
+Deployment complete. Applied 1 change(s).
