@@ -102,6 +102,10 @@ def test_rework_creates_rework_scripts_and_updates_plan(
             entries=(core_change, change),
             plan_path=plan_path,
         )
+        
+        # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
+        config_path = plan_path.parent / "sqitch.conf"
+        config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
 
         result = runner.invoke(main, ["rework", "widgets:add"])
 
@@ -128,7 +132,8 @@ def test_rework_creates_rework_scripts_and_updates_plan(
         assert revert_path.read_text(encoding="utf-8") == "-- revert script\n"
         assert verify_path.read_text(encoding="utf-8") == "-- verify script\n"
 
-        updated_plan = parse_plan(plan_path)
+        # Parse plan with default_engine since it's no longer in the file (Sqitch stores in config)
+        updated_plan = parse_plan(plan_path, default_engine="sqlite")
         updated_change = updated_plan.get_change("widgets:add")
 
         relative_deploy = updated_change.script_paths["deploy"].relative_to(project_root).as_posix()
@@ -189,6 +194,10 @@ def test_rework_applies_overrides(monkeypatch: pytest.MonkeyPatch, runner: CliRu
             entries=(schema_change, users_change, change),
             plan_path=plan_path,
         )
+        
+        # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
+        config_path = plan_path.parent / "sqitch.conf"
+        config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
 
         result = runner.invoke(
             main,
@@ -207,7 +216,8 @@ def test_rework_applies_overrides(monkeypatch: pytest.MonkeyPatch, runner: CliRu
         assert result.exit_code == 0, result.output
         assert "Created rework deploy script deploy/custom_reports.sql" in result.output
 
-        updated_plan = parse_plan(plan_path)
+        # Parse plan with default_engine since it's no longer in the file (Sqitch stores in config)
+        updated_plan = parse_plan(plan_path, default_engine="sqlite")
         updated = updated_plan.get_change("reports:generate")
 
         assert updated.notes == "Tweaked reports"
@@ -226,6 +236,10 @@ def test_rework_unknown_change_errors(runner: CliRunner) -> None:
     with runner.isolated_filesystem():
         plan_path = Path("sqlitch.plan")
         write_plan(project_name="demo", default_engine="sqlite", entries=(), plan_path=plan_path)
+        
+        # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
+        config_path = plan_path.parent / "sqitch.conf"
+        config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
 
         result = runner.invoke(main, ["rework", "missing:change"])
 

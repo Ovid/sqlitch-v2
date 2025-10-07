@@ -92,6 +92,10 @@ def _seed_project(project_root: Path) -> tuple[Path, Change]:
         entries=(core_change, core_tag, target_change, release_tag, tag),
         plan_path=plan_path,
     )
+    
+    # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
+    config_path = project_root / "sqitch.conf"
+    config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
 
     return plan_path, target_change
 
@@ -124,6 +128,10 @@ def _seed_minimal_project(project_root: Path) -> tuple[Path, Change]:
         entries=(minimal_change,),
         plan_path=plan_path,
     )
+    
+    # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
+    config_path = project_root / "sqitch.conf"
+    config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
 
     return plan_path, minimal_change
 
@@ -270,12 +278,18 @@ def test_show_reports_plan_parse_errors(runner: CliRunner) -> None:
     with runner.isolated_filesystem():
         project_root = Path.cwd()
         plan_path, change = _seed_project(project_root)
-        plan_path.write_text("invalid-entry\n", encoding="utf-8")
+        # Write a plan with proper headers but invalid entry
+        plan_path.write_text(
+            "%syntax-version=1.0.0\n%project=widgets\n\ninvalid-entry\n",
+            encoding="utf-8"
+        )
 
         result = runner.invoke(main, ["show", change.name])
 
         assert result.exit_code != 0
-        assert "Unknown plan entry 'invalid-entry'" in result.stderr
+        # Parser errors are raised as exceptions - check result.exception
+        assert result.exception is not None
+        assert "Unknown plan entry 'invalid-entry'" in str(result.exception)
 
 
 def test_show_deduplicates_plan_and_change_tags(runner: CliRunner) -> None:
@@ -319,6 +333,10 @@ def test_show_deduplicates_plan_and_change_tags(runner: CliRunner) -> None:
             entries=(duplicate_change, duplicate_tag),
             plan_path=plan_path,
         )
+        
+        # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
+        config_path = project_root / "sqitch.conf"
+        config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
 
         result = runner.invoke(main, ["show", duplicate_change.name])
 

@@ -27,11 +27,14 @@ def format_plan(
     syntax_version: str = "1.0.0",
     uri: str | None = None,
 ) -> str:
-    """Render a plan file as text without writing it to disk."""
+    """Render a plan file as text without writing it to disk.
+    
+    Note: default_engine parameter is kept for backward compatibility but not written to plan.
+    Sqitch stores engine in config file or target URIs, not in the plan file.
+    """
 
     base_dir = Path(base_path)
     header_lines = [f"%syntax-version={syntax_version}", f"%project={project_name}"]
-    header_lines.append(f"%default_engine={default_engine}")
     if uri:
         header_lines.append(f"%uri={uri}")
 

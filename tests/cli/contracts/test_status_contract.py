@@ -58,6 +58,10 @@ def _write_plan(plan_path: Path, entries: Sequence[PlanEntry]) -> None:
         entries=entries,
         plan_path=plan_path,
     )
+    
+    # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
+    config_path = plan_path.parent / "sqitch.conf"
+    config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
 
 
 def _prepare_workspace(workspace_db: Path) -> Path:

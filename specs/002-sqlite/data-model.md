@@ -26,7 +26,7 @@ SQLitch mirrors Sqitch’s file-based plan semantics and registry tables while e
   - `file_path` (Path): location of `plan` file (supports `sqitch.plan` and `sqlitch.plan`)
   - `entries` (list[PlanEntry]): ordered union of `Change` and `Tag` entries
   - `checksum` (string): hashed representation used for drift detection
-  - `default_engine` (string): engine alias resolved from config/CLI
+  - `default_engine` (string): engine alias resolved from config/CLI (NOT stored in plan file; Sqitch stores engine in `sqitch.conf` only)
   - `syntax_version` (string): semantic version from `%syntax-version` header (defaults to `1.0.0`)
   - `missing_dependencies` (list[str]): forward references captured as `"{change}->{dependency}"` when a compact Sqitch entry depends on a change that appears later in the file
 - **Relationships**: aggregates `Change` and `Tag`; associated with `EngineTarget`
@@ -34,6 +34,7 @@ SQLitch mirrors Sqitch’s file-based plan semantics and registry tables while e
   - Created by `sqlitch init`
   - Mutated by `sqlitch add|rework|tag`
   - Verified during deploy/revert operations for parity
+- **Important**: Plan files follow Sqitch format and do NOT contain a `%default_engine` header. The engine is always resolved from configuration (`[core] engine = <alias>` in `sqitch.conf`) or CLI arguments.
 
 ### Tag
 - **Attributes**:

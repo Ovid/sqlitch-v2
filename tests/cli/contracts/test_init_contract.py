@@ -50,7 +50,8 @@ def test_init_creates_project_layout(runner: CliRunner) -> None:
         lines = plan_content.splitlines()
         assert lines[0] == "%syntax-version=1.0.0"
         assert lines[1] == "%project=flipr"
-        assert lines[2] == "%default_engine=sqlite"
+        # Note: Sqitch doesn't store engine in plan - it's in config
+        assert lines[2] == ""  # Blank line after headers
 
         config_content = config_path.read_text(encoding="utf-8")
         assert "[core]" in config_content

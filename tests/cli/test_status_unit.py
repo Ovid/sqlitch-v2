@@ -37,6 +37,18 @@ def runner() -> CliRunner:
     return CliRunner()
 
 
+def _ensure_config(project_root: Path | None = None, engine: str = "sqlite") -> None:
+    """Create minimal sqitch.conf if it doesn't exist.
+    
+    Sqitch doesn't store engine in plan file - it comes from config.
+    """
+    if project_root is None:
+        project_root = Path.cwd()
+    config_path = project_root / "sqitch.conf"
+    if not config_path.exists():
+        config_path.write_text(f"[core]\n\tengine = {engine}\n", encoding="utf-8")
+
+
 def _prepare_workspace(workspace_db: Path) -> Path:
     workspace_db.parent.mkdir(parents=True, exist_ok=True)
     workspace_db.touch(exist_ok=True)
@@ -123,6 +135,7 @@ def test_status_rejects_project_mismatch(runner: CliRunner) -> None:
     with runner.isolated_filesystem():
         plan_path = Path("sqlitch.plan")
         write_plan(project_name="widgets", default_engine="sqlite", entries=(), plan_path=plan_path)
+        _ensure_config()
 
         result = runner.invoke(
             main,
@@ -149,6 +162,7 @@ def test_status_rejects_registry_project_mismatch(runner: CliRunner) -> None:
             entries=(),
             plan_path=Path("sqlitch.plan"),
         )
+        _ensure_config()
 
         registry_path = _prepare_workspace(Path("registry.db"))
         _create_registry(registry_path)
@@ -212,6 +226,7 @@ def test_status_outputs_human_summary_when_in_sync(runner: CliRunner) -> None:
             entries=(),
             plan_path=Path("sqlitch.plan"),
         )
+        _ensure_config()
         registry_path = _prepare_workspace(Path("registry.db"))
         _create_registry(registry_path)
 
@@ -240,6 +255,7 @@ def test_status_outputs_json_with_pending_changes(runner: CliRunner) -> None:
             entries=(_make_change("users"),),
             plan_path=Path("sqlitch.plan"),
         )
+        _ensure_config()
         registry_path = _prepare_workspace(Path("registry.db"))
         _create_registry(registry_path)
 
@@ -396,6 +412,7 @@ def test_build_json_payload_without_registry_rows(tmp_path: Path) -> None:
         entries=(),
         plan_path=tmp_path / "plan.plan",
     )
+    _ensure_config()
 
     payload = _build_json_payload(
         project="widgets",
@@ -419,6 +436,7 @@ def test_build_json_payload_with_registry_rows(tmp_path: Path) -> None:
         entries=(),
         plan_path=tmp_path / "sqlitch.plan",
     )
+    _ensure_config()
     rows = (
         CurrentChange(
             project="widgets",

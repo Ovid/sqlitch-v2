@@ -61,6 +61,10 @@ def _seed_plan(plan_path: Path) -> tuple[Change, Change, Tag]:
         entries=(change_one, change_two, tag),
         plan_path=plan_path,
     )
+    
+    # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
+    config_path = plan_path.parent / "sqitch.conf"
+    config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
 
     return change_one, change_two, tag
 
@@ -241,6 +245,10 @@ def test_plan_warns_for_forward_dependencies(runner: CliRunner) -> None:
             entries=(change,),
             plan_path=plan_path,
         )
+        
+        # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
+        config_path = plan_path.parent / "sqitch.conf"
+        config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
 
         result = runner.invoke(main, ["plan"])
 

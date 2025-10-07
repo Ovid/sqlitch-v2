@@ -16,12 +16,21 @@ from sqlitch.utils.templates import default_template_body, render_template
 
 
 def _write_plan(path: Path, entries: tuple[Change, ...] = ()) -> None:
+    """Write a plan file and minimal sqitch.conf for tests.
+    
+    Sqitch doesn't store engine in plan file - it comes from config.
+    """
+    # Write plan file (without default_engine header)
     write_plan(
         project_name="demo",
-        default_engine="sqlite",
+        default_engine="sqlite",  # Used for Plan object but not written to file
         entries=entries,
         plan_path=path,
     )
+    
+    # Write minimal config file so commands can find the engine
+    config_path = path.parent / "sqitch.conf"
+    config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
 
 
 def test_add_appends_change_and_creates_scripts(monkeypatch: pytest.MonkeyPatch) -> None:
