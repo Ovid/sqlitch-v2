@@ -9,7 +9,7 @@ import click
 
 from sqlitch.config.resolver import resolve_config
 from sqlitch.plan.formatter import write_plan
-from sqlitch.plan.model import Tag
+from sqlitch.plan.model import Change, PlanEntry, Tag
 from sqlitch.plan.parser import PlanParseError, parse_plan
 from sqlitch.utils.identity import resolve_planner_identity
 
@@ -168,10 +168,25 @@ def _add_tag(
         change_ref=target_change,
         planner=resolve_planner_identity(environment, config),
         tagged_at=_utcnow(),
+        note=note,
     )
 
-    # Append to plan entries
-    entries = tuple(plan.entries) + (tag,)
+    # Find the position to insert the tag (after the change it references)
+    new_entries: list[PlanEntry] = []
+    tag_inserted = False
+
+    for entry in plan.entries:
+        new_entries.append(entry)
+        # Insert tag after its referenced change
+        if isinstance(entry, Change) and entry.name == target_change:
+            new_entries.append(tag)
+            tag_inserted = True
+
+    if not tag_inserted:
+        # This shouldn't happen as we validate change exists, but be safe
+        raise CommandError(f'Could not find change "{target_change}" in plan')
+
+    entries = tuple(new_entries)
 
     write_plan(
         project_name=plan.project_name,
