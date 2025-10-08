@@ -1325,6 +1325,145 @@ class TestDeployUserIdentity:
 
         conn.close()
 
+    def test_prefers_sqlitch_environment_over_sqitch(
+        self, runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Deploy should prioritise SQLITCH_* env vars over SQITCH_* fallbacks."""
+        project_dir = tmp_path / "flipr"
+        project_dir.mkdir()
+
+        conf_file = project_dir / "sqitch.conf"
+        conf_file.write_text("[core]\n    engine = sqlite\n")
+
+        plan_file = project_dir / "sqitch.plan"
+        plan_file.write_text(
+            "%syntax-version=1.0.0\n"
+            "%project=flipr\n"
+            "\n"
+            "users 2025-01-01T00:00:00Z Test User <test@example.com> # Add users\n"
+        )
+
+        deploy_dir = project_dir / "deploy"
+        deploy_dir.mkdir()
+        (deploy_dir / "users.sql").write_text(
+            "-- Deploy flipr:users to sqlite\n"
+            "BEGIN;\n"
+            "CREATE TABLE users (id INTEGER PRIMARY KEY);\n"
+            "COMMIT;\n"
+        )
+
+        target_db = tmp_path / "flipr_test.db"
+        registry_db = tmp_path / "sqitch.db"
+
+        monkeypatch.setenv("SQITCH_USER_NAME", "Sqitch User")
+        monkeypatch.setenv("SQITCH_USER_EMAIL", "sqitch.user@example.com")
+        monkeypatch.setenv("SQLITCH_USER_NAME", "Sqlitch Preferred")
+        monkeypatch.setenv("SQLITCH_USER_EMAIL", "sqlitch.preferred@example.com")
+
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result = runner.invoke(
+                main,
+                ["deploy", f"db:sqlite:{target_db}"],
+            )
+        finally:
+            os.chdir(original_cwd)
+
+        assert result.exit_code == 0, f"Deploy should succeed\nOutput: {result.output}"
+
+        conn = sqlite3.connect(registry_db)
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT committer_name, committer_email FROM events WHERE change = 'users'"
+        )
+        row = cursor.fetchone()
+        assert row is not None, "Event record should exist"
+
+        committer_name, committer_email = row
+        assert committer_name == "Sqlitch Preferred"
+        assert committer_email == "sqlitch.preferred@example.com"
+
+        conn.close()
+
+
+class TestDeployFailureHandling:
+    """Validate deploy error paths and registry bookkeeping."""
+
+    def test_records_failure_event_on_script_error(self, runner: CliRunner, tmp_path: Path) -> None:
+        """A failing deploy script should record a fail event and leave no changes deployed."""
+
+        project_dir = tmp_path / "flipr"
+        project_dir.mkdir()
+
+        conf_file = project_dir / "sqitch.conf"
+        conf_file.write_text(
+            "[core]\n"
+            "    engine = sqlite\n"
+            "[user]\n"
+            "    name = Config User\n"
+            "    email = config.user@example.com\n"
+        )
+
+        plan_file = project_dir / "sqitch.plan"
+        plan_file.write_text(
+            "%syntax-version=1.0.0\n"
+            "%project=flipr\n"
+            "\n"
+            "users 2025-01-01T00:00:00Z Planner <planner@example.com> # Add users\n"
+        )
+
+        deploy_dir = project_dir / "deploy"
+        deploy_dir.mkdir()
+        (deploy_dir / "users.sql").write_text(
+            "-- Deploy flipr:users to sqlite\n"
+            "CREATE TABLE users (id INTEGER PRIMARY KEY);\n"
+            "SELECT RAISE(ABORT, 'deploy explosion');\n"
+        )
+
+        target_db = tmp_path / "flipr_test.db"
+        registry_db = tmp_path / "sqitch.db"
+
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result = runner.invoke(
+                main,
+                ["deploy", f"db:sqlite:{target_db}"],
+            )
+        finally:
+            os.chdir(original_cwd)
+
+        assert result.exit_code == 1
+        assert "Deploy failed for change 'users'" in result.output
+
+        # Target schema should be rolled back (table not created)
+        conn = sqlite3.connect(target_db)
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='users'"
+        )
+        assert cursor.fetchone() is None
+        conn.close()
+
+        # Registry should contain a fail event but no change record
+        assert registry_db.exists(), "Registry database should exist after failure"
+        conn = sqlite3.connect(registry_db)
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT COUNT(*) FROM changes")
+        assert cursor.fetchone() == (0,)
+
+        cursor.execute(
+            "SELECT event, note, committer_name, committer_email FROM events WHERE change = 'users'"
+        )
+        rows = cursor.fetchall()
+        assert rows == [
+            ("fail", "Add users", "Config User", "config.user@example.com")
+        ]
+
+        conn.close()
+
 
 @pytest.fixture
 def runner() -> CliRunner:

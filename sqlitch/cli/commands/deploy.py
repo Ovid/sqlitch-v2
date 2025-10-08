@@ -892,7 +892,52 @@ def _apply_change(
             manages_transactions=manages_transactions,
         )
     except sqlite3.Error as exc:  # pragma: no cover - execution error propagated
+        try:
+            _record_failure_event(
+                connection=connection,
+                registry_schema=registry_schema,
+                project=project,
+                change=change,
+                change_id=change_id,
+                note=note,
+                committed_at=committed_at,
+                committer_name=committer_name,
+                committer_email=committer_email,
+                planned_at=planned_at,
+                planner_name=planner_name,
+                planner_email=planner_email,
+                dependencies=change.dependencies,
+                tags=change.tags,
+            )
+        except CommandError as record_exc:
+            message = (
+                f"Deploy failed for change '{change.name}': {exc}; "
+                f"additionally, {record_exc}"
+            )
+            raise CommandError(message) from exc
         raise CommandError(f"Deploy failed for change '{change.name}': {exc}") from exc
+    except CommandError as exc:
+        try:
+            _record_failure_event(
+                connection=connection,
+                registry_schema=registry_schema,
+                project=project,
+                change=change,
+                change_id=change_id,
+                note=note,
+                committed_at=committed_at,
+                committer_name=committer_name,
+                committer_email=committer_email,
+                planned_at=planned_at,
+                planner_name=planner_name,
+                planner_email=planner_email,
+                dependencies=change.dependencies,
+                tags=change.tags,
+            )
+        except CommandError as record_exc:
+            message = f"{exc}; additionally, {record_exc}"
+            raise CommandError(message) from exc
+        raise
 
     deployed[change.name] = {
         "change_id": change_id,
@@ -1256,6 +1301,77 @@ def _record_deployment_entries(
         planner_email=planner_email,
         tags=tags,
     )
+
+
+def _record_failure_event(
+    *,
+    connection: sqlite3.Connection,
+    registry_schema: str,
+    project: str,
+    change: Change,
+    change_id: str,
+    note: str,
+    committed_at: str,
+    committer_name: str,
+    committer_email: str,
+    planned_at: str,
+    planner_name: str,
+    planner_email: str,
+    dependencies: Sequence[str],
+    tags: Sequence[str],
+) -> None:
+    """Record a failure event for ``change`` in the registry."""
+
+    cursor = connection.cursor()
+    try:
+        connection.execute("BEGIN")
+        cursor.execute(
+            f"""
+            INSERT INTO {registry_schema}.events (
+                event,
+                change_id,
+                change,
+                project,
+                note,
+                requires,
+                conflicts,
+                tags,
+                committed_at,
+                committer_name,
+                committer_email,
+                planned_at,
+                planner_name,
+                planner_email
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "fail",
+                change_id,
+                change.name,
+                project,
+                note,
+                " ".join(str(dependency) for dependency in dependencies),
+                "",
+                " ".join(str(tag) for tag in tags),
+                committed_at,
+                committer_name,
+                committer_email,
+                planned_at,
+                planner_name,
+                planner_email,
+            ),
+        )
+        connection.execute("COMMIT")
+    except sqlite3.Error as exc:
+        try:
+            connection.execute("ROLLBACK")
+        except sqlite3.Error:  # pragma: no cover - defensive guard
+            pass
+        raise CommandError(
+            f"Failed to record failure event for change '{change.name}': {exc}"
+        ) from exc
+    finally:
+        cursor.close()
 
 
 def _insert_registry_tags(

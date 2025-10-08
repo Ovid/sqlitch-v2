@@ -1,0 +1,11 @@
+{
+  "SQLITCH_FULLNAME": "Env Override",
+  "SQLITCH_EMAIL": "env-override@example.com",
+  "SQITCH_FULLNAME": "Sqitch Fallback",
+  "SQITCH_EMAIL": "sqitch-fallback@example.com",
+  "SQLITCH_TARGET": "db:sqlite:flipr_env.db",
+  "SQLITCH_USERNAME": "env_user",
+  "SQLITCH_PASSWORD": "env_password",
+  "SQLITCH_PAGER": "cat",
+  "SQLITCH_EDITOR": "true"
+}
