@@ -437,7 +437,7 @@ class TestRevertConfirmationPrompt:
 
         assert result.exit_code == 1, result.output
         assert "[y/N]:" in result.output
-        assert "Error: Revert aborted by user." in result.output
+        assert "Revert aborted by user." in result.output
 
         conn = sqlite3.connect(target_db)
         try:

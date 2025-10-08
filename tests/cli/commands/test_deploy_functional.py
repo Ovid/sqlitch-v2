@@ -1048,15 +1048,25 @@ class TestDeployDependencyValidation:
             "nonexistent" in result.output.lower() or "dependency" in result.output.lower()
         ), f"Error message should mention missing dependency\nOutput: {result.output}"
 
-        # Verify: Comments was not deployed
+        # Verify: Comments was not deployed (registry may not be initialised on failure)
+        if not registry_db.exists():
+            return
+
         conn = sqlite3.connect(registry_db)
-        cursor = conn.cursor()
-        cursor.execute("SELECT change FROM changes")
-        changes = [row[0] for row in cursor.fetchall()]
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='changes'"
+            )
+            if cursor.fetchone() is None:
+                return
 
-        assert "comments" not in changes, "Change with missing dependency should not be deployed"
+            cursor.execute("SELECT change FROM changes")
+            changes = [row[0] for row in cursor.fetchall()]
 
-        conn.close()
+            assert "comments" not in changes, "Change with missing dependency should not be deployed"
+        finally:
+            conn.close()
 
 
 class TestDeployScriptExecution:

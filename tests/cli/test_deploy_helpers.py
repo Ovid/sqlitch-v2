@@ -123,7 +123,7 @@ def test_select_changes_by_tag_filters() -> None:
 def test_select_changes_missing_change_raises() -> None:
     plan = _make_plan((_make_change("one"),))
 
-    with pytest.raises(CommandError, match="does not contain change"):
+    with pytest.raises(CommandError, match="Unknown change"):
         deploy_module._select_changes(plan=plan, to_change="missing", to_tag=None)
 
 
