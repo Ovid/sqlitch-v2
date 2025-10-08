@@ -193,6 +193,7 @@ def verify_command(
         plan_path=plan_path,
     )
     plan = _load_plan(plan_path, default_engine)
+    plan_change_names = [change.name for change in plan.changes]
 
     # Resolve engine target
     engine_target, display_target = _resolve_engine_target(
@@ -205,6 +206,11 @@ def verify_command(
 
     workspace_path = _strip_sqlite_uri_prefix(engine_target.uri)
     registry_path = _strip_sqlite_uri_prefix(engine_target.registry_uri)
+    workspace_display = Path(workspace_path).name
+    if workspace_display.endswith(".db"):
+        workspace_display = Path(workspace_display).stem
+    if not workspace_display:
+        workspace_display = display_target
 
     try:
         connection = sqlite3.connect(workspace_path)
@@ -213,6 +219,7 @@ def verify_command(
 
     processed_changes = 0
     error_count = 0
+    pending_changes: list[str] = []
     with closing(connection):
         try:
             connection.execute("ATTACH DATABASE ? AS sqitch", (registry_path,))
@@ -230,9 +237,13 @@ def verify_command(
         except sqlite3.Error as exc:
             raise CommandError(f"Failed to query registry: {exc}") from exc
 
+        click.echo(f"Verifying {workspace_display}")
+
         if not deployed_changes:
             click.echo("No changes to verify.")
             return
+
+        pending_changes = [name for name in plan_change_names if name not in deployed_changes]
 
         with closing(connection.cursor()) as cursor:
             for change_name in deployed_changes:
@@ -240,17 +251,23 @@ def verify_command(
                 verify_script_path = project_root / "verify" / f"{change_name}.sql"
 
                 if not verify_script_path.exists():
-                    click.echo(f"# {change_name} .. SKIP (no verify script)")
+                    click.echo(f"  # {change_name} .. SKIP (no verify script)")
                     continue
 
                 try:
                     script = Script.load(verify_script_path)
                     _execute_sqlite_verify_script(cursor, script.content)
-                    click.echo(f"* {change_name} .. ok")
+                    click.echo(f"  * {change_name} .. ok")
                 except Exception as exc:
-                    click.echo(f"# {change_name} .. NOT OK")
+                    click.echo(f"  # {change_name} .. NOT OK")
                     click.echo(f"  Error: {exc}", err=True)
                     error_count += 1
+
+    if pending_changes:
+        header = "Undeployed change:" if len(pending_changes) == 1 else "Undeployed changes:"
+        click.echo(header)
+        for change_name in pending_changes:
+            click.echo(f"  * {change_name}")
 
     if error_count:
         click.echo()

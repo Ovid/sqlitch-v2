@@ -688,9 +688,11 @@
   - ✅ Seeds registry snapshot to mirror tutorial revert + deploy history and asserts byte-for-byte match (stdout only)
   - **Status**: ✅ COMPLETE (2025-10-07) – Added parity regression and executed full pytest suite to satisfy coverage gate (91.95%)
   
-- [ ] **T069** [P] Regression test: Verify output parity in `tests/regression/test_tutorial_parity.py`
-  - Compare sqlitch verify vs sqitch verify output
-  - Validate exit codes match
+- [X] **T069** [P] Regression test: Verify output parity in `tests/regression/test_tutorial_parity.py`
+  - ✅ `test_verify_output_matches_sqitch` seeds deploy + revert registry snapshot and executes `sqlitch verify`
+  - ✅ Output compared byte-for-byte with Sqitch fixture `verify_after_revert.txt`
+  - ✅ Command exit code asserted to be zero after parity fix
+  - **Status**: ✅ COMPLETE (2025-10-07) – Added regression test and adjusted CLI output formatting for undeployed change listings.
   
 - [ ] **T070** [P] Regression test: Revert output parity in `tests/regression/test_tutorial_parity.py`
   - Compare sqlitch revert vs sqitch revert output

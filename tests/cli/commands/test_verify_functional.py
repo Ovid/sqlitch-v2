@@ -444,8 +444,8 @@ class TestVerifyExecution:
         # Verify: Exit code 1 if any fail and summary is printed
         output = verify_result.output
         assert verify_result.exit_code == 1, "Verify should exit 1 if any verification fails"
-        assert "* users .. ok" in output
-        assert "# posts .. NOT OK" in output
+        assert "  * users .. ok" in output
+        assert "  # posts .. NOT OK" in output
         assert "Verify Summary Report" in output
         assert "Changes: 2" in output
         assert "Errors:  1" in output
@@ -474,9 +474,9 @@ class TestVerifyExecution:
 
         output = result.output
         assert result.exit_code == 1, output
-        assert "# users .. NOT OK" in output
-        assert "# posts .. NOT OK" in output
-        assert output.index("# users .. NOT OK") < output.index("# posts .. NOT OK")
+        assert "  # users .. NOT OK" in output
+        assert "  # posts .. NOT OK" in output
+        assert output.index("  # users .. NOT OK") < output.index("  # posts .. NOT OK")
         assert "Verify Summary Report" in output
         assert "Changes: 2" in output
         assert "Errors:  2" in output
@@ -520,7 +520,7 @@ class TestVerifyAdditionalScenarios:
             result = runner.invoke(main, ["verify", f"db:sqlite:{target_db}"])
 
         assert result.exit_code == 0, result.output
-        assert "# users .. SKIP (no verify script)" in result.output
+        assert "  # users .. SKIP (no verify script)" in result.output
         assert "Verify successful" in result.output
 
     def test_handles_absence_of_deployed_changes(
