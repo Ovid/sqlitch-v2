@@ -170,11 +170,7 @@ def _execute_revert(request: _RevertRequest) -> None:
         _render_log_only_revert(request, changes)
         return
 
-    if not changes:
-        emitter = _build_emitter(request.quiet)
-        emitter(f"Reverting plan '{request.plan.project_name}' on target '{request.target}'.")
-        emitter("No changes to revert.")
-        return
+    emitter = _build_emitter(request.quiet)
 
     # Prompt for confirmation unless -y flag provided
     if not request.skip_prompt:
@@ -204,9 +200,6 @@ def _execute_revert(request: _RevertRequest) -> None:
         registry_uri=registry_uri,
     )
     engine = SQLiteEngine(engine_target)
-
-    emitter = _build_emitter(request.quiet)
-    emitter(f"Reverting plan '{request.plan.project_name}' on target '{request.target}'.")
 
     # Get committer identity
     committer_name, committer_email = _resolve_committer_identity(
@@ -244,25 +237,47 @@ def _execute_revert(request: _RevertRequest) -> None:
                     break
                 changes_to_revert.append(change)
 
+        target_change = changes[-1] if (request.to_change or request.to_tag) and changes else None
+
         if not changes_to_revert:
-            emitter("No changes to revert (none are currently deployed).")
+            if request.to_change or request.to_tag:
+                label = request.to_change or request.to_tag or (target_change.name if target_change else "target")
+                emitter(f'No changes deployed since: "{label}"')
+            else:
+                emitter("Nothing to revert (nothing deployed)")
             return
+
+        intro_message = _introductory_message(
+            target=request.target,
+            target_change=target_change,
+            to_change=request.to_change,
+            to_tag=request.to_tag,
+        )
+        emitter(intro_message)
 
         # Revert each change
         for change in changes_to_revert:
-            _revert_change(
-                connection=connection,
-                project=request.plan.project_name,
-                plan_root=request.plan_path.parent,
-                change=change,
-                env=request.env,
-                committer_name=committer_name,
-                committer_email=committer_email,
-                deployed=deployed,
-                registry_schema=registry_schema,
-                emitter=emitter,
-            )
-            emitter(f"- {change.name}")
+            try:
+                _revert_change(
+                    connection=connection,
+                    project=request.plan.project_name,
+                    plan_root=request.plan_path.parent,
+                    change=change,
+                    env=request.env,
+                    committer_name=committer_name,
+                    committer_email=committer_email,
+                    deployed=deployed,
+                    registry_schema=registry_schema,
+                    emitter=emitter,
+                )
+            except CommandError:
+                emitter(f"  - {change.name} .. not ok")
+                raise
+            except Exception as exc:  # pragma: no cover - defensive guard
+                emitter(f"  - {change.name} .. not ok")
+                raise CommandError(f"Revert failed for change '{change.name}': {exc}") from exc
+            else:
+                emitter(f"  - {change.name} .. ok")
 
     finally:
         connection.close()
@@ -599,10 +614,15 @@ def _select_changes(
 
 def _render_log_only_revert(request: _RevertRequest, changes: Sequence[Change]) -> None:
     emitter = _build_emitter(request.quiet)
-
-    emitter(
-        f"Reverting plan '{request.plan.project_name}' on target '{request.target}' (log-only)."
+    target_change = changes[-1] if (request.to_change or request.to_tag) and changes else None
+    intro_message = _introductory_message(
+        target=request.target,
+        target_change=target_change,
+        to_change=request.to_change,
+        to_tag=request.to_tag,
     )
+
+    emitter(f"{intro_message} (log-only)")
 
     if not changes:
         emitter("No changes available for reversion.")
@@ -621,6 +641,22 @@ def _build_emitter(quiet: bool) -> Callable[[str], None]:
             click.echo(message)
 
     return _emit
+
+
+def _introductory_message(
+    *,
+    target: str,
+    target_change: Change | None,
+    to_change: str | None,
+    to_tag: str | None,
+) -> str:
+    """Return the Sqitch-style introductory message for a revert operation."""
+
+    if to_change or to_tag:
+        label = target_change.name if target_change else (to_change or to_tag or "target")
+        return f"Reverting changes to {label} from {target}"
+
+    return f"Reverting all changes from {target}"
 
 
 @register_command("revert")

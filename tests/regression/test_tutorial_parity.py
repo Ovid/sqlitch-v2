@@ -626,3 +626,223 @@ SELECT 1;
             encoding="utf-8"
         )
         assert result.output == expected_output
+
+
+def test_revert_output_matches_sqitch(tmp_path: Path) -> None:
+    """`sqlitch revert` should emit Sqitch-identical output for multi-change projects."""
+
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        users_planned_at = datetime(2013, 12, 31, 18, 26, 59, tzinfo=timezone.utc)
+        flips_planned_at = datetime(2013, 12, 31, 19, 5, 44, tzinfo=timezone.utc)
+
+        users_change = Change.create(
+            name="users",
+            script_paths={
+                "deploy": Path("deploy/20131231182659_users_deploy.sql"),
+                "revert": Path("revert/20131231182659_users_revert.sql"),
+            },
+            planner="Marge N. O’Vera <marge@example.com>",
+            planned_at=users_planned_at,
+            notes="Creates table to track our users.",
+        )
+
+        flips_change = Change.create(
+            name="flips",
+            script_paths={
+                "deploy": Path("deploy/20131231190544_flips_deploy.sql"),
+                "revert": Path("revert/20131231190544_flips_revert.sql"),
+            },
+            planner="Marge N. O’Vera <marge@example.com>",
+            planned_at=flips_planned_at,
+            notes="Adds table for storing flips.",
+            dependencies=("users",),
+        )
+
+        write_plan(
+            project_name="flipr",
+            default_engine="sqlite",
+            entries=[users_change, flips_change],
+            plan_path=Path("sqitch.plan"),
+            uri=INIT_URI,
+        )
+
+        Path("sqitch.conf").write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
+
+        for directory in ("deploy", "revert"):
+            Path(directory).mkdir(parents=True, exist_ok=True)
+
+        Path("revert/users.sql").write_text(
+            """-- Revert flipr:users from sqlite
+
+BEGIN;
+
+DROP TABLE users;
+
+COMMIT;
+""",
+            encoding="utf-8",
+        )
+
+        Path("revert/flips.sql").write_text(
+            """-- Revert flipr:flips from sqlite
+
+BEGIN;
+
+DROP TABLE flips;
+
+COMMIT;
+""",
+            encoding="utf-8",
+        )
+
+        workspace_db = Path("flipr_test.db")
+        connection = sqlite3.connect(workspace_db)
+        try:
+            cursor = connection.cursor()
+            cursor.executescript(
+                """
+                CREATE TABLE users (
+                    user_id INTEGER PRIMARY KEY,
+                    username TEXT NOT NULL UNIQUE,
+                    email TEXT NOT NULL UNIQUE
+                );
+
+                CREATE TABLE flips (
+                    flip_id INTEGER PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(user_id),
+                    flip_name TEXT NOT NULL
+                );
+                """
+            )
+            connection.commit()
+        finally:
+            connection.close()
+
+        workspace_uri = f"db:sqlite:{workspace_db.resolve().as_posix()}"
+        registry_uri = derive_sqlite_registry_uri(
+            workspace_uri=workspace_uri,
+            project_root=Path.cwd(),
+        )
+        registry_path = resolve_sqlite_filesystem_path(registry_uri)
+        registry_path.parent.mkdir(parents=True, exist_ok=True)
+
+        registry_connection = sqlite3.connect(registry_path)
+        try:
+            cursor = registry_connection.cursor()
+            cursor.executescript(
+                """
+                CREATE TABLE projects (
+                    project         TEXT PRIMARY KEY,
+                    uri             TEXT,
+                    created_at      TEXT NOT NULL,
+                    creator_name    TEXT NOT NULL,
+                    creator_email   TEXT NOT NULL
+                );
+
+                CREATE TABLE changes (
+                    change_id       TEXT PRIMARY KEY,
+                    script_hash     TEXT,
+                    "change"        TEXT NOT NULL,
+                    project         TEXT NOT NULL,
+                    note            TEXT NOT NULL,
+                    committed_at    TEXT NOT NULL,
+                    committer_name  TEXT NOT NULL,
+                    committer_email TEXT NOT NULL,
+                    planned_at      TEXT NOT NULL,
+                    planner_name    TEXT NOT NULL,
+                    planner_email   TEXT NOT NULL
+                );
+
+                CREATE TABLE events (
+                    event           TEXT NOT NULL,
+                    change_id       TEXT NOT NULL,
+                    change          TEXT NOT NULL,
+                    project         TEXT NOT NULL,
+                    note            TEXT NOT NULL,
+                    requires        TEXT NOT NULL,
+                    conflicts       TEXT NOT NULL,
+                    tags            TEXT NOT NULL,
+                    committed_at    TEXT NOT NULL,
+                    committer_name  TEXT NOT NULL,
+                    committer_email TEXT NOT NULL,
+                    planned_at      TEXT NOT NULL,
+                    planner_name    TEXT NOT NULL,
+                    planner_email   TEXT NOT NULL,
+                    PRIMARY KEY (change_id, committed_at)
+                );
+                """
+            )
+
+            cursor.execute(
+                """
+                INSERT INTO projects (project, uri, created_at, creator_name, creator_email)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    "flipr",
+                    INIT_URI,
+                    "2013-12-31T00:00:00Z",
+                    "Marge N. O’Vera",
+                    "marge@example.com",
+                ),
+            )
+
+            cursor.executemany(
+                """
+                INSERT INTO changes (
+                    change_id,
+                    script_hash,
+                    "change",
+                    project,
+                    note,
+                    committed_at,
+                    committer_name,
+                    committer_email,
+                    planned_at,
+                    planner_name,
+                    planner_email
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                [
+                    (
+                        "96d76eb96cac55a27d7d4117e96af312a29d1738",
+                        "96d76eb96cac55a27d7d4117e96af312a29d1738",
+                        "users",
+                        "flipr",
+                        "Creates table to track our users.",
+                        "2013-12-31 10:26:59 -0800",
+                        "Marge N. O’Vera",
+                        "marge@example.com",
+                        "2013-12-31 10:26:59 -0800",
+                        "Marge N. O’Vera",
+                        "marge@example.com",
+                    ),
+                    (
+                        "b5ee95a49f8226b33a535fba8c2b834f97044730",
+                        "b5ee95a49f8226b33a535fba8c2b834f97044730",
+                        "flips",
+                        "flipr",
+                        "Adds table for storing flips.",
+                        "2013-12-31 11:05:44 -0800",
+                        "Marge N. O’Vera",
+                        "marge@example.com",
+                        "2013-12-31 11:05:44 -0800",
+                        "Marge N. O’Vera",
+                        "marge@example.com",
+                    ),
+                ],
+            )
+
+            registry_connection.commit()
+        finally:
+            registry_connection.close()
+
+        result = runner.invoke(main, ["revert", "db:sqlite:flipr_test.db", "-y"])
+
+        assert result.exit_code == 0, result.output
+
+        expected_output = (CLI_GOLDEN_ROOT / "revert_flips_output.txt").read_text(
+            encoding="utf-8"
+        )
+        assert result.output == expected_output

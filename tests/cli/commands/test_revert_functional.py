@@ -198,9 +198,9 @@ class TestRevertAllChanges:
 
         # Should succeed
         assert result.exit_code == 0, f"Revert failed: {result.output}"
-        assert "- comments" in result.output
-        assert "- posts" in result.output
-        assert "- users" in result.output
+        assert "  - comments .. ok" in result.output
+        assert "  - posts .. ok" in result.output
+        assert "  - users .. ok" in result.output
 
         # Verify output shows reverse order (comments, then posts, then users)
         comments_idx = result.output.index("comments")
@@ -320,8 +320,8 @@ SELECT id, user_id FROM posts WHERE 0 = 1;
 
         # Should succeed
         assert revert_result.exit_code == 0
-        assert "- posts" in revert_result.output
-        assert "- users" not in revert_result.output
+        assert "  - posts .. ok" in revert_result.output
+        assert "  - users .. ok" not in revert_result.output
 
         # Verify posts table is gone but users remains
         conn = sqlite3.connect(target_db)
@@ -356,9 +356,9 @@ class TestRevertToChange:
 
         # Should succeed
         assert result.exit_code == 0
-        assert "- comments" in result.output
-        assert "- posts" not in result.output
-        assert "- users" not in result.output
+        assert "  - comments .. ok" in result.output
+        assert "  - posts .. ok" not in result.output
+        assert "  - users .. ok" not in result.output
 
         # Verify comments is gone but posts and users remain
         conn = sqlite3.connect(target_db)

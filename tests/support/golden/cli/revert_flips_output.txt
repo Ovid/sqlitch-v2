@@ -1,0 +1,3 @@
+Reverting all changes from db:sqlite:flipr_test.db
+  - flips .. ok
+  - users .. ok
