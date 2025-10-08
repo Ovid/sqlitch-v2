@@ -740,11 +740,11 @@
   - Add tests for any uncovered branches
   - **Status**: ✅ COMPLETE (2025-10-08) – Full pytest suite with coverage reports 91.91% total (threshold ≥90%) and wrote results to `coverage.xml`.
   
-- [ ] **T077** Performance validation
+- [X] **T077** Performance validation
   - Test deploy with 100 changes
   - Verify completes in <5 seconds
   - Profile any slow operations
-  - **Status**: ⏸️ DEFERRED - Performance acceptable for tutorial scope
+  - **Status**: ✅ COMPLETE (2025-10-08) – Measured `sqlitch deploy` over 100 scripted changes via `CliRunner`; runtime 0.11s (<5s threshold) and verified registry/status output.
 
 ---
 
