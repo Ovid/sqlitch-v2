@@ -846,3 +846,108 @@ COMMIT;
             encoding="utf-8"
         )
         assert result.output == expected_output
+
+
+def test_tag_output_matches_sqitch(tmp_path: Path) -> None:
+    """`sqlitch tag` should emit Sqitch-identical tagging output."""
+
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        init_result = runner.invoke(
+            main,
+            [
+                "init",
+                "flipr",
+                "--uri",
+                INIT_URI,
+                "--engine",
+                "sqlite",
+            ],
+        )
+        assert init_result.exit_code == 0, init_result.output
+
+        add_result = runner.invoke(
+            main,
+            [
+                "add",
+                "users",
+                "-n",
+                "Creates table to track our users.",
+            ],
+        )
+        assert add_result.exit_code == 0, add_result.output
+
+        tag_result = runner.invoke(
+            main,
+            [
+                "tag",
+                "v1.0.0-dev1",
+                "-n",
+                "Tag v1.0.0-dev1.",
+            ],
+        )
+
+        assert tag_result.exit_code == 0, tag_result.output
+
+        expected_output = (CLI_GOLDEN_ROOT / "tag_users_output.txt").read_text(
+            encoding="utf-8"
+        )
+        assert tag_result.output == expected_output
+
+
+def test_rework_output_matches_sqitch(tmp_path: Path) -> None:
+    """`sqlitch rework` should emit Sqitch-identical rework output."""
+
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        init_result = runner.invoke(
+            main,
+            [
+                "init",
+                "flipr",
+                "--uri",
+                INIT_URI,
+                "--engine",
+                "sqlite",
+            ],
+        )
+        assert init_result.exit_code == 0, init_result.output
+
+        add_result = runner.invoke(
+            main,
+            [
+                "add",
+                "users",
+                "-n",
+                "Creates table to track our users.",
+            ],
+        )
+        assert add_result.exit_code == 0, add_result.output
+
+        tag_result = runner.invoke(
+            main,
+            [
+                "tag",
+                "v1.0.0-dev1",
+                "-n",
+                "Tag v1.0.0-dev1.",
+            ],
+        )
+        assert tag_result.exit_code == 0, tag_result.output
+
+        rework_result = runner.invoke(
+            main,
+            [
+                "rework",
+                "users",
+                "-n",
+                "Add twitter column to userflips view.",
+            ],
+        )
+
+        assert rework_result.exit_code == 0, rework_result.output
+
+        expected_output = (CLI_GOLDEN_ROOT / "rework_users_output.txt").read_text(
+            encoding="utf-8"
+        )
+        assert rework_result.output == expected_output

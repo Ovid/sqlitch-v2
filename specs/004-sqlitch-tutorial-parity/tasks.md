@@ -694,14 +694,14 @@
   - ✅ Command exit code asserted to be zero after parity fix
   - **Status**: ✅ COMPLETE (2025-10-07) – Added regression test and adjusted CLI output formatting for undeployed change listings.
   
-- [ ] **T070** [P] Regression test: Revert output parity in `tests/regression/test_tutorial_parity.py`
+- [X] **T070** [P] Regression test: Revert output parity in `tests/regression/test_tutorial_parity.py`
   - Compare sqlitch revert vs sqitch revert output
   - Validate behavior matches
   
-- [ ] **T071** [P] Regression test: Tag output parity in `tests/regression/test_tutorial_parity.py`
+- [X] **T071** [P] Regression test: Tag output parity in `tests/regression/test_tutorial_parity.py`
   - Compare sqlitch tag vs sqitch tag output
   
-- [ ] **T072** [P] Regression test: Rework output parity in `tests/regression/test_tutorial_parity.py`
+- [X] **T072** [P] Regression test: Rework output parity in `tests/regression/test_tutorial_parity.py`
   - Compare sqlitch rework vs sqitch rework output
 
 - [ ] **T082** Capture parity fixtures for deploy/status/log/verify/revert/tag/rework in `tests/support/golden/tutorial_parity/`
