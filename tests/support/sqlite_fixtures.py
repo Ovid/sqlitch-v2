@@ -27,6 +27,7 @@ class ChangeScript:
     deploy_sql: str
     revert_sql: str = "-- revert placeholder"
     verify_sql: str | None = None
+    dependencies: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,6 +90,7 @@ def create_sqlite_project(tmp_path: Path, *, changes: Iterable[ChangeScript]) ->
             planner="Test User <tester@example.com>",
             planned_at=datetime.now(timezone.utc),
             notes=None,
+            dependencies=definition.dependencies,
         )
         change_models.append(change)
         change_files[definition.name] = deploy_path

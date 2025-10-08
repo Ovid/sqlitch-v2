@@ -154,6 +154,7 @@ def _build_request(
 
     plan_path = _resolve_plan_path(project_root=project_root, override=plan_override, env=env)
     plan = _load_plan(plan_path, default_engine)
+    _assert_plan_dependencies_present(plan=plan, plan_path=plan_path)
 
     return _DeployRequest(
         project_root=project_root,
@@ -411,6 +412,25 @@ def _load_plan(plan_path: Path, default_engine: str | None) -> Plan:
         raise CommandError(f"Unable to read plan file {plan_path}: {exc}") from exc
 
 
+def _assert_plan_dependencies_present(*, plan: Plan, plan_path: Path) -> None:
+    known_changes = {change.name for change in plan.changes}
+    missing: list[str] = []
+    for change in plan.changes:
+        for dependency in change.dependencies:
+            if dependency not in known_changes and dependency not in missing:
+                missing.append(dependency)
+
+    if not missing:
+        return
+
+    plan_name = plan_path.name
+    if len(missing) == 1:
+        raise CommandError(f'Unable to find change "{missing[0]}" in plan {plan_name}')
+
+    quoted = ", ".join(f'"{name}"' for name in missing)
+    raise CommandError(f"Unable to find changes {quoted} in plan {plan_name}")
+
+
 def _select_changes(
     *,
     plan: Plan,
@@ -425,7 +445,7 @@ def _select_changes(
         try:
             index = next(i for i, change in enumerate(changes) if change.name == to_change)
         except StopIteration as exc:
-            raise CommandError(f"Plan does not contain change '{to_change}'.") from exc
+            raise CommandError(f'Unknown change: "{to_change}"') from exc
         return changes[: index + 1]
 
     if to_tag:

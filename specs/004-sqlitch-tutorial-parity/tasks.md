@@ -872,10 +872,11 @@ Task: "Regression test: Tag output parity"
 Task: "Regression test: Rework output parity"
 ```
 
-- [ ] **T085** Author Sqitch-parity error message regression tests in `tests/regression/test_error_messages.py`
+- [X] **T085** Author Sqitch-parity error message regression tests in `tests/regression/test_error_messages.py`
   - Capture representative negative scenarios (missing change in plan/registry, unknown target/engine, invalid dependency) and record Sqitch’s canonical stderr output as golden fixtures.
   - Assert SQLitch emits byte-identical wording (formatting, capitalization, punctuation) for each scenario, providing fast feedback on NFR-005 compliance.
   - Ensure the suite integrates with existing regression harness and documents any intentionally divergent messaging for stakeholder review.
+  - **Status**: ✅ COMPLETE (2025-10-08) – Added golden fixtures for unknown change, unknown target, and missing dependency errors with regression tests mirroring Sqitch stderr phrasing.
 
 ---
 

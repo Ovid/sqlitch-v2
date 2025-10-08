@@ -55,6 +55,11 @@ class CommandError(click.ClickException):
         super().__init__(message)
         self.exit_code = exit_code
 
+    def show(self, file: t.TextIO | None = None) -> None:
+        if file is None:
+            file = click.get_text_stream("stderr")
+        click.echo(self.format_message(), file=file)
+
 
 def register_command(name: str | None = None) -> t.Callable[[CommandRegistrar], CommandRegistrar]:
     """Decorator that registers a command registrar for later attachment.

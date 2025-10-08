@@ -7,6 +7,7 @@ These fixtures capture canonical Sqitch outputs that we will diff against the Py
 - `plans/` – Reference plan files with pragmas, dependencies, tags, and whitespace edge cases.
 - `registry/` – Text snapshots of Sqitch registry-driven commands (`status`, `verify`, `log`). Each engine has its own subdirectory (currently only `sqlite/`). The SQLite directory also contains a structured logging sample (`deploy_structured_log.jsonl`) that captures the JSON payloads emitted during an atomic deploy, including the resolved registry URI and `transaction_scope` metadata required for parity checks.
 - `tutorial_parity/` – Canonical outputs from the Sqitch SQLite tutorial after each major command (`deploy`, `status`, `log`, `verify`, `revert`, `tag`, `rework`). Each command snapshot preserves the tutorial plan (`*.plan`), registry dump (`*.sql`), and stdout capture so parity regressions can diff SQLitch output byte-for-byte.
+- `error_messages/` – Canonical stderr snippets captured from Sqitch for representative failure scenarios (unknown change targets, missing dependencies, invalid engine targets). Regression tests ensure SQLitch mirrors the wording exactly, preserving punctuation and quoting.
 
 ## Provenance
 
