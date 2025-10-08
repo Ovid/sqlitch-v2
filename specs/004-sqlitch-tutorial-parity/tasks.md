@@ -31,6 +31,7 @@
 - [ ] **T004** Extend config CLI functional tests in `tests/cli/commands/test_config_functional.py` to enforce FR-001a interactions and absence of `core.uri` writes.
   - Depends on: T002, T003
 - [ ] **T005** Add init command regression in `tests/cli/commands/test_init_functional.py` confirming new project configs omit `%core.uri` and respect engine default notes.
+  - Add assertion that `engine.<engine>.target` is absent unless user provided `--target`, covering FR-007a.
   - Depends on: T002
 - [ ] **T006** Create environment precedence matrix tests in `tests/cli/commands/test_deploy_functional.py` validating SQLITCH_* → SQITCH_* → GIT_* chain (FR-005a).
   - Depends on: T001
@@ -43,14 +44,61 @@
 - [ ] **T010** Add end-to-end Scenario 10 coverage in `tests/integration/test_quickstart_sqlite.py` executing config/env overrides + failure handling.
   - Depends on: T002, T006, T007
 
+- [ ] **T010a** Add compact plan formatter regression tests in `tests/plan/test_formatter.py` asserting output matches Sqitch fixture bytes for a multi-change plan.
+  - Capture golden fixture under `tests/support/golden/tutorial_parity/plan_compact` and ensure formatter respects timestamp + planner formatting.
+  - Depends on: T001
+- [ ] **T010b** Add CLI integration test in `tests/cli/commands/test_add_functional.py` verifying `sqlitch add` emits compact entries (no verbose format) when appending to `sqitch.plan`.
+  - Extend existing fixture expectations (or add new golden file) to assert entry structure and dependency serialization.
+  - Depends on: T010a
+- [ ] **T010c** Add engine alias functional tests in `tests/cli/commands/test_engine_functional.py` ensuring `engine add sqlite flipr_reg` resolves `target.flipr_reg.uri` when the target exists.
+  - Cover success case (writes `engine.sqlite.target` URI) and failure case (unknown target name emits Sqitch-equivalent error).
+  - Depends on: T002 (config scaffolding) and existing target command fixtures.
+- [ ] **T010d** Add regression test in `tests/cli/commands/test_target_functional.py` confirming `target add` persists alias entries consumed by the new engine test, keeping tutorial workflow intact.
+  - Ensure config writes remain silent and paths match FR-022 expectations.
+  - Depends on: T010c
+- [ ] **T010e** Extend add-command regression coverage in `tests/cli/commands/test_add_functional.py` to assert dependency flags, quiet mode, and script templating remain Sqitch-identical.
+  - Capture stdout/stderr fixtures for `--requires`, `--conflicts`, and `--note` flows to guard FR-009 behavior.
+  - Depends on: Existing add fixtures (no additional prerequisites).
+- [ ] **T010f** Add tag-command parity tests in `tests/cli/commands/test_tag_functional.py` verifying tag insertion order, duplicate detection, and list view formatting.
+  - Include golden output assertions for default listing to cover FR-015.
+  - Depends on: T010e (plan fixtures shared).
+- [ ] **T010g** Add rework-command regression suite in `tests/cli/commands/test_rework_functional.py` confirming @tag suffix script generation, dependency preservation, and quiet mode parity (FR-016).
+  - Ensure fixtures cover both tagged and untagged change flows.
+  - Depends on: T010f
+- [ ] **T010h** Add script template parity test in `tests/templates/test_sqlite_templates.py` comparing deployed `sqlitch/templates/sqlite/*.tmpl` files against Sqitch golden fixtures via byte digests.
+  - Reuse checksum helper so deploy/revert/verify templates fail fast when diverging (FR-020).
+  - Depends on: T001
+- [ ] **T010i** Add target URI parsing tests in `tests/cli/commands/test_target_functional.py` validating relative path resolution, in-memory databases, and normalization of registry sibling paths (FR-021).
+  - Include coverage for environment overrides (`SQLITCH_TARGET`) and ensure outputs match Sqitch fixtures.
+  - Depends on: T010d
+
 ## Phase 3.3 – Implementation
 - [ ] **T011** Update resolver merge logic in `sqlitch/config/resolver.py` to enforce scope precedence and ignore duplicate files.
   - Depends on: T002
 - [ ] **T012** Adjust loader grammar in `sqlitch/config/loader.py` per FR-023; normalize header casing and strip `%core.uri` references.
   - Depends on: T003
+- [ ] **T012a** Update plan formatter implementation in `sqlitch/plan/formatter.py` to emit Sqitch-compact format for changes and tags, reusing parser models for deterministic field ordering.
+  - Depends on: T010a, T010b
+- [ ] **T012b** Ensure CLI writers (`sqlitch/cli/commands/{init,add,tag,rework}.py`) and helper utilities leverage the updated formatter, removing verbose-format fallbacks and adjusting write paths.
+  - Depends on: T012a
+- [ ] **T012c** Update `sqlitch/cli/commands/engine.py` to resolve existing target aliases when adding or altering engines, mirroring Sqitch’s lookup order and emitting parity error messages when targets are missing.
+  - Depends on: T010c, T010d
+- [ ] **T012d** Adjust configuration helpers in `sqlitch/config/resolver.py` and CLI context builders to expose target URIs for engine commands, ensuring tutorial `engine add sqlite flipr_test` flow succeeds post-init.
+  - Depends on: T012c
+- [ ] **T012e** Audit `sqlitch/cli/commands/add.py` to resolve any regressions surfaced by T010b/T010e parity tests, keeping dependency, conflicts, and note handling aligned with Sqitch.
+  - Depends on: T010e
+- [ ] **T012f** Update `sqlitch/cli/commands/tag.py` if T010f uncovers ordering or formatting drift, ensuring tag listings and duplicate detection match Sqitch.
+  - Depends on: T010f
+- [ ] **T012g** Adjust `sqlitch/cli/commands/rework.py` per findings from T010g so @tag script generation, dependency copying, and messaging remain parity-accurate.
+  - Depends on: T010g
+- [ ] **T012h** Synchronize template discovery and rendering utilities (`sqlitch/cli/commands/add.py`, `sqlitch/cli/commands/rework.py`, `sqlitch/cli/commands/init.py`, `sqlitch/utils/fs.py`) to ensure Sqitch templates are loaded without mutation and accommodate any fixes highlighted by T010h.
+  - Depends on: T010h
+- [ ] **T012i** Patch `sqlitch/cli/commands/target.py` and related URI helpers to mirror Sqitch parsing semantics (relative path resolution, :memory: support, registry sibling detection) based on gaps revealed in T010i.
+  - Depends on: T010i
 - [ ] **T013** Modify config CLI write paths in `sqlitch/cli/commands/config.py` to block `core.uri` entries and respect new precedence rules.
   - Depends on: T004, T011, T012
 - [ ] **T014** Update init scaffolding in `sqlitch/cli/commands/init.py` and templates under `sqlitch/templates/` to omit `%core.uri` while preserving Sqitch note layout.
+  - Ensure `engine.<engine>.target` is written only when `--target` is supplied (FR-007a) and propagate optional target flag through scaffolding helpers.
   - Depends on: T005, T012
 - [ ] **T015** Enhance deploy workflow in `sqlitch/cli/commands/deploy.py` + `sqlitch/engine/sqlite.py` to record `deploy_fail` events atomically with identity data.
   - Depends on: T007
