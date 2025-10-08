@@ -157,6 +157,10 @@ The Sqitch SQLite tutorial demonstrates a complete workflow for managing databas
 - Q: How should `sqlitch verify` handle change failures?
    → A: **Continue verifying all targeted changes, report each failure, emit the summary report, and exit 1 if any failures occurred (matches Sqitch)**
 
+### Session 2025-10-08
+- Q: How should SQLitch handle the registry/events record when a deploy script fails mid-transaction?
+  → A: **Option A: Roll back DB changes and record a failure event (Sqitch parity)**
+
 ---
 
 ## User Scenarios & Testing *(mandatory)*
@@ -187,7 +191,8 @@ Database developers following the SQLite tutorial need to successfully complete 
 ### Functional Requirements
 
 **Configuration Management**:
-- **FR-001**: SQLitch MUST support hierarchical configuration with three scopes: system (/etc/sqitch/), user (~/.sqitch/), and local (project ./), where local overrides user, and user overrides system.
+- **FR-001**: SQLitch MUST support hierarchical configuration with three scopes: system (`$(prefix)/etc/sqitch/sqitch.conf`), user (`~/.sqitch/sqitch.conf`), and local (project `./sqitch.conf`), where local overrides user and user overrides system.
+- **FR-001a**: Configuration file locations MUST respect Sqitch’s environment variable overrides: `SQITCH_SYSTEM_CONFIG` for the system scope, `SQITCH_USER_CONFIG` for the user scope, and `SQITCH_CONFIG` for the local scope. When resolving configuration, SQLitch MUST load the files strictly in the order system → user → local, applying later scopes on top of earlier ones.
 
 - **FR-002**: Configuration files MUST use INI format with sections and key-value pairs, support multi-line values (using backslash continuation per Git config format), and preserve comments.
 
@@ -207,8 +212,12 @@ Database developers following the SQLite tutorial need to successfully complete 
 - **FR-004**: User identity resolution MUST follow this priority order:
   1. Config file `[user]` section (`user.name` and `user.email`)
   2. Environment variables (in order of preference):
-     - `SQLITCH_USER_NAME` / `SQLITCH_USER_EMAIL` (preferred)
-     - `SQITCH_USER_NAME` / `SQITCH_USER_EMAIL` (fallback for Sqitch compatibility)
+       - `SQLITCH_FULLNAME` / `SQLITCH_EMAIL` (preferred overrides for Sqitch-compatible variables)
+       - `SQITCH_FULLNAME` / `SQITCH_EMAIL`
+       - `SQLITCH_USER_NAME` / `SQLITCH_USER_EMAIL`
+       - `SQITCH_USER_NAME` / `SQITCH_USER_EMAIL`
+       - `SQLITCH_ORIG_FULLNAME` / `SQLITCH_ORIG_EMAIL`
+       - `SQITCH_ORIG_FULLNAME` / `SQITCH_ORIG_EMAIL`
      - `GIT_COMMITTER_NAME` / `GIT_COMMITTER_EMAIL`
      - `GIT_AUTHOR_NAME` / `GIT_AUTHOR_EMAIL`
   3. System environment (`USER`, `USERNAME` for name; `EMAIL` for email)
@@ -216,17 +225,34 @@ Database developers following the SQLite tutorial need to successfully complete 
 
 - **FR-005**: Environment variable handling MUST prefer `SQLITCH_*` prefixed variables over `SQITCH_*` prefixed variables for all configuration options, with `SQITCH_*` variables serving as fallback for backward compatibility with Sqitch.
 
+- **FR-005a**: SQLitch MUST recognize the following Sqitch environment variables, honoring `SQLITCH_*` overrides when present (and treating variables as optional):
+
+   | Concern | Primary Variables (highest precedence first) |
+   | --- | --- |
+   | Target resolution | `SQLITCH_TARGET`, `SQITCH_TARGET` |
+   | Database username | `SQLITCH_USERNAME`, `SQITCH_USERNAME` |
+   | Database password | `SQLITCH_PASSWORD`, `SQITCH_PASSWORD` |
+   | Identity (name/email) | `SQLITCH_FULLNAME`, `SQITCH_FULLNAME`, `SQLITCH_USER_NAME`, `SQITCH_USER_NAME`, `SQLITCH_ORIG_FULLNAME`, `SQITCH_ORIG_FULLNAME` / `SQLITCH_EMAIL`, `SQITCH_EMAIL`, `SQLITCH_USER_EMAIL`, `SQITCH_USER_EMAIL`, `SQLITCH_ORIG_EMAIL`, `SQITCH_ORIG_EMAIL` |
+   | Originating system user | `SQLITCH_ORIG_SYSUSER`, `SQITCH_ORIG_SYSUSER` |
+   | Editor program | `SQLITCH_EDITOR`, `SQITCH_EDITOR` |
+   | Pager program | `SQLITCH_PAGER`, `SQITCH_PAGER` |
+
+   If neither variant is present, SQLitch MUST behave as though the variable is unset. Values sourced from these environment variables MUST participate in the configuration precedence chain defined in **FR-001**/**FR-001a**.
+
 - **FR-006**: Deploy and revert operations MUST record the committer identity (name and email) in the registry `events` table, using the identity resolution defined in FR-004.
 
 **Core Commands (Tutorial-Critical)**:
 - **FR-007**: `sqitch init` MUST initialize a new SQLitch project with project name, URI, engine, creating sqitch.conf, sqitch.plan, and deploy/revert/verify directories.
 - **FR-007a**: On project initialization, SQLitch MUST NOT persist an `engine.<engine>.target` configuration value unless the user explicitly passes a target via command-line options; this mirrors Sqitch and ensures the tutorial workflow can subsequently invoke `engine add <engine> <target>` to set the registry location without encountering "Engine '<engine>' already exists".
+- **FR-007b**: `sqitch init` MUST NOT write a `core.uri` entry to `sqitch.conf`, even when `--uri` is provided; the project URI is recorded exclusively in the plan file header to mirror Sqitch behavior.
 
 - **FR-008**: `sqitch config` MUST support get/set/list operations for project-local (sqitch.conf), user (~/.sqitch/sqitch.conf), and system configurations with proper precedence, and successful set operations MUST be silent by default (no output unless verbose flags are provided) to preserve Sqitch parity.
 
 - **FR-009**: `sqitch add` MUST create deploy, revert, and verify script files with proper headers, add changes to the plan file, support dependency declarations (--requires, --conflicts), and accept change notes.
 
 - **FR-010**: `sqitch deploy` MUST deploy pending changes to target database in plan order, execute deploy scripts within transactions (unless scripts manage their own), record deployments in registry database, validate dependencies, and skip already-deployed changes.
+
+- **FR-010a**: If a deploy script fails, SQLitch MUST roll back the database transaction, record a failure event in the registry, and surface the error to the CLI exactly as Sqitch does.
 
 - **FR-011**: `sqitch verify` MUST execute verify scripts for deployed changes, report success/failure for each change, and exit with appropriate code (0=success, 1=failure).
 - **FR-011a**: `sqitch verify` MUST mirror Sqitch failure handling: continue verifying all targeted changes even after a failure, report each failing change (including out-of-order or missing deployments), emit the summary report, and exit with status code 1 if any failures were detected.
@@ -345,6 +371,42 @@ Database developers following the SQLite tutorial need to successfully complete 
 **Target Management**:
 - **FR-021**: SQLitch MUST parse database URIs (db:sqlite:path/to/db), resolve relative paths from project root, create target databases if they don't exist, and support in-memory databases (:memory:).
 - **FR-022**: `sqitch engine` parity – the `engine add` and `engine alter` flows MUST accept either a full database URI (e.g., `db:sqlite:flipr_test.db`) or the name of an existing target defined via `target add`. When provided a target name, SQLitch MUST resolve `target.<name>.uri` from configuration and reuse that value. If the target name is unknown, SQLitch MUST emit the same "Unknown target" error as Sqitch. Rejecting a known target name **is a bug**. After `sqitch init`, a single invocation of `engine add <engine> <target>` MUST succeed and populate `engine.<engine>.target`, matching the tutorial guidance for configuring the registry database name.
+
+#### `sqitch.conf` Grammar
+
+- **FR-023**: SQLitch MUST accept and emit `sqitch.conf` files conforming to the following grammar (EBNF-style):
+
+   ```
+   config_file      = section+
+   section          = core_section | engine_section | target_section | comment_block
+   core_section     = "[core]" NEWLINE core_entry*
+   engine_section   = "[engine \"" engine_name "\"]" NEWLINE engine_entry*
+   target_section   = "[target \"" target_name "\"]" NEWLINE target_entry*
+   comment_block    = comment_line+
+
+   core_entry       = comment_line | assignment("engine" | "plan_file" | "top_dir" |
+                                 "extension" | "deploy_dir" | "revert_dir" | "verify_dir" |
+                                 "reworked_dir" | "reworked_deploy_dir" | "reworked_revert_dir" |
+                                 "reworked_verify_dir" | variable_key)
+
+   engine_entry     = comment_line | assignment("target" | "registry" | "client")
+   target_entry     = comment_line | assignment("uri")
+   variable_key     = "variables." identifier
+
+   assignment(key)  = key SP "=" SP? value NEWLINE
+   comment_line     = [ \t]* ("#" | ";") text_to_eol NEWLINE
+   engine_name      = identifier
+   target_name      = identifier
+   identifier       = [A-Za-z0-9_.:-]+
+   value            = text_to_eol
+   text_to_eol      = [^\n]*
+   NEWLINE          = "\n"
+   SP               = " "
+   ```
+
+   - Comments MUST be preserved verbatim when modifying existing configuration entries.
+   - `core.uri` is not a valid assignment and MUST NOT be generated by default command workflows; project URIs belong in the plan file header (`%uri=` pragma).
+   - Additional custom sections MAY be present if supplied by the user, but SQLitch MUST ignore unknown sections and leave them untouched when writing updates.
 
 ### Non-Functional Requirements
 
