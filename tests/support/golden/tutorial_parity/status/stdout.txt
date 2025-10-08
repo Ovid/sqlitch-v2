@@ -1,0 +1,9 @@
+# On database db:sqlite:flipr_test.db
+# Project:  flipr
+# Change:   f30fe47f5f99501fb8d481e910d9112c5ac0a676
+# Name:     users
+# Deployed: 2013-12-31 10:26:59 -0800
+# By:       Marge N. O’Vera <marge@example.com>
+# 
+Nothing to deploy (up-to-date)
+

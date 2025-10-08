@@ -1,0 +1,6 @@
+Verifying flipr_test
+  * users .. ok
+Undeployed change:
+  * flips
+Verify successful
+

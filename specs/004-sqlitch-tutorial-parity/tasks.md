@@ -704,10 +704,11 @@
 - [X] **T072** [P] Regression test: Rework output parity in `tests/regression/test_tutorial_parity.py`
   - Compare sqlitch rework vs sqitch rework output
 
-- [ ] **T082** Capture parity fixtures for deploy/status/log/verify/revert/tag/rework in `tests/support/golden/tutorial_parity/`
+- [X] **T082** Capture parity fixtures for deploy/status/log/verify/revert/tag/rework in `tests/support/golden/tutorial_parity/`
   - Run Sqitch tutorial commands to record golden outputs (stdout/stderr) and registry snapshots
   - Store results as plain-text fixtures for comparison in regression tests
   - Document fixture refresh procedure in `tests/support/golden/README.md`
+  - **Status**: ✅ COMPLETE (2025-10-07) – Added tutorial parity fixture tree with stdout, plan, and registry captures plus regeneration notes in `tests/support/golden/README.md`
 
 ---
 
