@@ -71,6 +71,24 @@
 - [ ] **T010i** Add target URI parsing tests in `tests/cli/commands/test_target_functional.py` validating relative path resolution, in-memory databases, and normalization of registry sibling paths (FR-021).
   - Include coverage for environment overrides (`SQLITCH_TARGET`) and ensure outputs match Sqitch fixtures.
   - Depends on: T010d
+- [ ] **T010j** Expand verify command parity tests in `tests/cli/commands/test_verify_functional.py` to cover success, single failure, multi-failure, and out-of-order deployment scenarios (FR-011/FR-011a).
+  - Capture stdout/stderr fixtures matching Sqitch and assert summary exit codes across all permutations.
+  - Depends on: T007
+- [ ] **T010k** Add revert command regression tests in `tests/cli/commands/test_revert_functional.py` for confirmation prompts, `--yes` bypass, dependency protection, and failure messaging (FR-012/FR-012a).
+  - Ensure prompts match Sqitch wording byte-for-byte and that declined confirmations leave registry untouched.
+  - Depends on: T007
+- [ ] **T010l** Add config formatting preservation tests in `tests/config/test_loader.py` (and writer fixtures) validating multiline values, indentation, and comment retention across read/write cycles (FR-002/FR-003).
+  - Use golden INI fixtures to assert byte-identical round trips for system/user/local scopes.
+  - Depends on: T003
+- [ ] **T010m** Add registry schema parity guard in `tests/registry/test_schema_parity.py` comparing `sqlitch/registry/migrations.py` DDL against Sqitch’s SQLite schema (FR-017).
+  - Compute canonicalized SQL digests and fail on divergence.
+  - Depends on: T001
+- [ ] **T010n** Extend plan validation tests in `tests/plan/test_validation.py` to assert duplicate names, missing dependencies, and conflict cycles raise Sqitch-identical errors (FR-019).
+  - Introduce fixtures mirroring Sqitch failure cases for parity checking.
+  - Depends on: T010a
+- [ ] **T010o** Add error message parity tests in `tests/cli/commands/test_errors_functional.py` covering representative CLI failure paths (deploy, verify, revert) to satisfy NFR-005.
+  - Assert error text, formatting, and exit codes align with Sqitch goldens.
+  - Depends on: T007, T010j, T010k
 
 ## Phase 3.3 – Implementation
 - [ ] **T011** Update resolver merge logic in `sqlitch/config/resolver.py` to enforce scope precedence and ignore duplicate files.
@@ -95,6 +113,18 @@
   - Depends on: T010h
 - [ ] **T012i** Patch `sqlitch/cli/commands/target.py` and related URI helpers to mirror Sqitch parsing semantics (relative path resolution, :memory: support, registry sibling detection) based on gaps revealed in T010i.
   - Depends on: T010i
+- [ ] **T012j** Align verify command implementation in `sqlitch/cli/commands/verify.py` with new T010j parity tests, ensuring failure aggregation, output ordering, and exit codes match Sqitch.
+  - Depends on: T010j
+- [ ] **T012k** Address revert command gaps in `sqlitch/cli/commands/revert.py` highlighted by T010k, covering confirmation prompts, dependency guards, and error messaging.
+  - Depends on: T010k
+- [ ] **T012l** Update config read/write helpers (`sqlitch/config/loader.py`, `sqlitch/config/resolver.py`, and writer utilities) to maintain indentation, multiline values, and comment fidelity per T010l.
+  - Depends on: T010l
+- [ ] **T012m** Reconcile registry migrations in `sqlitch/registry/migrations.py` with Sqitch schema differences uncovered by T010m (column types, indexes, triggers) to maintain parity.
+  - Depends on: T010m
+- [ ] **T012n** Update plan validation logic in `sqlitch/plan/validation.py` (and related helpers) to reflect expectations from T010n duplicate/conflict tests.
+  - Depends on: T010n
+- [ ] **T012o** Normalize CLI error messaging across commands (deploy, verify, revert) in light of T010o parity assertions, ensuring output channels and copy match Sqitch.
+  - Depends on: T010o
 - [ ] **T013** Modify config CLI write paths in `sqlitch/cli/commands/config.py` to block `core.uri` entries and respect new precedence rules.
   - Depends on: T004, T011, T012
 - [ ] **T014** Update init scaffolding in `sqlitch/cli/commands/init.py` and templates under `sqlitch/templates/` to omit `%core.uri` while preserving Sqitch note layout.
@@ -116,3 +146,5 @@
   - Depends on: T019
 - [ ] **T021** Refresh release notes in `REPORT-TASKS.md` and ensure coverage thresholds maintained (run pytest + coverage gate).
   - Depends on: T019, T020
+- [ ] **T022** Execute performance smoke test (`tests/performance/test_deploy_latency.py`) to confirm deploy of <100 changes completes within 5 seconds (NFR-003), documenting results in `docs/reports/sqlite-tutorial-parity.md`.
+  - Depends on: T015, T019
