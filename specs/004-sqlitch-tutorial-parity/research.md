@@ -373,6 +373,27 @@ def write_config(path: Path, settings: Mapping[str, Mapping[str, str]]) -> None:
 
 ---
 
+### 3.3 Configuration Scope Overrides *(NEW 2025-10-08)*
+
+- **Sqitch Behavior**: Configuration is loaded in system → user → local order, with each successive scope overriding prior values. Environment variables can relocate each scope:
+    - `SQITCH_SYSTEM_CONFIG`: overrides system config path
+    - `SQITCH_USER_CONFIG`: overrides user config path
+    - `SQITCH_CONFIG`: overrides project (local) config path
+- **Default Paths**: `$(prefix)/etc/sqitch/sqitch.conf`, `~/.sqitch/sqitch.conf`, `./sqitch.conf`.
+- **Parity Requirements**:
+    - SQLitch must resolve the environment overrides before falling back to defaults and keep the resolved paths in `ConfigProfile.files` in load order.
+    - Missing scopes are silently ignored, matching Sqitch behavior.
+    - When writing values, SQLitch must only touch the active scope file and preserve comments/whitespace for untouched scopes.
+- **Implementation Direction**: Extend `resolve_config` to read the environment variables (prefer `SQLITCH_*` overrides, fall back to `SQITCH_*` names for compatibility) and pass explicit directories into `load_config`.
+
+### 3.4 `core.uri` Parity *(NEW 2025-10-08)*
+
+- **Observation**: SQLitch currently writes `core.uri` during `sqlitch init --uri ...`, while Sqitch stores the URI only in the plan header.
+- **Perl Reference**: `App::Sqitch::Command::init::write_config` omits the key entirely (only comments mention it when unset).
+- **Resolution**: Update SQLitch config writer to avoid persisting `core.uri` unless the user explicitly sets it later. Regression tests should assert that freshly generated `sqitch.conf` matches Sqitch output with comment placeholders but no URI entry.
+
+---
+
 ## 4. Command Infrastructure
 
 ### Location
@@ -427,6 +448,29 @@ class CLIContext:
 ```
 
 **Status**: ✅ All options work across commands
+
+### 4.4 Environment Variable Matrix *(NEW 2025-10-08)*
+
+- **Parity Requirement**: Support every Sqitch environment variable with `SQLITCH_*` overrides taking priority and `SQITCH_*` values as fallback.
+- **Matrix**:
+
+    | Concern | SQLitch-first | Sqitch fallback | Notes |
+    | --- | --- | --- | --- |
+    | Target override | `SQLITCH_TARGET` | `SQITCH_TARGET` | Accepts alias or URI; feeds `CLIContext.target` |
+    | DB username | `SQLITCH_USERNAME` | `SQITCH_USERNAME` | Used by engine adapters; propagate to SQLite connection if provided |
+    | DB password | `SQLITCH_PASSWORD` | `SQITCH_PASSWORD` | Only forwarded to engines that need it |
+    | Full name | `SQLITCH_FULLNAME` | `SQITCH_FULLNAME` | Highest-priority identity source before config/user/env chain |
+    | Email | `SQLITCH_EMAIL` | `SQITCH_EMAIL` | Pairs with fullname for planner/committer identity |
+    | Legacy user.* keys | `SQLITCH_USER_NAME`, `SQLITCH_USER_EMAIL` | `SQITCH_USER_NAME`, `SQITCH_USER_EMAIL` | Remain in fallback chain per FR-004 |
+    | Origin system user | `SQLITCH_ORIG_SYSUSER` | `SQITCH_ORIG_SYSUSER` | Provided to remote execution contexts |
+    | Origin fullname/email | `SQLITCH_ORIG_FULLNAME` / `SQLITCH_ORIG_EMAIL` | `SQITCH_ORIG_FULLNAME` / `SQITCH_ORIG_EMAIL` | Used when primary identity vars absent |
+    | Editor | `SQLITCH_EDITOR` | `SQITCH_EDITOR` | Launch editor for change notes |
+    | Pager | `SQLITCH_PAGER` | `SQITCH_PAGER` | Overrides default pager when enabled |
+
+- **Implementation Notes**:
+    - Extend `sqlitch.utils.identity.resolve_identity` (or equivalent helper) to inspect the expanded precedence order defined in FR-004 and test each branch.
+    - `CLIContext` should derive `target` and UI programs from the merged environment before command execution, matching Sqitch CLI convenience.
+    - Tests must cover `SQLITCH_*` override precedence and fallback to `SQITCH_*` when the SQLitch variable is absent.
 
 ### Command Patterns to Follow
 

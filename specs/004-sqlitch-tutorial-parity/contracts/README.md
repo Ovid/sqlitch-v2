@@ -16,6 +16,18 @@ This directory documents the CLI command contracts for SQLitch tutorial parity. 
 
 ---
 
+### Environment Variable Overrides *(Updated 2025-10-08)*
+
+- SQLitch must recognize every Sqitch environment variable, preferring `SQLITCH_*` forms and falling back to `SQITCH_*` when absent.
+- Contract tests cover overrides for:
+    - Target selection: `SQLITCH_TARGET` → `SQITCH_TARGET`
+    - Authentication: `SQLITCH_USERNAME` / `SQLITCH_PASSWORD`
+    - Identity: `SQLITCH_FULLNAME`, `SQLITCH_EMAIL`, `SQLITCH_USER_NAME`, `SQLITCH_USER_EMAIL`, `SQLITCH_ORIG_*`
+    - Tooling: `SQLITCH_EDITOR`, `SQLITCH_PAGER`
+- Tests verify that CLI commands pick up overrides without explicit flags and record the resulting identity/target metadata in logs and registry events.
+
+---
+
 ## Contract Test Coverage
 
 CLI contracts are validated through contract tests in `tests/cli/commands/test_*_contract.py`. These tests ensure:
@@ -68,6 +80,8 @@ sqitch config --list
 - Write to specified scope
 - List all config values
 - Error on missing or invalid keys
+- Honor `SQITCH_CONFIG`, `SQITCH_USER_CONFIG`, and `SQITCH_SYSTEM_CONFIG` overrides while keeping config precedence (system→user→local)
+- Never emit `core.uri` when `--uri` supplied during init (plan handles `%uri=` pragma)
 
 ---
 
@@ -100,6 +114,11 @@ sqitch deploy [db:engine:target] [--to-change CHANGE] [--to-tag TAG] [--mode MOD
 **Functional Tests**: `tests/cli/commands/test_deploy_functional.py`
 - 20 tests covering registry creation, change deployment, dependencies, transactions
 
+**Additional Requirements**:
+- Respect `SQLITCH_TARGET`/`SQITCH_TARGET` overrides when no positional target supplied.
+- Capture committer identity using the full precedence chain (config → SQLITCH_* → SQITCH_* → git/system).
+- On script failure, roll back the workspace transaction, insert a `fail` event, and exit 1 (FR-010a).
+
 ---
 
 ### 5. `sqitch verify [target]`
@@ -116,6 +135,10 @@ sqitch verify [db:engine:target] [options]
 
 **Functional Tests**: `tests/cli/commands/test_verify_functional.py`
 - TestVerifyExecution: 5 tests covering script execution, success/failure reporting
+
+**Additional Requirements**:
+- Continue executing remaining verify scripts after a failure, summarizing all results, and exit 1 if any failure occurred (FR-011a).
+- Respect environment target overrides and identity precedence for emitted output.
 
 ---
 
@@ -139,6 +162,7 @@ sqitch revert [db:engine:target] [--to CHANGE] [--to-tag TAG] [options]
 - Update registry
 - Support `--to` for partial reverts
 - Validate no dependent changes exist
+- Prompt before reverting unless `--yes`/`-y` provided (FR-012a)
 
 ---
 
@@ -178,6 +202,7 @@ sqitch log [db:engine:target] [--event TYPE] [--change CHANGE] [--format FORMAT]
 - Display in reverse chronological order
 - Support filtering by event type and change
 - Support human and JSON formats
+- Display deploy failures (FR-010a) with recorded committer identity sourced from environment precedence
 
 ---
 

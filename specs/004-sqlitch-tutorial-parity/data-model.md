@@ -579,7 +579,14 @@ def _resolve_committer_identity(
 
     name = (
         config_name
+        or env.get("SQLITCH_FULLNAME")
+        or env.get("SQITCH_FULLNAME")
         or env.get("SQLITCH_USER_NAME")
+        or env.get("SQITCH_USER_NAME")
+        or env.get("SQLITCH_ORIG_FULLNAME")
+        or env.get("SQITCH_ORIG_FULLNAME")
+        or env.get("SQLITCH_ORIG_SYSUSER")
+        or env.get("SQITCH_ORIG_SYSUSER")
         or env.get("GIT_COMMITTER_NAME")
         or env.get("GIT_AUTHOR_NAME")
         or env.get("USER")
@@ -589,7 +596,12 @@ def _resolve_committer_identity(
 
     email = (
         config_email
+        or env.get("SQLITCH_EMAIL")
+        or env.get("SQITCH_EMAIL")
         or env.get("SQLITCH_USER_EMAIL")
+        or env.get("SQITCH_USER_EMAIL")
+        or env.get("SQLITCH_ORIG_EMAIL")
+        or env.get("SQITCH_ORIG_EMAIL")
         or env.get("GIT_COMMITTER_EMAIL")
         or env.get("GIT_AUTHOR_EMAIL")
         or env.get("EMAIL")
@@ -609,12 +621,18 @@ def _resolve_committer_identity(
    - `user.email` - Email address (e.g., "marge@example.com")
    - Config precedence: local → user → system
    
-2. **Environment variables**:
-   - `SQLITCH_USER_NAME` / `SQLITCH_USER_EMAIL` (SQLitch-specific)
-   - `GIT_COMMITTER_NAME` / `GIT_COMMITTER_EMAIL` (Git committer)
-   - `GIT_AUTHOR_NAME` / `GIT_AUTHOR_EMAIL` (Git author)
-   - `USER` / `USERNAME` (system username)
-   - `EMAIL` (system email)
+2. **Environment variables** (highest priority first within each pair):
+    - `SQLITCH_FULLNAME`, `SQITCH_FULLNAME`
+    - `SQLITCH_EMAIL`, `SQITCH_EMAIL`
+    - `SQLITCH_USER_NAME`, `SQITCH_USER_NAME`
+    - `SQLITCH_USER_EMAIL`, `SQITCH_USER_EMAIL`
+    - `SQLITCH_ORIG_FULLNAME`, `SQITCH_ORIG_FULLNAME`
+    - `SQLITCH_ORIG_EMAIL`, `SQITCH_ORIG_EMAIL`
+    - `SQLITCH_ORIG_SYSUSER`, `SQITCH_ORIG_SYSUSER`
+    - `GIT_COMMITTER_NAME` / `GIT_COMMITTER_EMAIL`
+    - `GIT_AUTHOR_NAME` / `GIT_AUTHOR_EMAIL`
+    - `USER` / `USERNAME`
+    - `EMAIL`
 
 3. **Generated fallback**:
    - Name: "SQLitch User"

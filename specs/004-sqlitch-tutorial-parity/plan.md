@@ -1,8 +1,8 @@
 
 # Implementation Plan: SQLite Tutorial Parity
 
-**Branch**: `004-sqlitch-tutorial-parity` | **Date**: 2025-10-07 | **Spec**: [Feature Spec](spec.md)
-**Input**: Feature specification from `/specs/004-sqlitch-tutorial-parity/spec.md`
+**Branch**: `004-sqlitch-tutorial-parity` | **Date**: 2025-10-08 | **Spec**: [`specs/004-sqlitch-tutorial-parity/spec.md`](spec.md)
+**Input**: Feature specification from `specs/004-sqlitch-tutorial-parity/spec.md`
 
 ## Execution Flow (/plan command scope)
 ```
@@ -31,108 +31,134 @@
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-Implement the full SQLite tutorial workflow with SQLitch by finishing the remaining command behaviors (`config`, `deploy`, `verify`, `status`, `revert`, `log`, `tag`, `rework`, `engine`) so every step matches Sqitch byte-for-byte. We will leverage the existing registry schema, plan parser, and CLI scaffolding discovered during research to wire commands to real registry operations, identity resolution, and template handling.
+Deliver full Sqitch parity for the SQLite tutorial so every documented workflow (`init`, `config`, `add`, `deploy`, `verify`, `status`, `revert`, `log`, `tag`, `rework`, `engine`, `target`) executes with byte-for-byte identical output when run with `sqlitch`. The implementation centers on wiring the existing plan/registry infrastructure into the CLI commands, enforcing the clarified configuration hierarchy and environment-variable precedence, and emitting the compact plan format while recording deploy/revert/verify/fail events exactly as Sqitch does. The feature succeeds when the tutorial can be completed end-to-end using SQLitch with the same files, registry contents, and console output as upstream Sqitch.
 
 ## Technical Context
-**Language/Version**: Python 3.11
-**Primary Dependencies**: Click CLI framework, SQLAlchemy (SQLite engine), python-dateutil, Pydantic, standard library `sqlite3`
-**Storage**: SQLite databases for both target schema and Sqitch-compatible registry
-**Testing**: pytest with Click `CliRunner`, pytest-randomly, coverage ≥90%
-**Target Platform**: Cross-platform CLI (macOS & Linux developers)
-**Project Type**: Single Python CLI project with supporting library modules
-**Performance Goals**: NFR-003 — `sqlitch deploy` completes <5s for plans under 100 changes on dev hardware
-**Constraints**: Behavioral parity with Sqitch (outputs, exit codes, prompts), compact plan format, registry schema identical to Sqitch, silent config writes by default, confirmation required before every revert unless `--yes`
-**Scale/Scope**: Tutorial-scale Flipr project (dozens of changes max) plus regression coverage for future parity
+**Language/Version**: Python 3.11 (per `requires-python >=3.11`)
+**Primary Dependencies**: Click 8.1 CLI framework, SQLAlchemy 2.x for registry I/O, python-dateutil for timezone-aware parsing, Pydantic 2.x domain models
+**Storage**: SQLite registry database co-located with target DB; plan/config/state stored on filesystem
+**Testing**: Pytest (strict config), Click `CliRunner`, pytest-randomly, pytest-cov ≥90%
+**Target Platform**: Cross-platform CLI on macOS & Linux shells
+**Project Type**: Single back-end/CLI project (`sqlitch/` package with tests)
+**Performance Goals**: Tutorial deploys <5 seconds for plans <100 changes (FR-003); default CLI interactions remain near-instant (<200ms) when not executing SQL
+**Constraints**: Maintain ≥90% coverage (NFR-002), byte-identical default output to Sqitch (NFR-004), honor config/env precedence (FR-001a/FR-005a), structured logging only via flags
+**Scale/Scope**: Tutorial-scale plans (~dozens of changes); registry and config must scale to continuous CLI use but feature scope limited to SQLite tutorial flows
 
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- **Test-First Development:** Phase planning sequences every command enhancement behind new or unskipped contract/integration tests (e.g., tutorial walkthrough scenarios in `tests/cli/commands/`), ensuring we start Red before implementing.
-- **Observability & Determinism:** Commands continue to emit human output only unless `--json`/verbosity flags are set; any registry instrumentation stays within SQLite tables with no new log sinks.
-- **Behavioral Parity:** All command behaviors are cross-checked against `sqitch/` POD docs and Perl source; deviations (e.g., engine alias handling) are documented in spec clarifications and research notes.
-- **Simplicity-First:** Implementation focuses on reusing existing registry + plan modules rather than introducing new abstractions; no additional engines, flags, or output modes beyond tutorial requirements.
-- **Documented Interfaces:** Public CLI entry points and helper modules will gain/refresh docstrings as part of implementation, and quickstart plus contracts capture user-facing expectations.
+- **Test-First Development:** Each CLI enhancement will begin by unskipping or adding failing tests under `tests/cli`, `tests/integration`, and `tests/regression` that lock parity with the Sqitch tutorial (e.g., deploy failure recording, config hierarchy, environment variable overrides) before touching implementation modules.
+- **Observability & Determinism:** Default command executions will continue emitting only Sqitch-style human output; structured logs remain off unless verbose/json flags trigger existing instrumentation. Registry writes on deploy/revert stay transactional to preserve deterministic histories (FR-010a).
+- **Behavioral Parity:** All behaviors are cross-checked against `sqitch/` Perl sources (`App::Sqitch::Command::*`) and tutorial POD. Newly clarified expectations—no `core.uri` entry, precise config scope ordering, and full `SQLITCH_*`/`SQITCH_*` environment coverage—are treated as non-negotiable parity items.
+- **Simplicity-First:** Implementation will extend existing helpers (config loader, plan formatter, registry migrations) instead of introducing new abstractions. Any unavoidable complexity (e.g., identity fallback chain) will reuse shared utility modules in `sqlitch/utils` to avoid duplication.
+- **Documented Interfaces:** Public-facing modules touched during implementation (`sqlitch.cli.commands.*`, `sqlitch.config.*`, `sqlitch.utils.identity`) will have docstrings updated to reflect environment variable precedence, registry event semantics, and CLI options, keeping docs aligned with behavior.
 
 ## Project Structure
 
 ### Documentation (this feature)
 ```
-specs/004-sqlitch-tutorial-parity/
-├── plan.md              # Implementation plan (this file)
-├── research.md          # Phase 0 findings (registry parity, engine alias, etc.)
-├── data-model.md        # Phase 1 entity/state design
-├── quickstart.md        # End-to-end tutorial validation steps
-├── contracts/           # CLI contract summaries and references to tests
-└── tasks.md             # Generated by /tasks command (not modified here)
+ specs/004-sqlitch-tutorial-parity/
+├── plan.md              # This file (/plan command output)
+├── research.md          # Phase 0 output (/plan command)
+├── data-model.md        # Phase 1 output (/plan command)
+├── quickstart.md        # Phase 1 output (/plan command)
+├── contracts/           # Phase 1 output (/plan command)
+└── tasks.md             # Phase 2 output (/tasks command - NOT created by /plan)
 ```
 
 ### Source Code (repository root)
 ```
 sqlitch/
-├── __init__.py
 ├── cli/
 │   ├── __init__.py
-│   ├── commands/
 │   ├── main.py
-│   └── options.py
+│   └── commands/
+│       ├── __init__.py
+│       ├── add.py
+│       ├── config.py
+│       ├── deploy.py
+│       ├── engine.py
+│       ├── log.py
+│       ├── rework.py
+│       ├── revert.py
+│       ├── status.py
+│       ├── tag.py
+│       ├── target.py
+│       └── verify.py
 ├── config/
+│   ├── __init__.py
+│   ├── loader.py
+│   └── resolver.py
 ├── engine/
+│   ├── __init__.py
+│   ├── base.py
+│   └── sqlite.py
 ├── plan/
+│   ├── __init__.py
+│   ├── formatter.py
+│   ├── model.py
+│   └── parser.py
 ├── registry/
+│   ├── __init__.py
+│   └── migrations.py
 └── utils/
+      ├── __init__.py
+      ├── fs.py
+      ├── identity.py
+      ├── logging.py
+      └── time.py
 
 tests/
 ├── cli/
-│   ├── commands/
-│   └── contracts/
+├── config/
 ├── integration/
+├── plan/
 ├── registry/
 ├── regression/
-├── support/
-└── utils/
+├── scripts/
+└── support/
 
-sqitch/
-├── bin/
-└── lib/
-
-docs/
-└── architecture/
+sqitch/                 # Vendored Perl reference implementation
 ```
 
-**Structure Decision**: Single-project Python CLI codebase; feature work lives in `sqlitch/` modules with corresponding tests under `tests/`. Upstream Sqitch fixtures remain under `sqitch/` for parity validation.
+**Structure Decision**: Single-package CLI application; all commands and supporting libraries live under `sqlitch/`, with pytest suites mirroring the same module layout for contract, integration, and regression coverage.
 
 ## Phase 0: Outline & Research
-1. Clarified outstanding parity questions (registry schema mirroring, revert confirmation, verify failure flow, engine alias resolution) using Sqitch POD docs and perl implementation; outcomes recorded in `research.md` and the spec clarifications.
-2. Validated supporting infrastructure (plan parser, config resolver, registry migrations) to avoid duplicating logic and confirmed required extension points for command implementations.
-3. Documented research decisions using the template format (Decision / Rationale / Alternatives) with emphasis on registry operations, identity resolution, and command sequencing. No unresolved clarifications remain.
+1. Validate Sqitch’s environment-variable contract (sqitch-environment.pod) to confirm precedence for `SQLITCH_*`/`SQITCH_*` pairs covering target selection, authentication, identity, originating host metadata, editor, and pager (FR-004/FR-005a). Capture authoritative references and expected fallbacks in `research.md`.
+2. Document configuration scope resolution, including `SQITCH_CONFIG`, `SQITCH_USER_CONFIG`, and `SQITCH_SYSTEM_CONFIG` overrides, plus merge order system→user→local (FR-001/FR-001a). Verify how Sqitch handles missing files or duplicate entries.
+3. Analyze deploy/revert failure handling in `App::Sqitch::Command::deploy` to confirm event recording semantics (FR-010a) and registry transaction boundaries for SQLite; note required SQLAlchemy transaction patterns.
+4. Reconcile plan formatter output with compact Sqitch format (FR-019a) ensuring timestamps, planner identity, and tag placement remain parity-consistent; document any gaps between current formatter behavior and desired state.
+5. Inventory command outputs in the tutorial (help text, success messages, prompts) to ensure expected stdout/stderr/exit codes are captured as acceptance baselines.
 
-**Output**: `research.md` (complete — last updated 2025-10-07) capturing parity decisions and remaining implementation gaps.
+**Output**: `specs/004-sqlitch-tutorial-parity/research.md` refreshed with parity notes on environment precedence, config hierarchy, deploy failure events, plan formatting, and CLI output expectations.
 
 ## Phase 1: Design & Contracts
 *Prerequisites: research.md complete*
 
-1. `data-model.md` enumerates the key domain entities (Project, Change, Tag, Dependency, Target, Registry Event, DeployOptions) with attributes, relationships, and lifecycle notes mapped from research + spec.
-2. CLI contracts are documented in `contracts/README.md`, pointing to the Click command signatures, expected options, and existing contract tests ensuring Sqitch parity.
-3. Quickstart scenarios map the complete tutorial flow (init → add → deploy → verify → status → revert → log → tag → rework) into reproducible validation steps referenced by future integration tests.
-4. Agent context (`.github/copilot-instructions.md`) has been refreshed via `.specify/scripts/bash/update-agent-context.sh copilot` after plan updates to ensure tooling awareness of new dependencies and constraints.
+1. **Data model updates (`data-model.md`)**: Document the registry entities (projects, changes, dependencies, events, tags), config scopes, and plan entries with newly clarified fields—highlight failure event records, identity resolution order, and environment-variable inputs that feed identity/target resolution.
+2. **CLI command contracts (`contracts/`)**: For each tutorial-critical command, capture invocation, required options, environment/config inputs, stdout/stderr expectations, prompts, and exit codes. Include explicit notes for config scope writing, deploy failure recording, and verify failure summary (FR-008–FR-016, FR-010a, FR-011a, FR-012a).
+3. **Test blueprints**: For every contract, outline the failing test that will be added/unskipped first (CLI regression tests, integration flows, golden comparisons). Ensure deploy/revert/verify tests assert registry contents, log/fail events, and environment variable overrides.
+4. **Quickstart path (`quickstart.md`)**: Translate the tutorial scenarios into a condensed walkthrough that exercises config overrides, environment variable precedence, deploy failure handling, and tag/rework flows.
+5. **Agent context**: Run `.specify/scripts/bash/update-agent-context.sh copilot` and append any new technologies or decisions (environment variable precedence, config overrides) to keep automation context current.
 
-**Output**: `data-model.md`, `contracts/README.md`, `quickstart.md`, updated Copilot context — all present under `specs/004-sqlitch-tutorial-parity/`.
+**Output**: Updated `data-model.md`, refreshed CLI contract specs under `specs/004-sqlitch-tutorial-parity/contracts/`, failing test plans referenced in design docs, `quickstart.md` walkthrough, and synchronized agent context file.
 
 ## Phase 2: Task Planning Approach
 *This section describes what the /tasks command will do - DO NOT execute during /plan*
 
 **Task Generation Strategy**:
-- Use `.specify/templates/tasks-template.md` to structure tasks anchored to failing tests first (e.g., tutorial walkthrough integration tests, contract updates for config/revert/log/tag).
-- Derive contract-test tasks from `contracts/README.md` gaps (e.g., config get/set, revert prompt, verify failure handling, engine alias acceptance).
-- Map each entity/operation in `data-model.md` to implementation tasks (registry mutations, plan formatter updates, script generation behavior).
-- Include follow-up tasks for docs/tests (quickstart validation, registry schema assertions) before implementation tasks that satisfy them.
+- Load `.specify/templates/tasks-template.md` as base
+- Derive task list from Phase 1 artifacts: each CLI contract becomes a failing CLI regression/integration test task, followed by implementation tasks to make it pass.
+- Data model items yield persistence/identity helper tasks (e.g., environment-variable resolution helper, registry event writer).
+- Quickstart scenarios produce end-to-end acceptance test tasks verifying tutorial parity, including config override flows and deploy failure cases.
+- Include dedicated tasks for config writer updates (no core.uri, scope overrides), environment variable handling, and plan formatter compact output.
 
 **Ordering Strategy**:
-- Maintain Red→Green sequence: add/activate tests per command before coding behavior.
-- Respect dependency order: registry model + plan updates precede CLI command wiring; CLI implementations precede documentation polish.
-- Use `[P]` markers for independent command tasks (e.g., log vs verify) to highlight parallelizable workstreams.
+- TDD order: For every command, add failing tests before code; environment variable helpers tested prior to CLI wiring.
+- Dependency order: Update configuration/identity helpers before command implementations; registry functions before CLI surfaces that depend on them.
+- Mark [P] for parallel execution when tests touch disjoint commands (e.g., `log` vs `verify`).
 
-**Estimated Output**: ~25 ordered tasks balancing test additions, command implementations, and documentation alignment.
+**Estimated Output**: 28-32 ordered tasks spanning tests, config/env support, command implementations, plan formatter updates, and refactors.
 
 **IMPORTANT**: This phase is executed by the /tasks command, NOT by /plan
 
@@ -148,7 +174,8 @@ docs/
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| _None_ | — | — |
+| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
+| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
 
 
 ## Progress Tracking
@@ -157,7 +184,7 @@ docs/
 **Phase Status**:
 - [x] Phase 0: Research complete (/plan command)
 - [x] Phase 1: Design complete (/plan command)
-- [ ] Phase 2: Task planning complete (/plan command - describe approach only)
+- [x] Phase 2: Task planning complete (/plan command - describe approach only)
 - [ ] Phase 3: Tasks generated (/tasks command)
 - [ ] Phase 4: Implementation complete
 - [ ] Phase 5: Validation passed
@@ -169,4 +196,4 @@ docs/
 - [x] Complexity deviations documented
 
 ---
-*Based on Constitution v1.10.1 - See `.specify/memory/constitution.md`*
+*Based on Constitution v1.10.1 – see `.specify/memory/constitution.md`*

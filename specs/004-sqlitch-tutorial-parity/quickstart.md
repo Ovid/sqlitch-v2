@@ -33,6 +33,7 @@ cat ~/.sqitch/sqitch.conf  # Should show user settings
 
 **Success Criteria**:
 - ✅ sqitch.conf created with correct engine
+- ✅ sqitch.conf omits `uri =` assignment (only commented placeholders)
 - ✅ sqitch.plan created with pragmas
 - ✅ deploy/, revert/, verify/ directories created
 - ✅ User config saved to ~/.sqitch/sqitch.conf
@@ -277,6 +278,44 @@ sqlitch engine remove sqlite -y
 - ✅ `engine update` accepts either alias or URI
 - ✅ Removal returns CLI output parity with Sqitch
 - ✅ Config file reflects expected sections
+
+---
+
+### Scenario 10: Environment & Config Overrides
+**Goal**: Validate environment-variable precedence and alternate config locations
+
+```bash
+# Prepare alternate local config path
+cp sqitch.conf sqitch.local.override
+
+# Use SQITCH_CONFIG to point at override file for a single command
+env SQITCH_CONFIG=$(pwd)/sqitch.local.override \
+  sqlitch config --local core.plan_file custom.plan
+
+# Confirm original sqitch.conf untouched while override file updated
+grep 'plan_file' sqitch.conf || echo "sqitch.conf unchanged"
+grep 'plan_file' sqitch.local.override  # Should show core.plan_file=custom.plan
+
+# Exercise SQLITCH_* overrides for identity & target
+env SQLITCH_TARGET=db:sqlite:flipr_env.db \
+  SQLITCH_FULLNAME='Env Override' \
+  SQLITCH_EMAIL='env@example.com' \
+  sqlitch deploy
+
+# Fallback to SQITCH_* when SQLITCH_* absent
+env SQITCH_FULLNAME='Sqitch Fallback' \
+  SQITCH_EMAIL='fallback@example.com' \
+  sqlitch verify db:sqlite:flipr_env.db
+
+# Inspect latest events for recorded committer identity
+sqlite3 sqitch.db 'SELECT change, event, committer_name, committer_email FROM events ORDER BY committed_at DESC LIMIT 3;'
+```
+
+**Success Criteria**:
+- ✅ `SQITCH_CONFIG` redirect only affects the specified invocation and leaves `sqitch.conf` untouched
+- ✅ `SQLITCH_*` variables override config-derived identity and default target
+- ✅ `SQITCH_*` variables supply identity when `SQLITCH_*` counterparts are absent
+- ✅ Registry events record names/emails matching the environment used for each invocation
 
 ---
 
