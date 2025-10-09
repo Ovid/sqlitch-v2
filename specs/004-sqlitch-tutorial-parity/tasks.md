@@ -19,7 +19,7 @@
 - [X] T002 [P] Augment `tests/cli/test_status_unit.py` to assert registry targets render as project-relative URIs and `_load_registry_rows` raises `CommandError` when the SQLite file is missing (locks current failure before implementation)
 - [X] T003 [P] Tighten `tests/cli/contracts/test_status_contract.py` expectations for human output and JSON payload (target string, summary header, undeployed list) based on Sqitch transcript
 - [X] T004 [P] Expand `tests/cli/contracts/test_log_contract.py` to assert newline spacing and identity lines exactly match Sqitch log output (ensures current failure remains)
-- [ ] T005 [P] Update `tests/regression/test_tutorial_parity.py` log/status snapshots for Quickstart Scenarios 7 and 10 to capture Sqitch baseline before code changes
+- [X] T005 [P] Update `tests/regression/test_tutorial_parity.py` log/status snapshots for Quickstart Scenarios 7 and 10 to capture Sqitch baseline before code changes
 
 ## Phase 3.3: Core Implementation
 - [ ] T006 Normalize SQLite registry targets in `sqlitch/cli/commands/status.py::_resolve_registry_target` so CLI output keeps the original target string while resolving filesystem paths internally

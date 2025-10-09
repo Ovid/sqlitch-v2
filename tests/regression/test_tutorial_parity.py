@@ -371,7 +371,8 @@ def test_status_output_matches_sqitch(tmp_path: Path) -> None:
         assert result.output == expected_output
         status_lines = result.output.splitlines()
         assert status_lines[0] == "# On database db:sqlite:flipr_test.db"
-        assert status_lines[-1] == "Nothing to deploy (up-to-date)"
+        assert status_lines[-2] == "Nothing to deploy (up-to-date)"
+        assert status_lines[-1] == ""
 
 
 def test_log_output_matches_sqitch(tmp_path: Path) -> None:
@@ -489,8 +490,9 @@ def test_log_output_matches_sqitch(tmp_path: Path) -> None:
         assert result.output == expected_output
         log_lines = result.output.splitlines()
         assert log_lines[0] == "On database db:sqlite:flipr_test.db"
-        assert log_lines[6] == ""
-        assert log_lines[7] == "    Creates table to track our users."
+        assert log_lines[5] == ""
+        assert log_lines[6] == "    Creates table to track our users."
+        assert log_lines[-1] == ""
 
 
 def test_verify_output_matches_sqitch(tmp_path: Path) -> None:
