@@ -22,15 +22,15 @@
 - [X] T005 [P] Update `tests/regression/test_tutorial_parity.py` log/status snapshots for Quickstart Scenarios 7 and 10 to capture Sqitch baseline before code changes
 
 ## Phase 3.3: Core Implementation
-- [ ] T006 Normalize SQLite registry targets in `sqlitch/cli/commands/status.py::_resolve_registry_target` so CLI output keeps the original target string while resolving filesystem paths internally
-- [ ] T007 Ensure `sqlitch/cli/commands/status.py::_load_registry_rows` raises `CommandError` on missing databases and hydrates `DeploymentStatus` rows with project-relative URIs
-- [ ] T008 Update `sqlitch/cli/commands/status.py::_render_human_output` to emit Sqitch-parity headers, undeployed lists, and ahead/in-sync summaries using the normalized target string
-- [ ] T009 Align JSON payload construction in `sqlitch/cli/commands/status.py::_build_json_payload` with contract expectations (target, pending changes, status state)
-- [ ] T010 Match Sqitch human output ordering and spacing in `sqlitch/cli/commands/log.py`, reusing `DeploymentEvent` metadata for identity lines
+- [X] T006 Normalize SQLite registry targets in `sqlitch/cli/commands/status.py::_resolve_registry_target` so CLI output keeps the original target string while resolving filesystem paths internally
+- [X] T007 Ensure `sqlitch/cli/commands/status.py::_load_registry_rows` raises `CommandError` on missing databases and hydrates `DeploymentStatus` rows with project-relative URIs
+- [X] T008 Update `sqlitch/cli/commands/status.py::_render_human_output` to emit Sqitch-parity headers, undeployed lists, and ahead/in-sync summaries using the normalized target string
+- [X] T009 Align JSON payload construction in `sqlitch/cli/commands/status.py::_build_json_payload` with contract expectations (target, pending changes, status state)
+- [X] T010 Match Sqitch human output ordering and spacing in `sqlitch/cli/commands/log.py`, reusing `DeploymentEvent` metadata for identity lines
 
 ## Phase 3.4: Polish
-- [ ] T013 [P] Document status/log normalization changes in `docs/architecture/reports/status-log-parity.md`
-- [ ] T014 [P] Add focused unit coverage for `sqlitch/engine/sqlite.py::resolve_sqlite_filesystem_path` ensuring relative resolution mirrors CLI output expectations
+- [X] T013 [P] Document status/log normalization changes in `docs/architecture/reports/status-log-parity.md`
+- [X] T014 [P] Add focused unit coverage for `sqlitch/engine/sqlite.py::resolve_sqlite_filesystem_path` ensuring relative resolution mirrors CLI output expectations
 
 ## Dependencies
 - T002 → T006 → T007 → T008 → T009

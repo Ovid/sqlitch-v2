@@ -367,6 +367,24 @@ def test_resolve_sqlite_filesystem_path_rejects_remote_file_hosts() -> None:
         )
 
 
+def test_resolve_sqlite_filesystem_path_with_relative_path() -> None:
+    """Test resolve_sqlite_filesystem_path handles relative paths."""
+    import sqlitch.engine.sqlite as sqlite_engine
+
+    result = sqlite_engine.resolve_sqlite_filesystem_path("db:sqlite:./relative/path.db")
+    assert result == Path("./relative/path.db")
+    assert not result.is_absolute()
+
+
+def test_resolve_sqlite_filesystem_path_with_relative_file_uri() -> None:
+    """Test resolve_sqlite_filesystem_path handles relative file: URIs."""
+    import sqlitch.engine.sqlite as sqlite_engine
+
+    result = sqlite_engine.resolve_sqlite_filesystem_path("db:sqlite:file:./relative/path.db")
+    assert result == Path("./relative/path.db")
+    assert not result.is_absolute()
+
+
 def test_extract_sqlite_statements_single_statement() -> None:
     """Test extract_sqlite_statements with single statement."""
     from sqlitch.engine.sqlite import extract_sqlite_statements
