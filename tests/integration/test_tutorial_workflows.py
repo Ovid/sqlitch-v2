@@ -713,12 +713,13 @@ class TestScenario9TargetEngineParity:
             )
             assert add_result.exit_code == 0, add_result.output
 
-            config_path = config_root / "sqitch.conf"
+            # Engine config is written to project root, not user config root
+            config_path = Path.cwd() / "sqitch.conf"
             parser = configparser.ConfigParser(interpolation=None)
             parser.optionxform = str
             parser.read(config_path, encoding="utf-8")
             assert parser.has_section('engine "sqlite"')
-            assert parser['engine "sqlite"']["uri"] == "db:sqlite:flipr_test.db"
+            assert parser['engine "sqlite"']["target"] == "flipr_test"
 
             update_result = runner.invoke(
                 main,

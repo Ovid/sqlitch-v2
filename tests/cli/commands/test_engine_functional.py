@@ -53,8 +53,8 @@ class TestEngineAliasResolution:
             section = 'engine "sqlite"'
             assert parser.has_section(section), "Engine section should be created"
             assert (
-                parser.get(section, "uri") == "db:sqlite:flipr_test.db"
-            ), "Engine URI should match target alias URI"
+                parser.get(section, "target") == "flipr_test"
+            ), "Engine target should store the target alias name"
 
     def test_engine_add_errors_for_unknown_target_alias(self, runner: CliRunner) -> None:
         """Engine add should emit Sqitch-parity error when alias is unknown."""

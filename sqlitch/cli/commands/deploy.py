@@ -119,6 +119,10 @@ def deploy_command(
         option_value=target_option,
         configured_target=cli_context.target,
         positional_targets=target_args,
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=env,
+        default_engine=default_engine,
     )
 
     request = _build_request(
@@ -214,6 +218,8 @@ def _execute_deploy(request: _DeployRequest) -> None:
     engine_target, display_target = _resolve_engine_target(
         target=request.target,
         project_root=request.project_root,
+        config_root=request.config_root,
+        env=request.env,
         default_engine=request.plan.default_engine,
         plan_path=request.plan_path,
         registry_override=request.registry_override,
@@ -372,6 +378,10 @@ def _resolve_target(
     option_value: str | None,
     configured_target: str | None,
     positional_targets: Sequence[str],
+    project_root: Path,
+    config_root: Path,
+    env: Mapping[str, str],
+    default_engine: str | None,
 ) -> str:
     if option_value and positional_targets:
         raise CommandError("Provide either --target or a positional target, not both.")
@@ -385,6 +395,18 @@ def _resolve_target(
         target = option_value
     else:
         target = configured_target
+
+    # If no target from CLI/env, check if the default engine has a target configured
+    if not target and default_engine:
+        config_profile = config_resolver.resolve_config(
+            root_dir=project_root,
+            config_root=config_root,
+            env=env,
+        )
+        engine_section = f'engine "{default_engine}"'
+        engine_target = config_profile.settings.get(engine_section, {}).get("target")
+        if engine_target:
+            target = engine_target
 
     if not target:
         raise CommandError(
@@ -467,6 +489,8 @@ def _resolve_engine_target(
     *,
     target: str,
     project_root: Path,
+    config_root: Path,
+    env: Mapping[str, str],
     default_engine: str,
     plan_path: Path,
     registry_override: str | None,
@@ -475,6 +499,32 @@ def _resolve_engine_target(
     """Return an :class:`EngineTarget` for the requested deployment target."""
 
     candidate = target.strip()
+    
+    # Check if the candidate is a target alias and resolve it
+    if not candidate.startswith("db:"):
+        # Might be a target alias - try to resolve it
+        config_profile = config_resolver.resolve_config(
+            root_dir=project_root,
+            config_root=config_root,
+            env=env,
+        )
+        target_section = f'target "{candidate}"'
+        target_data = config_profile.settings.get(target_section)
+        if target_data is not None:
+            target_uri = target_data.get("uri")
+            if target_uri:
+                # Found a target alias - use the resolved URI
+                candidate = target_uri
+                original_display = target  # Keep the original alias name for display
+            else:
+                # Target section exists but no URI - treat as plain value
+                original_display = candidate
+        else:
+            # Not a target alias - treat as plain value
+            original_display = candidate
+    else:
+        original_display = candidate
+    
     if candidate.startswith("db:"):
         remainder = candidate[3:]
         engine_token, separator, payload = remainder.partition(":")

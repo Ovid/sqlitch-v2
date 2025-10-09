@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
+from types import MappingProxyType
+
 import click
 import pytest
 
@@ -51,6 +53,10 @@ def test_resolve_target_prefers_option_over_config() -> None:
             option_value="cli",
             configured_target="config",
             positional_targets=(),
+            project_root=Path.cwd(),
+            config_root=Path.cwd(),
+            env=MappingProxyType({}),
+            default_engine="sqlite",
         )
         == "cli"
     )
@@ -62,6 +68,10 @@ def test_resolve_target_accepts_positional_target() -> None:
             option_value=None,
             configured_target=None,
             positional_targets=("db:sqlite:demo",),
+            project_root=Path.cwd(),
+            config_root=Path.cwd(),
+            env=MappingProxyType({}),
+            default_engine="sqlite",
         )
         == "db:sqlite:demo"
     )
@@ -73,6 +83,10 @@ def test_resolve_target_rejects_both_option_and_positional() -> None:
             option_value="cli",
             configured_target=None,
             positional_targets=("db:sqlite:demo",),
+            project_root=Path.cwd(),
+            config_root=Path.cwd(),
+            env=MappingProxyType({}),
+            default_engine="sqlite",
         )
 
 
@@ -82,6 +96,10 @@ def test_resolve_target_rejects_multiple_positional_targets() -> None:
             option_value=None,
             configured_target=None,
             positional_targets=("db:sqlite:one", "db:sqlite:two"),
+            project_root=Path.cwd(),
+            config_root=Path.cwd(),
+            env=MappingProxyType({}),
+            default_engine="sqlite",
         )
 
 
@@ -91,6 +109,10 @@ def test_resolve_target_requires_value() -> None:
             option_value=None,
             configured_target=None,
             positional_targets=(),
+            project_root=Path.cwd(),
+            config_root=Path.cwd(),
+            env=MappingProxyType({}),
+            default_engine="sqlite",
         )
 
 

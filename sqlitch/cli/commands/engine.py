@@ -83,13 +83,19 @@ def add_engine(
     """Create a new engine definition in the configuration root."""
 
     cli_context = require_cli_context(ctx)
+    
+    # Resolve to validate, but store the original value if it's a target name
     resolved_uri = _resolve_engine_uri(cli_context=cli_context, candidate=uri)
     _validate_engine_uri(resolved_uri)
+    
+    # If the original value wasn't a URI, it was a target name - store the name, not the URI
+    is_target_alias = not _is_supported_engine_uri(uri)
+    target_value = uri if is_target_alias else resolved_uri
 
     _mutate_engine_definition(
         cli_context=cli_context,
         name=name,
-        uri=resolved_uri,
+        uri=target_value,  # Store target name if alias, URI if direct
         registry=registry,
         client=client,
         plan_file=plan_file,
@@ -126,13 +132,19 @@ def update_engine(
     """Update an existing engine definition."""
 
     cli_context = require_cli_context(ctx)
+    
+    # Resolve to validate, but store the original value if it's a target name
     resolved_uri = _resolve_engine_uri(cli_context=cli_context, candidate=uri)
     _validate_engine_uri(resolved_uri)
+    
+    # If the original value wasn't a URI, it was a target name - store the name, not the URI
+    is_target_alias = not _is_supported_engine_uri(uri)
+    target_value = uri if is_target_alias else resolved_uri
 
     _mutate_engine_definition(
         cli_context=cli_context,
         name=name,
-        uri=resolved_uri,
+        uri=target_value,  # Store target name if alias, URI if direct
         registry=registry,
         client=client,
         plan_file=plan_file,
@@ -210,7 +222,8 @@ def _mutate_engine_definition(
             # Update mode: section must exist
             raise CommandError(f"Engine '{name}' is not defined.")
 
-    parser.set(section, "uri", uri)
+    # Sqitch uses "target" field in engine sections, not "uri"
+    parser.set(section, "target", uri)
     if registry is not None:
         parser.set(section, "registry", registry)
 
@@ -227,16 +240,20 @@ def _mutate_engine_definition(
 
 
 def _engine_config_path(cli_context: CLIContext) -> Path:
-    directory = cli_context.config_root
+    """
+    Resolve the config file path for engines.
+    Prefers project-level config over user config (Sqitch parity).
+    """
+    # Always prefer project-level config for engine definitions
     try:
-        resolution = resolve_config_file(directory)
+        resolution = resolve_config_file(cli_context.project_root)
     except ArtifactConflictError as exc:  # pragma: no cover - defensive guard
         raise CommandError(str(exc)) from exc
 
     if resolution.path is not None:
         return resolution.path
 
-    return directory / "sqitch.conf"
+    return cli_context.project_root / "sqitch.conf"
 
 
 def _section_name(name: str) -> str:
@@ -266,7 +283,7 @@ def _load_engines(path: Path) -> Iterable[EngineDefinition]:
         data = parser[section]
         yield EngineDefinition(
             name=name,
-            uri=data.get("uri", ""),
+            uri=data.get("target", ""),  # Sqitch stores this in "target" field
             registry=data.get("registry"),
             client=data.get("client"),
             verify=data.get("verify"),
