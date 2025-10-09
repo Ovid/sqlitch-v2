@@ -104,8 +104,8 @@ def test_engine_add_writes_definition(tmp_path: Path) -> None:
         assert "registry" not in contents
 
 
-def test_engine_add_rejects_duplicate(tmp_path: Path) -> None:
-    """Adding an engine twice should raise a parity-preserving error."""
+def test_engine_add_allows_upsert(tmp_path: Path) -> None:
+    """Adding an engine twice should succeed and update the URI (Sqitch parity)."""
 
     runner = _runner()
     config_root = tmp_path / "config-root"
@@ -119,13 +119,18 @@ def test_engine_add_rejects_duplicate(tmp_path: Path) -> None:
         )
         assert first.exit_code == 0, first.output
 
-        duplicate = runner.invoke(
+        # Re-adding with different URI should succeed (upsert behavior)
+        second = runner.invoke(
             main,
-            ["engine", "add", "widgets", "db:sqlite:widgets.db"],
+            ["engine", "add", "widgets", "db:sqlite:widgets_v2.db"],
             env=env,
         )
-        assert duplicate.exit_code != 0
-        assert "Engine 'widgets' already exists" in duplicate.output
+        assert second.exit_code == 0, second.output
+        
+        # Verify the URI was updated
+        config_path = config_root / "sqitch.conf"
+        contents = _read_engine_section(config_path, "widgets")
+        assert contents["uri"] == "db:sqlite:widgets_v2.db"
 
 
 def test_engine_update_overwrites_existing_values(tmp_path: Path) -> None:

@@ -94,7 +94,7 @@ def add_engine(
         client=client,
         plan_file=plan_file,
         verify_flag=verify_flag,
-        allow_existing=False,
+        allow_existing=True,  # Allow upsert behavior like Sqitch
     )
 
     _emit(ctx, f"Created engine '{name}'")
@@ -203,9 +203,11 @@ def _mutate_engine_definition(
     if parser.has_section(section) and not allow_existing:
         raise CommandError(f"Engine '{name}' already exists.")
     if not parser.has_section(section):
-        if not allow_existing:
+        if allow_existing:
+            # Upsert mode: create section if it doesn't exist
             parser.add_section(section)
         else:
+            # Update mode: section must exist
             raise CommandError(f"Engine '{name}' is not defined.")
 
     parser.set(section, "uri", uri)
