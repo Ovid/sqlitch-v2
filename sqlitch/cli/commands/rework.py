@@ -143,6 +143,15 @@ def rework_command(
     )
 
     try:
+        original_plan_text = plan_path.read_text(encoding="utf-8")
+    except FileNotFoundError as exc:  # pragma: no cover - defensive
+        raise CommandError(f"Plan file {plan_path} is missing") from exc
+    except OSError as exc:  # pragma: no cover - IO propagated as command error
+        raise CommandError(f"Unable to read plan file {plan_path}: {exc}") from exc
+
+    include_default_engine_header = "%default_engine=" in original_plan_text
+
+    try:
         plan = parse_plan(plan_path, default_engine=default_engine)
     except FileNotFoundError as exc:  # pragma: no cover - defensive
         raise CommandError(f"Plan file {plan_path} is missing") from exc
@@ -222,6 +231,7 @@ def rework_command(
         plan_path=plan.file_path,
         syntax_version=plan.syntax_version,
         uri=plan.uri,
+        include_default_engine=include_default_engine_header,
     )
 
     quiet = bool(cli_context.quiet)
@@ -239,6 +249,7 @@ def rework_command(
             _emit(f"Created rework {kind} script {_format_display_path(target, project_root)}")
 
     _emit(f"Reworked {change_name}")
+    _emit("")
 
 
 @register_command("rework")

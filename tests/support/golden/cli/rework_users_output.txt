@@ -2,3 +2,4 @@ Created rework deploy script deploy/users@v1.0.0-dev1.sql
 Created rework revert script revert/users@v1.0.0-dev1.sql
 Created rework verify script verify/users@v1.0.0-dev1.sql
 Reworked users
+

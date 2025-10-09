@@ -64,7 +64,7 @@
 - [X] **T010f** Add tag-command regression coverage in `tests/cli/commands/test_tag_functional.py` to guard Sqitch output parity, including quiet mode suppression and golden stdout fixtures.
   - Capture stdout comparison leveraging `tests/support/golden/cli/tag_users_output.txt` and assert quiet mode yields no additional output.
   - Depends on: T010e (plan fixtures shared).
-- [ ] **T010g** Add rework-command regression suite in `tests/cli/commands/test_rework_functional.py` confirming @tag suffix script generation, dependency preservation, and quiet mode parity (FR-016).
+- [X] **T010g** Add rework-command regression suite in `tests/cli/commands/test_rework_functional.py` confirming @tag suffix script generation, dependency preservation, and quiet mode parity (FR-016).
   - Ensure fixtures cover both tagged and untagged change flows.
   - Depends on: T010f
 - [ ] **T010h** Add script template parity test in `tests/templates/test_sqlite_templates.py` comparing deployed `sqlitch/templates/sqlite/*.tmpl` files against Sqitch golden fixtures via byte digests.

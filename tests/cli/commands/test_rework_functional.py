@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -9,6 +10,15 @@ from click.testing import CliRunner
 
 from sqlitch.cli.main import main
 from sqlitch.plan.parser import parse_plan
+
+
+CLI_GOLDEN_ROOT = (
+    Path(__file__).resolve().parents[2]
+    / "support"
+    / "golden"
+    / "tutorial_parity"
+    / "rework"
+)
 
 
 TAG_NAME = "v1.0.0"
@@ -24,6 +34,89 @@ def _tag_latest_change(runner: CliRunner, note: str | None = None) -> None:
 
 class TestReworkCommand:
     """Tests for reworking changes."""
+
+    def test_matches_golden_output_and_plan(  # noqa: D401 - behavior explained inline
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Rework output and plan rewrites must match Sqitch golden fixtures."""
+
+        runner = CliRunner()
+
+        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+            project_dir = Path(td)
+
+            init = runner.invoke(
+                main,
+                [
+                    "init",
+                    "flipr",
+                    "--engine",
+                    "sqlite",
+                    "--uri",
+                    "https://github.com/sqitchers/sqitch-sqlite-intro/",
+                ],
+                catch_exceptions=False,
+            )
+            assert init.exit_code == 0, init.output
+
+            add = runner.invoke(
+                main,
+                [
+                    "add",
+                    "users",
+                    "-n",
+                    "Creates table to track our users.",
+                ],
+                catch_exceptions=False,
+            )
+            assert add.exit_code == 0, add.output
+
+            tag = runner.invoke(
+                main,
+                [
+                    "tag",
+                    "v1.0.0-dev1",
+                    "-n",
+                    "Tag v1.0.0-dev1.",
+                ],
+                catch_exceptions=False,
+            )
+            assert tag.exit_code == 0, tag.output
+
+            plan_path = project_dir / "sqitch.plan"
+            plan_before = (CLI_GOLDEN_ROOT / "plan_before.plan").read_text(encoding="utf-8")
+            plan_path.write_text(plan_before, encoding="utf-8")
+
+            fixed_timestamp = datetime(2013, 12, 31, 18, 26, 59, tzinfo=timezone.utc)
+            monkeypatch.setattr(
+                "sqlitch.cli.commands.rework._utcnow",
+                lambda: fixed_timestamp,
+            )
+            monkeypatch.setattr(
+                "sqlitch.cli.commands.rework.resolve_planner_identity",
+                lambda env, config: "Marge N. O’Vera <marge@example.com>",
+            )
+
+            result = runner.invoke(
+                main,
+                [
+                    "rework",
+                    "users",
+                    "--note",
+                    "Add twitter column to userflips view.",
+                ],
+                catch_exceptions=False,
+            )
+            assert result.exit_code == 0, result.output
+
+            expected_output = (CLI_GOLDEN_ROOT / "stdout.txt").read_text(encoding="utf-8")
+            assert result.output == expected_output
+
+            updated_plan = plan_path.read_text(encoding="utf-8")
+            expected_plan = (CLI_GOLDEN_ROOT / "plan_after.plan").read_text(encoding="utf-8")
+            assert updated_plan == expected_plan
 
     def test_creates_scripts_with_tag_suffix(self, tmp_path: Path) -> None:
         """Rework should create scripts suffixed with the latest tag."""
