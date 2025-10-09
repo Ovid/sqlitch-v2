@@ -3,11 +3,6 @@
 **Input**: Design documents from `/specs/004-sqlitch-tutorial-parity/`
 **Prerequisites**: plan.md ✅, research.md ✅, data-model.md ✅, quickstart.md ✅, contracts/README ✅
 
-# Tasks: SQLite Tutorial Parity
-
-**Input**: Design documents from `/specs/004-sqlitch-tutorial-parity/`
-**Prerequisites**: plan.md ✅, research.md ✅, data-model.md ✅, quickstart.md ✅, contracts/README ✅
-
 ## Execution Flow (main)
 ```
 1. Load plan.md (2025-10-08) to confirm CLI parity goals, constitution gates, and sequencing.
@@ -75,23 +70,26 @@
 - [ ] **T046** Normalize CLI error messaging across commands using centralized formatter to satisfy NFR-005 parity expectations.
 
 ## Phase 3.4 – Integration & Polish
-- [ ] **T047** Re-run and stabilize quickstart integration (`tests/integration/test_quickstart_sqlite.py`) ensuring all scenarios, especially Scenario 10, pass with new behaviors.
-- [ ] **T048** Update documentation (`docs/reports/sqlite-tutorial-parity.md`, `REPORT.md`) with config precedence, failure logging, and template parity notes.
-- [ ] **T049** Refresh release artifacts (`REPORT-TASKS.md`, `IMPLEMENTATION_REPORT.md`) and capture coverage results ≥90% (NFR-002).
-- [ ] **T050** Execute performance smoke (`tests/performance/test_deploy_latency.py`) validating <5s deploy for <100 changes, documenting in parity report (NFR-003).
-- [ ] **T051** Sync agent context via `.specify/scripts/bash/update-agent-context.sh copilot` with new tech highlights after implementation wraps.
+- [ ] **T047** Re-run and stabilize quickstart integration in `tests/integration/test_quickstart_sqlite.py`, ensuring all tutorial scenarios pass with new behaviors.
+- [ ] **T048** Run the full pytest suite (`python -m pytest`) from repo root and log pass/fail results before closing tasks (NFR-006 gate).
+- [ ] **T049** Update documentation (`docs/reports/sqlite-tutorial-parity.md`, `REPORT.md`) with config precedence, failure logging, and template parity notes.
+- [ ] **T050** Refresh release artifacts (`REPORT-TASKS.md`, `IMPLEMENTATION_REPORT.md`) and capture coverage results ≥90% (NFR-002).
+- [ ] **T051** Execute performance smoke (`tests/performance/test_deploy_latency.py`) validating <5s deploy for <100 changes, documenting in the parity report (NFR-003).
+- [ ] **T052** Sync agent context via `.specify/scripts/bash/update-agent-context.sh copilot` with new tech highlights after implementation wraps.
 
 ## Dependencies
 - T001 → T003–T005, T014, T017, T021, T022, T023.
 - T002 → T009–T013, T025 (shared goldens).
-- T003, T004 must precede T026–T028.
+- T003, T004 precede T026–T028.
 - T007 precedes T008, T011, T015, T035.
 - T008 precedes T009, T010, T013, T035–T037.
 - T014/T015/T016 precede T030–T032.
 - T017/T018 precede T040–T041.
 - T019/T020/T021 precede T031/T042.
 - T022 precedes T042.
-- T025 precedes T047–T050.
+- T025 precedes T047–T052.
+- T047 precedes T048.
+- T048 precedes T049–T052.
 
 ## Parallel Execution Example
 ```
@@ -103,83 +101,8 @@ Task: "T012 [P] Create revert parity suite in tests/cli/commands/test_revert_fun
 ```
 
 ```
-# Once T030–T037 implementations are complete:
-Task: "T047 Re-run and stabilize quickstart integration (tests/integration/test_quickstart_sqlite.py)"
-Task: "T048 Update documentation (docs/reports/sqlite-tutorial-parity.md, REPORT.md)"
-Task: "T049 Refresh release artifacts (REPORT-TASKS.md, IMPLEMENTATION_REPORT.md)"
+# Once T030–T037 implementations are complete and T047/T048 have passed:
+Task: "T049 Update documentation (docs/reports/sqlite-tutorial-parity.md, REPORT.md)"
+Task: "T050 Refresh release artifacts (REPORT-TASKS.md, IMPLEMENTATION_REPORT.md)"
+Task: "T052 Sync agent context via .specify/scripts/bash/update-agent-context.sh copilot"
 ```
-  - Depends on: T007
-- [ ] **T010k** Add revert command regression tests in `tests/cli/commands/test_revert_functional.py` for confirmation prompts, `--yes` bypass, dependency protection, and failure messaging (FR-012/FR-012a).
-  - Ensure prompts match Sqitch wording byte-for-byte and that declined confirmations leave registry untouched.
-  - Depends on: T007
-- [ ] **T010l** Add config formatting preservation tests in `tests/config/test_loader.py` (and writer fixtures) validating multiline values, indentation, and comment retention across read/write cycles (FR-002/FR-003).
-  - Use golden INI fixtures to assert byte-identical round trips for system/user/local scopes.
-  - Depends on: T003
-- [ ] **T010m** Add registry schema parity guard in `tests/registry/test_schema_parity.py` comparing `sqlitch/registry/migrations.py` DDL against Sqitch’s SQLite schema (FR-017).
-  - Compute canonicalized SQL digests and fail on divergence.
-  - Depends on: T001
-- [ ] **T010n** Extend plan validation tests in `tests/plan/test_validation.py` to assert duplicate names, missing dependencies, and conflict cycles raise Sqitch-identical errors (FR-019).
-  - Introduce fixtures mirroring Sqitch failure cases for parity checking.
-  - Depends on: T010a
-- [ ] **T010o** Add error message parity tests in `tests/cli/commands/test_errors_functional.py` covering representative CLI failure paths (deploy, verify, revert) to satisfy NFR-005.
-  - Assert error text, formatting, and exit codes align with Sqitch goldens.
-  - Depends on: T007, T010j, T010k
-
-## Phase 3.3 – Implementation
-- [ ] **T011** Update resolver merge logic in `sqlitch/config/resolver.py` to enforce scope precedence and ignore duplicate files.
-  - Depends on: T002
-- [ ] **T012** Adjust loader grammar in `sqlitch/config/loader.py` per FR-023; normalize header casing and strip `%core.uri` references.
-  - Depends on: T003
-- [ ] **T012a** Update plan formatter implementation in `sqlitch/plan/formatter.py` to emit Sqitch-compact format for changes and tags, reusing parser models for deterministic field ordering.
-  - Depends on: T010a, T010b
-- [ ] **T012b** Ensure CLI writers (`sqlitch/cli/commands/{init,add,tag,rework}.py`) and helper utilities leverage the updated formatter, removing verbose-format fallbacks and adjusting write paths.
-  - Depends on: T012a
-- [ ] **T012c** Update `sqlitch/cli/commands/engine.py` to resolve existing target aliases when adding or altering engines, mirroring Sqitch’s lookup order and emitting parity error messages when targets are missing.
-  - Depends on: T010c, T010d
-- [ ] **T012d** Adjust configuration helpers in `sqlitch/config/resolver.py` and CLI context builders to expose target URIs for engine commands, ensuring tutorial `engine add sqlite flipr_test` flow succeeds post-init.
-  - Depends on: T012c
-- [X] **T012e** Audit `sqlitch/cli/commands/add.py` to resolve any regressions surfaced by T010b/T010e parity tests, keeping dependency, conflicts, and note handling aligned with Sqitch.
-  - Depends on: T010e
-- [X] **T012f** Update `sqlitch/cli/commands/tag.py` if T010f uncovers ordering or formatting drift, ensuring tag listings and duplicate detection match Sqitch.
-  - Depends on: T010f
-- [ ] **T012g** Adjust `sqlitch/cli/commands/rework.py` per findings from T010g so @tag script generation, dependency copying, and messaging remain parity-accurate.
-  - Depends on: T010g
-- [ ] **T012h** Synchronize template discovery and rendering utilities (`sqlitch/cli/commands/add.py`, `sqlitch/cli/commands/rework.py`, `sqlitch/cli/commands/init.py`, `sqlitch/utils/fs.py`) to ensure Sqitch templates are loaded without mutation and accommodate any fixes highlighted by T010h.
-  - Depends on: T010h
-- [ ] **T012i** Patch `sqlitch/cli/commands/target.py` and related URI helpers to mirror Sqitch parsing semantics (relative path resolution, :memory: support, registry sibling detection) based on gaps revealed in T010i.
-  - Depends on: T010i
-- [ ] **T012j** Align verify command implementation in `sqlitch/cli/commands/verify.py` with new T010j parity tests, ensuring failure aggregation, output ordering, and exit codes match Sqitch.
-  - Depends on: T010j
-- [ ] **T012k** Address revert command gaps in `sqlitch/cli/commands/revert.py` highlighted by T010k, covering confirmation prompts, dependency guards, and error messaging.
-  - Depends on: T010k
-- [ ] **T012l** Update config read/write helpers (`sqlitch/config/loader.py`, `sqlitch/config/resolver.py`, and writer utilities) to maintain indentation, multiline values, and comment fidelity per T010l.
-  - Depends on: T010l
-- [ ] **T012m** Reconcile registry migrations in `sqlitch/registry/migrations.py` with Sqitch schema differences uncovered by T010m (column types, indexes, triggers) to maintain parity.
-  - Depends on: T010m
-- [ ] **T012n** Update plan validation logic in `sqlitch/plan/validation.py` (and related helpers) to reflect expectations from T010n duplicate/conflict tests.
-  - Depends on: T010n
-- [ ] **T012o** Normalize CLI error messaging across commands (deploy, verify, revert) in light of T010o parity assertions, ensuring output channels and copy match Sqitch.
-  - Depends on: T010o
-- [ ] **T013** Modify config CLI write paths in `sqlitch/cli/commands/config.py` to block `core.uri` entries and respect new precedence rules.
-  - Depends on: T004, T011, T012
-- [ ] **T014** Update init scaffolding in `sqlitch/cli/commands/init.py` and templates under `sqlitch/templates/` to omit `%core.uri` while preserving Sqitch note layout.
-  - Ensure `engine.<engine>.target` is written only when `--target` is supplied (FR-007a) and propagate optional target flag through scaffolding helpers.
-  - Depends on: T005, T012
-- [ ] **T015** Enhance deploy workflow in `sqlitch/cli/commands/deploy.py` + `sqlitch/engine/sqlite.py` to record `deploy_fail` events atomically with identity data.
-  - Depends on: T007
-- [ ] **T016** Update log rendering in `sqlitch/cli/commands/log.py` to display failure markers, and extend `sqlitch/cli/commands/_formatters.py` if needed.
-  - Depends on: T008, T015
-- [ ] **T017** Adjust status output in `sqlitch/cli/commands/status.py` to highlight last failure per FR-010a, reusing new event data.
-  - Depends on: T009, T015
-- [ ] **T018** Synchronize identity helpers in `sqlitch/utils/identity.py` to expose env precedence API for deploy/revert reuse.
-  - Depends on: T006, T015
-
-## Phase 3.4 – Integration & Polish
-- [ ] **T019** Run full quickstart Scenario 10 via `tests/integration/test_quickstart_sqlite.py` ensuring parity with Sqitch outputs.
-  - Depends on: T010–T018
-- [ ] **T020** Update documentation in `docs/reports/sqlite-tutorial-parity.md` and `REPORT.md` with new behavior summaries and troubleshooting tips.
-  - Depends on: T019
-- [ ] **T021** Refresh release notes in `REPORT-TASKS.md` and ensure coverage thresholds maintained (run pytest + coverage gate).
-  - Depends on: T019, T020
-- [ ] **T022** Execute performance smoke test (`tests/performance/test_deploy_latency.py`) to confirm deploy of <100 changes completes within 5 seconds (NFR-003), documenting results in `docs/reports/sqlite-tutorial-parity.md`.
-  - Depends on: T015, T019
