@@ -243,7 +243,7 @@ Database developers following the SQLite tutorial need to successfully complete 
 
 **Core Commands (Tutorial-Critical)**:
 - **FR-007**: `sqitch init` MUST initialize a new SQLitch project with project name, URI, engine, creating sqitch.conf, sqitch.plan, and deploy/revert/verify directories.
-- **FR-007a**: On project initialization, SQLitch MUST NOT persist an `engine.<engine>.target` configuration value unless the user explicitly passes a target via command-line options; this mirrors Sqitch and ensures the tutorial workflow can subsequently invoke `engine add <engine> <target>` to set the registry location without encountering "Engine '<engine>' already exists".
+- **FR-007a**: On project initialization, SQLitch MUST NOT persist an `engine.<engine>.target` configuration value unless the user explicitly passes a target via command-line options; this mirrors Sqitch and ensures the tutorial workflow can subsequently invoke `engine add <engine> <target>` to set the registry location. **Critically**, `engine add` uses **upsert semantics**: if an engine with the same name already exists (even if only as a commented configuration section), the command MUST succeed and update the existing definition rather than raising "Engine already exists" error. This matches Sqitch's behavior where `sqitch engine add <name>` can be called multiple times to iteratively configure the engine.
 - **FR-007b**: `sqitch init` MUST NOT write a `core.uri` entry to `sqitch.conf`, even when `--uri` is provided; the project URI is recorded exclusively in the plan file header to mirror Sqitch behavior.
 
 - **FR-008**: `sqitch config` MUST support get/set/list operations for project-local (sqitch.conf), user (~/.sqitch/sqitch.conf), and system configurations with proper precedence, and successful set operations MUST be silent by default (no output unless verbose flags are provided) to preserve Sqitch parity.
@@ -370,7 +370,7 @@ Database developers following the SQLite tutorial need to successfully complete 
 
 **Target Management**:
 - **FR-021**: SQLitch MUST parse database URIs (db:sqlite:path/to/db), resolve relative paths from project root, create target databases if they don't exist, and support in-memory databases (:memory:).
-- **FR-022**: `sqitch engine` parity – the `engine add` and `engine alter` flows MUST accept either a full database URI (e.g., `db:sqlite:flipr_test.db`) or the name of an existing target defined via `target add`. When provided a target name, SQLitch MUST resolve `target.<name>.uri` from configuration and reuse that value. If the target name is unknown, SQLitch MUST emit the same "Unknown target" error as Sqitch. Rejecting a known target name **is a bug**. After `sqitch init`, a single invocation of `engine add <engine> <target>` MUST succeed and populate `engine.<engine>.target`, matching the tutorial guidance for configuring the registry database name.
+- **FR-022**: `sqitch engine` parity – the `engine add` and `engine alter` flows MUST accept either a full database URI (e.g., `db:sqlite:flipr_test.db`) or the name of an existing target defined via `target add`. When provided a target name, SQLitch MUST resolve `target.<name>.uri` from configuration and reuse that value. If the target name is unknown, SQLitch MUST emit the same "Unknown target" error as Sqitch. Rejecting a known target name **is a bug**. After `sqitch init`, a single invocation of `engine add <engine> <target>` MUST succeed and populate `engine.<engine>.target`, matching the tutorial guidance for configuring the registry database name. **Important**: `engine add` implements **upsert semantics** – calling it multiple times with the same engine name succeeds and updates the configuration rather than failing with a duplicate error (see FR-007a).
 
 #### `sqitch.conf` Grammar
 
@@ -467,8 +467,8 @@ Database developers following the SQLite tutorial need to successfully complete 
 
 ## Notes
 
-### Known Parity Gaps (2025-10-07)
-- UAT Step 14 (`sqlitch engine add sqlite flipr_test`) fails because SQLitch currently rejects target aliases when adding an engine. Sqitch accepts a previously defined target name and resolves its URI. This behavior is now captured in **FR-022** and must be implemented before closing Feature 004.
+### Known Parity Gaps (2025-10-09)
+- ~~UAT Step 14 (`sqlitch engine add sqlite flipr_test`) fails because SQLitch currently rejects target aliases when adding an engine. Sqitch accepts a previously defined target name and resolves its URI. This behavior is now captured in **FR-022** and must be implemented before closing Feature 004.~~ **RESOLVED 2025-10-09**: `engine add` now implements upsert semantics, allowing it to be called multiple times with the same engine name. The command succeeds and updates the configuration rather than raising a duplicate error, matching Sqitch's behavior.
 
 ### Implementation Order (Tutorial Sequence)
 

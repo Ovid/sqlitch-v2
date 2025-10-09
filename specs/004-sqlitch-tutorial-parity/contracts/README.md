@@ -253,10 +253,11 @@ sqitch rework <change> [-n|--note NOTE] [options]
 ---
 
 ### 11. `sqitch engine <action>`
-**Status**: ⚠️ Partial (alias resolution missing)
+**Status**: ✅ Complete
 
-**Key Behavior Update (2025-10-07)**:
-- `engine add <engine> <target>` MUST accept either a URI or the name of a target defined via `target add`, resolving to `target.<name>.uri` exactly like Sqitch.
+**Key Behavior Update (2025-10-09)**:
+- `engine add <engine> <target>` implements **upsert semantics** (Sqitch parity): calling it multiple times with the same engine name succeeds and updates the configuration rather than raising a duplicate error. This allows iterative configuration and matches Sqitch's behavior.
+- `engine add` MUST accept either a URI or the name of a target defined via `target add`, resolving to `target.<name>.uri` exactly like Sqitch.
 - `engine update` shares the same resolution rules; rejecting known aliases is a parity bug (see FR-022).
 - `engine remove` MUST leave config clean and emit Sqitch-equivalent messaging.
 
