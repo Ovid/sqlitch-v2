@@ -420,6 +420,8 @@ Database developers following the SQLite tutorial need to successfully complete 
 
 - **NFR-005**: All error messages MUST be clear, actionable, and follow Sqitch conventions.
 
+- **NFR-006**: Before any task is marked complete, the full test suite MUST be executed. If a failure surfaces for behavior where implementation already exists, that failure MUST be fixed immediately. If the corresponding implementation has not yet been delivered, the failing test MUST be skipped with a clear rationale, and the follow-on implementation task is responsible for removing that skip and delivering the passing behavior.
+
 ### Key Entities *(include if feature involves data)*
 
 - **Project**: Initialized SQLitch project with name, URI, engine config

@@ -53,8 +53,6 @@ Deliver full Sqitch parity for the SQLite tutorial so every documented workflow 
 - **Simplicity-First:** Implementation will extend existing helpers (config loader, plan formatter, registry migrations) instead of introducing new abstractions. Any unavoidable complexity (e.g., identity fallback chain) will reuse shared utility modules in `sqlitch/utils` to avoid duplication.
 - **Documented Interfaces:** Public-facing modules touched during implementation (`sqlitch.cli.commands.*`, `sqlitch.config.*`, `sqlitch.utils.identity`) will have docstrings updated to reflect environment variable precedence, registry event semantics, and CLI options, keeping docs aligned with behavior.
 
-## Project Structure
-
 ### Documentation (this feature)
 ```
  specs/004-sqlitch-tutorial-parity/
@@ -69,54 +67,54 @@ Deliver full Sqitch parity for the SQLite tutorial so every documented workflow 
 ### Source Code (repository root)
 ```
 sqlitch/
-├── cli/
-│   ├── __init__.py
-│   ├── main.py
-│   └── commands/
-│       ├── __init__.py
-│       ├── add.py
-│       ├── config.py
-│       ├── deploy.py
-│       ├── engine.py
-│       ├── log.py
-│       ├── rework.py
-│       ├── revert.py
-│       ├── status.py
-│       ├── tag.py
-│       ├── target.py
-│       └── verify.py
-├── config/
-│   ├── __init__.py
-│   ├── loader.py
-│   └── resolver.py
-├── engine/
-│   ├── __init__.py
-│   ├── base.py
-│   └── sqlite.py
-├── plan/
-│   ├── __init__.py
-│   ├── formatter.py
-│   ├── model.py
-│   └── parser.py
-├── registry/
-│   ├── __init__.py
-│   └── migrations.py
-└── utils/
-      ├── __init__.py
-      ├── fs.py
-      ├── identity.py
-      ├── logging.py
-      └── time.py
+ ├── cli/
+ │   ├── __init__.py
+ │   ├── main.py
+ │   └── commands/
+ │       ├── __init__.py
+ │       ├── add.py
+ │       ├── config.py
+ │       ├── deploy.py
+ │       ├── engine.py
+ │       ├── log.py
+ │       ├── rework.py
+ │       ├── revert.py
+ │       ├── status.py
+ │       ├── tag.py
+ │       ├── target.py
+ │       └── verify.py
+ ├── config/
+ │   ├── __init__.py
+ │   ├── loader.py
+ │   └── resolver.py
+ ├── engine/
+ │   ├── __init__.py
+ │   ├── base.py
+ │   └── sqlite.py
+ ├── plan/
+ │   ├── __init__.py
+ │   ├── formatter.py
+ │   ├── model.py
+ │   └── parser.py
+ ├── registry/
+ │   ├── __init__.py
+ │   └── migrations.py
+ └── utils/
+       ├── __init__.py
+       ├── fs.py
+       ├── identity.py
+       ├── logging.py
+       └── time.py
 
 tests/
-├── cli/
-├── config/
-├── integration/
-├── plan/
-├── registry/
-├── regression/
-├── scripts/
-└── support/
+ ├── cli/
+ ├── config/
+ ├── integration/
+ ├── plan/
+ ├── registry/
+ ├── regression/
+ ├── scripts/
+ └── support/
 
 sqitch/                 # Vendored Perl reference implementation
 ```
