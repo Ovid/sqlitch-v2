@@ -28,6 +28,7 @@
 - [ ] **T006** Add init regression tests in `tests/cli/commands/test_init_functional.py` asserting new projects omit `core.uri` and avoid `engine.<engine>.target` unless `--target` supplied (FR-007a/FR-007b).
 - [ ] **T007** Build environment precedence matrix tests in `tests/cli/commands/test_deploy_functional.py` asserting SQLITCH_* → SQITCH_* → git/system fallbacks (FR-004/FR-005/FR-005a).
 - [ ] **T008** Author deploy failure registry tests in `tests/cli/commands/test_deploy_functional.py` verifying transactional rollback and `events` table `fail` rows (FR-010a).
+- [ ] **T008a** Extend deploy failure parity tests in `tests/cli/commands/test_deploy_functional.py` to assert registry tables remain unchanged after a simulated failure (FR-010a, data-model §§4.6–4.7).
 - [ ] **T009 [P]** Add log failure rendering assertions in `tests/cli/commands/test_log_functional.py` comparing output to Sqitch golden fixtures (FR-010a, NFR-004).
 - [ ] **T010 [P]** Extend status command tests in `tests/cli/commands/test_status_functional.py` to surface last-failure metadata and pending indicators (FR-010a).
 - [ ] **T011 [P]** Create verify parity suite in `tests/cli/commands/test_verify_functional.py` covering success, single failure, multi-failure, and out-of-order cases (FR-011/FR-011a).
@@ -81,8 +82,9 @@
 - T001 → T003–T005, T014, T017, T021, T022, T023.
 - T002 → T009–T013, T025 (shared goldens).
 - T003, T004 precede T026–T028.
-- T007 precedes T008, T011, T015, T035.
-- T008 precedes T009, T010, T013, T035–T037.
+- T007 precedes T008, T008a, T011, T015, T035.
+- T008 precedes T008a, T009, T010, T013, T035–T037.
+- T008a precedes T035–T037.
 - T014/T015/T016 precede T030–T032.
 - T017/T018 precede T040–T041.
 - T019/T020/T021 precede T031/T042.
