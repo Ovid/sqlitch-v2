@@ -15,6 +15,13 @@ from pathlib import Path
 
 from sqlitch.cli.main import main
 
+CLI_GOLDEN_ROOT = (
+    Path(__file__).resolve().parents[2]
+    / "support"
+    / "golden"
+    / "cli"
+)
+
 
 @pytest.fixture
 def runner():
@@ -347,3 +354,73 @@ class TestAddPlanFormatting:
             assert "flips [users]" in plan_content, (
                 "Plan entry should embed dependencies in compact bracket syntax"
             )
+
+
+class TestAddOptionParity:
+    """Guard Sqitch parity for add command option combinations (T010e)."""
+
+    def test_requires_conflicts_note_output_matches_golden(self, runner):
+        """Combined options should emit Sqitch-identical CLI output and plan entries."""
+
+        with runner.isolated_filesystem():
+            runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
+
+            result = runner.invoke(
+                main,
+                [
+                    "add",
+                    "flips",
+                    "--requires",
+                    "users",
+                    "--conflicts",
+                    "legacy",
+                    "--note",
+                    "Adds flips table",
+                ],
+            )
+
+            assert result.exit_code == 0, f"Add failed: {result.output}"
+
+            expected_output = (
+                CLI_GOLDEN_ROOT / "add_requires_conflicts_note_output.txt"
+            ).read_text(encoding="utf-8")
+            assert result.output == expected_output
+
+            plan_content = Path("sqitch.plan").read_text(encoding="utf-8")
+            assert "flips [users]" in plan_content
+            assert "# Adds flips table" in plan_content
+
+    def test_requires_conflicts_render_template_sections(self, runner):
+        """Template should include requires and conflicts annotations when provided."""
+
+        with runner.isolated_filesystem():
+            runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
+            runner.invoke(
+                main,
+                [
+                    "add",
+                    "flips",
+                    "--requires",
+                    "users",
+                    "--conflicts",
+                    "legacy",
+                ],
+            )
+
+            deploy_content = Path("deploy/flips.sql").read_text(encoding="utf-8")
+            assert "-- requires: users" in deploy_content
+            assert "-- conflicts: legacy" in deploy_content
+
+    def test_quiet_mode_still_updates_plan(self, runner):
+        """Quiet mode should suppress output but still append to the plan."""
+
+        with runner.isolated_filesystem():
+            runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
+
+            result = runner.invoke(main, ["--quiet", "add", "users"])
+
+            assert result.exit_code == 0, f"Add --quiet failed: {result.output}"
+            assert result.output.strip() == ""
+
+            plan_content = Path("sqitch.plan").read_text(encoding="utf-8")
+            assert "users " in plan_content

@@ -230,7 +230,7 @@ def add_command(
         "change": change_name,
         "engine": engine_name,
         "requires": list(requires),
-        "conflicts": [],
+        "conflicts": list(conflicts),
         "tags": list(tags),
     }
 
@@ -251,6 +251,7 @@ def add_command(
         planned_at=timestamp,
         notes=note,
         dependencies=tuple(requires) or None,
+        conflicts=tuple(conflicts) or None,
         tags=tuple(tags) or None,
     )
 

@@ -47,19 +47,18 @@
 - [X] **T010a** Add compact plan formatter regression tests in `tests/plan/test_formatter.py` asserting output matches Sqitch fixture bytes for a multi-change plan.
   - Capture golden fixture under `tests/support/golden/tutorial_parity/plan_compact` and ensure formatter respects timestamp + planner formatting.
   - Depends on: T001
-- [ ] **T010b** Add CLI integration test in `tests/cli/commands/test_add_functional.py` verifying `sqlitch add` emits compact entries (no verbose format) when appending to `sqitch.plan`.
+- [X] **T010b** Add CLI integration test in `tests/cli/commands/test_add_functional.py` verifying `sqlitch add` emits compact entries (no verbose format) when appending to `sqitch.plan`.
   - Extend existing fixture expectations (or add new golden file) to assert entry structure and dependency serialization.
   - Depends on: T010a
-- [ ] **T010c** Add engine alias functional tests in `tests/cli/commands/test_engine_functional.py` ensuring `engine add sqlite flipr_reg` resolves `target.flipr_reg.uri` when the target exists.
+- [X] **T010c** Add engine alias functional tests in `tests/cli/commands/test_engine_functional.py` ensuring `engine add sqlite flipr_reg` resolves `target.flipr_reg.uri` when the target exists.
   - Cover success case (writes `engine.sqlite.target` URI) and failure case (unknown target name emits Sqitch-equivalent error).
   - Depends on: T002 (config scaffolding) and existing target command fixtures.
-- [ ] **T010d** Add regression test in `tests/cli/commands/test_target_functional.py` confirming `target add` persists alias entries consumed by the new engine test, keeping tutorial workflow intact.
+- [X] **T010d** Add regression test in `tests/cli/commands/test_target_functional.py` confirming `target add` persists alias entries consumed by the new engine test, keeping tutorial workflow intact.
   - Ensure config writes remain silent and paths match FR-022 expectations.
   - Depends on: T010c
-- [ ] **T010e** Extend add-command regression coverage in `tests/cli/commands/test_add_functional.py` to assert dependency flags, quiet mode, and script templating remain Sqitch-identical.
+ [X] **T010e** Extend add-command regression coverage in `tests/cli/commands/test_add_functional.py` to assert dependency flags, quiet mode, and script templating remain Sqitch-identical.
   - Capture stdout/stderr fixtures for `--requires`, `--conflicts`, and `--note` flows to guard FR-009 behavior.
   - Depends on: Existing add fixtures (no additional prerequisites).
-- [ ] **T010f** Add tag-command parity tests in `tests/cli/commands/test_tag_functional.py` verifying tag insertion order, duplicate detection, and list view formatting.
   - Include golden output assertions for default listing to cover FR-015.
   - Depends on: T010e (plan fixtures shared).
 - [ ] **T010g** Add rework-command regression suite in `tests/cli/commands/test_rework_functional.py` confirming @tag suffix script generation, dependency preservation, and quiet mode parity (FR-016).
@@ -103,7 +102,7 @@
   - Depends on: T010c, T010d
 - [ ] **T012d** Adjust configuration helpers in `sqlitch/config/resolver.py` and CLI context builders to expose target URIs for engine commands, ensuring tutorial `engine add sqlite flipr_test` flow succeeds post-init.
   - Depends on: T012c
-- [ ] **T012e** Audit `sqlitch/cli/commands/add.py` to resolve any regressions surfaced by T010b/T010e parity tests, keeping dependency, conflicts, and note handling aligned with Sqitch.
+- [X] **T012e** Audit `sqlitch/cli/commands/add.py` to resolve any regressions surfaced by T010b/T010e parity tests, keeping dependency, conflicts, and note handling aligned with Sqitch.
   - Depends on: T010e
 - [ ] **T012f** Update `sqlitch/cli/commands/tag.py` if T010f uncovers ordering or formatting drift, ensuring tag listings and duplicate detection match Sqitch.
   - Depends on: T010f

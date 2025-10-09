@@ -58,6 +58,7 @@ class Change:
     notes: str | None = None
     change_id: UUID | None = None
     dependencies: Sequence[str] = field(default_factory=tuple)
+    conflicts: Sequence[str] = field(default_factory=tuple)
     tags: Sequence[str] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
@@ -68,6 +69,7 @@ class Change:
             script_paths=self.script_paths,
             change_id=self.change_id,
             dependencies=self.dependencies,
+            conflicts=self.conflicts,
             tags=self.tags,
         )
 
@@ -75,6 +77,7 @@ class Change:
         object.__setattr__(self, "change_id", normalized.change_id)
         object.__setattr__(self, "script_paths", MappingProxyType(normalized.script_paths))
         object.__setattr__(self, "dependencies", normalized.dependencies)
+        object.__setattr__(self, "conflicts", normalized.conflicts)
         object.__setattr__(self, "tags", normalized.tags)
 
     @classmethod
@@ -88,6 +91,7 @@ class Change:
         notes: str | None = None,
         change_id: UUID | None = None,
         dependencies: Sequence[str] | None = None,
+        conflicts: Sequence[str] | None = None,
         tags: Sequence[str] | None = None,
     ) -> "Change":
         """Factory method that applies validation prior to instantiation."""
@@ -99,6 +103,7 @@ class Change:
             script_paths=script_paths,
             change_id=change_id,
             dependencies=dependencies,
+            conflicts=conflicts,
             tags=tags,
         )
 
@@ -110,6 +115,7 @@ class Change:
             notes=notes,
             change_id=normalized.change_id,
             dependencies=normalized.dependencies,
+            conflicts=normalized.conflicts,
             tags=normalized.tags,
         )
 
@@ -206,6 +212,7 @@ class _NormalizedChange:
     change_id: UUID | None
     script_paths: dict[str, Path | None]
     dependencies: tuple[str, ...]
+    conflicts: tuple[str, ...]
     tags: tuple[str, ...]
 
 
@@ -217,6 +224,7 @@ def _normalize_change_fields(
     script_paths: Mapping[str, Path | str | None] | None,
     change_id: UUID | None,
     dependencies: Sequence[str] | None,
+    conflicts: Sequence[str] | None,
     tags: Sequence[str] | None,
 ) -> _NormalizedChange:
     if not name:
@@ -228,6 +236,7 @@ def _normalize_change_fields(
     normalized_change_id = _normalize_change_id(change_id)
     normalized_scripts = _normalize_script_paths(script_paths)
     normalized_dependencies = _normalize_unique_sequence(dependencies, "Change.dependencies")
+    normalized_conflicts = _normalize_unique_sequence(conflicts, "Change.conflicts")
     normalized_tags = _normalize_unique_sequence(tags, "Change.tags")
 
     return _NormalizedChange(
@@ -235,6 +244,7 @@ def _normalize_change_fields(
         change_id=normalized_change_id,
         script_paths=normalized_scripts,
         dependencies=normalized_dependencies,
+        conflicts=normalized_conflicts,
         tags=normalized_tags,
     )
 
