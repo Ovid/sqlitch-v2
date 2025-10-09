@@ -916,8 +916,7 @@ def _apply_change(
             )
         except CommandError as record_exc:
             message = (
-                f"Deploy failed for change '{change.name}': {exc}; "
-                f"additionally, {record_exc}"
+                f"Deploy failed for change '{change.name}': {exc}; " f"additionally, {record_exc}"
             )
             raise CommandError(message) from exc
         raise CommandError(f"Deploy failed for change '{change.name}': {exc}") from exc

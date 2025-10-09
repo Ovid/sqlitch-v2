@@ -132,12 +132,14 @@ load_configuration = load_config
 
 
 def _normalize_section_name(section: str) -> str:
-    if "\"" in section:
-        head, quote, tail = section.partition("\"")
+    if '"' in section:
+        head, quote, tail = section.partition('"')
         return f"{head.lower()}{quote}{tail}"
     return section.lower()
 
 
 def _assert_no_plan_pragma(option: str) -> None:
     if option.startswith("%"):
-        raise ValueError(f"Plan pragmas are not permitted in configuration files (invalid option '{option}')")
+        raise ValueError(
+            f"Plan pragmas are not permitted in configuration files (invalid option '{option}')"
+        )

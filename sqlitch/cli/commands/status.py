@@ -231,7 +231,9 @@ def _resolve_registry_target(
         raise CommandError(f"Unsupported engine '{candidate_engine}'") from exc
 
     if not stripped_target.startswith("db:"):
-        display_target = f"db:{engine_name}:{workspace_payload}" if workspace_payload else f"db:{engine_name}:"
+        display_target = (
+            f"db:{engine_name}:{workspace_payload}" if workspace_payload else f"db:{engine_name}:"
+        )
 
     if engine_name == "sqlite":
         if not workspace_payload:

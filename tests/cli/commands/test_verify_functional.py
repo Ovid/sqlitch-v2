@@ -451,9 +451,7 @@ class TestVerifyExecution:
         assert "Errors:  1" in output
         assert "Verify failed" in output
 
-    def test_reports_all_failures_before_summary(
-        self, runner: CliRunner, tmp_path: Path
-    ) -> None:
+    def test_reports_all_failures_before_summary(self, runner: CliRunner, tmp_path: Path) -> None:
         """Verify should continue through all failures and report a summary."""
 
         project_dir, target_db = setup_project(tmp_path, changes=("users", "posts"))
@@ -512,7 +510,9 @@ class TestVerifyAdditionalScenarios:
     def test_reports_skip_when_verify_script_missing(
         self, runner: CliRunner, tmp_path: Path
     ) -> None:
-        project_dir, target_db = setup_project(tmp_path, changes=("users",), create_verify_scripts=False)
+        project_dir, target_db = setup_project(
+            tmp_path, changes=("users",), create_verify_scripts=False
+        )
 
         deploy_project(runner, project_dir, f"db:sqlite:{target_db}")
 
@@ -523,9 +523,7 @@ class TestVerifyAdditionalScenarios:
         assert "  # users .. SKIP (no verify script)" in result.output
         assert "Verify successful" in result.output
 
-    def test_handles_absence_of_deployed_changes(
-        self, runner: CliRunner, tmp_path: Path
-    ) -> None:
+    def test_handles_absence_of_deployed_changes(self, runner: CliRunner, tmp_path: Path) -> None:
         project_dir, target_db = setup_project(tmp_path, changes=())
 
         workspace_uri = f"db:sqlite:{target_db}"
@@ -595,9 +593,7 @@ class TestVerifyAdditionalScenarios:
         assert result.exit_code == 1
         assert "A target must be provided" in result.output
 
-    def test_rejects_conflicting_target_inputs(
-        self, runner: CliRunner, tmp_path: Path
-    ) -> None:
+    def test_rejects_conflicting_target_inputs(self, runner: CliRunner, tmp_path: Path) -> None:
         project_dir, target_db = setup_project(tmp_path, changes=())
 
         with pushd(project_dir):
@@ -614,9 +610,7 @@ class TestVerifyAdditionalScenarios:
         assert result.exit_code == 1
         assert "Provide either a positional target" in result.output
 
-    def test_rejects_multiple_positional_targets(
-        self, runner: CliRunner, tmp_path: Path
-    ) -> None:
+    def test_rejects_multiple_positional_targets(self, runner: CliRunner, tmp_path: Path) -> None:
         project_dir, _ = setup_project(tmp_path, changes=())
 
         with pushd(project_dir):
@@ -753,7 +747,9 @@ class TestVerifyAdditionalScenarios:
         assert engine_target.uri == f"db:sqlite:{expected_path}"
         assert display == "workspace.db"
 
-    def test_load_plan_wraps_parse_errors(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    def test_load_plan_wraps_parse_errors(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
         plan_path = tmp_path / "sqitch.plan"
         plan_path.write_text("%syntax-version=1.0.0\n%project=flipr\n")
 
@@ -855,6 +851,7 @@ class TestVerifyErrorHandling:
 
         assert result.exit_code == 1
         assert "Failed to query registry" in result.output
+
 
 @pytest.fixture
 def runner() -> CliRunner:

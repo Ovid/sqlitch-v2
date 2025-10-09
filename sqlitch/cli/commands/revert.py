@@ -241,7 +241,11 @@ def _execute_revert(request: _RevertRequest) -> None:
 
         if not changes_to_revert:
             if request.to_change or request.to_tag:
-                label = request.to_change or request.to_tag or (target_change.name if target_change else "target")
+                label = (
+                    request.to_change
+                    or request.to_tag
+                    or (target_change.name if target_change else "target")
+                )
                 emitter(f'No changes deployed since: "{label}"')
             else:
                 emitter("Nothing to revert (nothing deployed)")

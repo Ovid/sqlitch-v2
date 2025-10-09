@@ -68,7 +68,9 @@ class TestEngineAliasResolution:
             init_result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"], env=env)
             assert init_result.exit_code == 0, f"Init failed: {init_result.output}"
 
-            engine_result = runner.invoke(main, ["engine", "add", "sqlite", "missing_alias"], env=env)
+            engine_result = runner.invoke(
+                main, ["engine", "add", "sqlite", "missing_alias"], env=env
+            )
             assert engine_result.exit_code != 0
             assert 'Unknown target "missing_alias"' in engine_result.output
 

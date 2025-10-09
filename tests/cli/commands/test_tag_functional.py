@@ -12,9 +12,7 @@ from sqlitch.cli.main import main
 from sqlitch.plan.parser import parse_plan
 
 
-CLI_GOLDEN_ROOT = (
-    Path(__file__).resolve().parents[2] / "support" / "golden" / "cli"
-)
+CLI_GOLDEN_ROOT = Path(__file__).resolve().parents[2] / "support" / "golden" / "cli"
 
 
 def load_cli_golden(name: str) -> str:

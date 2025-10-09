@@ -408,5 +408,7 @@ class TestConfigEnvironmentOverrides:
 
             result = runner.invoke(main, ["config", "core.engine"], env=env)
 
-            assert result.exit_code == 0, f"Config get failed with SQLITCH override: {result.output}"
+            assert (
+                result.exit_code == 0
+            ), f"Config get failed with SQLITCH override: {result.output}"
             assert "sqlite" in result.output, "SQLITCH_CONFIG should override SQITCH_CONFIG"

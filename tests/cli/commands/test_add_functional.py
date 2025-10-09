@@ -15,12 +15,7 @@ from pathlib import Path
 
 from sqlitch.cli.main import main
 
-CLI_GOLDEN_ROOT = (
-    Path(__file__).resolve().parents[2]
-    / "support"
-    / "golden"
-    / "cli"
-)
+CLI_GOLDEN_ROOT = Path(__file__).resolve().parents[2] / "support" / "golden" / "cli"
 
 
 @pytest.fixture
@@ -323,15 +318,12 @@ class TestAddPlanFormatting:
 
             plan_content = Path("sqitch.plan").read_text(encoding="utf-8")
             data_lines = [
-                line
-                for line in plan_content.splitlines()
-                if line and not line.startswith("%")
+                line for line in plan_content.splitlines() if line and not line.startswith("%")
             ]
 
             assert data_lines, "Plan should include at least one entry"
             assert all(
-                not line.lower().startswith("change ")
-                for line in data_lines
+                not line.lower().startswith("change ") for line in data_lines
             ), "Plan entries must use compact format without 'change' prefix"
 
     def test_plan_dependency_serialization_matches_compact_format(self, runner):
@@ -351,9 +343,9 @@ class TestAddPlanFormatting:
 
             plan_content = Path("sqitch.plan").read_text(encoding="utf-8")
 
-            assert "flips [users]" in plan_content, (
-                "Plan entry should embed dependencies in compact bracket syntax"
-            )
+            assert (
+                "flips [users]" in plan_content
+            ), "Plan entry should embed dependencies in compact bracket syntax"
 
 
 class TestAddOptionParity:

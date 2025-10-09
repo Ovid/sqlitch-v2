@@ -90,6 +90,7 @@ def _read_project_config(path: Path) -> configparser.ConfigParser:
     parser.read(path, encoding="utf-8")
     return parser
 
+
 class TestTargetUriParsing:
     """Functional tests for target URI parsing and normalization (T010i)."""
 

@@ -414,9 +414,7 @@ class TestRevertScriptExecution:
 class TestRevertConfirmationPrompt:
     """Ensure revert prompts the user unless bypassed."""
 
-    def test_prompts_and_aborts_when_declined(
-        self, project_with_deployed_changes: Path
-    ) -> None:
+    def test_prompts_and_aborts_when_declined(self, project_with_deployed_changes: Path) -> None:
         runner = CliRunner()
         project_dir = project_with_deployed_changes
         target_db = project_dir / "test.db"
@@ -448,9 +446,7 @@ class TestRevertConfirmationPrompt:
         finally:
             conn.close()
 
-    def test_yes_flag_skips_prompt_and_executes(
-        self, project_with_deployed_changes: Path
-    ) -> None:
+    def test_yes_flag_skips_prompt_and_executes(self, project_with_deployed_changes: Path) -> None:
         runner = CliRunner()
         project_dir = project_with_deployed_changes
         target_db = project_dir / "test.db"

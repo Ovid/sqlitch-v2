@@ -105,9 +105,15 @@ def test_add_output_matches_sqitch() -> None:
         expected_output = (CLI_GOLDEN_ROOT / "add_users_output.txt").read_text(encoding="utf-8")
         assert result.output == expected_output
 
-        deploy_header, *deploy_rest = Path("deploy/users.sql").read_text(encoding="utf-8").splitlines()
-        revert_header, *revert_rest = Path("revert/users.sql").read_text(encoding="utf-8").splitlines()
-        verify_header, *verify_rest = Path("verify/users.sql").read_text(encoding="utf-8").splitlines()
+        deploy_header, *deploy_rest = (
+            Path("deploy/users.sql").read_text(encoding="utf-8").splitlines()
+        )
+        revert_header, *revert_rest = (
+            Path("revert/users.sql").read_text(encoding="utf-8").splitlines()
+        )
+        verify_header, *verify_rest = (
+            Path("verify/users.sql").read_text(encoding="utf-8").splitlines()
+        )
 
         assert deploy_header == "-- Deploy flipr:users to sqlite"
         assert revert_header == "-- Revert flipr:users from sqlite"
@@ -192,7 +198,9 @@ SELECT user_id, username, email
         assert deploy_result.exit_code == 0, deploy_result.output
 
         normalized_output = _normalize_deploy_output(deploy_result.output)
-        expected_output = (CLI_GOLDEN_ROOT / "deploy_users_output.txt").read_text(encoding="utf-8").strip()
+        expected_output = (
+            (CLI_GOLDEN_ROOT / "deploy_users_output.txt").read_text(encoding="utf-8").strip()
+        )
         assert normalized_output == expected_output
 
         # Validate registry state mirrors expectations.
@@ -849,9 +857,7 @@ COMMIT;
 
         assert result.exit_code == 0, result.output
 
-        expected_output = (CLI_GOLDEN_ROOT / "revert_flips_output.txt").read_text(
-            encoding="utf-8"
-        )
+        expected_output = (CLI_GOLDEN_ROOT / "revert_flips_output.txt").read_text(encoding="utf-8")
         assert result.output == expected_output
 
 
@@ -896,9 +902,7 @@ def test_tag_output_matches_sqitch(tmp_path: Path) -> None:
 
         assert tag_result.exit_code == 0, tag_result.output
 
-        expected_output = (CLI_GOLDEN_ROOT / "tag_users_output.txt").read_text(
-            encoding="utf-8"
-        )
+        expected_output = (CLI_GOLDEN_ROOT / "tag_users_output.txt").read_text(encoding="utf-8")
         assert tag_result.output == expected_output
 
 
@@ -954,7 +958,5 @@ def test_rework_output_matches_sqitch(tmp_path: Path) -> None:
 
         assert rework_result.exit_code == 0, rework_result.output
 
-        expected_output = (CLI_GOLDEN_ROOT / "rework_users_output.txt").read_text(
-            encoding="utf-8"
-        )
+        expected_output = (CLI_GOLDEN_ROOT / "rework_users_output.txt").read_text(encoding="utf-8")
         assert rework_result.output == expected_output

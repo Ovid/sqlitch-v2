@@ -273,7 +273,7 @@ def add_command(
     _echo(f"Created {_format_display_path(deploy_target, project_root)}")
     _echo(f"Created {_format_display_path(revert_target, project_root)}")
     _echo(f"Created {_format_display_path(verify_target, project_root)}")
-    _echo(f"Added \"{change_name}\" to sqitch.plan")
+    _echo(f'Added "{change_name}" to sqitch.plan')
 
 
 @register_command("add")

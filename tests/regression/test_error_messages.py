@@ -9,9 +9,7 @@ from click.testing import CliRunner
 from sqlitch.cli.main import main
 from tests.support.sqlite_fixtures import ChangeScript, create_sqlite_project
 
-GOLDEN_ROOT = (
-    Path(__file__).resolve().parent.parent / "support" / "golden" / "error_messages"
-)
+GOLDEN_ROOT = Path(__file__).resolve().parent.parent / "support" / "golden" / "error_messages"
 
 
 def _load_golden(name: str) -> str:

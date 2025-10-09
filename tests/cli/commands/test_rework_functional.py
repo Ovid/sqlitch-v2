@@ -13,11 +13,7 @@ from sqlitch.plan.parser import parse_plan
 
 
 CLI_GOLDEN_ROOT = (
-    Path(__file__).resolve().parents[2]
-    / "support"
-    / "golden"
-    / "tutorial_parity"
-    / "rework"
+    Path(__file__).resolve().parents[2] / "support" / "golden" / "tutorial_parity" / "rework"
 )
 
 

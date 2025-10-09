@@ -193,7 +193,7 @@ class TestInitDirectoryCreation:
             assert result.exit_code == 0, f"Init failed: {result.output}"
 
             config_content = Path("sqitch.conf").read_text()
-            assert "[engine \"sqlite\"]" in config_content
+            assert '[engine "sqlite"]' in config_content
             assert "target = db:sqlite:flipr.db" in config_content
 
 

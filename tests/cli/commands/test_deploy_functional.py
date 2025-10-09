@@ -359,6 +359,7 @@ class TestDeployWithSingleChange:
 
         conn.close()
 
+
 class TestDeployIdentityPrecedence:
     """Validate full SQLITCH → SQITCH → GIT identity precedence chain."""
 
@@ -1194,16 +1195,16 @@ class TestDeployDependencyValidation:
         conn = sqlite3.connect(registry_db)
         try:
             cursor = conn.cursor()
-            cursor.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='changes'"
-            )
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='changes'")
             if cursor.fetchone() is None:
                 return
 
             cursor.execute("SELECT change FROM changes")
             changes = [row[0] for row in cursor.fetchall()]
 
-            assert "comments" not in changes, "Change with missing dependency should not be deployed"
+            assert (
+                "comments" not in changes
+            ), "Change with missing dependency should not be deployed"
         finally:
             conn.close()
 
@@ -1513,9 +1514,7 @@ class TestDeployUserIdentity:
 
         conn = sqlite3.connect(registry_db)
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT committer_name, committer_email FROM events WHERE change = 'users'"
-        )
+        cursor.execute("SELECT committer_name, committer_email FROM events WHERE change = 'users'")
         row = cursor.fetchone()
         assert row is not None, "Event record should exist"
 
@@ -1579,9 +1578,7 @@ class TestDeployFailureHandling:
         # Target schema should be rolled back (table not created)
         conn = sqlite3.connect(target_db)
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='users'"
-        )
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
         assert cursor.fetchone() is None
         conn.close()
 
@@ -1597,9 +1594,7 @@ class TestDeployFailureHandling:
             "SELECT event, note, committer_name, committer_email FROM events WHERE change = 'users'"
         )
         rows = cursor.fetchall()
-        assert rows == [
-            ("deploy_fail", "Add users", "Config User", "config.user@example.com")
-        ]
+        assert rows == [("deploy_fail", "Add users", "Config User", "config.user@example.com")]
 
         conn.close()
 

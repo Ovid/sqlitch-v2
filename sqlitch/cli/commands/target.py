@@ -285,9 +285,7 @@ def _normalise_target_entry(
 
     is_file_uri = payload.startswith("file:")
     is_simple_relative = (
-        not is_file_uri
-        and not original_path.is_absolute()
-        and len(original_path.parts) == 1
+        not is_file_uri and not original_path.is_absolute() and len(original_path.parts) == 1
     )
 
     if is_file_uri:
