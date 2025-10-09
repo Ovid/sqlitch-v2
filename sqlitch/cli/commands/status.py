@@ -206,25 +206,32 @@ def _resolve_registry_target(
     *,
     registry_override: str | None = None,
 ) -> tuple[EngineTarget, str]:
-    display_target = target
+    stripped_target = target.strip()
+    if not stripped_target:
+        raise CommandError("Target value cannot be empty.")
+
+    display_target = stripped_target
 
     workspace_payload: str
 
-    if target.startswith("db:"):
-        remainder = target[3:]
+    if stripped_target.startswith("db:"):
+        remainder = stripped_target[3:]
         engine_token, separator, payload = remainder.partition(":")
         if not separator:
-            raise CommandError(f"Malformed target URI: {target}")
+            raise CommandError(f"Malformed target URI: {stripped_target}")
         candidate_engine = engine_token or default_engine
         workspace_payload = payload
     else:
         candidate_engine = default_engine
-        workspace_payload = target
+        workspace_payload = stripped_target
 
     try:
         engine_name = canonicalize_engine_name(candidate_engine)
     except UnsupportedEngineError as exc:
         raise CommandError(f"Unsupported engine '{candidate_engine}'") from exc
+
+    if not stripped_target.startswith("db:"):
+        display_target = f"db:{engine_name}:{workspace_payload}" if workspace_payload else f"db:{engine_name}:"
 
     if engine_name == "sqlite":
         if not workspace_payload:
@@ -249,8 +256,6 @@ def _resolve_registry_target(
             workspace_uri = f"db:sqlite:file:{workspace_path.as_posix()}"
         else:
             workspace_uri = f"db:sqlite:{workspace_path.as_posix()}"
-
-        display_target = workspace_uri
 
         registry_uri = config_resolver.resolve_registry_uri(
             engine=engine_name,

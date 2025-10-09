@@ -267,6 +267,9 @@ def test_status_outputs_in_sync_snapshot(runner: CliRunner) -> None:
 
         assert result.exit_code == 0, result.output
         assert result.stdout == expected
+    lines = result.stdout.splitlines()
+    assert lines[0] == "# On database db:sqlite:flipr_test.db"
+    assert lines[-1] == "Nothing to deploy (up-to-date)"
 
 
 def test_status_reports_undeployed_changes(runner: CliRunner) -> None:
@@ -314,6 +317,9 @@ def test_status_reports_undeployed_changes(runner: CliRunner) -> None:
 
         assert result.exit_code == 1, result.output
         assert result.stdout == expected
+        lines = result.stdout.splitlines()
+        assert lines[0] == "# On database flipr_test"
+        assert lines[-2:] == ["Undeployed change:", "  * flips"]
 
 
 def test_status_json_format_matches_fixture(runner: CliRunner) -> None:
@@ -393,9 +399,10 @@ def test_status_json_format_matches_fixture(runner: CliRunner) -> None:
         payload = json.loads(result.stdout)
         assert payload["project"] == PROJECT
         assert payload["target"] == "db:sqlite:dev/flipr_dev.db"
-        assert payload["status"] in {"in_sync", "ahead", "behind"}
+        assert payload["status"] == "in_sync"
         assert "change" in payload
         assert payload["change"]["name"] == "userflips"
         assert payload["change"]["deploy_id"] == "60ee3aba0445bf3287f9dc1dd97b1877523fa139"
         assert payload["change"]["tag"] == "@v1.0.0-dev1"
+        assert payload["pending_changes"] == []
         assert golden_text.splitlines()[1].split()[2] == payload["project"]

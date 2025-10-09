@@ -117,6 +117,14 @@ def test_log_reports_human_history() -> None:
 
         assert result.exit_code == 0, result.stderr
         assert result.stdout == expected
+    lines = result.stdout.splitlines()
+    assert lines[0] == "On database db:sqlite:flipr_test.db"
+    # Ensure blank line separates summary from description exactly like Sqitch
+    assert lines[6] == ""
+    assert lines[7] == "    Creates table to track our users."
+    # Double-check second entry retains blank separator
+    assert lines[13] == ""
+    assert lines[14] == "    Creates table to track our users."
 
 
 def test_log_supports_json_format() -> None:
@@ -165,6 +173,7 @@ def test_log_supports_json_format() -> None:
     assert event["change"] == "users"
     assert event["project"] == "flipr"
     assert event["committer"]["name"] == "Marge N. O’Vera"
+    assert event["committer"]["email"] == "marge@example.com"
 
 
 def test_log_rejects_unknown_format() -> None:

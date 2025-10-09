@@ -315,6 +315,8 @@ def _format_human(target: str, events: Sequence[LogEvent]) -> str:
         lines.append("No events found.")
         return "\n".join(lines) + "\n"
 
+    lines.append("")
+
     for index, event in enumerate(events):
         lines.append(f"{event.event.capitalize()} {event.change_id}")
         lines.append(f"Name:      {event.change}")

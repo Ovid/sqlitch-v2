@@ -13,12 +13,12 @@
 ```
 
 ## Phase 3.1: Setup
-- [ ] T001 Verify dev environment by running `pip install -e .[dev]` in project root (touches `pyproject.toml` dependencies)
+- [X] T001 Verify dev environment by running `pip install -e .[dev]` in project root (touches `pyproject.toml` dependencies)
 
 ## Phase 3.2: Tests First (TDD)
-- [ ] T002 [P] Augment `tests/cli/test_status_unit.py` to assert registry targets render as project-relative URIs and `_load_registry_rows` raises `CommandError` when the SQLite file is missing (locks current failure before implementation)
-- [ ] T003 [P] Tighten `tests/cli/contracts/test_status_contract.py` expectations for human output and JSON payload (target string, summary header, undeployed list) based on Sqitch transcript
-- [ ] T004 [P] Expand `tests/cli/contracts/test_log_contract.py` to assert newline spacing and identity lines exactly match Sqitch log output (ensures current failure remains)
+- [X] T002 [P] Augment `tests/cli/test_status_unit.py` to assert registry targets render as project-relative URIs and `_load_registry_rows` raises `CommandError` when the SQLite file is missing (locks current failure before implementation)
+- [X] T003 [P] Tighten `tests/cli/contracts/test_status_contract.py` expectations for human output and JSON payload (target string, summary header, undeployed list) based on Sqitch transcript
+- [X] T004 [P] Expand `tests/cli/contracts/test_log_contract.py` to assert newline spacing and identity lines exactly match Sqitch log output (ensures current failure remains)
 - [ ] T005 [P] Update `tests/regression/test_tutorial_parity.py` log/status snapshots for Quickstart Scenarios 7 and 10 to capture Sqitch baseline before code changes
 
 ## Phase 3.3: Core Implementation

@@ -349,6 +349,26 @@ def test_render_human_output_handles_not_deployed() -> None:
     assert "No deployments have been recorded yet." in rendered
 
 
+def test_render_human_output_uses_supplied_target(tmp_path: Path) -> None:
+    """Human output should echo the original target URI without normalization."""
+
+    _, display_target = _resolve_registry_target(
+        "db:sqlite:registry.db",
+        tmp_path,
+        "sqlite",
+    )
+
+    rendered = _render_human_output(
+        project="widgets",
+        target=display_target,
+        rows=(),
+        status="not_deployed",
+        pending_changes=(),
+    )
+
+    assert "# On database db:sqlite:registry.db" in rendered
+
+
 def test_render_human_output_lists_pending_changes() -> None:
     """Behind status should enumerate pending change names."""
 
@@ -577,8 +597,10 @@ def test_resolve_registry_target_normalizes_relative_path(tmp_path: Path) -> Non
 def test_load_registry_rows_missing_database(tmp_path: Path) -> None:
     """Missing registry databases should surface as CommandError instances."""
 
+    engine_target, _ = _resolve_registry_target("missing.db", tmp_path, "sqlite")
+
     with pytest.raises(CommandError, match="Workspace database"):
-        _resolve_registry_target("missing.db", tmp_path, "sqlite")
+        _load_registry_rows(engine_target, "widgets")
 
 
 def test_determine_status_handles_not_deployed() -> None:
