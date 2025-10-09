@@ -242,6 +242,10 @@ def resolve_fullname(
     Returns:
         Full name string (never None).
     """
+    value = env.get("SQLITCH_FULLNAME")
+    if value:
+        return value
+
     # Check SQITCH_FULLNAME
     value = env.get("SQITCH_FULLNAME")
     if value:
@@ -257,7 +261,11 @@ def resolve_fullname(
     if value:
         return value
 
-    # Check config user.name
+    value = env.get("GIT_AUTHOR_NAME")
+    if value:
+        return value
+
+    # Check config user.name after Git author overrides
     if config is not None:
         user_section = config.settings.get("user", {})
         value = user_section.get("name")
@@ -268,10 +276,6 @@ def resolve_fullname(
     system_name = get_system_fullname(username_fallback)
     if system_name:
         return system_name
-
-    value = env.get("GIT_AUTHOR_NAME")
-    if value:
-        return value
 
     # Fallback to username
     return username_fallback
@@ -301,6 +305,11 @@ def resolve_email(
     Returns:
         Email string (never None).
     """
+    # Prefer SQLITCH_EMAIL overrides
+    value = env.get("SQLITCH_EMAIL")
+    if value:
+        return value
+
     # Check SQITCH_EMAIL
     value = env.get("SQITCH_EMAIL")
     if value:
@@ -316,16 +325,16 @@ def resolve_email(
     if value:
         return value
 
-    # Check config user.email
+    value = env.get("GIT_AUTHOR_EMAIL")
+    if value:
+        return value
+
+    # Check config user.email after Git author overrides
     if config is not None:
         user_section = config.settings.get("user", {})
         value = user_section.get("email")
         if value:
             return value
-
-    value = env.get("GIT_AUTHOR_EMAIL")
-    if value:
-        return value
 
     value = env.get("EMAIL")
     if value:

@@ -2,14 +2,20 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sqlite3
 from pathlib import Path
 
 import pytest
-from click.testing import CliRunner
+from click.testing import CliRunner, Result
 
 from sqlitch.cli.main import main
+
+_SUPPORT_DIR = Path(__file__).resolve().parents[2] / "support"
+_TUTORIAL_ENV_OVERRIDES_PATH = _SUPPORT_DIR / "tutorial_parity" / "env_overrides.json"
+with _TUTORIAL_ENV_OVERRIDES_PATH.open(encoding="utf-8") as _env_file:
+    TUTORIAL_ENV_OVERRIDES = json.load(_env_file)
 
 
 class TestDeployWithNoRegistry:
@@ -352,6 +358,139 @@ class TestDeployWithSingleChange:
         assert "email" in columns, "Should have email column"
 
         conn.close()
+
+class TestDeployIdentityPrecedence:
+    """Validate full SQLITCH → SQITCH → GIT identity precedence chain."""
+
+    @staticmethod
+    def _create_project(tmp_path: Path) -> tuple[Path, Path, Path]:
+        project_dir = tmp_path / "flipr"
+        project_dir.mkdir()
+
+        (project_dir / "sqitch.conf").write_text("[core]\n    engine = sqlite\n", encoding="utf-8")
+
+        (project_dir / "sqitch.plan").write_text(
+            "%syntax-version=1.0.0\n"
+            "%project=flipr\n"
+            "\n"
+            "users 2025-01-01T00:00:00Z Test User <test@example.com> # Add users table\n",
+            encoding="utf-8",
+        )
+
+        deploy_dir = project_dir / "deploy"
+        deploy_dir.mkdir()
+        (deploy_dir / "users.sql").write_text(
+            "-- Deploy flipr:users to sqlite\n"
+            "BEGIN;\n"
+            "CREATE TABLE users (id INTEGER PRIMARY KEY);\n"
+            "COMMIT;\n",
+            encoding="utf-8",
+        )
+
+        target_db = tmp_path / "flipr_target.db"
+        registry_db = tmp_path / "sqitch.db"
+        return project_dir, target_db, registry_db
+
+    @staticmethod
+    def _invoke_deploy(runner: CliRunner, project_dir: Path, target_db: Path) -> Result:
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            return runner.invoke(main, ["deploy", f"db:sqlite:{target_db}"])
+        finally:
+            os.chdir(original_cwd)
+
+    @staticmethod
+    def _fetch_identity(registry_db: Path) -> tuple[str, str]:
+        conn = sqlite3.connect(registry_db)
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT committer_name, committer_email FROM events WHERE change = 'users'"
+            )
+            row = cursor.fetchone()
+            assert row is not None, "Deployment event should exist"
+            return row[0], row[1]
+        finally:
+            conn.close()
+
+    @staticmethod
+    def _clear_identity_env(monkeypatch: pytest.MonkeyPatch) -> None:
+        for key in (
+            "SQLITCH_FULLNAME",
+            "SQLITCH_EMAIL",
+            "SQITCH_FULLNAME",
+            "SQITCH_EMAIL",
+            "GIT_AUTHOR_NAME",
+            "GIT_AUTHOR_EMAIL",
+        ):
+            monkeypatch.delenv(key, raising=False)
+
+    def test_prefers_sqlitch_fullname_and_email(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        project_dir, target_db, registry_db = self._create_project(tmp_path)
+        self._clear_identity_env(monkeypatch)
+
+        monkeypatch.setenv("SQLITCH_FULLNAME", TUTORIAL_ENV_OVERRIDES["SQLITCH_FULLNAME"])
+        monkeypatch.setenv("SQLITCH_EMAIL", TUTORIAL_ENV_OVERRIDES["SQLITCH_EMAIL"])
+        monkeypatch.setenv("SQITCH_FULLNAME", TUTORIAL_ENV_OVERRIDES["SQITCH_FULLNAME"])
+        monkeypatch.setenv("SQITCH_EMAIL", TUTORIAL_ENV_OVERRIDES["SQITCH_EMAIL"])
+        monkeypatch.setenv("GIT_AUTHOR_NAME", TUTORIAL_ENV_OVERRIDES["GIT_AUTHOR_NAME"])
+        monkeypatch.setenv("GIT_AUTHOR_EMAIL", TUTORIAL_ENV_OVERRIDES["GIT_AUTHOR_EMAIL"])
+
+        result = self._invoke_deploy(runner, project_dir, target_db)
+
+        assert result.exit_code == 0, f"Deploy failed: {result.output}"
+
+        name, email = self._fetch_identity(registry_db)
+        assert name == TUTORIAL_ENV_OVERRIDES["SQLITCH_FULLNAME"]
+        assert email == TUTORIAL_ENV_OVERRIDES["SQLITCH_EMAIL"]
+
+    def test_falls_back_to_sqitch_fullname_and_email(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        project_dir, target_db, registry_db = self._create_project(tmp_path)
+        self._clear_identity_env(monkeypatch)
+
+        monkeypatch.setenv("SQITCH_FULLNAME", TUTORIAL_ENV_OVERRIDES["SQITCH_FULLNAME"])
+        monkeypatch.setenv("SQITCH_EMAIL", TUTORIAL_ENV_OVERRIDES["SQITCH_EMAIL"])
+        monkeypatch.setenv("GIT_AUTHOR_NAME", TUTORIAL_ENV_OVERRIDES["GIT_AUTHOR_NAME"])
+        monkeypatch.setenv("GIT_AUTHOR_EMAIL", TUTORIAL_ENV_OVERRIDES["GIT_AUTHOR_EMAIL"])
+
+        result = self._invoke_deploy(runner, project_dir, target_db)
+
+        assert result.exit_code == 0, f"Deploy failed: {result.output}"
+
+        name, email = self._fetch_identity(registry_db)
+        assert name == TUTORIAL_ENV_OVERRIDES["SQITCH_FULLNAME"]
+        assert email == TUTORIAL_ENV_OVERRIDES["SQITCH_EMAIL"]
+
+    def test_falls_back_to_git_author_when_no_sqitch_vars(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        project_dir, target_db, registry_db = self._create_project(tmp_path)
+        self._clear_identity_env(monkeypatch)
+
+        monkeypatch.setenv("GIT_AUTHOR_NAME", TUTORIAL_ENV_OVERRIDES["GIT_AUTHOR_NAME"])
+        monkeypatch.setenv("GIT_AUTHOR_EMAIL", TUTORIAL_ENV_OVERRIDES["GIT_AUTHOR_EMAIL"])
+
+        result = self._invoke_deploy(runner, project_dir, target_db)
+
+        assert result.exit_code == 0, f"Deploy failed: {result.output}"
+
+        name, email = self._fetch_identity(registry_db)
+        assert name == TUTORIAL_ENV_OVERRIDES["GIT_AUTHOR_NAME"]
+        assert email == TUTORIAL_ENV_OVERRIDES["GIT_AUTHOR_EMAIL"]
 
     def test_inserts_change_record_in_registry(self, runner: CliRunner, tmp_path: Path) -> None:
         """Deploy should insert change record into registry changes table."""
@@ -1459,7 +1598,7 @@ class TestDeployFailureHandling:
         )
         rows = cursor.fetchall()
         assert rows == [
-            ("fail", "Add users", "Config User", "config.user@example.com")
+            ("deploy_fail", "Add users", "Config User", "config.user@example.com")
         ]
 
         conn.close()

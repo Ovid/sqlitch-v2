@@ -353,6 +353,76 @@ class TestStatusWithPendingChanges:
         assert "flipr" in output, "Should show project name"
 
 
+class TestStatusFailureMetadata:
+    """Ensure status surfaces metadata for the most recent failure."""
+
+    def test_reports_last_failure_details(self, runner: CliRunner, tmp_path: Path) -> None:
+        project_dir = tmp_path / "flipr"
+        project_dir.mkdir()
+
+        conf_file = project_dir / "sqitch.conf"
+        conf_file.write_text(
+            "[core]\n"
+            "    engine = sqlite\n"
+            "[user]\n"
+            "    name = Config User\n"
+            "    email = config.user@example.com\n",
+            encoding="utf-8",
+        )
+
+        plan_file = project_dir / "sqitch.plan"
+        plan_file.write_text(
+            "%syntax-version=1.0.0\n"
+            "%project=flipr\n"
+            "\n"
+            "users 2025-01-01T00:00:00Z Planner <planner@example.com> # Add users\n",
+            encoding="utf-8",
+        )
+
+        deploy_dir = project_dir / "deploy"
+        deploy_dir.mkdir()
+        (deploy_dir / "users.sql").write_text(
+            "-- Deploy flipr:users to sqlite\n"
+            "BEGIN;\n"
+            "CREATE TABLE users (id INTEGER PRIMARY KEY);\n"
+            "SELECT RAISE(ABORT, 'deploy explosion');\n"
+            "COMMIT;\n",
+            encoding="utf-8",
+        )
+
+        target_db = tmp_path / "flipr_test.db"
+
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            deploy_result = runner.invoke(
+                main,
+                ["deploy", f"db:sqlite:{target_db}"],
+            )
+        finally:
+            os.chdir(original_cwd)
+
+        assert deploy_result.exit_code != 0, "Deploy must fail to trigger failure metadata"
+
+        # Execute status after failure
+        try:
+            os.chdir(project_dir)
+            status_result = runner.invoke(
+                main,
+                ["status", f"db:sqlite:{target_db}"],
+            )
+        finally:
+            os.chdir(original_cwd)
+
+        assert status_result.exit_code == 1, "Status should indicate pending changes after failure"
+
+        output_lower = status_result.output.lower()
+        assert "last failure" in output_lower
+        assert "users" in output_lower
+        assert "config user" in output_lower
+        assert "add users" in output_lower
+
+
 @pytest.fixture
 def runner() -> CliRunner:
     """Provide a Click test runner."""

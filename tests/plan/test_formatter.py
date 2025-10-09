@@ -52,7 +52,6 @@ def test_format_plan_generates_expected_text(tmp_path: Path) -> None:
     )
 
     # Compact Sqitch format: <name> [<dependencies>] <timestamp> <planner> # <note>
-    # Note: default_engine is NOT written to plan (Sqitch stores it in config/target URIs)
     expected = "%syntax-version=1.0.0\n%project=widgets\n\ncore:init 2025-10-03T12:30:00Z alice@example.com\nwidgets:add [core:init] 2025-10-03T12:34:56Z alice@example.com # Add widgets table.\n@v1.0 2025-10-03T12:35:30Z alice@example.com\n"
 
     assert plan_text == expected
@@ -111,12 +110,10 @@ def test_compute_checksum_matches_sha256(value: str, expected: str) -> None:
 def test_format_plan_preserves_missing_change_id(tmp_path: Path) -> None:
     # Compact format does not include change_id, script_paths, or tags metadata
     # Only: <name> [<dependencies>] <timestamp> <planner> # <note>
-    # Note: default_engine NOT in plan (Sqitch stores in config)
     original = "%syntax-version=1.0.0\n%project=widgets\n\ncore:init 2025-10-03T12:30:00Z alice@example.com\n"
     plan_path = tmp_path / "plan"
     plan_path.write_text(original, encoding="utf-8")
 
-    # Parser needs default_engine parameter since it's not in the file
     plan = parser.parse_plan(plan_path, default_engine="pg")
     rendered = formatter.format_plan(
         project_name=plan.project_name,
@@ -126,3 +123,29 @@ def test_format_plan_preserves_missing_change_id(tmp_path: Path) -> None:
     )
 
     assert rendered == original
+
+
+def test_formatter_matches_tutorial_parity_golden() -> None:
+    fixture_path = (
+        Path(__file__).resolve().parents[1]
+        / "support"
+        / "golden"
+        / "tutorial_parity"
+        / "plan_compact"
+        / "sqitch.plan"
+    )
+
+    golden = fixture_path.read_text(encoding="utf-8")
+    plan = parser.parse_plan(fixture_path, default_engine="sqlite")
+
+    rendered = formatter.format_plan(
+        project_name=plan.project_name,
+        default_engine=plan.default_engine,
+        entries=plan.entries,
+        base_path=fixture_path.parent,
+        syntax_version=plan.syntax_version,
+        uri=plan.uri,
+        include_default_engine=True,
+    )
+
+    assert rendered == golden

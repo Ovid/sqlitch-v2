@@ -28,6 +28,10 @@ from ..options import global_sqitch_options
 __all__ = ["config_command"]
 
 _CONFIG_FILENAME = "sqitch.conf"
+_ENV_SQLITCH_CONFIG = "SQLITCH_CONFIG"
+_ENV_SQITCH_CONFIG = "SQITCH_CONFIG"
+_ENV_SQLITCH_USER_CONFIG = "SQLITCH_USER_CONFIG"
+_ENV_SQITCH_USER_CONFIG = "SQITCH_USER_CONFIG"
 
 
 @click.command("config")
@@ -269,6 +273,8 @@ def _set_option(
     quiet: bool,
 ) -> None:
     section, option = _split_key(name)
+    if section.lower() == "core" and option.lower() == "uri":
+        raise CommandError("core.uri may not be modified via sqlitch config")
     config_path = _config_file_path(scope, project_root, config_root, env)
 
     existing_lines = _read_config_lines(config_path)
@@ -291,6 +297,8 @@ def _unset_option(
     quiet: bool,
 ) -> None:
     section, option = _split_key(name)
+    if section.lower() == "core" and option.lower() == "uri":
+        raise CommandError("core.uri may not be modified via sqlitch config")
     config_path = _config_file_path(scope, project_root, config_root, env)
 
     if not config_path.exists():
@@ -356,12 +364,10 @@ def _config_file_path(
     config_root: Path,
     env: Mapping[str, str],
 ) -> Path:
-    if scope == ConfigScope.LOCAL:
-        directory = project_root
-    elif scope == ConfigScope.USER:
-        directory = config_root
-    else:
-        raise CommandError("System scope modifications are not supported yet.")
+    directory, explicit_file = _resolve_scope_target(scope, project_root, config_root, env)
+
+    if explicit_file:
+        return directory
 
     try:
         resolution = resolve_config_file(directory)
@@ -389,6 +395,29 @@ def _load_parser(path: Path) -> configparser.ConfigParser:
     if path.exists():
         parser.read(path, encoding="utf-8")
     return parser
+
+
+def _resolve_scope_target(
+    scope: ConfigScope,
+    project_root: Path,
+    config_root: Path,
+    env: Mapping[str, str],
+) -> tuple[Path, bool]:
+    env_map = {key: str(value) for key, value in env.items()}
+
+    if scope == ConfigScope.LOCAL:
+        override = env_map.get(_ENV_SQLITCH_CONFIG) or env_map.get(_ENV_SQITCH_CONFIG)
+        if override:
+            return Path(override), True
+        return project_root, False
+
+    if scope == ConfigScope.USER:
+        override = env_map.get(_ENV_SQLITCH_USER_CONFIG) or env_map.get(_ENV_SQITCH_USER_CONFIG)
+        if override:
+            return Path(override), True
+        return config_root, False
+
+    raise CommandError("System scope modifications are not supported yet.")
 
 
 def _read_config_lines(path: Path) -> list[str]:

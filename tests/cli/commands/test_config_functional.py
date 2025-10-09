@@ -216,6 +216,15 @@ class TestConfigSetOperation:
                 pg_count == 0 or '[engine "pg"]' in config_content
             ), "Should replace old value, not duplicate"
 
+    def test_rejects_core_uri_assignment(self, runner):
+        """Config set must not permit writing core.uri entries."""
+        with runner.isolated_filesystem():
+            result = runner.invoke(main, ["config", "core.uri", "https://example.com/flipr"])
+
+            assert result.exit_code != 0, "Setting core.uri should fail"
+            assert "core.uri" in result.output
+            assert not Path("sqitch.conf").exists(), "Command must not create sqitch.conf"
+
 
 class TestConfigListOperation:
     """Test T027: Config list displays all configuration values."""
@@ -353,3 +362,51 @@ class TestConfigErrorHandling:
                 0,
                 1,
             ), f"Should handle invalid keys gracefully, got {result.exit_code}"
+
+
+class TestConfigEnvironmentOverrides:
+    """Tests covering FR-001a environment override precedence."""
+
+    def test_environment_overrides_define_scope_precedence(self, runner):
+        """SQITCH_* variables should control scope order system → user → local."""
+
+        with runner.isolated_filesystem():
+            system_conf = Path("system.conf")
+            system_conf.write_text("[core]\n\tengine = pg\n", encoding="utf-8")
+
+            user_conf = Path("user.conf")
+            user_conf.write_text("[core]\n\tengine = mysql\n", encoding="utf-8")
+
+            local_conf = Path("local.conf")
+            local_conf.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
+
+            env = {
+                "SQITCH_SYSTEM_CONFIG": str(system_conf),
+                "SQITCH_USER_CONFIG": str(user_conf),
+                "SQITCH_CONFIG": str(local_conf),
+            }
+
+            result = runner.invoke(main, ["config", "core.engine"], env=env)
+
+            assert result.exit_code == 0, f"Config get failed with overrides: {result.output}"
+            assert "sqlite" in result.output, "Local SQITCH_CONFIG should take precedence"
+
+    def test_sqlitch_overrides_take_priority_over_sqitch(self, runner):
+        """SQLITCH_* overrides should supersede SQITCH_* fallbacks."""
+
+        with runner.isolated_filesystem():
+            fallback_conf = Path("fallback.conf")
+            fallback_conf.write_text("[core]\n\tengine = mysql\n", encoding="utf-8")
+
+            preferred_conf = Path("preferred.conf")
+            preferred_conf.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
+
+            env = {
+                "SQITCH_CONFIG": str(fallback_conf),
+                "SQLITCH_CONFIG": str(preferred_conf),
+            }
+
+            result = runner.invoke(main, ["config", "core.engine"], env=env)
+
+            assert result.exit_code == 0, f"Config get failed with SQLITCH override: {result.output}"
+            assert "sqlite" in result.output, "SQLITCH_CONFIG should override SQITCH_CONFIG"

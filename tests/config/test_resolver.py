@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from sqlitch.config import resolver
+from sqlitch.config.loader import ConfigConflictError
 
 
 def _write_config(path: Path, content: str) -> None:
@@ -12,6 +15,55 @@ def _write_config(path: Path, content: str) -> None:
 
 def _env(**values: object) -> dict[str, str]:
     return {key: str(value) for key, value in values.items()}
+
+
+def test_resolve_config_applies_scope_precedence(tmp_path: Path) -> None:
+    project_dir = tmp_path / "project"
+    project_dir.mkdir()
+
+    system_dir = tmp_path / "system"
+    _write_config(system_dir / "sqitch.conf", "[core]\nengine=pg\n")
+
+    user_dir = tmp_path / "user"
+    _write_config(
+        user_dir / "sqitch.conf",
+        """[core]\nplan_file=sqitch.plan\n""",
+    )
+
+    _write_config(
+        project_dir / "sqitch.conf",
+        """[core]\nengine=sqlite\n""",
+    )
+
+    profile = resolver.resolve_config(
+        root_dir=project_dir,
+        config_root=user_dir,
+        system_path=system_dir,
+    )
+
+    assert profile.files == (
+        system_dir / "sqitch.conf",
+        user_dir / "sqitch.conf",
+        project_dir / "sqitch.conf",
+    )
+    core_settings = profile.settings["core"]
+    assert core_settings["engine"] == "sqlite"
+    assert core_settings["plan_file"] == "sqitch.plan"
+
+
+def test_resolve_config_rejects_duplicate_files_within_scope(tmp_path: Path) -> None:
+    project_dir = tmp_path / "project"
+    project_dir.mkdir()
+
+    system_dir = tmp_path / "system"
+    system_dir.mkdir()
+    _write_config(system_dir / "sqitch.conf", "[core]\nengine=pg\n")
+    _write_config(system_dir / "sqlitch.conf", "[core]\nengine=pg\n")
+
+    with pytest.raises(ConfigConflictError) as excinfo:
+        resolver.resolve_config(root_dir=project_dir, system_path=system_dir)
+
+    assert "system" in str(excinfo.value)
 
 
 def test_determine_config_root_prioritises_sqlitch_env(tmp_path: Path) -> None:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -35,6 +36,17 @@ class CurrentChange:
     committer_name: str
     committer_email: str
     tag: str | None
+
+
+@dataclass(frozen=True)
+class FailureMetadata:
+    """Represents the most recent failure event recorded in the registry."""
+
+    change: str
+    note: str
+    committed_at: str
+    committer_name: str
+    committer_email: str
 
 
 @click.command("status")
@@ -107,7 +119,7 @@ def status_command(
         plan.default_engine,
         registry_override=cli_context.registry,
     )
-    registry_rows = _load_registry_rows(engine_target, resolved_project)
+    registry_rows, last_failure = _load_registry_state(engine_target, resolved_project)
 
     if registry_rows:
         registry_project = registry_rows[-1].project
@@ -131,6 +143,7 @@ def status_command(
             plan=plan,
             rows=registry_rows,
             pending_changes=pending,
+            last_failure=last_failure,
         )
         click.echo(json.dumps(payload, indent=2, sort_keys=False))
     else:
@@ -140,6 +153,7 @@ def status_command(
             rows=registry_rows,
             status=status,
             pending_changes=pending,
+            last_failure=last_failure,
         )
         click.echo(text, nl=False)
 
@@ -252,10 +266,10 @@ def _resolve_registry_target(
     return engine_target, display_target
 
 
-def _load_registry_rows(
+def _load_registry_state(
     engine_target: EngineTarget,
     expected_project: str,
-) -> tuple[CurrentChange, ...]:
+) -> tuple[tuple[CurrentChange, ...], FailureMetadata | None]:
     try:
         engine = create_engine(engine_target)
     except UnsupportedEngineError as exc:
@@ -269,6 +283,9 @@ def _load_registry_rows(
         ) from exc
 
     cursor = None
+    rows: list[object] = []
+    columns: list[str] = []
+    failure_row: FailureMetadata | None = None
     try:
         cursor = connection.cursor()
         cursor.execute("SELECT project FROM changes GROUP BY project")
@@ -305,6 +322,8 @@ def _load_registry_rows(
         rows = cursor.fetchall()
         description = getattr(cursor, "description", None)
         columns = [column[0] for column in description] if description else []
+
+        failure_row = _load_last_failure_event(connection, expected_project)
     except Exception as exc:  # pragma: no cover - query failures propagated
         if _registry_schema_missing(exc):
             raise CommandError(
@@ -325,7 +344,7 @@ def _load_registry_rows(
             pass
 
     if not rows:
-        return ()
+        return (), failure_row
 
     def _row_mapping(row: object) -> Mapping[str, object]:
         if isinstance(row, Mapping):
@@ -358,7 +377,62 @@ def _load_registry_rows(
             )
         )
 
-    return tuple(registry_rows)
+    return tuple(registry_rows), failure_row
+
+
+def _load_registry_rows(
+    engine_target: EngineTarget,
+    expected_project: str,
+) -> tuple[CurrentChange, ...]:
+    rows, _ = _load_registry_state(engine_target, expected_project)
+    return rows
+
+
+def _load_last_failure_event(
+    connection: sqlite3.Connection, expected_project: str
+) -> FailureMetadata | None:
+    failure_cursor: sqlite3.Cursor | None = None
+    try:
+        failure_cursor = connection.cursor()
+        try:
+            failure_cursor.execute(
+                """
+                SELECT change, note, committed_at, committer_name, committer_email
+                FROM events
+                WHERE project = ? AND lower(event) = 'deploy_fail'
+                ORDER BY committed_at DESC, change_id DESC
+                LIMIT 1
+                """,
+                (expected_project,),
+            )
+        except sqlite3.Error as exc:
+            message = str(exc).lower()
+            missing_indicators = (
+                "no such table: events",
+                'relation "events" does not exist',
+                'table "events" does not exist',
+                'missing from-clause entry for table "events"',
+            )
+            if any(indicator in message for indicator in missing_indicators):
+                return None
+            raise
+
+        row = failure_cursor.fetchone()
+        if not row:
+            return None
+        return FailureMetadata(
+            change=str(row[0] or ""),
+            note=str(row[1] or ""),
+            committed_at=str(row[2] or ""),
+            committer_name=str(row[3] or ""),
+            committer_email=str(row[4] or ""),
+        )
+    finally:
+        if failure_cursor is not None:
+            try:
+                failure_cursor.close()
+            except Exception:  # pragma: no cover - best effort cleanup
+                pass
 
 
 def _registry_schema_missing(error: Exception) -> bool:
@@ -415,6 +489,7 @@ def _render_human_output(
     rows: Sequence[CurrentChange],
     status: str,
     pending_changes: Sequence[str],
+    last_failure: FailureMetadata | None = None,
 ) -> str:
     lines: list[str] = [
         f"# On database {target}",
@@ -448,7 +523,19 @@ def _render_human_output(
             ]
         )
 
-    lines.append("# ")
+    if last_failure is not None:
+        lines.append("# Last failure:")
+        lines.append(f"#   Change:   {last_failure.change}")
+        if last_failure.note:
+            lines.append(f"#   Note:     {last_failure.note}")
+        if last_failure.committed_at:
+            lines.append(f"#   At:       {last_failure.committed_at}")
+        lines.append(
+            f"#   By:       {last_failure.committer_name} <{last_failure.committer_email}>"
+        )
+        lines.append("# ")
+    else:
+        lines.append("# ")
 
     if status == "behind":
         header = "Undeployed change:" if len(pending_changes) == 1 else "Undeployed changes:"
@@ -472,6 +559,7 @@ def _build_json_payload(
     plan: Plan,
     rows: Sequence[CurrentChange],
     pending_changes: Sequence[str],
+    last_failure: FailureMetadata | None = None,
 ) -> dict[str, object]:
     change_payload: dict[str, object] | None = None
     if rows:
@@ -487,7 +575,7 @@ def _build_json_payload(
             "tag": current.tag,
         }
 
-    return {
+    payload: dict[str, object] = {
         "project": project,
         "target": target,
         "status": status,
@@ -495,3 +583,16 @@ def _build_json_payload(
         "change": change_payload,
         "pending_changes": list(pending_changes),
     }
+
+    if last_failure is not None:
+        payload["last_failure"] = {
+            "change": last_failure.change,
+            "note": last_failure.note,
+            "committed_at": last_failure.committed_at,
+            "by": {
+                "name": last_failure.committer_name,
+                "email": last_failure.committer_email,
+            },
+        }
+
+    return payload

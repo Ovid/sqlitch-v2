@@ -70,6 +70,27 @@ class TestInitDirectoryCreation:
                 "%uri=https://github.com/sqitchers/sqitch-sqlite-intro/" in plan_content
             ), "Missing %uri pragma"
 
+    def test_sqitch_conf_omits_core_uri(self, runner):
+        """Init must not write core.uri entries even when --uri supplied."""
+        with runner.isolated_filesystem():
+            result = runner.invoke(
+                main,
+                [
+                    "init",
+                    "flipr",
+                    "--engine",
+                    "sqlite",
+                    "--uri",
+                    "https://github.com/sqitchers/sqitch-sqlite-intro/",
+                ],
+            )
+
+            assert result.exit_code == 0, f"Init failed: {result.output}"
+
+            config_content = Path("sqitch.conf").read_text()
+            assert "core.uri" not in config_content
+            assert "%core.uri" not in config_content
+
     def test_creates_script_directories(self, runner):
         """Init must create deploy/, revert/, and verify/ directories."""
         with runner.isolated_filesystem():
@@ -143,6 +164,37 @@ class TestInitDirectoryCreation:
             ), "sqitch.plan must start with %syntax-version pragma"
             # Plan should end with blank line after pragmas
             assert plan_content.endswith("\n"), "sqitch.plan should end with newline"
+
+    def test_engine_target_is_absent_without_flag(self, runner):
+        """Init must not persist engine.target unless --target provided."""
+        with runner.isolated_filesystem():
+            result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
+
+            assert result.exit_code == 0, f"Init failed: {result.output}"
+
+            config_content = Path("sqitch.conf").read_text()
+            assert "\n\ttarget = " not in config_content
+
+    def test_engine_target_written_when_flag_provided(self, runner):
+        """Init must persist engine.target when explicit --target supplied."""
+        with runner.isolated_filesystem():
+            result = runner.invoke(
+                main,
+                [
+                    "init",
+                    "flipr",
+                    "--engine",
+                    "sqlite",
+                    "--target",
+                    "db:sqlite:flipr.db",
+                ],
+            )
+
+            assert result.exit_code == 0, f"Init failed: {result.output}"
+
+            config_content = Path("sqitch.conf").read_text()
+            assert "[engine \"sqlite\"]" in config_content
+            assert "target = db:sqlite:flipr.db" in config_content
 
 
 class TestInitEngineValidation:

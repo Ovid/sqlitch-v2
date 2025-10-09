@@ -85,6 +85,61 @@ def project_with_changes(tmp_path: Path) -> Path:
     return project_dir
 
 
+@pytest.fixture
+def project_with_failed_deploy(tmp_path: Path) -> tuple[Path, Path]:
+    """Create a project with a recorded deploy failure event."""
+
+    project_dir = tmp_path / "fail_project"
+    project_dir.mkdir()
+
+    plan_file = project_dir / "sqitch.plan"
+    plan_file.write_text(
+        "%syntax-version=1.0.0\n"
+        "%project=fail_project\n"
+        "\n"
+        "users 2025-01-01T10:00:00Z Planner <planner@example.com> # Add users table\n",
+        encoding="utf-8",
+    )
+
+    config_file = project_dir / "sqitch.conf"
+    config_file.write_text(
+        "[core]\n"
+        "    engine = sqlite\n"
+        "[user]\n"
+        "    name = Config User\n"
+        "    email = config.user@example.com\n",
+        encoding="utf-8",
+    )
+
+    (project_dir / "deploy").mkdir()
+    (project_dir / "revert").mkdir()
+    (project_dir / "verify").mkdir()
+
+    (project_dir / "deploy" / "users.sql").write_text(
+        "-- Deploy fail_project:users to sqlite\n"
+        "BEGIN;\n"
+        "CREATE TABLE users (id INTEGER PRIMARY KEY);\n"
+        "SELECT RAISE(ABORT, 'deploy explosion');\n"
+        "COMMIT;\n",
+        encoding="utf-8",
+    )
+
+    target_db = project_dir / "fail.db"
+
+    runner = CliRunner()
+    original_cwd = os.getcwd()
+    try:
+        os.chdir(project_dir)
+        result = runner.invoke(main, ["deploy", f"db:sqlite:{target_db}"])
+    finally:
+        os.chdir(original_cwd)
+
+    assert result.exit_code != 0, "Deploy should fail to create failure event"
+    assert "deploy" in result.output.lower(), "Deploy failure message should surface"
+
+    return project_dir, target_db
+
+
 class TestLogDisplayAllEvents:
     """Test log command displays all events correctly."""
 
@@ -346,6 +401,79 @@ class TestLogLimitAndSkip:
         assert result.exit_code == 0
         # Should show remaining events
         assert "Deploy" in result.output or "On database" in result.output
+
+
+class TestLogFailureEvents:
+    """Ensure deploy failure events are represented in log output."""
+
+    def test_human_output_includes_failure_event(
+        self, project_with_failed_deploy: tuple[Path, Path]
+    ) -> None:
+        runner = CliRunner()
+        project_dir, target_db = project_with_failed_deploy
+
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result = runner.invoke(main, ["log", f"db:sqlite:{target_db}"])
+        finally:
+            os.chdir(original_cwd)
+
+        assert result.exit_code == 0, f"Log command failed: {result.output}"
+        lower_output = result.output.lower()
+        assert "deploy_fail" in lower_output
+        assert "config user" in lower_output
+        assert "config.user@example.com" in lower_output
+        assert "add users" in lower_output
+
+    def test_json_output_includes_failure_event(
+        self, project_with_failed_deploy: tuple[Path, Path]
+    ) -> None:
+        import json
+
+        runner = CliRunner()
+        project_dir, target_db = project_with_failed_deploy
+
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result = runner.invoke(
+                main,
+                ["log", f"db:sqlite:{target_db}", "--format", "json"],
+            )
+        finally:
+            os.chdir(original_cwd)
+
+        assert result.exit_code == 0, f"Log command failed: {result.output}"
+        events = json.loads(result.output)
+        assert isinstance(events, list)
+        assert events, "Should include at least one event"
+        failure = events[0]
+        assert failure["event"] == "deploy_fail"
+        assert failure["committer"]["name"] == "Config User"
+        assert failure["committer"]["email"] == "config.user@example.com"
+        assert failure["note"] == "Add users"
+
+    def test_event_filter_accepts_deploy_fail(
+        self, project_with_failed_deploy: tuple[Path, Path]
+    ) -> None:
+        runner = CliRunner()
+        project_dir, target_db = project_with_failed_deploy
+
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            result = runner.invoke(
+                main,
+                ["log", f"db:sqlite:{target_db}", "--event", "deploy_fail"],
+            )
+        finally:
+            os.chdir(original_cwd)
+
+        assert result.exit_code == 0, f"Log command failed: {result.output}"
+        lower_output = result.output.lower()
+        assert "deploy_fail" in lower_output
+        assert "deploy" not in lower_output or "deploy_fail" in lower_output
 
 
 class TestLogJsonFormat:

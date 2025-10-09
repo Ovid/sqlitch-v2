@@ -20,6 +20,10 @@ if TYPE_CHECKING:
 _ENV_SQLITCH_CONFIG_ROOT = "SQLITCH_CONFIG_ROOT"
 _ENV_SQITCH_CONFIG_ROOT = "SQITCH_CONFIG_ROOT"
 _ENV_XDG_CONFIG_HOME = "XDG_CONFIG_HOME"
+_ENV_SQLITCH_CONFIG = "SQLITCH_CONFIG"
+_ENV_SQITCH_CONFIG = "SQITCH_CONFIG"
+_ENV_SQLITCH_USER_CONFIG = "SQLITCH_USER_CONFIG"
+_ENV_SQITCH_USER_CONFIG = "SQITCH_USER_CONFIG"
 _ENV_SQLITCH_SYSTEM_CONFIG = "SQLITCH_SYSTEM_CONFIG"
 _ENV_SQITCH_SYSTEM_CONFIG = "SQITCH_SYSTEM_CONFIG"
 
@@ -101,17 +105,22 @@ def resolve_config(
     env_map = _normalize_env(env)
     project_root = Path(root_dir)
 
-    user_root = (
-        Path(config_root)
-        if config_root is not None
-        else determine_config_root(env=env_map, home=home)
+    user_root = _resolve_user_scope_root(
+        env_map=env_map,
+        config_root=config_root,
+        home=home,
     )
     system_root = _determine_system_root(env=env_map, system_path=system_path)
+
+    local_override = _coerce_path(env_map.get(_ENV_SQLITCH_CONFIG))
+    if local_override is None:
+        local_override = _coerce_path(env_map.get(_ENV_SQITCH_CONFIG))
+    local_root = local_override if local_override is not None else project_root
 
     scope_dirs = {
         ConfigScope.SYSTEM: system_root,
         ConfigScope.USER: user_root,
-        ConfigScope.LOCAL: project_root,
+        ConfigScope.LOCAL: local_root,
     }
 
     return load_config(
@@ -119,6 +128,23 @@ def resolve_config(
         scope_dirs=scope_dirs,
         config_filenames=config_filenames,
     )
+
+
+def _resolve_user_scope_root(
+    *, env_map: Mapping[str, str], config_root: Path | str | None, home: Path | None
+) -> Path:
+    override = _coerce_path(env_map.get(_ENV_SQLITCH_USER_CONFIG))
+    if override is not None:
+        return override
+
+    legacy_override = _coerce_path(env_map.get(_ENV_SQITCH_USER_CONFIG))
+    if legacy_override is not None:
+        return legacy_override
+
+    if config_root is not None:
+        return Path(config_root)
+
+    return determine_config_root(env=env_map, home=home)
 
 
 def resolve_registry_uri(

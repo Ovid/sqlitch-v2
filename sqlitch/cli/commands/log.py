@@ -52,7 +52,7 @@ class LogEvent:
 @click.option(
     "--event",
     "event_filter",
-    type=click.Choice(("deploy", "revert", "fail", "merge"), case_sensitive=False),
+    type=click.Choice(("deploy", "deploy_fail", "revert", "fail", "merge"), case_sensitive=False),
     help="Filter events by event type.",
 )
 @global_sqitch_options

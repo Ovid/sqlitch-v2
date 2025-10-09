@@ -78,7 +78,7 @@ CREATE TABLE dependencies (
 
 CREATE TABLE events (
     event           TEXT        NOT NULL CONSTRAINT events_event_check CHECK (
-        event IN ('deploy', 'revert', 'fail', 'merge')
+        event IN ('deploy', 'revert', 'fail', 'merge', 'deploy_fail')
     ),
     change_id       TEXT        NOT NULL,
     change          TEXT        NOT NULL,
@@ -136,7 +136,7 @@ PRAGMA foreign_keys = ON;
 
 -- Create a new events table with support for "merge" events.
 CREATE TABLE new_events (
-    event           TEXT        NOT NULL CHECK (event IN ('deploy', 'revert', 'fail', 'merge')),
+    event           TEXT        NOT NULL CHECK (event IN ('deploy', 'revert', 'fail', 'merge', 'deploy_fail')),
     change_id       TEXT        NOT NULL,
     change          TEXT        NOT NULL,
     project         TEXT        NOT NULL REFERENCES projects(project) ON UPDATE CASCADE,
@@ -505,7 +505,7 @@ COMMENT ON COLUMN :"registry".dependencies.dependency_id IS 'Change ID the depen
 
 CREATE TABLE :"registry".events (
     event           TEXT        NOT NULL CONSTRAINT events_event_check CHECK (
-        event IN ('deploy', 'revert', 'fail', 'merge')
+        event IN ('deploy', 'revert', 'fail', 'merge', 'deploy_fail')
     ),
     change_id       TEXT        NOT NULL,
     change          TEXT        NOT NULL,
@@ -567,7 +567,7 @@ COMMENT ON COLUMN :"registry".changes.script_hash IS 'Deploy script SHA-1 hash.'
 -- Allow "merge" events.
 ALTER TABLE :"registry".events DROP CONSTRAINT events_event_check;
 ALTER TABLE :"registry".events ADD  CONSTRAINT events_event_check
-      CHECK (event IN ('deploy', 'revert', 'fail', 'merge'));
+    CHECK (event IN ('deploy', 'revert', 'fail', 'merge', 'deploy_fail'));
 
 COMMENT ON SCHEMA :"registry" IS 'Sqitch database deployment metadata v1.0.';
 

@@ -99,13 +99,15 @@ def _build_cli_context(
     )
     logger = create_logger(log_config)
 
+    resolved_target = target or environment.get("SQLITCH_TARGET") or environment.get("SQITCH_TARGET")
+
     return CLIContext(
         project_root=Path.cwd(),
         config_root=resolved_config_root,
         config_root_overridden=config_root_overridden,
         env=environment,
         engine=engine,
-        target=target,
+        target=resolved_target,
         registry=registry,
         plan_file=normalized_plan_file,
         verbosity=verbosity,

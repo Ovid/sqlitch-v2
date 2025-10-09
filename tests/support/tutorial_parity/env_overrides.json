@@ -7,5 +7,9 @@
   "SQLITCH_USERNAME": "env_user",
   "SQLITCH_PASSWORD": "env_password",
   "SQLITCH_PAGER": "cat",
-  "SQLITCH_EDITOR": "true"
+  "SQLITCH_EDITOR": "true",
+  "GIT_AUTHOR_NAME": "Git Author",
+  "GIT_AUTHOR_EMAIL": "git-author@example.com",
+  "GIT_COMMITTER_NAME": "Git Committer",
+  "GIT_COMMITTER_EMAIL": "git-committer@example.com"
 }

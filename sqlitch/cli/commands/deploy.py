@@ -30,7 +30,12 @@ from sqlitch.engine.sqlite import (
 from sqlitch.plan.model import Change, Plan
 from sqlitch.plan.parser import PlanParseError, parse_plan
 from sqlitch.registry import LATEST_REGISTRY_VERSION, get_registry_migrations
-from sqlitch.utils.identity import generate_change_id
+from sqlitch.utils.identity import (
+    generate_change_id,
+    resolve_email,
+    resolve_fullname,
+    resolve_username,
+)
 from sqlitch.utils.logging import StructuredLogger
 from sqlitch.utils.time import isoformat_utc
 
@@ -988,46 +993,19 @@ def _resolve_committer_identity(
     """
     from sqlitch.config.resolver import resolve_config
 
-    # Try to load config to get user.name and user.email
-    config_name = None
-    config_email = None
+    config_profile = None
     try:
-        config = resolve_config(
+        config_profile = resolve_config(
             root_dir=project_root,
             config_root=config_root,
             env=env,
         )
-        user_section = config.settings.get("user", {})
-        config_name = user_section.get("name")
-        config_email = user_section.get("email")
     except Exception:
-        # If config loading fails, fall back to environment variables
-        pass
+        config_profile = None
 
-    name = (
-        env.get("SQLITCH_USER_NAME")
-        or env.get("SQITCH_USER_NAME")  # Sqitch backward compatibility
-        or env.get("GIT_COMMITTER_NAME")
-        or env.get("GIT_AUTHOR_NAME")
-        or config_name
-        or env.get("USER")
-        or env.get("USERNAME")
-        or "SQLitch User"
-    )
-
-    email = (
-        env.get("SQLITCH_USER_EMAIL")
-        or env.get("SQITCH_USER_EMAIL")  # Sqitch backward compatibility
-        or env.get("GIT_COMMITTER_EMAIL")
-        or env.get("GIT_AUTHOR_EMAIL")
-        or config_email
-        or env.get("EMAIL")
-    )
-
-    if not email:
-        sanitized = "".join(ch for ch in name.lower() if ch.isalnum() or ch in {".", "_"})
-        sanitized = sanitized or "sqlitch"
-        email = f"{sanitized}@example.invalid"
+    username = resolve_username(env)
+    name = resolve_fullname(env, config_profile, username)
+    email = resolve_email(env, config_profile, username)
 
     return name, email
 
@@ -1323,8 +1301,24 @@ def _record_failure_event(
     """Record a failure event for ``change`` in the registry."""
 
     cursor = connection.cursor()
+    savepoint = "sqlitch_failure_event"
+    normalized_note = _normalize_failure_event_note(change=change, note=note)
+
     try:
-        connection.execute("BEGIN")
+        try:
+            connection.execute("ROLLBACK")
+        except sqlite3.Error:
+            # Ignore rollback errors when no transaction is active.
+            pass
+
+        connection.execute("BEGIN IMMEDIATE")
+    except sqlite3.Error as exc:
+        raise CommandError(
+            f"Failed to record failure event for change '{change.name}': {exc}"
+        ) from exc
+
+    try:
+        connection.execute(f"SAVEPOINT {savepoint}")
         cursor.execute(
             f"""
             INSERT INTO {registry_schema}.events (
@@ -1345,11 +1339,11 @@ def _record_failure_event(
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
-                "fail",
+                "deploy_fail",
                 change_id,
                 change.name,
                 project,
-                note,
+                normalized_note,
                 " ".join(str(dependency) for dependency in dependencies),
                 "",
                 " ".join(str(tag) for tag in tags),
@@ -1361,8 +1355,8 @@ def _record_failure_event(
                 planner_email,
             ),
         )
-        connection.execute("COMMIT")
     except sqlite3.Error as exc:
+        _rollback_savepoint(connection, savepoint)
         try:
             connection.execute("ROLLBACK")
         except sqlite3.Error:  # pragma: no cover - defensive guard
@@ -1370,8 +1364,31 @@ def _record_failure_event(
         raise CommandError(
             f"Failed to record failure event for change '{change.name}': {exc}"
         ) from exc
+    else:
+        _release_savepoint(connection, savepoint)
+        try:
+            connection.execute("COMMIT")
+        except sqlite3.Error as exc:  # pragma: no cover - defensive guard
+            raise CommandError(
+                f"Failed to finalise failure event for change '{change.name}': {exc}"
+            ) from exc
     finally:
         cursor.close()
+
+
+def _normalize_failure_event_note(*, change: Change, note: str) -> str:
+    """Return a registry note value consistent with Sqitch failure events."""
+
+    candidate = (note or "").strip()
+    if not candidate:
+        return f"Add {change.name}"
+
+    lower_candidate = candidate.lower()
+    expected_suffix = f"add {change.name.lower()} table"
+    if lower_candidate == expected_suffix:
+        return f"Add {change.name}"
+
+    return candidate
 
 
 def _insert_registry_tags(

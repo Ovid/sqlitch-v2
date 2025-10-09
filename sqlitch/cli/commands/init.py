@@ -75,7 +75,9 @@ def init_command(
 
     project = _determine_project_name(project_name, project_root)
     engine = _normalize_engine(engine_option or context_engine)
-    target = target_option or context_target or _ENGINE_DEFAULTS[engine]["target"]
+    default_target = _ENGINE_DEFAULTS[engine]["target"]
+    target = target_option or context_target or default_target
+    persist_target = target_option is not None
 
     top_dir_path, top_dir_display = _determine_top_dir(project_root, top_dir_option, environment)
     plan_path = _determine_plan_path(
@@ -113,6 +115,8 @@ def init_command(
         top_dir_display=top_dir_display,
         target=target,
         uri=uri_option,
+        emit_target_hint=not persist_target,
+        persist_engine_target=persist_target,
     )
     config_path.parent.mkdir(parents=True, exist_ok=True)
     config_path.write_text(config_content, encoding="utf-8")
@@ -231,8 +235,10 @@ def _render_config(
     plan_path: Path,
     project_root: Path,
     top_dir_display: str,
-    target: str,
+    target: str | None,
     uri: str | None,
+    emit_target_hint: bool = True,
+    persist_engine_target: bool = False,
 ) -> str:
     defaults = _ENGINE_DEFAULTS.get(engine, {})
     registry = defaults.get("registry", "sqlitch")
@@ -248,12 +254,20 @@ def _render_config(
     lines.append(f"{indent}# plan_file = {plan_display}")
     lines.append(f"{indent}# top_dir = {top_dir_display}")
 
-    engine_section_header = f'# [engine "{engine}"]'
-    lines.append(engine_section_header)
-    lines.append(f"{indent}# target = {target}")
-    lines.append(f"{indent}# registry = {registry}")
-    if client:
-        lines.append(f"{indent}# client = {client}")
+    if persist_engine_target and target:
+        lines.append("")
+        lines.append(f'[engine "{engine}"]')
+        lines.append(f"{indent}target = {target}")
+        lines.append(f"{indent}# registry = {registry}")
+        if client:
+            lines.append(f"{indent}# client = {client}")
+    elif emit_target_hint:
+        lines.append(f'# [engine "{engine}"]')
+        if target:
+            lines.append(f"{indent}# target = {target}")
+        lines.append(f"{indent}# registry = {registry}")
+        if client:
+            lines.append(f"{indent}# client = {client}")
 
     return "\n".join(lines) + "\n"
 

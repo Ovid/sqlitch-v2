@@ -18,33 +18,33 @@
 - Tests precede implementation for each behavior (TDD).
 
 ## Phase 3.1 – Environment & Fixtures Prep
-- [ ] **T001** Refresh tutorial fixtures to include config/env overrides in `tests/support/tutorial_parity/`.
+- [X] **T001** Refresh tutorial fixtures to include config/env overrides in `tests/support/tutorial_parity/`.
   - Output: sanitized fixture tree with `sqitch.conf` lacking `%core.uri` and env override metadata.
 
 ## Phase 3.2 – Tests First
-- [ ] **T002** Add resolver scope precedence tests in `tests/config/test_resolver.py`.
+- [X] **T002** Add resolver scope precedence tests in `tests/config/test_resolver.py`.
   - Cover FR-001a: system → user → local ordering and duplicate-file rejection.
   - Depends on: T001
-- [ ] **T003** Add loader grammar coverage for FR-023 in `tests/config/test_loader.py`.
+- [X] **T003** Add loader grammar coverage for FR-023 in `tests/config/test_loader.py`.
   - Ensure parser accepts uppercase section headers and rejects stray `%core.uri` entries.
   - Depends on: T001
-- [ ] **T004** Extend config CLI functional tests in `tests/cli/commands/test_config_functional.py` to enforce FR-001a interactions and absence of `core.uri` writes.
+- [X] **T004** Extend config CLI functional tests in `tests/cli/commands/test_config_functional.py` to enforce FR-001a interactions and absence of `core.uri` writes.
   - Depends on: T002, T003
-- [ ] **T005** Add init command regression in `tests/cli/commands/test_init_functional.py` confirming new project configs omit `%core.uri` and respect engine default notes.
+- [X] **T005** Add init command regression in `tests/cli/commands/test_init_functional.py` confirming new project configs omit `%core.uri` and respect engine default notes.
   - Add assertion that `engine.<engine>.target` is absent unless user provided `--target`, covering FR-007a.
   - Depends on: T002
-- [ ] **T006** Create environment precedence matrix tests in `tests/cli/commands/test_deploy_functional.py` validating SQLITCH_* → SQITCH_* → GIT_* chain (FR-005a).
+- [X] **T006** Create environment precedence matrix tests in `tests/cli/commands/test_deploy_functional.py` validating SQLITCH_* → SQITCH_* → GIT_* chain (FR-005a).
   - Depends on: T001
-- [ ] **T007** Add deploy failure event tests in `tests/cli/commands/test_deploy_functional.py` asserting `events` table captures `deploy_fail` rows with identity + note (FR-010a).
+- [X] **T007** Add deploy failure event tests in `tests/cli/commands/test_deploy_functional.py` asserting `events` table captures `deploy_fail` rows with identity + note (FR-010a).
   - Depends on: T006
-- [ ] **T008** Add log formatting tests in `tests/cli/commands/test_log_functional.py` for failure events and ensure output matches Sqitch parity (FR-010a).
+- [X] **T008** Add log formatting tests in `tests/cli/commands/test_log_functional.py` for failure events and ensure output matches Sqitch parity (FR-010a).
   - Depends on: T007
-- [ ] **T009** Extend status command tests in `tests/cli/commands/test_status_functional.py` to surface last failure metadata when deployment pending (FR-010a).
+- [X] **T009** Extend status command tests in `tests/cli/commands/test_status_functional.py` to surface last failure metadata when deployment pending (FR-010a).
   - Depends on: T007
-- [ ] **T010** Add end-to-end Scenario 10 coverage in `tests/integration/test_quickstart_sqlite.py` executing config/env overrides + failure handling.
+- [X] **T010** Add end-to-end Scenario 10 coverage in `tests/integration/test_quickstart_sqlite.py` executing config/env overrides + failure handling.
   - Depends on: T002, T006, T007
 
-- [ ] **T010a** Add compact plan formatter regression tests in `tests/plan/test_formatter.py` asserting output matches Sqitch fixture bytes for a multi-change plan.
+- [X] **T010a** Add compact plan formatter regression tests in `tests/plan/test_formatter.py` asserting output matches Sqitch fixture bytes for a multi-change plan.
   - Capture golden fixture under `tests/support/golden/tutorial_parity/plan_compact` and ensure formatter respects timestamp + planner formatting.
   - Depends on: T001
 - [ ] **T010b** Add CLI integration test in `tests/cli/commands/test_add_functional.py` verifying `sqlitch add` emits compact entries (no verbose format) when appending to `sqitch.plan`.

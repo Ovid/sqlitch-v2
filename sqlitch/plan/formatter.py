@@ -26,19 +26,25 @@ def format_plan(
     newline: str = "\n",
     syntax_version: str = "1.0.0",
     uri: str | None = None,
+    include_default_engine: bool = False,
 ) -> str:
     """Render a plan file as text without writing it to disk.
 
-    Note: default_engine parameter is kept for backward compatibility but not written to plan.
-    Sqitch stores engine in config file or target URIs, not in the plan file.
+    The rendered plan mirrors Sqitch's compact format including pragma headers. When
+    ``include_default_engine`` is ``True`` the ``%default_engine`` pragma is emitted to
+    match Sqitch fixtures that persist the engine in plan headers.
     """
 
     base_dir = Path(base_path)
     header_lines = [f"%syntax-version={syntax_version}", f"%project={project_name}"]
     if uri:
         header_lines.append(f"%uri={uri}")
+    if include_default_engine and default_engine:
+        header_lines.append(f"%default_engine={default_engine}")
 
     lines: list[str] = [*header_lines, ""]
+    if not entries:
+        lines.append("")
     for entry in entries:
         if isinstance(entry, Change):
             lines.append(_format_change(entry, base_dir))
@@ -58,6 +64,7 @@ def write_plan(
     newline: str = "\n",
     syntax_version: str = "1.0.0",
     uri: str | None = None,
+    include_default_engine: bool = False,
 ) -> Plan:
     """Write a plan file to disk and return the corresponding :class:`Plan`."""
 
@@ -72,6 +79,7 @@ def write_plan(
         newline=newline,
         syntax_version=syntax_version,
         uri=uri,
+        include_default_engine=include_default_engine,
     )
     plan_file.write_text(content, encoding="utf-8")
 
