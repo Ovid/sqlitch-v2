@@ -18,8 +18,8 @@
 - Keep tests ahead of implementation per TDD.
 
 ## Phase 3.1 – Environment & Fixture Preparation
-- [ ] **T001** Refresh tutorial fixtures under `tests/support/tutorial_parity/` to match compact plan format and config/env override cases (no `core.uri`, new `%default_engine`).
-- [ ] **T002** Snapshot Sqitch golden outputs for failure/log/status flows in `tests/support/golden/tutorial_parity/` to drive later parity assertions.
+- [X] **T001** Refresh tutorial fixtures under `tests/support/tutorial_parity/` to match compact plan format and config/env override cases (no `core.uri`, new `%default_engine`).
+- [X] **T002** Snapshot Sqitch golden outputs for failure/log/status flows in `tests/support/golden/tutorial_parity/` to drive later parity assertions.
 
 ## Phase 3.2 – Tests First (must fail before implementation)
 - [ ] **T003 [P]** Add scope precedence coverage (FR-001/FR-001a) in `tests/config/test_resolver.py` for system→user→local ordering and duplicate-file rejection.

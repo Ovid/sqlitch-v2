@@ -6,11 +6,12 @@ This directory provides sanitized fixtures for the SQLite tutorial scenarios.
   `core.uri` entry and using four-space indentation so tests can diff the exact
   output written by SQLitch.
 * `sqitch.plan` supplies a compact-format plan containing the initial tutorial
-  changes and tags used in integration tests.
+  changes and tags used in integration tests. The header explicitly carries the
+  `%default_engine=` pragma so formatter regressions can be detected.
 * `env_overrides.json` captures the environment variable precedence matrix that
-  Scenario 10 exercises, including SQLITCH_*, SQITCH_*, and GIT_* identity
-  fallbacks. Tests may load this file to apply deterministic overrides without
-  depending on the developer's shell environment.
+  Scenario 10 exercises, including SQLITCH_* overrides, SQITCH_* fallbacks, and
+  GIT_* identity overrides. Tests may load this file to apply deterministic
+  overrides without depending on the developer's shell environment.
 * `scripts/` contains deploy/verify templates with placeholder bodies that match
   Sqitch's defaults. They are deliberately minimal so tests can copy them into an
   isolated filesystem and customize as needed.

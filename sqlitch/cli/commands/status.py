@@ -229,21 +229,28 @@ def _resolve_registry_target(
     if engine_name == "sqlite":
         if not workspace_payload:
             raise CommandError("SQLite targets require an explicit database path")
-        if workspace_payload == ":memory:":
-            raise CommandError("In-memory SQLite targets are not supported")
 
         if workspace_payload.startswith("file:"):
-            workspace_uri = f"db:sqlite:{workspace_payload}"
-            workspace_path = resolve_sqlite_filesystem_path(workspace_uri)
+            workspace_path = resolve_sqlite_filesystem_path(f"db:sqlite:{workspace_payload}")
         else:
             workspace_path = Path(workspace_payload)
-            if not workspace_path.is_absolute():
-                workspace_path = project_root / workspace_path
+
+        if str(workspace_path) == ":memory:":
+            raise CommandError("In-memory SQLite targets are not supported")
+
+        if not workspace_path.is_absolute():
+            workspace_path = (project_root / workspace_path).resolve()
+        else:
             workspace_path = workspace_path.resolve()
+
+        workspace_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if workspace_payload.startswith("file:"):
+            workspace_uri = f"db:sqlite:file:{workspace_path.as_posix()}"
+        else:
             workspace_uri = f"db:sqlite:{workspace_path.as_posix()}"
 
-        if not workspace_path.exists():
-            raise CommandError(f"Workspace database {workspace_path} is missing")
+        display_target = workspace_uri
 
         registry_uri = config_resolver.resolve_registry_uri(
             engine=engine_name,
@@ -326,12 +333,13 @@ def _load_registry_state(
         failure_row = _load_last_failure_event(connection, expected_project)
     except Exception as exc:  # pragma: no cover - query failures propagated
         if _registry_schema_missing(exc):
+            rows = []
+            columns = []
+            failure_row = None
+        else:
             raise CommandError(
-                f"Database {engine_target.registry_uri} has not been initialized for Sqitch"
+                f"Failed to read registry database {engine_target.registry_uri}: {exc}"
             ) from exc
-        raise CommandError(
-            f"Failed to read registry database {engine_target.registry_uri}: {exc}"
-        ) from exc
     finally:
         if cursor is not None:
             try:

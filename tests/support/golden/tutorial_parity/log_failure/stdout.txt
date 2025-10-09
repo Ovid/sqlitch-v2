@@ -1,0 +1,21 @@
+On database db:sqlite:flipr_test.db
+Revert f30fe47f5f99501fb8d481e910d9112c5ac0a676
+Name:      users
+Committer: Marge N. O’Vera <marge@example.com>
+Date:      2013-12-31 10:54:13 -0800
+
+    Creates table to track our users.
+
+Fail e6ce0812f4cf51382d43903b564274f080ff5e7a
+Name:      flips
+Committer: Marge N. O’Vera <marge@example.com>
+Date:      2013-12-31 10:54:12 -0800
+
+    Adds flips table.
+
+Deploy f30fe47f5f99501fb8d481e910d9112c5ac0a676
+Name:      users
+Committer: Marge N. O’Vera <marge@example.com>
+Date:      2013-12-31 10:26:59 -0800
+
+    Creates table to track our users.

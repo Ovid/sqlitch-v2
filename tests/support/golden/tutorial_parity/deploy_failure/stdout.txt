@@ -1,0 +1,12 @@
+Adding registry tables to db:sqlite:sqitch.db
+Deploying changes to db:sqlite:flipr_test.db
+  + users .. ok
+  + flips .. Parse error near line 6: no such column: non_existent_column
+  SELECT non_existent_column FROM users;
+         ^--- error here
+not ok
+"sqlite3" unexpectedly returned exit value 1
+
+Reverting all changes
+  - users .. ok
+Deploy failed
