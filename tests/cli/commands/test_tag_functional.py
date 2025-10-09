@@ -12,6 +12,75 @@ from sqlitch.cli.main import main
 from sqlitch.plan.parser import parse_plan
 
 
+CLI_GOLDEN_ROOT = (
+    Path(__file__).resolve().parents[2] / "support" / "golden" / "cli"
+)
+
+
+def load_cli_golden(name: str) -> str:
+    return (CLI_GOLDEN_ROOT / name).read_text(encoding="utf-8")
+
+
+class TestTagParity:
+    """Regression tests asserting tag command output parity."""
+
+    def test_tag_output_matches_sqitch_golden(self, tmp_path: Path) -> None:
+        """Tagging emits Sqitch-identical stdout."""
+
+        runner = CliRunner()
+
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            result = runner.invoke(
+                main,
+                ["init", "flipr", "--engine", "sqlite"],
+                catch_exceptions=False,
+            )
+            assert result.exit_code == 0
+
+            result = runner.invoke(
+                main,
+                ["add", "users"],
+                catch_exceptions=False,
+            )
+            assert result.exit_code == 0
+
+            result = runner.invoke(
+                main,
+                ["tag", "v1.0.0-dev1"],
+                catch_exceptions=False,
+            )
+            assert result.exit_code == 0
+            assert result.output == load_cli_golden("tag_users_output.txt")
+
+    def test_quiet_mode_suppresses_output(self, tmp_path: Path) -> None:
+        """Quiet mode suppresses tag command output."""
+
+        runner = CliRunner()
+
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            result = runner.invoke(
+                main,
+                ["init", "flipr", "--engine", "sqlite"],
+                catch_exceptions=False,
+            )
+            assert result.exit_code == 0
+
+            result = runner.invoke(
+                main,
+                ["add", "users"],
+                catch_exceptions=False,
+            )
+            assert result.exit_code == 0
+
+            result = runner.invoke(
+                main,
+                ["--quiet", "tag", "v1.0.0-dev1"],
+                catch_exceptions=False,
+            )
+            assert result.exit_code == 0
+            assert result.output == "" or result.output.strip() == ""
+
+
 class TestTagCreation:
     """Tests for creating tags in the plan."""
 

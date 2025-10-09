@@ -14,7 +14,7 @@ from sqlitch.plan.parser import PlanParseError, parse_plan
 from sqlitch.utils.identity import resolve_planner_identity
 
 from . import CommandError, register_command
-from ._context import require_cli_context
+from ._context import quiet_mode_enabled, require_cli_context
 from ._plan_utils import resolve_default_engine, resolve_plan_path
 from ..options import global_output_options, global_sqitch_options
 
@@ -114,6 +114,7 @@ def _add_tag(
     cli_context = require_cli_context(ctx)
     project_root = cli_context.project_root
     environment = cli_context.env
+    quiet = quiet_mode_enabled(ctx)
 
     # Load configuration for planner identity resolution
     config = resolve_config(
@@ -197,7 +198,8 @@ def _add_tag(
         uri=plan.uri,
     )
 
-    click.echo(f"Tagged {target_change} with @{tag_name}")
+    if not quiet:
+        click.echo(f"Tagged {target_change} with @{tag_name}")
 
 
 @register_command("tag")

@@ -56,10 +56,13 @@
 - [X] **T010d** Add regression test in `tests/cli/commands/test_target_functional.py` confirming `target add` persists alias entries consumed by the new engine test, keeping tutorial workflow intact.
   - Ensure config writes remain silent and paths match FR-022 expectations.
   - Depends on: T010c
- [X] **T010e** Extend add-command regression coverage in `tests/cli/commands/test_add_functional.py` to assert dependency flags, quiet mode, and script templating remain Sqitch-identical.
+- [X] **T010e** Extend add-command regression coverage in `tests/cli/commands/test_add_functional.py` to assert dependency flags, quiet mode, and script templating remain Sqitch-identical.
   - Capture stdout/stderr fixtures for `--requires`, `--conflicts`, and `--note` flows to guard FR-009 behavior.
   - Depends on: Existing add fixtures (no additional prerequisites).
   - Include golden output assertions for default listing to cover FR-015.
+  - Depends on: T010e (plan fixtures shared).
+- [X] **T010f** Add tag-command regression coverage in `tests/cli/commands/test_tag_functional.py` to guard Sqitch output parity, including quiet mode suppression and golden stdout fixtures.
+  - Capture stdout comparison leveraging `tests/support/golden/cli/tag_users_output.txt` and assert quiet mode yields no additional output.
   - Depends on: T010e (plan fixtures shared).
 - [ ] **T010g** Add rework-command regression suite in `tests/cli/commands/test_rework_functional.py` confirming @tag suffix script generation, dependency preservation, and quiet mode parity (FR-016).
   - Ensure fixtures cover both tagged and untagged change flows.
@@ -104,7 +107,7 @@
   - Depends on: T012c
 - [X] **T012e** Audit `sqlitch/cli/commands/add.py` to resolve any regressions surfaced by T010b/T010e parity tests, keeping dependency, conflicts, and note handling aligned with Sqitch.
   - Depends on: T010e
-- [ ] **T012f** Update `sqlitch/cli/commands/tag.py` if T010f uncovers ordering or formatting drift, ensuring tag listings and duplicate detection match Sqitch.
+- [X] **T012f** Update `sqlitch/cli/commands/tag.py` if T010f uncovers ordering or formatting drift, ensuring tag listings and duplicate detection match Sqitch.
   - Depends on: T010f
 - [ ] **T012g** Adjust `sqlitch/cli/commands/rework.py` per findings from T010g so @tag script generation, dependency copying, and messaging remain parity-accurate.
   - Depends on: T010g
