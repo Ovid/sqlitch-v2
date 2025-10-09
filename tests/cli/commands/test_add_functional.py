@@ -300,3 +300,50 @@ class TestAddTutorialScenario:
             assert Path("deploy/posts.sql").exists()
             assert Path("revert/posts.sql").exists()
             assert Path("verify/posts.sql").exists()
+
+
+class TestAddPlanFormatting:
+    """Test T010b: Add command writes plan entries in compact format."""
+
+    def test_plan_entries_use_compact_format(self, runner):
+        """Plan should not include verbose Sqitch "change" statements."""
+        with runner.isolated_filesystem():
+            runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
+
+            result = runner.invoke(main, ["add", "users", "-n", "Adds users table"])
+
+            assert result.exit_code == 0, f"Add failed: {result.output}"
+
+            plan_content = Path("sqitch.plan").read_text(encoding="utf-8")
+            data_lines = [
+                line
+                for line in plan_content.splitlines()
+                if line and not line.startswith("%")
+            ]
+
+            assert data_lines, "Plan should include at least one entry"
+            assert all(
+                not line.lower().startswith("change ")
+                for line in data_lines
+            ), "Plan entries must use compact format without 'change' prefix"
+
+    def test_plan_dependency_serialization_matches_compact_format(self, runner):
+        """Dependencies should be serialized inline inside brackets."""
+        with runner.isolated_filesystem():
+            runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
+
+            first = runner.invoke(main, ["add", "users"])
+            assert first.exit_code == 0, f"Initial add failed: {first.output}"
+
+            second = runner.invoke(
+                main,
+                ["add", "flips", "--requires", "users", "-n", "Adds flips table"],
+            )
+
+            assert second.exit_code == 0, f"Second add failed: {second.output}"
+
+            plan_content = Path("sqitch.plan").read_text(encoding="utf-8")
+
+            assert "flips [users]" in plan_content, (
+                "Plan entry should embed dependencies in compact bracket syntax"
+            )
