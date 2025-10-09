@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Mapping
 from contextlib import closing
 from pathlib import Path
 
@@ -66,6 +67,8 @@ def _resolve_engine_target(
     *,
     target: str,
     project_root: Path,
+    config_root: Path,
+    env: Mapping[str, str],
     default_engine: str,
     plan_path: Path,
     registry_override: str | None,
@@ -73,6 +76,34 @@ def _resolve_engine_target(
     """Return an EngineTarget for the requested target."""
 
     candidate = target.strip()
+    
+    # Check if the candidate is a target alias and resolve it
+    if not candidate.startswith("db:"):
+        # Might be a target alias - try to resolve it
+        from sqlitch.config import resolver as config_resolver
+
+        config_profile = config_resolver.resolve_config(
+            root_dir=project_root,
+            config_root=config_root,
+            env=env,
+        )
+        target_section = f'target "{candidate}"'
+        target_data = config_profile.settings.get(target_section)
+        if target_data is not None:
+            target_uri = target_data.get("uri")
+            if target_uri:
+                # Found a target alias - use the resolved URI
+                candidate = target_uri
+                original_display = target  # Keep the original alias name for display
+            else:
+                # Target section exists but no URI - treat as plain value
+                original_display = candidate
+        else:
+            # Not a target alias - treat as plain value
+            original_display = candidate
+    else:
+        original_display = candidate
+    
     if candidate.startswith("db:"):
         remainder = candidate[3:]
         engine_token, separator, payload = remainder.partition(":")
@@ -92,6 +123,8 @@ def _resolve_engine_target(
         raise CommandError(f"Unsupported engine '{engine_hint}'") from exc
 
     if engine_name == "sqlite":
+        from sqlitch.config import resolver as config_resolver
+
         workspace_uri, display_target = _resolve_sqlite_workspace_uri(
             payload=workspace_payload,
             project_root=project_root,
@@ -175,10 +208,8 @@ def verify_command(
     target_value = target_args[0] if target_args else target_option
     if not target_value:
         target_value = cli_context.target
-    if not target_value:
-        raise CommandError("A target must be provided via --target or configuration.")
 
-    # Load plan
+    # Load plan and default engine first to check for engine.target config
     plan_path = resolve_plan_path(
         project_root=project_root,
         override=cli_context.plan_file,
@@ -193,12 +224,31 @@ def verify_command(
         plan_path=plan_path,
     )
     plan = _load_plan(plan_path, default_engine)
+
+    # If no target from CLI/env, check if the default engine has a target configured
+    if not target_value and default_engine:
+        from sqlitch.config import resolver as config_resolver
+
+        config_profile = config_resolver.resolve_config(
+            root_dir=project_root,
+            config_root=cli_context.config_root,
+            env=environment,
+        )
+        engine_section = f'engine "{default_engine}"'
+        engine_target = config_profile.settings.get(engine_section, {}).get("target")
+        if engine_target:
+            target_value = engine_target
+
+    if not target_value:
+        raise CommandError("A target must be provided via --target or configuration.")
     plan_change_names = [change.name for change in plan.changes]
 
     # Resolve engine target
     engine_target, display_target = _resolve_engine_target(
         target=target_value,
         project_root=project_root,
+        config_root=cli_context.config_root,
+        env=environment,
         default_engine=plan.default_engine,
         plan_path=plan_path,
         registry_override=cli_context.registry,

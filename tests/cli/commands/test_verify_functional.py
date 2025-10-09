@@ -713,6 +713,8 @@ class TestVerifyAdditionalScenarios:
             _resolve_engine_target(
                 target="db:sqlite",
                 project_root=project_dir,
+                config_root=tmp_path,
+                env={},
                 default_engine="sqlite",
                 plan_path=plan_path,
                 registry_override=None,
@@ -726,6 +728,8 @@ class TestVerifyAdditionalScenarios:
             _resolve_engine_target(
                 target="db:madeup:flipr",
                 project_root=project_dir,
+                config_root=tmp_path,
+                env={},
                 default_engine="sqlite",
                 plan_path=plan_path,
                 registry_override=None,
@@ -738,6 +742,8 @@ class TestVerifyAdditionalScenarios:
         engine_target, display = _resolve_engine_target(
             target="workspace.db",
             project_root=project_dir,
+            config_root=tmp_path,
+            env={},
             default_engine="sqlite",
             plan_path=plan_path,
             registry_override=None,

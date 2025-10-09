@@ -22,9 +22,9 @@ def test_verify_no_changes(runner: CliRunner) -> None:
         result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
         assert result.exit_code == 0
 
-    result = runner.invoke(main, ["verify"])
-    assert result.exit_code != 0
-    assert "target must be provided" in result.output
+        result = runner.invoke(main, ["verify"])
+        assert result.exit_code != 0
+        assert "target must be provided" in result.output
 
 
 def test_verify_log_only_reports_unimplemented(runner: CliRunner) -> None:

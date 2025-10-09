@@ -12,6 +12,8 @@ from typing import Callable
 
 import click
 
+from sqlitch.config import resolver as config_resolver
+from sqlitch.engine import EngineTarget, canonicalize_engine_name
 from sqlitch.engine.sqlite import (
     derive_sqlite_registry_uri,
     extract_sqlite_statements,
@@ -105,6 +107,10 @@ def revert_command(
         option_value=target_option,
         configured_target=cli_context.target,
         positional_targets=target_args,
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=env,
+        default_engine=default_engine,
     )
 
     request = _build_request(
@@ -181,23 +187,16 @@ def _execute_revert(request: _RevertRequest) -> None:
         ):
             raise CommandError("Revert aborted by user.")
 
-    # Build engine target
+    # Resolve engine target
     from sqlitch.engine.sqlite import SQLiteEngine
-    from sqlitch.engine.base import EngineTarget
 
-    # For SQLite, derive registry URI
-    workspace_uri = request.target
-    registry_uri = derive_sqlite_registry_uri(
-        workspace_uri=workspace_uri,
+    engine_target, display_target = _resolve_engine_target(
+        target=request.target,
         project_root=request.project_root,
+        config_root=request.config_root,
+        env=request.env,
+        default_engine=request.plan.default_engine,
         registry_override=None,  # TODO: support registry override
-    )
-
-    engine_target = EngineTarget(
-        name=workspace_uri,
-        engine="sqlite",
-        uri=workspace_uri,
-        registry_uri=registry_uri,
     )
     engine = SQLiteEngine(engine_target)
 
@@ -538,11 +537,92 @@ def _parse_identity(identity: str) -> tuple[str, str | None]:
     return identity.strip(), None
 
 
+def _resolve_engine_target(
+    *,
+    target: str,
+    project_root: Path,
+    config_root: Path,
+    env: Mapping[str, str],
+    default_engine: str,
+    registry_override: str | None,
+) -> tuple[EngineTarget, str]:
+    """Return an EngineTarget for the requested target."""
+
+    candidate = target.strip()
+    
+    # Check if the candidate is a target alias and resolve it
+    if not candidate.startswith("db:"):
+        # Might be a target alias - try to resolve it
+        config_profile = config_resolver.resolve_config(
+            root_dir=project_root,
+            config_root=config_root,
+            env=env,
+        )
+        target_section = f'target "{candidate}"'
+        target_data = config_profile.settings.get(target_section)
+        if target_data is not None:
+            target_uri = target_data.get("uri")
+            if target_uri:
+                # Found a target alias - use the resolved URI
+                candidate = target_uri
+                original_display = target  # Keep the original alias name for display
+            else:
+                # Target section exists but no URI - treat as plain value
+                original_display = candidate
+        else:
+            # Not a target alias - treat as plain value
+            original_display = candidate
+    else:
+        original_display = candidate
+    
+    if candidate.startswith("db:"):
+        remainder = candidate[3:]
+        engine_token, separator, payload = remainder.partition(":")
+        if not separator:
+            raise CommandError(f"Malformed target URI: {target}")
+        engine_hint = engine_token or default_engine
+        workspace_payload = payload
+        original_display = candidate
+    else:
+        engine_hint = default_engine
+        workspace_payload = candidate
+        original_display = candidate
+
+    try:
+        engine_name = canonicalize_engine_name(engine_hint)
+    except Exception as exc:
+        raise CommandError(f"Unsupported engine '{engine_hint}'") from exc
+
+    if engine_name == "sqlite":
+        # For SQLite, resolve the workspace path
+        workspace_uri = f"db:sqlite:{workspace_payload}"
+        registry_uri = config_resolver.resolve_registry_uri(
+            engine=engine_name,
+            workspace_uri=workspace_uri,
+            project_root=project_root,
+            registry_override=registry_override,
+        )
+        display_name = original_display
+        engine_target = EngineTarget(
+            name=display_name,
+            engine=engine_name,
+            uri=workspace_uri,
+            registry_uri=registry_uri,
+        )
+        return engine_target, display_name
+
+    raise CommandError(f"Engine '{engine_name}' revert is not supported yet.")
+
+
 def _resolve_target(
     *,
     option_value: str | None,
     configured_target: str | None,
     positional_targets: Sequence[str],
+    project_root: Path,
+    config_root: Path,
+    env: Mapping[str, str],
+    default_engine: str | None,
 ) -> str:
     """Resolve the target URI from command-line options or configuration."""
     if option_value and positional_targets:
@@ -557,6 +637,20 @@ def _resolve_target(
         target = option_value
     else:
         target = configured_target
+
+    # If no target from CLI/env, check if the default engine has a target configured
+    if not target and default_engine:
+        from sqlitch.config import resolver as config_resolver
+
+        config_profile = config_resolver.resolve_config(
+            root_dir=project_root,
+            config_root=config_root,
+            env=env,
+        )
+        engine_section = f'engine "{default_engine}"'
+        engine_target = config_profile.settings.get(engine_section, {}).get("target")
+        if engine_target:
+            target = engine_target
 
     if not target:
         raise CommandError(
