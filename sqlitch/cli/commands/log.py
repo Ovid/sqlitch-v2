@@ -315,19 +315,18 @@ def _format_human(target: str, events: Sequence[LogEvent]) -> str:
         lines.append("No events found.")
         return "\n".join(lines) + "\n"
 
-    lines.append("")
-
     for index, event in enumerate(events):
         lines.append(f"{event.event.capitalize()} {event.change_id}")
         lines.append(f"Name:      {event.change}")
         lines.append(f"Committer: {event.committer_name} <{event.committer_email}>")
         lines.append(f"Date:      {event.committed_at}")
-        lines.append("")
+        if index == 0:
+            lines.append("")
+
         note_lines = event.note.splitlines() or [""]
         for note_line in note_lines:
             lines.append(f"    {note_line}" if note_line else "")
-        if index != len(events) - 1:
-            lines.append("")
+        lines.append("")
 
     return "\n".join(lines) + "\n"
 

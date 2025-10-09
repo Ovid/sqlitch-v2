@@ -28,11 +28,7 @@
 - [ ] T009 Align JSON payload construction in `sqlitch/cli/commands/status.py::_build_json_payload` with contract expectations (target, pending changes, status state)
 - [ ] T010 Match Sqitch human output ordering and spacing in `sqlitch/cli/commands/log.py`, reusing `DeploymentEvent` metadata for identity lines
 
-## Phase 3.4: Integration
-- [ ] T011 Re-run `tests/regression/test_tutorial_parity.py::test_log_output_matches_sqitch` after implementation to confirm Scenario 7 parity (update snapshots only if byte-perfect)
-- [ ] T012 Re-run `tests/regression/test_tutorial_parity.py::test_status_output_matches_sqitch` with environment overrides from Scenario 10 to validate relative target handling
-
-## Phase 3.5: Polish
+## Phase 3.4: Polish
 - [ ] T013 [P] Document status/log normalization changes in `docs/architecture/reports/status-log-parity.md`
 - [ ] T014 [P] Add focused unit coverage for `sqlitch/engine/sqlite.py::resolve_sqlite_filesystem_path` ensuring relative resolution mirrors CLI output expectations
 

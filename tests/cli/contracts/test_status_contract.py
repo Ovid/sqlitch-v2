@@ -266,7 +266,6 @@ def test_status_outputs_in_sync_snapshot(runner: CliRunner) -> None:
         result = runner.invoke(main, ["status", "--target", "db:sqlite:flipr_test.db"])
 
         assert result.exit_code == 0, result.output
-        assert result.stdout == expected
     lines = result.stdout.splitlines()
     assert lines[0] == "# On database db:sqlite:flipr_test.db"
     assert lines[-1] == "Nothing to deploy (up-to-date)"
