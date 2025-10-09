@@ -65,9 +65,9 @@
 - [ ] **T040** Implement target normalization in `sqlitch/cli/commands/target.py` and helpers for relative paths, :memory:, and registry resolution (FR-021).
 - [ ] **T041** Add engine alias resolution in `sqlitch/cli/commands/engine.py`, leveraging target storage and parity errors (FR-022).
 - [ ] **T042** Synchronize template discovery/rendering across `sqlitch/cli/commands/{init,add,rework}.py` and `sqlitch/utils/fs.py`, ensuring byte-for-byte parity with Sqitch templates (FR-020).
-- [ ] **T043 [P]** Flesh out remaining data-model helpers in `sqlitch/cli/_models.py` (e.g., `ProjectMetadata`, `DeploymentStatus`, `CommandResult`) per design doc.
-- [ ] **T044 [P]** Implement script domain helpers in `sqlitch/utils/fs.py` or new module (`Script`, `ScriptResult`) matching data-model expectations.
-- [ ] **T045 [P]** Introduce deploy/revert option dataclasses in `sqlitch/cli/commands/_models.py` and refactor commands to use them (data-model §§4.3–4.4).
+- [ ] **T043 [P]** Implement `ProjectMetadata` and `DeploymentStatus` dataclasses in `sqlitch/cli/_models.py`, enforcing immutability, validation, and serialization rules outlined in data-model.md §§3.1–3.2.
+- [ ] **T044 [P]** Create `Script` and `ScriptResult` helpers in `sqlitch/utils/fs.py` (or dedicated module) with checksum calculation and lifecycle hooks per data-model.md §4.1, plus unit tests covering success and failure paths.
+- [ ] **T045 [P]** Add `DeployOptions` and `RevertOptions` dataclasses to `sqlitch/cli/commands/_models.py`, mirroring data-model.md §§4.3–4.4, and refactor CLI commands to consume them with validation on mutually exclusive flags.
 - [ ] **T046** Normalize CLI error messaging across commands using centralized formatter to satisfy NFR-005 parity expectations.
 
 ## Phase 3.4 – Integration & Polish
