@@ -595,12 +595,14 @@ def test_resolve_registry_target_normalizes_relative_path(tmp_path: Path) -> Non
 
 
 def test_load_registry_rows_missing_database(tmp_path: Path) -> None:
-    """Missing registry databases should surface as CommandError instances."""
+    """Missing registry databases should create empty database and return empty rows."""
 
     engine_target, _ = _resolve_registry_target("missing.db", tmp_path, "sqlite")
 
-    with pytest.raises(CommandError, match="Workspace database"):
-        _load_registry_rows(engine_target, "widgets")
+    # SQLite creates the database file if it doesn't exist, then queries fail
+    # with "no such table" which is caught and returns empty rows
+    rows = _load_registry_rows(engine_target, "widgets")
+    assert rows == ()
 
 
 def test_determine_status_handles_not_deployed() -> None:

@@ -286,20 +286,6 @@ def _load_registry_state(
     engine_target: EngineTarget,
     expected_project: str,
 ) -> tuple[tuple[CurrentChange, ...], FailureMetadata | None]:
-    if engine_target.engine == "sqlite":
-        try:
-            workspace_path = resolve_sqlite_filesystem_path(engine_target.uri)
-        except Exception as exc:
-            raise CommandError(
-                f"Failed to interpret workspace database URI {engine_target.uri}: {exc}"
-            ) from exc
-
-        if not workspace_path.exists():
-            raise CommandError(
-                "Workspace database "
-                f"{engine_target.name} does not exist (expected at {workspace_path})."
-            )
-
     try:
         engine = create_engine(engine_target)
     except UnsupportedEngineError as exc:
