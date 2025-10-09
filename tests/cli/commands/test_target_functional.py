@@ -90,7 +90,6 @@ def _read_project_config(path: Path) -> configparser.ConfigParser:
     parser.read(path, encoding="utf-8")
     return parser
 
-@pytest.mark.skip(reason="Pending target URI normalization and registry defaults (T012i)")
 class TestTargetUriParsing:
     """Functional tests for target URI parsing and normalization (T010i)."""
 
