@@ -56,6 +56,7 @@ class _RevertRequest:
 @click.command("revert")
 @click.argument("target_args", nargs=-1)
 @click.option("--target", "target_option", help="Deployment target alias or URI.")
+@click.option("--to", "to", help="Revert through the specified change or tag (inclusive).")
 @click.option("--to-change", "to_change", help="Revert through the specified change (inclusive).")
 @click.option("--to-tag", "to_tag", help="Revert through the specified tag (inclusive).")
 @click.option(
@@ -76,6 +77,7 @@ def revert_command(
     *,
     target_args: tuple[str, ...],
     target_option: str | None,
+    to: str | None,
     to_change: str | None,
     to_tag: str | None,
     log_only: bool,
@@ -90,6 +92,21 @@ def revert_command(
     project_root = project_root_from(ctx)
     env = environment_from(ctx)
     plan_override = plan_override_from(ctx)
+
+    # Validate --to option usage
+    if to and (to_change or to_tag):
+        raise CommandError("Cannot specify both --to and --to-change/--to-tag options.")
+    
+    # If --to is provided, determine if it's a tag or change
+    if to:
+        # Tags in Sqitch start with '@'
+        if to.startswith("@"):
+            # Strip the @ prefix when storing the tag name
+            to_tag = to[1:]
+            to_change = None
+        else:
+            to_change = to
+            to_tag = None
 
     plan_path_for_engine = _resolve_plan_path(
         project_root=project_root, override=plan_override, env=env
