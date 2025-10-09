@@ -254,6 +254,13 @@ def _resolve_registry_target(
         else:
             workspace_uri = f"db:sqlite:{workspace_path.as_posix()}"
 
+        if stripped_target.startswith("db:"):
+            if workspace_payload.startswith("file:"):
+                display_target = workspace_uri
+            elif workspace_payload not in {":memory:"}:
+                if workspace_payload.startswith(("./", "../", ".\\", "..\\")):
+                    display_target = workspace_uri
+
         registry_uri = config_resolver.resolve_registry_uri(
             engine=engine_name,
             workspace_uri=workspace_uri,
