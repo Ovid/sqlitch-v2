@@ -67,11 +67,13 @@
 - [X] **T010g** Add rework-command regression suite in `tests/cli/commands/test_rework_functional.py` confirming @tag suffix script generation, dependency preservation, and quiet mode parity (FR-016).
   - Ensure fixtures cover both tagged and untagged change flows.
   - Depends on: T010f
-- [ ] **T010h** Add script template parity test in `tests/templates/test_sqlite_templates.py` comparing deployed `sqlitch/templates/sqlite/*.tmpl` files against Sqitch golden fixtures via byte digests.
+- [X] **T010h** Add script template parity test in `tests/templates/test_sqlite_templates.py` comparing deployed `sqlitch/templates/sqlite/*.tmpl` files against Sqitch golden fixtures via byte digests.
   - Reuse checksum helper so deploy/revert/verify templates fail fast when diverging (FR-020).
+  - Tests currently skipped pending template packaging (see T012h).
   - Depends on: T001
 - [ ] **T010i** Add target URI parsing tests in `tests/cli/commands/test_target_functional.py` validating relative path resolution, in-memory databases, and normalization of registry sibling paths (FR-021).
   - Include coverage for environment overrides (`SQLITCH_TARGET`) and ensure outputs match Sqitch fixtures.
+  - Tests currently marked ``@pytest.mark.skip`` pending T012i implementation.
   - Depends on: T010d
 - [ ] **T010j** Expand verify command parity tests in `tests/cli/commands/test_verify_functional.py` to cover success, single failure, multi-failure, and out-of-order deployment scenarios (FR-011/FR-011a).
   - Capture stdout/stderr fixtures matching Sqitch and assert summary exit codes across all permutations.

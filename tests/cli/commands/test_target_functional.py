@@ -82,3 +82,100 @@ class TestTargetAliasPersistence:
             parser.optionxform = str
             parser.read("sqitch.conf", encoding="utf-8")
             assert parser.has_section('target "flipr_test"')
+
+
+def _read_project_config(path: Path) -> configparser.ConfigParser:
+    parser = configparser.ConfigParser(interpolation=None)
+    parser.optionxform = str
+    parser.read(path, encoding="utf-8")
+    return parser
+
+@pytest.mark.skip(reason="Pending target URI normalization and registry defaults (T012i)")
+class TestTargetUriParsing:
+    """Functional tests for target URI parsing and normalization (T010i)."""
+
+    def test_target_add_normalizes_relative_uri(self, runner: CliRunner) -> None:
+        """Relative SQLite URIs should resolve to absolute paths with sibling registries."""
+
+        with runner.isolated_filesystem():
+            env = _build_isolated_env()
+            env["SQLITCH_CONFIG_ROOT"] = str(Path.cwd())
+            env["HOME"] = str(Path.cwd())
+
+            init_result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"], env=env)
+            assert init_result.exit_code == 0, f"Init failed: {init_result.output}"
+
+            target_dir = Path("db")
+            target_dir.mkdir()
+            relative_uri = "db:sqlite:./db/flipr_local.db"
+
+            add_result = runner.invoke(
+                main,
+                ["target", "add", "flipr_local", relative_uri],
+                env=env,
+            )
+            assert add_result.exit_code == 0, f"Target add failed: {add_result.output}"
+
+            config = _read_project_config(Path("sqitch.conf"))
+            section = 'target "flipr_local"'
+            assert config.has_section(section), "Target section should exist"
+
+            resolved_db = (Path.cwd() / "db" / "flipr_local.db").resolve().as_posix()
+            expected_uri = f"db:sqlite:{resolved_db}"
+            assert config.get(section, "uri") == expected_uri
+
+            resolved_registry = (Path.cwd() / "db" / "sqitch.db").resolve().as_posix()
+            expected_registry = f"db:sqlite:{resolved_registry}"
+            assert config.get(section, "registry") == expected_registry
+
+    def test_target_add_supports_in_memory_database(self, runner: CliRunner) -> None:
+        """In-memory SQLite targets should be preserved verbatim and assign a sibling registry."""
+
+        with runner.isolated_filesystem():
+            env = _build_isolated_env()
+            env["SQLITCH_CONFIG_ROOT"] = str(Path.cwd())
+            env["HOME"] = str(Path.cwd())
+
+            init_result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"], env=env)
+            assert init_result.exit_code == 0, f"Init failed: {init_result.output}"
+
+            in_memory_uri = "db:sqlite::memory:"
+            add_result = runner.invoke(
+                main,
+                ["target", "add", "flipr_memory", in_memory_uri],
+                env=env,
+            )
+            assert add_result.exit_code == 0, f"Target add failed: {add_result.output}"
+
+            config = _read_project_config(Path("sqitch.conf"))
+            section = 'target "flipr_memory"'
+            assert config.has_section(section), "Target section should exist"
+
+            assert config.get(section, "uri") == in_memory_uri
+
+            resolved_registry = (Path.cwd() / "sqitch.db").resolve().as_posix()
+            expected_registry = f"db:sqlite:{resolved_registry}"
+            assert config.get(section, "registry") == expected_registry
+
+    def test_status_uses_sqlitch_target_environment_override(self, runner: CliRunner) -> None:
+        """Status should honor SQLITCH_TARGET while normalizing filesystem paths."""
+
+        with runner.isolated_filesystem():
+            env = _build_isolated_env()
+            env["SQLITCH_CONFIG_ROOT"] = str(Path.cwd())
+            env["HOME"] = str(Path.cwd())
+
+            init_result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"], env=env)
+            assert init_result.exit_code == 0, f"Init failed: {init_result.output}"
+
+            target_dir = Path("db")
+            target_dir.mkdir()
+            env_target_uri = "db:sqlite:./db/env_target.db"
+            env["SQLITCH_TARGET"] = env_target_uri
+
+            status_result = runner.invoke(main, ["status"], env=env)
+            assert status_result.exit_code == 0, f"Status failed: {status_result.output}"
+
+            resolved_display = (Path.cwd() / "db" / "env_target.db").resolve().as_posix()
+            expected_snippet = f"db:sqlite:{resolved_display}"
+            assert expected_snippet in status_result.output
