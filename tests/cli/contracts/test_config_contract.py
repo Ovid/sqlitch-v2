@@ -40,9 +40,9 @@ def test_config_gets_value_from_local_scope(runner: CliRunner) -> None:
 def test_config_user_scope_override(runner: CliRunner) -> None:
     """Explicit scope flags should select the requested configuration file."""
 
-    with isolated_test_context(runner) as (runner, temp_dir):
+    with isolated_test_context(runner, set_env=False) as (runner, temp_dir):
         _write_config((temp_dir / "sqitch.conf"), "[core]\nengine = sqlite\n")
-        user_root = Path("config-root")
+        user_root = temp_dir / "config-root"
         _write_config(user_root / "sqitch.conf", "[core]\nengine = postgres\n")
 
         env = {"SQLITCH_CONFIG_ROOT": str(user_root)}
@@ -112,9 +112,9 @@ def test_config_conflicting_scopes_error(runner: CliRunner) -> None:
 def test_config_list_json_outputs_settings(runner: CliRunner) -> None:
     """Listing with --json should emit a JSON payload of merged settings."""
 
-    with isolated_test_context(runner) as (runner, temp_dir):
+    with isolated_test_context(runner, set_env=False) as (runner, temp_dir):
         _write_config((temp_dir / "sqitch.conf"), "[core]\nengine = sqlite\n")
-        user_root = Path("config-root")
+        user_root = temp_dir / "config-root"
         _write_config(user_root / "sqitch.conf", "[deploy]\nuri = sqlite.db\n")
 
         env = {"SQLITCH_CONFIG_ROOT": str(user_root)}
@@ -204,8 +204,8 @@ def test_config_registry_scope_rejected(runner: CliRunner) -> None:
 def test_config_explicit_scope_missing_option_errors(runner: CliRunner) -> None:
     """Explicit scope lookups must report missing options."""
 
-    with isolated_test_context(runner) as (runner, temp_dir):
-        user_root = Path("config-root")
+    with isolated_test_context(runner, set_env=False) as (runner, temp_dir):
+        user_root = temp_dir / "config-root"
         env = {"SQLITCH_CONFIG_ROOT": str(user_root)}
 
         result = runner.invoke(main, ["config", "--user", "core.engine"], env=env)
@@ -320,8 +320,8 @@ def test_config_gets_default_value(runner: CliRunner) -> None:
 def test_config_gets_default_value_from_explicit_scope(runner: CliRunner) -> None:
     """Explicit scope lookups should read DEFAULT values from that config file."""
 
-    with isolated_test_context(runner) as (runner, temp_dir):
-        user_root = Path("config-root")
+    with isolated_test_context(runner, set_env=False) as (runner, temp_dir):
+        user_root = temp_dir / "config-root"
         _write_config(user_root / "sqitch.conf", "[DEFAULT]\ncolor = blue\n")
         env = {"SQLITCH_CONFIG_ROOT": str(user_root)}
 

@@ -48,7 +48,7 @@ class TestScenario10EnvironmentOverrides:
 
         workspace = tmp_path / "workspace"
         workspace.mkdir()
-        with isolated_test_context(runner, base_dir=workspace) as (runner, temp_dir):
+        with isolated_test_context(runner, base_dir=workspace, set_env=False) as (runner, temp_dir):
             # Initialize tutorial project and author a baseline change
             result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
             assert result.exit_code == 0, f"init failed: {result.output}"

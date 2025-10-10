@@ -80,6 +80,8 @@ def test_no_direct_isolated_filesystem_usage() -> None:
         "tests/support/README.md",  # Documentation
         "tests/conftest.py",  # Session hook - checks for violations
         "tests/regression/test_test_isolation_enforcement.py",  # This file
+        "tests/regression/MIGRATION_COMPLETE.md",  # Migration documentation
+        "tests/regression/README_ENFORCEMENT.md",  # Enforcement documentation
     }
 
     # Search for test files using isolated_filesystem

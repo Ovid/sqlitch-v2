@@ -49,6 +49,8 @@ def pytest_sessionstart(session: pytest.Session) -> None:
         "tests/support/README.md",  # Documentation
         "tests/conftest.py",  # This file - checks for violations
         "tests/regression/test_test_isolation_enforcement.py",  # Enforcement test
+        "tests/regression/MIGRATION_COMPLETE.md",  # Migration documentation
+        "tests/regression/README_ENFORCEMENT.md",  # Enforcement documentation
     }
     
     # Search for test files using isolated_filesystem
