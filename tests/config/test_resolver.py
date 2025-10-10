@@ -96,13 +96,21 @@ def test_determine_config_root_prefers_existing_sqitch_directory(tmp_path: Path)
     assert root == home / ".sqitch"
 
 
-def test_determine_config_root_prefers_existing_config_directory(tmp_path: Path) -> None:
+def test_determine_config_root_uses_sqitch_for_compatibility(tmp_path: Path) -> None:
+    """FR-001b: Always use ~/.sqitch/ for Sqitch compatibility, not ~/.config/sqlitch/.
+    
+    Even if ~/.config/sqlitch/ exists, we must use ~/.sqitch/ to maintain
+    100% compatibility with Sqitch. Users must be able to seamlessly switch
+    between sqitch and sqlitch commands.
+    """
     home = tmp_path / "home"
+    # Even if .config/sqlitch exists, we should use .sqitch for compatibility
     (home / ".config" / "sqlitch").mkdir(parents=True)
 
     root = resolver.determine_config_root(env={}, home=home)
 
-    assert root == home / ".config" / "sqlitch"
+    # FR-001b: Must use .sqitch, not .config/sqlitch
+    assert root == home / ".sqitch"
 
 
 def test_determine_config_root_defaults_to_xdg(tmp_path: Path) -> None:

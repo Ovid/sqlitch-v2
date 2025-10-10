@@ -133,6 +133,53 @@ def test_config_operation():
 
 ### Verification
 
+## 3. Test Writing Guidelines
+
+### MANDATORY: Test Isolation
+
+**All tests that invoke CLI commands or manipulate configuration files MUST use `isolated_test_context()`.**
+
+This is a **CONSTITUTIONAL REQUIREMENT** to prevent tests from polluting the user's actual configuration directories.
+
+```python
+from click.testing import CliRunner
+from tests.support.test_helpers import isolated_test_context
+from sqlitch.cli.main import main
+
+def test_config_operations():
+    """Example: Properly isolated config test."""
+    runner = CliRunner()
+    
+    # ✅ CORRECT: Use isolated_test_context()
+    with isolated_test_context(runner) as (runner, temp_dir):
+        result = runner.invoke(main, ['config', '--user', 'user.name', 'Test'])
+        assert result.exit_code == 0
+        
+        # Config written to temp_dir/.sqitch/, not ~/.sqitch/
+        user_config = temp_dir / '.sqitch' / 'sqitch.conf'
+        assert user_config.exists()
+```
+
+**Why This Matters:**
+- Without isolation, tests write to `~/.sqitch/sqitch.conf` or (worse) `~/.config/sqlitch/`
+- This violates FR-001b (100% Sqitch Compatibility)
+- Could destroy user's existing configuration files
+- Makes tests non-deterministic and environment-dependent
+
+**Never do this:**
+```python
+def test_config_bad_example():
+    """❌ WRONG: Will pollute user's home directory!"""
+    runner = CliRunner()
+    with runner.isolated_filesystem():  # ❌ Not enough isolation
+        result = runner.invoke(main, ['config', '--user', 'user.name', 'Test'])
+        # This writes to actual ~/.sqitch/ or ~/.config/sqlitch/!
+```
+
+**Documentation:** See `tests/support/README.md` for complete usage patterns and examples.
+
+**Verification:**
+
 Before committing new tests, manually verify:
 
 ```bash

@@ -78,17 +78,11 @@ def determine_config_root(
     if xdg_root is not None:
         return xdg_root / "sqlitch"
 
+    # FR-001b: 100% Configuration Compatibility
+    # Always use ~/.sqitch/ for Sqitch compatibility
+    # Do NOT create ~/.config/sqlitch/ unless explicitly overridden via environment
     home_dir = Path(home) if home is not None else Path.home()
-    config_default = home_dir / ".config" / "sqlitch"
-    sqitch_default = home_dir / ".sqitch"
-
-    config_exists = config_default.exists()
-    sqitch_exists = sqitch_default.exists()
-
-    if config_exists or not sqitch_exists:
-        return config_default
-
-    return sqitch_default
+    return home_dir / ".sqitch"
 
 
 def resolve_config(
