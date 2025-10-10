@@ -12,17 +12,21 @@ import subprocess
 from pathlib import Path
 
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+SCRIPT = REPO_ROOT / "uat" / "scripts" / "forward-compat.py"
+
+
 def run_forward_compat(tmp_path: Path) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     env.setdefault("SQLITCH_UAT_SKIP_EXECUTION", "1")
     out_file = tmp_path / "forward.log"
     cmd = [
         "python",
-        "uat/forward-compat.py",
+        str(SCRIPT),
         "--out",
         str(out_file),
     ]
-    return subprocess.run(cmd, cwd=Path.cwd(), text=True, capture_output=True, env=env, check=False)
+    return subprocess.run(cmd, cwd=REPO_ROOT, text=True, capture_output=True, env=env, check=False)
 
 
 def test_forward_compat_happy_path_short_circuit(tmp_path: Path) -> None:
@@ -41,8 +45,8 @@ def test_forward_compat_requires_out_argument(tmp_path: Path) -> None:
     env = os.environ.copy()
     env.setdefault("SQLITCH_UAT_SKIP_EXECUTION", "1")
     result = subprocess.run(
-        ["python", "uat/forward-compat.py"],
-        cwd=Path.cwd(),
+        ["python", str(SCRIPT)],
+        cwd=REPO_ROOT,
         text=True,
         capture_output=True,
         env=env,
