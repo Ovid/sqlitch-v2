@@ -14,6 +14,7 @@ import pytest
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 
 
 @pytest.fixture
@@ -46,7 +47,7 @@ class TestInitOptionalProjectName:
 
     def test_init_without_project_name_accepted(self, runner):
         """Init without project name must be accepted (uses directory name)."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["init"])
             # Should accept (not a parsing error)
             # May exit 0 (success), 1 (not implemented), or fail validation
@@ -58,14 +59,14 @@ class TestInitWithProjectName:
 
     def test_init_with_project_name_accepted(self, runner):
         """Init with project name must be accepted."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["init", "myproject"])
             # Should accept (not a parsing error)
             assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
 
     def test_init_with_engine_option(self, runner):
         """Init with --engine option must be accepted."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["init", "myproject", "--engine", "sqlite"])
             # Should accept (not a parsing error)
             assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
@@ -76,7 +77,7 @@ class TestInitGlobalOptions:
 
     def test_quiet_option_accepted(self, runner):
         """Init must accept --quiet global option."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["init", "--quiet"])
             # Should not fail with "no such option" error
             assert "no such option" not in result.output.lower()
@@ -84,7 +85,7 @@ class TestInitGlobalOptions:
 
     def test_verbose_option_accepted(self, runner):
         """Init must accept --verbose global option."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["init", "--verbose"])
             # Should not fail with "no such option" error
             assert "no such option" not in result.output.lower()
@@ -99,7 +100,7 @@ class TestInitGlobalOptions:
 
     def test_no_pager_option_accepted(self, runner):
         """Init must accept --no-pager global option."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["init", "--no-pager"])
             # Should not fail with "no such option" error
             assert "no such option" not in result.output.lower()

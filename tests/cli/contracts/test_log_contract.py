@@ -11,6 +11,7 @@ from typing import Iterable
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 from sqlitch.engine.sqlite import derive_sqlite_registry_uri, resolve_sqlite_filesystem_path
 
 
@@ -82,7 +83,7 @@ def test_log_reports_human_history() -> None:
     expected = (GOLDEN_ROOT / "log_users_revert.txt").read_text(encoding="utf-8")
 
     runner = _runner()
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         workspace_db = Path("flipr_test.db")
         registry_path = _prepare_workspace(workspace_db)
         _seed_events(
@@ -132,7 +133,7 @@ def test_log_supports_json_format() -> None:
     """JSON output should return structured event dictionaries."""
 
     runner = _runner()
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         workspace_db = Path("flipr_test.db")
         registry_path = _prepare_workspace(workspace_db)
         _seed_events(
@@ -181,7 +182,7 @@ def test_log_rejects_unknown_format() -> None:
     """Invalid format selections should return a parity-preserving error."""
 
     runner = _runner()
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         workspace_db = Path("flipr_test.db")
         registry_path = _prepare_workspace(workspace_db)
         _seed_events(
@@ -221,7 +222,7 @@ def test_log_rejects_negative_limit() -> None:
     """Negative limits should be rejected before querying the registry."""
 
     runner = _runner()
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         workspace_db = Path("flipr_test.db")
         registry_path = _prepare_workspace(workspace_db)
         _seed_events(
@@ -261,7 +262,7 @@ def test_log_requires_explicit_target_when_missing() -> None:
     """Running without target configuration should raise an error."""
 
     runner = _runner()
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["log"], catch_exceptions=False)
 
         assert result.exit_code != 0
@@ -272,7 +273,7 @@ def test_log_supports_filters_and_pagination() -> None:
     """Project, change, and pagination filters should narrow results."""
 
     runner = _runner()
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         workspace_db = Path("flipr_test.db")
         registry_path = _prepare_workspace(workspace_db)
         _seed_events(
@@ -347,7 +348,7 @@ def test_log_reports_no_events_message() -> None:
     """Filters that remove all rows should print the no events message."""
 
     runner = _runner()
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         workspace_db = Path("flipr_test.db")
         registry_path = _prepare_workspace(workspace_db)
         _seed_events(
@@ -386,7 +387,7 @@ def test_log_skip_without_limit() -> None:
     """Providing only --skip should still return results after the offset."""
 
     runner = _runner()
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         workspace_db = Path("flipr_test.db")
         registry_path = _prepare_workspace(workspace_db)
         _seed_events(

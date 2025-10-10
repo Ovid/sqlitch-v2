@@ -9,6 +9,7 @@ from __future__ import annotations
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 
 
 # All 19 Sqitch commands
@@ -42,7 +43,7 @@ def test_gc_002_all_commands_accept_quiet():
     """GC-002: All commands accept --quiet global option."""
     runner = CliRunner()
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         for cmd in COMMANDS:
             # Provide required arguments for commands that need them
             args = [cmd, "--quiet"]
@@ -66,7 +67,7 @@ def test_gc_002_all_commands_accept_verbose():
     """GC-002: All commands accept --verbose global option."""
     runner = CliRunner()
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         for cmd in COMMANDS:
             args = [cmd, "--verbose"]
             if cmd in ["add", "rework"]:
@@ -89,7 +90,7 @@ def test_gc_002_all_commands_accept_no_pager():
     """GC-002: All commands accept --no-pager global option."""
     runner = CliRunner()
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         for cmd in COMMANDS:
             args = [cmd, "--no-pager"]
             if cmd in ["add", "rework"]:
@@ -112,7 +113,7 @@ def test_gc_002_all_commands_accept_chdir():
     """GC-002: All commands accept --chdir global option."""
     runner = CliRunner()
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         for cmd in COMMANDS:
             args = [cmd, "--chdir", "/tmp"]
             if cmd in ["add", "rework"]:
@@ -135,7 +136,7 @@ def test_global_options_do_not_cause_parsing_errors():
     """GC-002: Global options should not cause option parsing errors."""
     runner = CliRunner()
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         # Test a representative sample with multiple global options
         test_cases = [
             (["plan", "--quiet", "--verbose"]),

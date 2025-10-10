@@ -10,6 +10,7 @@ import pytest
 
 from sqlitch.cli.commands import rework as rework_module
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change
 from sqlitch.plan.parser import parse_plan
@@ -96,7 +97,7 @@ def test_rework_creates_rework_scripts_and_updates_plan(
     except ImportError:
         pass
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         project_root = Path.cwd()
         plan_path = project_root / "sqlitch.plan"
 
@@ -179,7 +180,7 @@ def test_rework_applies_overrides(monkeypatch: pytest.MonkeyPatch, runner: CliRu
     monkeypatch.setattr(rework_module, "_utcnow", lambda: timestamp)
     monkeypatch.setenv("SQLITCH_USER_NAME", "Ada Lovelace")
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         project_root = Path.cwd()
         plan_path = project_root / "sqlitch.plan"
 
@@ -256,7 +257,7 @@ def test_rework_applies_overrides(monkeypatch: pytest.MonkeyPatch, runner: CliRu
 def test_rework_unknown_change_errors(runner: CliRunner) -> None:
     """Reworking a change that does not exist should fail with a helpful error."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         write_plan(project_name="demo", default_engine="sqlite", entries=(), plan_path=plan_path)
 

@@ -9,6 +9,7 @@ import pytest
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 from sqlitch.plan.parser import parse_plan
 
 
@@ -40,7 +41,7 @@ class TestReworkCommand:
 
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             project_dir = Path(td)
 
             init = runner.invoke(
@@ -118,7 +119,7 @@ class TestReworkCommand:
         """Rework should create scripts suffixed with the latest tag."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             project_dir = Path(td)
 
             # Initialize project
@@ -171,7 +172,7 @@ class TestReworkCommand:
         """Test rework copies existing script content."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             project_dir = Path(td)
 
             # Initialize project
@@ -213,7 +214,7 @@ class TestReworkCommand:
         """Test rework updates plan entry."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             project_dir = Path(td)
 
             # Initialize project
@@ -287,7 +288,7 @@ class TestReworkCommand:
         """Test rework fails if change doesn't exist."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             # Initialize project
             result = runner.invoke(
                 main,
@@ -309,7 +310,7 @@ class TestReworkCommand:
         """Rework should fail if the change has not been tagged."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path):
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, temp_dir):
             result = runner.invoke(
                 main,
                 ["init", "test_project", "--engine", "sqlite"],
@@ -336,7 +337,7 @@ class TestReworkCommand:
         """Test rework preserves original dependencies by default."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             project_dir = Path(td)
 
             # Initialize project
@@ -382,7 +383,7 @@ class TestReworkCommand:
         """Test rework can override dependencies with --requires."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             project_dir = Path(td)
 
             # Initialize project
@@ -422,7 +423,7 @@ class TestReworkCommand:
         """Test rework supports custom script paths."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             project_dir = Path(td)
 
             # Initialize project
@@ -472,7 +473,7 @@ class TestReworkCommand:
         """Test rework respects quiet mode."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             # Initialize project
             result = runner.invoke(
                 main,
@@ -506,7 +507,7 @@ class TestReworkCommand:
         """Test rework fails if source script is missing."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             project_dir = Path(td)
 
             # Initialize project
@@ -548,7 +549,7 @@ class TestReworkWithTag:
         """Test rework works after tagging a change."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             project_dir = Path(td)
 
             # Initialize project
@@ -585,7 +586,7 @@ class TestReworkWithTag:
         """Test rework preserves the original change_id."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             project_dir = Path(td)
 
             # Initialize project

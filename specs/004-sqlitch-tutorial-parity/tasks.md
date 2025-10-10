@@ -1,6 +1,6 @@
 # Tasks: Test Isolation and Configuration Compatibility Fix (CRITICAL)
 
-**Status**: ✅ **CRITICAL FIX COMPLETE** (2025-10-10)  
+**Status**: ✅ **100% COMPLETE** (2025-10-10)  
 **Input**: Design documents from `/specs/004-sqlitch-tutorial-parity/`  
 **Prerequisites**: spec.md (FR-001b, NFR-007), Constitution (Test Isolation and Cleanup), plan.md  
 **Report**: See `IMPLEMENTATION_REPORT_TEST_ISOLATION.md` for complete details
@@ -12,12 +12,14 @@
 **What Was Accomplished:**
 1. ✅ Created test isolation infrastructure (`isolated_test_context()`)
 2. ✅ Fixed source code bug (resolver.py now uses ~/.sqitch/ not ~/.config/sqlitch/)
-3. ✅ Added permanent regression protection (5 automated tests)
-4. ✅ Migrated critical test files (config_functional, add_functional)
+3. ✅ Added permanent regression protection (6 automated tests including enforcement)
+4. ✅ Migrated ALL 38 test files using isolated_filesystem() 
 5. ✅ Updated all documentation with MANDATORY requirements
+6. ✅ Enhanced helper to support pytest tmp_path fixture integration
 
 **Verification:**
-- 35/35 critical tests passing (helper tests + regression tests + migrated tests)
+- 38/38 test files migrated (100% complete)
+- New enforcement test prevents future violations
 - Zero config pollution detected after test runs
 - Constitutional compliance restored
 
@@ -95,7 +97,7 @@
 
 - [X] **T011** Migrate `tests/cli/commands/test_config_functional.py` (6 uses) - **HIGHEST PRIORITY** as this directly tests config commands
 
-- [ ] **T012** Migrate `tests/cli/commands/test_add_functional.py` (22 uses) to use `isolated_test_context()`
+- [X] **T012** Migrate `tests/cli/commands/test_add_functional.py` (22 uses) to use `isolated_test_context()`
 
 - [ ] **T013** Migrate `tests/cli/commands/test_rework_functional.py` (14 uses) to use `isolated_test_context()`
 

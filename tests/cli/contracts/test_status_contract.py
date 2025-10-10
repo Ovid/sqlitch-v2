@@ -13,6 +13,7 @@ from click.testing import CliRunner
 import pytest
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 from sqlitch.engine.sqlite import derive_sqlite_registry_uri, resolve_sqlite_filesystem_path
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change, PlanEntry, Tag
@@ -238,7 +239,7 @@ def test_status_outputs_in_sync_snapshot(runner: CliRunner) -> None:
 
     expected = _read_golden("status_after_users.txt")
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         change_time = datetime(2013, 12, 31, 18, 26, 59, tzinfo=timezone.utc)
         users_change = _change(
@@ -276,7 +277,7 @@ def test_status_reports_undeployed_changes(runner: CliRunner) -> None:
 
     expected = _read_golden("status_after_revert_flips.txt")
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         users_time = datetime(2013, 12, 31, 18, 57, 55, tzinfo=timezone.utc)
         flips_time = datetime(2013, 12, 31, 19, 5, 44, tzinfo=timezone.utc)
@@ -326,7 +327,7 @@ def test_status_json_format_matches_fixture(runner: CliRunner) -> None:
 
     golden_text = _read_golden("status_dev_tagged.txt")
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         users_time = datetime(2013, 12, 31, 18, 26, 59, tzinfo=timezone.utc)
         flips_time = datetime(2013, 12, 31, 19, 5, 44, tzinfo=timezone.utc)

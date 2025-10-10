@@ -10,6 +10,7 @@ from click.testing import CliRunner
 import pytest
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change, Tag
 
@@ -139,7 +140,7 @@ def _seed_minimal_project(project_root: Path) -> tuple[Path, Change]:
 def test_show_human_format_displays_change_metadata(runner: CliRunner) -> None:
     """Default output should mirror Sqitch show change metadata."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         project_root = Path.cwd()
         _, change = _seed_project(project_root)
 
@@ -160,7 +161,7 @@ def test_show_human_format_displays_change_metadata(runner: CliRunner) -> None:
 def test_show_json_format_returns_structured_payload(runner: CliRunner) -> None:
     """JSON output should expose change metadata for automation."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         project_root = Path.cwd()
         _, change = _seed_project(project_root)
 
@@ -184,7 +185,7 @@ def test_show_json_format_returns_structured_payload(runner: CliRunner) -> None:
 def test_show_script_option_outputs_script_contents(runner: CliRunner) -> None:
     """Requesting a script should stream the script contents verbatim."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         project_root = Path.cwd()
         _, change = _seed_project(project_root)
 
@@ -197,7 +198,7 @@ def test_show_script_option_outputs_script_contents(runner: CliRunner) -> None:
 def test_show_accepts_tag_reference(runner: CliRunner) -> None:
     """Tags should resolve to their associated change."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         project_root = Path.cwd()
         _, change = _seed_project(project_root)
 
@@ -210,7 +211,7 @@ def test_show_accepts_tag_reference(runner: CliRunner) -> None:
 def test_show_project_filter_mismatch_errors(runner: CliRunner) -> None:
     """Project filters should reject plans that do not match."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         project_root = Path.cwd()
         _, change = _seed_project(project_root)
 
@@ -223,7 +224,7 @@ def test_show_project_filter_mismatch_errors(runner: CliRunner) -> None:
 def test_show_outputs_defaults_when_metadata_missing(runner: CliRunner) -> None:
     """Show should surface sensible defaults when optional metadata is absent."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         project_root = Path.cwd()
         _, change = _seed_minimal_project(project_root)
 
@@ -253,7 +254,7 @@ def test_show_outputs_defaults_when_metadata_missing(runner: CliRunner) -> None:
 def test_show_script_option_reports_missing_files(runner: CliRunner) -> None:
     """Missing or unspecified scripts should raise clear errors."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         project_root = Path.cwd()
         _, change = _seed_minimal_project(project_root)
 
@@ -275,7 +276,7 @@ def test_show_script_option_reports_missing_files(runner: CliRunner) -> None:
 def test_show_reports_plan_parse_errors(runner: CliRunner) -> None:
     """Plan parse failures should surface the parser error message."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         project_root = Path.cwd()
         plan_path, change = _seed_project(project_root)
         # Write a plan with proper headers but invalid entry
@@ -294,7 +295,7 @@ def test_show_reports_plan_parse_errors(runner: CliRunner) -> None:
 def test_show_deduplicates_plan_and_change_tags(runner: CliRunner) -> None:
     """Tags applied at both change and plan level should not be repeated."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         project_root = Path.cwd()
         for directory in ("deploy", "revert", "verify"):
             (project_root / directory).mkdir(parents=True, exist_ok=True)
@@ -349,7 +350,7 @@ def test_show_deduplicates_plan_and_change_tags(runner: CliRunner) -> None:
 def test_show_unknown_change_errors(runner: CliRunner) -> None:
     """Missing changes should raise a helpful error message."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         project_root = Path.cwd()
         plan_path, _ = _seed_project(project_root)
         assert plan_path.exists()

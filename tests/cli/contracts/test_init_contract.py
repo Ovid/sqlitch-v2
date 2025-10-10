@@ -8,6 +8,7 @@ from click.testing import CliRunner
 import pytest
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 
 
 @pytest.fixture()
@@ -20,7 +21,7 @@ def runner() -> CliRunner:
 def test_init_creates_project_layout(runner: CliRunner) -> None:
     """sqlitch init should mirror Sqitch project scaffolding for SQLite."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
 
         assert result.exit_code == 0, result.output
@@ -68,7 +69,7 @@ def test_init_respects_env_and_plan_override(
 
     monkeypatch.setenv("SQLITCH_TOP_DIR", "db/scripts")
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_override = Path("plans/custom.plan")
         result = runner.invoke(
             main,
@@ -80,14 +81,14 @@ def test_init_respects_env_and_plan_override(
         assert "Created plans/custom.plan" in output_lines
 
         assert plan_override.is_file()
-        assert not Path("sqitch.plan").exists()
+        assert not (temp_dir / "sqitch.plan").exists()
 
         top_dir = Path("db/scripts")
         assert top_dir.is_dir()
         for subdir in ("deploy", "revert", "verify"):
             assert (top_dir / subdir).is_dir()
 
-        config_content = Path("sqitch.conf").read_text(encoding="utf-8")
+        config_content = (temp_dir / "sqitch.conf").read_text(encoding="utf-8")
         assert "# plan_file = plans/custom.plan" in config_content
         assert "# top_dir = db/scripts" in config_content
 
@@ -95,20 +96,20 @@ def test_init_respects_env_and_plan_override(
 def test_init_accepts_uri_option(runner: CliRunner) -> None:
     """--uri should be recorded in the generated config file."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         uri = "https://github.com/example/project"
         result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite", "--uri", uri])
 
         assert result.exit_code == 0, result.output
 
-        config_content = Path("sqitch.conf").read_text(encoding="utf-8")
+        config_content = (temp_dir / "sqitch.conf").read_text(encoding="utf-8")
         assert f"uri = {uri}" in config_content
 
 
 def test_init_rejects_unknown_engine(runner: CliRunner) -> None:
     """Unrecognized engines must raise a user-facing CommandError."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["init", "--engine", "oracle"])
 
     assert result.exit_code != 0
@@ -118,7 +119,7 @@ def test_init_rejects_unknown_engine(runner: CliRunner) -> None:
 def test_init_aborts_when_plan_file_exists(runner: CliRunner) -> None:
     """Existing plan files should prevent accidental overwrites."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqitch.plan")
         plan_path.write_text("%project=existing\n", encoding="utf-8")
 
@@ -132,12 +133,12 @@ def test_init_aborts_when_plan_file_exists(runner: CliRunner) -> None:
 def test_init_engine_alias_applies_defaults(runner: CliRunner) -> None:
     """Engine aliases like postgres should normalize to canonical defaults."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["init", "flipr", "--engine", "postgres"])
 
         assert result.exit_code == 0, result.output
 
-        config_content = Path("sqitch.conf").read_text(encoding="utf-8")
+        config_content = (temp_dir / "sqitch.conf").read_text(encoding="utf-8")
         assert "engine = pg" in config_content
         assert "# target = db:pg:" in config_content
 
@@ -145,7 +146,7 @@ def test_init_engine_alias_applies_defaults(runner: CliRunner) -> None:
 def test_init_respects_top_dir_option(runner: CliRunner) -> None:
     """The --top-dir option should drive scaffold placement and config hints."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["init", "--top-dir", "db/sql"])
 
         assert result.exit_code == 0, result.output
@@ -154,14 +155,14 @@ def test_init_respects_top_dir_option(runner: CliRunner) -> None:
         for subdir in ("deploy", "revert", "verify"):
             assert (top_dir / subdir).is_dir()
 
-        config_content = Path("sqitch.conf").read_text(encoding="utf-8")
+        config_content = (temp_dir / "sqitch.conf").read_text(encoding="utf-8")
         assert "# top_dir = db/sql" in config_content
 
 
 def test_init_ignores_existing_templates_directory(runner: CliRunner) -> None:
     """Pre-existing template directories are ignored now that we do not scaffold templates."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         templates_root = Path("etc/templates")
         templates_root.mkdir(parents=True, exist_ok=True)
 

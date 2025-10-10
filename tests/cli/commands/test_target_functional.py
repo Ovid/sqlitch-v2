@@ -8,6 +8,7 @@ import pytest
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 
 
 @pytest.fixture
@@ -30,7 +31,7 @@ class TestTargetAliasPersistence:
     def test_target_add_persists_alias_in_project_config(self, runner: CliRunner) -> None:
         """Target add should persist alias entries used by engine commands."""
 
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             env = _build_isolated_env()
             env["SQLITCH_CONFIG_ROOT"] = str(Path.cwd())
             env["HOME"] = str(Path.cwd())
@@ -62,7 +63,7 @@ class TestTargetAliasPersistence:
     def test_target_add_respects_quiet_mode(self, runner: CliRunner) -> None:
         """Target add should suppress output when quiet mode is active."""
 
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             env = _build_isolated_env()
             env["SQLITCH_CONFIG_ROOT"] = str(Path.cwd())
             env["HOME"] = str(Path.cwd())
@@ -97,7 +98,7 @@ class TestTargetUriParsing:
     def test_target_add_normalizes_relative_uri(self, runner: CliRunner) -> None:
         """Relative SQLite URIs should resolve to absolute paths with sibling registries."""
 
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             env = _build_isolated_env()
             env["SQLITCH_CONFIG_ROOT"] = str(Path.cwd())
             env["HOME"] = str(Path.cwd())
@@ -116,7 +117,7 @@ class TestTargetUriParsing:
             )
             assert add_result.exit_code == 0, f"Target add failed: {add_result.output}"
 
-            config = _read_project_config(Path("sqitch.conf"))
+            config = _read_project_config((temp_dir / "sqitch.conf"))
             section = 'target "flipr_local"'
             assert config.has_section(section), "Target section should exist"
 
@@ -131,7 +132,7 @@ class TestTargetUriParsing:
     def test_target_add_supports_in_memory_database(self, runner: CliRunner) -> None:
         """In-memory SQLite targets should be preserved verbatim and assign a sibling registry."""
 
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             env = _build_isolated_env()
             env["SQLITCH_CONFIG_ROOT"] = str(Path.cwd())
             env["HOME"] = str(Path.cwd())
@@ -147,7 +148,7 @@ class TestTargetUriParsing:
             )
             assert add_result.exit_code == 0, f"Target add failed: {add_result.output}"
 
-            config = _read_project_config(Path("sqitch.conf"))
+            config = _read_project_config((temp_dir / "sqitch.conf"))
             section = 'target "flipr_memory"'
             assert config.has_section(section), "Target section should exist"
 
@@ -160,7 +161,7 @@ class TestTargetUriParsing:
     def test_status_uses_sqlitch_target_environment_override(self, runner: CliRunner) -> None:
         """Status should honor SQLITCH_TARGET while normalizing filesystem paths."""
 
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             env = _build_isolated_env()
             env["SQLITCH_CONFIG_ROOT"] = str(Path.cwd())
             env["HOME"] = str(Path.cwd())

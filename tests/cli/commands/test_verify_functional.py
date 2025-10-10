@@ -11,6 +11,7 @@ import pytest
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 from sqlitch.cli.commands import CommandError
 from sqlitch.cli.commands.verify import (
     _execute_sqlite_verify_script,
@@ -497,7 +498,7 @@ class TestVerifyUnimplementedOptions:
     def test_unimplemented_option_errors(
         self, runner: CliRunner, args: list[str], message: str
     ) -> None:
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["verify", *args])
 
             assert result.exit_code == 1

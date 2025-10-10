@@ -10,6 +10,7 @@ import pytest
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 
 _SUPPORT_DIR = Path(__file__).resolve().parents[1] / "support"
 _ENV_OVERRIDES_PATH = _SUPPORT_DIR / "tutorial_parity" / "env_overrides.json"
@@ -47,7 +48,7 @@ class TestScenario10EnvironmentOverrides:
 
         workspace = tmp_path / "workspace"
         workspace.mkdir()
-        with runner.isolated_filesystem(temp_dir=workspace):
+        with isolated_test_context(runner, base_dir=workspace) as (runner, temp_dir):
             # Initialize tutorial project and author a baseline change
             result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
             assert result.exit_code == 0, f"init failed: {result.output}"

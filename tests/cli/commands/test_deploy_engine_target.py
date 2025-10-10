@@ -10,6 +10,7 @@ import pytest
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 
 
 @pytest.fixture
@@ -24,7 +25,7 @@ class TestDeployWithEngineTarget:
     def test_deploy_uses_engine_target_when_no_explicit_target(self, runner: CliRunner) -> None:
         """Deploy should use engine.sqlite.target when no explicit target is given."""
 
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             env = os.environ.copy()
             env["SQLITCH_CONFIG_ROOT"] = str(Path.cwd())
             env["HOME"] = str(Path.cwd())
@@ -51,11 +52,11 @@ class TestDeployWithEngineTarget:
             assert add_result.exit_code == 0, f"Add failed: {add_result.output}"
 
             # Create simple deploy/revert/verify scripts
-            Path("deploy/users.sql").write_text(
+            (temp_dir / "deploy/users.sql").write_text(
                 "BEGIN; CREATE TABLE users (id INTEGER PRIMARY KEY); COMMIT;"
             )
-            Path("revert/users.sql").write_text("BEGIN; DROP TABLE users; COMMIT;")
-            Path("verify/users.sql").write_text("SELECT id FROM users WHERE 0;")
+            (temp_dir / "revert/users.sql").write_text("BEGIN; DROP TABLE users; COMMIT;")
+            (temp_dir / "verify/users.sql").write_text("SELECT id FROM users WHERE 0;")
 
             # Deploy WITHOUT specifying a target - should use engine.sqlite.target
             deploy_result = runner.invoke(main, ["deploy"], env=env)
@@ -64,8 +65,8 @@ class TestDeployWithEngineTarget:
             assert "flipr_test.db" in deploy_result.output
 
             # Verify database was created
-            assert Path("flipr_test.db").exists()
-            assert Path("sqitch.db").exists()
+            assert (temp_dir / "flipr_test.db").exists()
+            assert (temp_dir / "sqitch.db").exists()
 
             # Verify table exists
             conn = sqlite3.connect("flipr_test.db")
@@ -78,7 +79,7 @@ class TestDeployWithEngineTarget:
     def test_deploy_errors_when_no_target_and_no_engine_target(self, runner: CliRunner) -> None:
         """Deploy should error when no target is specified and engine has no target configured."""
 
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             env = os.environ.copy()
             env["SQLITCH_CONFIG_ROOT"] = str(Path.cwd())
             env["HOME"] = str(Path.cwd())
@@ -93,11 +94,11 @@ class TestDeployWithEngineTarget:
             assert add_result.exit_code == 0, f"Add failed: {add_result.output}"
 
             # Create simple deploy/revert/verify scripts
-            Path("deploy/users.sql").write_text(
+            (temp_dir / "deploy/users.sql").write_text(
                 "BEGIN; CREATE TABLE users (id INTEGER PRIMARY KEY); COMMIT;"
             )
-            Path("revert/users.sql").write_text("BEGIN; DROP TABLE users; COMMIT;")
-            Path("verify/users.sql").write_text("SELECT id FROM users WHERE 0;")
+            (temp_dir / "revert/users.sql").write_text("BEGIN; DROP TABLE users; COMMIT;")
+            (temp_dir / "verify/users.sql").write_text("SELECT id FROM users WHERE 0;")
 
             # Deploy WITHOUT specifying a target and WITHOUT engine target configured
             deploy_result = runner.invoke(main, ["deploy"], env=env)
@@ -107,7 +108,7 @@ class TestDeployWithEngineTarget:
     def test_explicit_target_overrides_engine_target(self, runner: CliRunner) -> None:
         """Explicit target argument should override engine.sqlite.target."""
 
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             env = os.environ.copy()
             env["SQLITCH_CONFIG_ROOT"] = str(Path.cwd())
             env["HOME"] = str(Path.cwd())
@@ -134,11 +135,11 @@ class TestDeployWithEngineTarget:
             assert add_result.exit_code == 0, f"Add failed: {add_result.output}"
 
             # Create simple deploy/revert/verify scripts
-            Path("deploy/users.sql").write_text(
+            (temp_dir / "deploy/users.sql").write_text(
                 "BEGIN; CREATE TABLE users (id INTEGER PRIMARY KEY); COMMIT;"
             )
-            Path("revert/users.sql").write_text("BEGIN; DROP TABLE users; COMMIT;")
-            Path("verify/users.sql").write_text("SELECT id FROM users WHERE 0;")
+            (temp_dir / "revert/users.sql").write_text("BEGIN; DROP TABLE users; COMMIT;")
+            (temp_dir / "verify/users.sql").write_text("SELECT id FROM users WHERE 0;")
 
             # Deploy with an explicit different target
             deploy_result = runner.invoke(main, ["deploy", "db:sqlite:explicit.db"], env=env)
@@ -147,5 +148,5 @@ class TestDeployWithEngineTarget:
             assert "explicit.db" in deploy_result.output
 
             # Verify the explicit database was created, not the default one
-            assert Path("explicit.db").exists()
-            assert not Path("default.db").exists()
+            assert (temp_dir / "explicit.db").exists()
+            assert not (temp_dir / "default.db").exists()

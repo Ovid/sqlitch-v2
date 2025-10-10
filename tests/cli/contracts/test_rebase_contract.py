@@ -9,6 +9,7 @@ from click.testing import CliRunner
 import pytest
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change, Tag
 
@@ -71,7 +72,7 @@ def _seed_plan(plan_path: Path) -> tuple[Change, Change, Tag]:
 def test_rebase_requires_target(runner: CliRunner) -> None:
     """Rebase should require a target to be provided explicitly or via config."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         _seed_plan(plan_path)
 
@@ -84,7 +85,7 @@ def test_rebase_requires_target(runner: CliRunner) -> None:
 def test_rebase_log_only_shows_revert_and_deploy_sequences(runner: CliRunner) -> None:
     """Log-only runs should outline both the revert and deploy stages."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         change_one, change_two, _ = _seed_plan(plan_path)
 
@@ -114,7 +115,7 @@ def test_rebase_log_only_shows_revert_and_deploy_sequences(runner: CliRunner) ->
 def test_rebase_from_option_limits_redeploy_scope(runner: CliRunner) -> None:
     """Providing --from should restrict the redeployment set."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         change_one, change_two, _ = _seed_plan(plan_path)
 
@@ -138,7 +139,7 @@ def test_rebase_from_option_limits_redeploy_scope(runner: CliRunner) -> None:
 def test_rebase_onto_option_limits_revert_scope(runner: CliRunner) -> None:
     """Providing --onto should keep earlier changes deployed."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         change_one, change_two, tag = _seed_plan(plan_path)
 
@@ -162,7 +163,7 @@ def test_rebase_onto_option_limits_revert_scope(runner: CliRunner) -> None:
 def test_rebase_unknown_reference_fails(runner: CliRunner) -> None:
     """Unknown change or tag references should surface helpful errors."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         _seed_plan(plan_path)
 

@@ -53,6 +53,7 @@ __all__ = ["isolated_test_context"]
 @contextmanager
 def isolated_test_context(
     runner: CliRunner,
+    base_dir: Path | None = None,
 ) -> Generator[tuple[CliRunner, Path], None, None]:
     """Create an isolated filesystem context with configuration environment variables.
 
@@ -71,6 +72,9 @@ def isolated_test_context(
 
     Args:
         runner: A Click CliRunner instance for invoking CLI commands
+        base_dir: Optional base directory to use (e.g., pytest's tmp_path fixture).
+                 If provided, creates config directories inside this path.
+                 If None, uses runner.isolated_filesystem() to create a temp directory.
 
     Yields:
         tuple[CliRunner, Path]: The same runner instance and the temp directory path
@@ -86,6 +90,13 @@ def isolated_test_context(
         ...     user_config = temp_dir / '.sqitch' / 'sqitch.conf'
         ...     assert user_config.exists()
         ...     assert 'Tester' in user_config.read_text()
+
+    Example with pytest tmp_path fixture:
+        >>> def test_with_tmp_path(runner, tmp_path):
+        ...     with isolated_test_context(runner, base_dir=tmp_path) as (runner, temp_dir):
+        ...         # temp_dir will be tmp_path
+        ...         result = runner.invoke(main, ["init", "myproject"])
+        ...         assert result.exit_code == 0
 
     Constitutional Compliance:
         This function is **MANDATORY** for any test that invokes SQLitch commands
@@ -110,11 +121,11 @@ def isolated_test_context(
     }
 
     try:
-        with runner.isolated_filesystem() as temp_dir_str:
-            temp_dir = Path(temp_dir_str)
+        if base_dir is not None:
+            # Use provided base directory (e.g., pytest's tmp_path)
+            temp_dir = Path(base_dir)
 
-            # Set up isolated config paths within the temporary directory
-            # These mirror the standard Sqitch config hierarchy but isolated
+            # Set up isolated config paths within the base directory
             system_config_dir = temp_dir / "etc" / "sqitch"
             user_config_dir = temp_dir / ".sqitch"
             local_config = temp_dir / "sqitch.conf"
@@ -130,6 +141,28 @@ def isolated_test_context(
 
             # Yield control to the test
             yield runner, temp_dir
+        else:
+            # Use Click's isolated_filesystem() to create temp directory
+            with runner.isolated_filesystem() as temp_dir_str:
+                temp_dir = Path(temp_dir_str)
+
+                # Set up isolated config paths within the temporary directory
+                # These mirror the standard Sqitch config hierarchy but isolated
+                system_config_dir = temp_dir / "etc" / "sqitch"
+                user_config_dir = temp_dir / ".sqitch"
+                local_config = temp_dir / "sqitch.conf"
+
+                # Create the directory structure
+                system_config_dir.mkdir(parents=True, exist_ok=True)
+                user_config_dir.mkdir(parents=True, exist_ok=True)
+
+                # Set environment variables to point to isolated locations
+                os.environ["SQLITCH_SYSTEM_CONFIG"] = str(system_config_dir / "sqitch.conf")
+                os.environ["SQLITCH_USER_CONFIG"] = str(user_config_dir / "sqitch.conf")
+                os.environ["SQLITCH_CONFIG"] = str(local_config)
+
+                # Yield control to the test
+                yield runner, temp_dir
 
     finally:
         # Restore original environment variables

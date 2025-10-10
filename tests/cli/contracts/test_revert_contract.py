@@ -9,6 +9,7 @@ from click.testing import CliRunner
 import pytest
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change, Tag
 
@@ -71,7 +72,7 @@ def _seed_plan(plan_path: Path) -> tuple[Change, Change, Tag]:
 def test_revert_requires_target(runner: CliRunner) -> None:
     """Revert should require a target to be provided explicitly or via config."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         _seed_plan(plan_path)
 
@@ -84,7 +85,7 @@ def test_revert_requires_target(runner: CliRunner) -> None:
 def test_revert_log_only_outputs_changes_in_reverse(runner: CliRunner) -> None:
     """Log-only mode should list changes in reverse deployment order."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         change_one, change_two, _ = _seed_plan(plan_path)
 
@@ -108,7 +109,7 @@ def test_revert_log_only_outputs_changes_in_reverse(runner: CliRunner) -> None:
 def test_revert_conflicting_filters_error(runner: CliRunner) -> None:
     """Providing both --to-change and --to-tag should raise an error."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         change_one, _, tag = _seed_plan(plan_path)
 

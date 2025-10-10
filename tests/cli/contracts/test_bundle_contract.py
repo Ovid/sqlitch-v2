@@ -8,6 +8,7 @@ from click.testing import CliRunner
 import pytest
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 
 
 def _seed_project() -> None:
@@ -23,7 +24,7 @@ def _seed_project() -> None:
 def test_bundle_creates_default_bundle_directory() -> None:
     runner = CliRunner()
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         _seed_project()
 
         result = runner.invoke(main, ["bundle"])
@@ -43,7 +44,7 @@ def test_bundle_creates_default_bundle_directory() -> None:
 def test_bundle_honours_dest_option() -> None:
     runner = CliRunner()
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         _seed_project()
 
         result = runner.invoke(main, ["bundle", "--dest", "dist/bundles"])
@@ -58,7 +59,7 @@ def test_bundle_honours_dest_option() -> None:
 def test_bundle_errors_when_plan_missing() -> None:
     runner = CliRunner()
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["bundle"])
 
         assert result.exit_code != 0
@@ -68,7 +69,7 @@ def test_bundle_errors_when_plan_missing() -> None:
 def test_bundle_no_plan_flag_skips_plan_copy() -> None:
     runner = CliRunner()
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         for directory in ("deploy", "revert", "verify"):
             dir_path = Path(directory)
             dir_path.mkdir(parents=True)

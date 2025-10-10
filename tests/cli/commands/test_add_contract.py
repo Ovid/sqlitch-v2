@@ -16,6 +16,7 @@ import pytest
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 
 
 class TestAddCommandContract:
@@ -33,7 +34,7 @@ class TestAddCommandContract:
         Contract: CC-ADD-001
         Perl behavior: Missing required argument should exit 2
         """
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["add"])
 
             assert result.exit_code == 2, (
@@ -51,7 +52,7 @@ class TestAddCommandContract:
         Contract: CC-ADD-002
         Perl behavior: Should accept valid change name without parsing error
         """
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             # Note: This will fail if not in a SQLitch project, but should NOT
             # fail with a parsing/argument error (exit code 2)
             result = runner.invoke(main, ["add", "my_test_change"])
@@ -76,7 +77,7 @@ class TestAddCommandContract:
         Contract: CC-ADD-003
         Perl behavior: --note is an optional parameter that should be accepted
         """
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["add", "my_change", "--note", "Test note"])
 
             # Should not fail with "no such option" error (exit code 2)
@@ -90,7 +91,7 @@ class TestAddCommandContract:
 
         Perl behavior: --requires specifies dependencies
         """
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["add", "my_change", "--requires", "other_change"])
 
             assert result.exit_code != 2 or "no such option" not in result.output.lower(), (
@@ -103,7 +104,7 @@ class TestAddCommandContract:
 
         Perl behavior: --conflicts specifies conflicting changes
         """
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["add", "my_change", "--conflicts", "other_change"])
 
             assert result.exit_code != 2 or "no such option" not in result.output.lower(), (
@@ -127,7 +128,7 @@ class TestAddGlobalContracts:
         Contract: GC-001
         Global contract: All commands must support --help
         """
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["add", "--help"])
 
             assert result.exit_code == 0, (
@@ -153,7 +154,7 @@ class TestAddGlobalContracts:
         Contract: GC-002
         Global contract: All commands must accept global options
         """
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["add", "--quiet", "my_change"])
 
             # Should not fail with "no such option" error
@@ -172,7 +173,7 @@ class TestAddGlobalContracts:
 
         Contract: GC-002
         """
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["add", "--verbose", "my_change"])
 
             assert (
@@ -188,7 +189,7 @@ class TestAddGlobalContracts:
 
         Contract: GC-002
         """
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["add", "--chdir", "/tmp", "my_change"])
 
             assert (
@@ -204,7 +205,7 @@ class TestAddGlobalContracts:
 
         Contract: GC-002
         """
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["add", "--no-pager", "my_change"])
 
             assert (
@@ -222,7 +223,7 @@ class TestAddGlobalContracts:
         Contract: GC-005
         Global contract: Unknown options must be rejected
         """
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["add", "--nonexistent-option", "my_change"])
 
             assert result.exit_code == 2, (

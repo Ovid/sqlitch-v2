@@ -28,10 +28,10 @@ def migrate_test_file(file_path: Path) -> tuple[bool, str]:
         return (True, "Already migrated")
     
     # Check if file uses isolated_filesystem
-    if "isolated_filesystem()" not in content:
+    if "isolated_filesystem()" not in content and "isolated_filesystem(temp_dir=" not in content:
         return (True, "No isolated_filesystem() usage found")
     
-    #Step 1: Add import if not present
+    # Step 1: Add import if not present
     if "from tests.support.test_helpers import" not in content:
         # Find the imports section
         import_pattern = r"(from sqlitch\.cli\.main import.*?\n)"
@@ -63,6 +63,23 @@ def migrate_test_file(file_path: Path) -> tuple[bool, str]:
         var_name = match.group(1)
         return f"with isolated_test_context(runner) as (runner, temp_dir):"
     content = re.sub(pattern2, replace_with_tempdir, content)
+    
+    # Pattern 3: with runner.isolated_filesystem(temp_dir=tmp_path):
+    # This pattern is used with pytest's tmp_path fixture or any variable
+    # We need to wrap it to add env var isolation
+    pattern3 = r"with runner\.isolated_filesystem\(temp_dir=(\w+)\):"
+    def replace_with_base_dir(match):
+        var_name = match.group(1)
+        return f"with isolated_test_context(runner, base_dir={var_name}) as (runner, temp_dir):"
+    content = re.sub(pattern3, replace_with_base_dir, content)
+    
+    # Pattern 4: with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+    pattern4 = r"with runner\.isolated_filesystem\(temp_dir=(\w+)\) as (\w+):"
+    def replace_with_base_dir_and_var(match):
+        base_var = match.group(1)
+        assigned_var = match.group(2)
+        return f"with isolated_test_context(runner, base_dir={base_var}) as (runner, {assigned_var}):"
+    content = re.sub(pattern4, replace_with_base_dir_and_var, content)
     
     # Step 3: Replace Path(temp_dir_str) with temp_dir
     content = re.sub(r"Path\(temp_dir_str\)", "temp_dir", content)

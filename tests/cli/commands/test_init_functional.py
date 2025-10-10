@@ -14,6 +14,7 @@ from click.testing import CliRunner
 from pathlib import Path
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 
 
 @pytest.fixture
@@ -27,7 +28,7 @@ class TestInitDirectoryCreation:
 
     def test_creates_sqitch_conf_with_engine(self, runner):
         """Init must create sqitch.conf with correct engine setting."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
 
             assert result.exit_code == 0, f"Init failed: {result.output}"
@@ -43,7 +44,7 @@ class TestInitDirectoryCreation:
 
     def test_creates_sqitch_plan_with_pragmas(self, runner):
         """Init must create sqitch.plan with project pragmas."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(
                 main,
                 [
@@ -72,7 +73,7 @@ class TestInitDirectoryCreation:
 
     def test_sqitch_conf_omits_core_uri(self, runner):
         """Init must not write core.uri entries even when --uri supplied."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(
                 main,
                 [
@@ -87,13 +88,13 @@ class TestInitDirectoryCreation:
 
             assert result.exit_code == 0, f"Init failed: {result.output}"
 
-            config_content = Path("sqitch.conf").read_text()
+            config_content = (temp_dir / "sqitch.conf").read_text()
             assert "core.uri" not in config_content
             assert "%core.uri" not in config_content
 
     def test_creates_script_directories(self, runner):
         """Init must create deploy/, revert/, and verify/ directories."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
 
             assert result.exit_code == 0, f"Init failed: {result.output}"
@@ -109,20 +110,20 @@ class TestInitDirectoryCreation:
 
     def test_directory_structure_matches_fr001_requirements(self, runner):
         """Init must create complete directory structure per FR-001."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
 
             assert result.exit_code == 0, f"Init failed: {result.output}"
 
             # Verify all required artifacts
             required_files = [
-                Path("sqitch.conf"),
-                Path("sqitch.plan"),
+                (temp_dir / "sqitch.conf"),
+                (temp_dir / "sqitch.plan"),
             ]
             required_dirs = [
-                Path("deploy"),
-                Path("revert"),
-                Path("verify"),
+                (temp_dir / "deploy"),
+                (temp_dir / "revert"),
+                (temp_dir / "verify"),
             ]
 
             for file_path in required_files:
@@ -137,7 +138,7 @@ class TestInitDirectoryCreation:
 
     def test_file_contents_match_sqitch_format(self, runner):
         """Init must create files with Sqitch-compatible format."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(
                 main,
                 [
@@ -153,12 +154,12 @@ class TestInitDirectoryCreation:
             assert result.exit_code == 0, f"Init failed: {result.output}"
 
             # Verify sqitch.conf format
-            config_content = Path("sqitch.conf").read_text()
+            config_content = (temp_dir / "sqitch.conf").read_text()
             assert config_content.startswith("[core]"), "sqitch.conf must start with [core] section"
             assert "\tengine = sqlite" in config_content, "Engine setting must use tab indentation"
 
             # Verify sqitch.plan format
-            plan_content = Path("sqitch.plan").read_text()
+            plan_content = (temp_dir / "sqitch.plan").read_text()
             assert plan_content.startswith(
                 "%syntax-version="
             ), "sqitch.plan must start with %syntax-version pragma"
@@ -167,17 +168,17 @@ class TestInitDirectoryCreation:
 
     def test_engine_target_is_absent_without_flag(self, runner):
         """Init must not persist engine.target unless --target provided."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
 
             assert result.exit_code == 0, f"Init failed: {result.output}"
 
-            config_content = Path("sqitch.conf").read_text()
+            config_content = (temp_dir / "sqitch.conf").read_text()
             assert "\n\ttarget = " not in config_content
 
     def test_engine_target_written_when_flag_provided(self, runner):
         """Init must persist engine.target when explicit --target supplied."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(
                 main,
                 [
@@ -192,7 +193,7 @@ class TestInitDirectoryCreation:
 
             assert result.exit_code == 0, f"Init failed: {result.output}"
 
-            config_content = Path("sqitch.conf").read_text()
+            config_content = (temp_dir / "sqitch.conf").read_text()
             assert '[engine "sqlite"]' in config_content
             assert "target = db:sqlite:flipr.db" in config_content
 
@@ -202,14 +203,14 @@ class TestInitEngineValidation:
 
     def test_validates_engine_in_registry(self, runner):
         """Init must accept valid engines from ENGINE_REGISTRY."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             # sqlite should be valid
             result = runner.invoke(main, ["init", "test", "--engine", "sqlite"])
             assert result.exit_code == 0, f"Valid engine 'sqlite' rejected: {result.output}"
 
     def test_fails_with_clear_error_for_invalid_engine(self, runner):
         """Init must fail with clear error message for invalid engine."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["init", "test", "--engine", "notarealengine"])
 
             # Should fail (exit code 1 for user error)
@@ -224,13 +225,13 @@ class TestInitEngineValidation:
 
     def test_defaults_to_sqlite_when_not_specified(self, runner):
         """Init must default to sqlite engine when --engine not provided."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["init", "test"])
 
             assert result.exit_code == 0, f"Init without engine failed: {result.output}"
 
             # Verify sqlite is set as default
-            config_content = Path("sqitch.conf").read_text()
+            config_content = (temp_dir / "sqitch.conf").read_text()
             assert "engine = sqlite" in config_content, "Should default to sqlite engine"
 
 
@@ -239,7 +240,7 @@ class TestInitOutputFormat:
 
     def test_outputs_creation_messages(self, runner):
         """Init should output 'Created' messages for each artifact."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
 
             assert result.exit_code == 0, f"Init failed: {result.output}"
@@ -253,7 +254,7 @@ class TestInitOutputFormat:
 
     def test_quiet_mode_suppresses_output(self, runner):
         """Init with --quiet should suppress creation messages."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             # --quiet is a global option and must come before the subcommand
             result = runner.invoke(main, ["--quiet", "init", "flipr", "--engine", "sqlite"])
 
@@ -270,9 +271,9 @@ class TestInitErrorHandling:
 
     def test_fails_if_sqitch_conf_exists(self, runner):
         """Init must fail if sqitch.conf already exists."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             # Create existing config
-            Path("sqitch.conf").write_text("[core]\n")
+            (temp_dir / "sqitch.conf").write_text("[core]\n")
 
             result = runner.invoke(main, ["init", "test"])
 
@@ -281,9 +282,9 @@ class TestInitErrorHandling:
 
     def test_fails_if_sqitch_plan_exists(self, runner):
         """Init must fail if sqitch.plan already exists."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             # Create existing plan
-            Path("sqitch.plan").write_text("%syntax-version=1.0.0\n")
+            (temp_dir / "sqitch.plan").write_text("%syntax-version=1.0.0\n")
 
             result = runner.invoke(main, ["init", "test"])
 
@@ -292,9 +293,9 @@ class TestInitErrorHandling:
 
     def test_fails_if_deploy_directory_exists(self, runner):
         """Init must fail if deploy/ directory already exists."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             # Create existing directory
-            Path("deploy").mkdir()
+            (temp_dir / "deploy").mkdir()
 
             result = runner.invoke(main, ["init", "test"])
 

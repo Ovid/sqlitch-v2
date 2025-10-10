@@ -15,6 +15,7 @@ import pytest
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 
 
 class TestScenario1ProjectInitialization:
@@ -32,7 +33,7 @@ class TestScenario1ProjectInitialization:
         """Test init creates all required files and directories."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path):
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, temp_dir):
             # Initialize SQLitch project
             result = runner.invoke(
                 main,
@@ -70,7 +71,7 @@ class TestScenario1ProjectInitialization:
         """Test config get/set operations."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path):
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, temp_dir):
             # Initialize project first
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
 
@@ -118,7 +119,7 @@ class TestScenario2FirstChange:
         """Test complete workflow for first change."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path):
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, temp_dir):
             # Initialize project
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
 
@@ -230,7 +231,7 @@ class TestScenario3DependentChange:
         """Test adding and deploying a change with dependencies."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path):
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, temp_dir):
             # Initialize project
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
 
@@ -329,7 +330,7 @@ class TestScenario4ViewCreation:
         """Test creating a view with multiple dependencies."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path):
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, temp_dir):
             # Initialize project
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
 
@@ -434,7 +435,7 @@ class TestScenario5TaggingRelease:
         """Test tagging a release version."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path):
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, temp_dir):
             # Initialize project and add a change
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
             runner.invoke(main, ["add", "users", "-n", "Creates users table."])
@@ -490,7 +491,7 @@ class TestScenario6RevertChanges:
         """Test reverting changes and re-deploying."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path):
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, temp_dir):
             # Initialize project and add two changes
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
 
@@ -588,7 +589,7 @@ class TestScenario7ChangeHistory:
         """Test viewing deployment history with log command."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path):
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, temp_dir):
             # Initialize project and deploy some changes
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
 
@@ -645,7 +646,7 @@ class TestScenario8ReworkChange:
         """Test reworking a deployed change."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path):
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, temp_dir):
             # Initialize project
             runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
 
@@ -692,7 +693,7 @@ class TestScenario9TargetEngineParity:
 
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path):
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, temp_dir):
             config_root = Path.cwd() / ".sqlitch-config"
             env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
 

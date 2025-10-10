@@ -8,6 +8,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 
 
 def _read_engine_section(path: Path, name: str) -> dict[str, str]:
@@ -42,7 +43,7 @@ def test_engine_add_accepts_target_alias(tmp_path: Path) -> None:
     runner = _runner()
     config_root = tmp_path / "config-root"
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
         
         # First, need to init project to create sqitch.conf in project root
@@ -76,7 +77,7 @@ def test_engine_add_unknown_target_alias_errors(tmp_path: Path) -> None:
     runner = _runner()
     config_root = tmp_path / "config-root"
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
         result = runner.invoke(
             main,
@@ -94,7 +95,7 @@ def test_engine_add_writes_definition(tmp_path: Path) -> None:
     runner = _runner()
     config_root = tmp_path / "config-root"
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
         
         # Init project first
@@ -122,7 +123,7 @@ def test_engine_add_allows_upsert(tmp_path: Path) -> None:
     runner = _runner()
     config_root = tmp_path / "config-root"
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
         
         # Init project first
@@ -156,7 +157,7 @@ def test_engine_update_overwrites_existing_values(tmp_path: Path) -> None:
     runner = _runner()
     config_root = tmp_path / "config-root"
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         # Init and write initial engine config to project root
         env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
         init_result = runner.invoke(main, ["init", "testproj", "--engine", "sqlite"], env=env)
@@ -196,7 +197,7 @@ def test_engine_remove_deletes_definition(tmp_path: Path) -> None:
     runner = _runner()
     config_root = tmp_path / "config-root"
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         # Init and write initial engine config to project root
         env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
         init_result = runner.invoke(main, ["init", "testproj", "--engine", "sqlite"], env=env)
@@ -225,7 +226,7 @@ def test_engine_list_outputs_table(tmp_path: Path) -> None:
     runner = _runner()
     config_root = tmp_path / "config-root"
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         # Init and write engine configs to project root
         env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
         init_result = runner.invoke(main, ["init", "testproj", "--engine", "sqlite"], env=env)

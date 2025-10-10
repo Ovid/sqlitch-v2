@@ -8,6 +8,7 @@ from click.testing import CliRunner
 import pytest
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 
 
 @pytest.fixture()
@@ -20,7 +21,7 @@ def runner() -> CliRunner:
 def test_tag_adds_to_plan(runner: CliRunner) -> None:
     """sqlitch tag adds a tag entry to the plan file."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         # Initialize project
         result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
         assert result.exit_code == 0
@@ -35,7 +36,7 @@ def test_tag_adds_to_plan(runner: CliRunner) -> None:
         assert "Tagged users_table with @v1.0" in result.output
 
         # Verify plan file
-        plan_content = Path("sqitch.plan").read_text(encoding="utf-8")
+        plan_content = (temp_dir / "sqitch.plan").read_text(encoding="utf-8")
         # Compact format: @v1.0 <timestamp> <planner>
         assert "@v1.0" in plan_content
         assert "users_table" in plan_content
@@ -44,7 +45,7 @@ def test_tag_adds_to_plan(runner: CliRunner) -> None:
 def test_tag_lists_tags(runner: CliRunner) -> None:
     """sqlitch tag --list displays plan tags."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         # Initialize project with tags
         result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
         assert result.exit_code == 0
@@ -64,7 +65,7 @@ def test_tag_lists_tags(runner: CliRunner) -> None:
 def test_tag_requires_name(runner: CliRunner) -> None:
     """Tag command without name lists tags (or errors if no plan)."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["tag"])
 
     # Should error because there's no plan file, not because name is missing
@@ -75,7 +76,7 @@ def test_tag_requires_name(runner: CliRunner) -> None:
 def test_tag_list_rejects_additional_arguments(runner: CliRunner) -> None:
     """--list should not accept additional parameters."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["tag", "--list", "extra"])
 
     assert result.exit_code != 0
@@ -85,7 +86,7 @@ def test_tag_list_rejects_additional_arguments(runner: CliRunner) -> None:
 def test_tag_duplicate_error(runner: CliRunner) -> None:
     """Duplicate tags are rejected."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
         assert result.exit_code == 0
 
@@ -103,7 +104,7 @@ def test_tag_duplicate_error(runner: CliRunner) -> None:
 def test_tag_unknown_change_error(runner: CliRunner) -> None:
     """Tagging unknown changes fails."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
         assert result.exit_code == 0
 
@@ -115,7 +116,7 @@ def test_tag_unknown_change_error(runner: CliRunner) -> None:
 def test_tag_defaults_to_latest_change_when_change_missing(runner: CliRunner) -> None:
     """Tagging without a change name should select the most recent change."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
         assert result.exit_code == 0
 
@@ -129,7 +130,7 @@ def test_tag_defaults_to_latest_change_when_change_missing(runner: CliRunner) ->
         assert result.exit_code == 0
         assert "Tagged change2 with @release" in result.output
 
-        plan_content = Path("sqitch.plan").read_text(encoding="utf-8")
+        plan_content = (temp_dir / "sqitch.plan").read_text(encoding="utf-8")
         # Compact format: @release <timestamp> <planner>
         # Tag should appear after change2 in the plan
         assert "@release" in plan_content
@@ -139,7 +140,7 @@ def test_tag_defaults_to_latest_change_when_change_missing(runner: CliRunner) ->
 def test_tag_reports_error_when_no_changes_exist(runner: CliRunner) -> None:
     """Tagging without any changes should yield a helpful error."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
         assert result.exit_code == 0
 

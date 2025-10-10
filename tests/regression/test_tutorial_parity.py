@@ -12,6 +12,7 @@ import pytest
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 from sqlitch.engine.sqlite import derive_sqlite_registry_uri, resolve_sqlite_filesystem_path
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change
@@ -42,7 +43,7 @@ def test_init_output_matches_sqitch() -> None:
     """`sqlitch init` should emit Sqitch-identical scaffolding."""
 
     runner = CliRunner()
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(
             main,
             [
@@ -60,11 +61,11 @@ def test_init_output_matches_sqitch() -> None:
         expected_output = (CLI_GOLDEN_ROOT / "init_output.txt").read_text(encoding="utf-8")
         assert result.output == expected_output
 
-        generated_plan = Path("sqitch.plan").read_text(encoding="utf-8")
+        generated_plan = (temp_dir / "sqitch.plan").read_text(encoding="utf-8")
         expected_plan = (PLANS_GOLDEN_ROOT / "init.plan").read_text(encoding="utf-8")
         assert generated_plan == expected_plan
 
-        generated_config = Path("sqitch.conf").read_text(encoding="utf-8")
+        generated_config = (temp_dir / "sqitch.conf").read_text(encoding="utf-8")
         expected_config = (CONFIG_GOLDEN_ROOT / "init_sqitch.conf").read_text(encoding="utf-8")
         assert generated_config == expected_config
 
@@ -76,7 +77,7 @@ def test_add_output_matches_sqitch() -> None:
     """`sqlitch add` should mirror Sqitch output and script headers."""
 
     runner = CliRunner()
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         init_result = runner.invoke(
             main,
             [
@@ -106,13 +107,13 @@ def test_add_output_matches_sqitch() -> None:
         assert result.output == expected_output
 
         deploy_header, *deploy_rest = (
-            Path("deploy/users.sql").read_text(encoding="utf-8").splitlines()
+            (temp_dir / "deploy/users.sql").read_text(encoding="utf-8").splitlines()
         )
         revert_header, *revert_rest = (
-            Path("revert/users.sql").read_text(encoding="utf-8").splitlines()
+            (temp_dir / "revert/users.sql").read_text(encoding="utf-8").splitlines()
         )
         verify_header, *verify_rest = (
-            Path("verify/users.sql").read_text(encoding="utf-8").splitlines()
+            (temp_dir / "verify/users.sql").read_text(encoding="utf-8").splitlines()
         )
 
         assert deploy_header == "-- Deploy flipr:users to sqlite"
@@ -124,7 +125,7 @@ def test_deploy_output_matches_sqitch(tmp_path: Path) -> None:
     """`sqlitch deploy` should emit Sqitch-identical output and registry state."""
 
     runner = CliRunner()
-    with runner.isolated_filesystem(temp_dir=tmp_path):
+    with isolated_test_context(runner, base_dir=tmp_path) as (runner, temp_dir):
         init_result = runner.invoke(
             main,
             [
@@ -228,7 +229,7 @@ def test_status_output_matches_sqitch(tmp_path: Path) -> None:
     """`sqlitch status` should emit Sqitch-identical output after deploy."""
 
     runner = CliRunner()
-    with runner.isolated_filesystem(temp_dir=tmp_path):
+    with isolated_test_context(runner, base_dir=tmp_path) as (runner, temp_dir):
         # Seed plan and config with deterministic tutorial metadata.
         planned_at = datetime(2013, 12, 31, 18, 26, 59, tzinfo=timezone.utc)
         change = Change.create(
@@ -378,7 +379,7 @@ def test_log_output_matches_sqitch(tmp_path: Path) -> None:
     """`sqlitch log` should emit Sqitch-identical history for recent events."""
 
     runner = CliRunner()
-    with runner.isolated_filesystem(temp_dir=tmp_path):
+    with isolated_test_context(runner, base_dir=tmp_path) as (runner, temp_dir):
         planned_at = datetime(2013, 12, 31, 18, 26, 59, tzinfo=timezone.utc)
         change = Change.create(
             name="users",
@@ -498,7 +499,7 @@ def test_verify_output_matches_sqitch(tmp_path: Path) -> None:
     """`sqlitch verify` should emit Sqitch-identical output including undeployed changes."""
 
     runner = CliRunner()
-    with runner.isolated_filesystem(temp_dir=tmp_path):
+    with isolated_test_context(runner, base_dir=tmp_path) as (runner, temp_dir):
         users_planned_at = datetime(2013, 12, 31, 18, 26, 59, tzinfo=timezone.utc)
         flips_planned_at = datetime(2013, 12, 31, 19, 5, 44, tzinfo=timezone.utc)
 
@@ -648,7 +649,7 @@ def test_revert_output_matches_sqitch(tmp_path: Path) -> None:
     """`sqlitch revert` should emit Sqitch-identical output for multi-change projects."""
 
     runner = CliRunner()
-    with runner.isolated_filesystem(temp_dir=tmp_path):
+    with isolated_test_context(runner, base_dir=tmp_path) as (runner, temp_dir):
         users_planned_at = datetime(2013, 12, 31, 18, 26, 59, tzinfo=timezone.utc)
         flips_planned_at = datetime(2013, 12, 31, 19, 5, 44, tzinfo=timezone.utc)
 
@@ -866,7 +867,7 @@ def test_tag_output_matches_sqitch(tmp_path: Path) -> None:
     """`sqlitch tag` should emit Sqitch-identical tagging output."""
 
     runner = CliRunner()
-    with runner.isolated_filesystem(temp_dir=tmp_path):
+    with isolated_test_context(runner, base_dir=tmp_path) as (runner, temp_dir):
         init_result = runner.invoke(
             main,
             [
@@ -911,7 +912,7 @@ def test_rework_output_matches_sqitch(tmp_path: Path) -> None:
     """`sqlitch rework` should emit Sqitch-identical rework output."""
 
     runner = CliRunner()
-    with runner.isolated_filesystem(temp_dir=tmp_path):
+    with isolated_test_context(runner, base_dir=tmp_path) as (runner, temp_dir):
         init_result = runner.invoke(
             main,
             [

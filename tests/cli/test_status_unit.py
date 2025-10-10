@@ -11,6 +11,7 @@ from click.testing import CliRunner
 import pytest
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 from sqlitch.cli.commands import CommandError
 from sqlitch.cli.commands.status import (
     CurrentChange,
@@ -122,7 +123,7 @@ def _make_change(name: str) -> Change:
 def test_status_requires_explicit_target(runner: CliRunner) -> None:
     """Invoking status without a target should raise a user-facing error."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["status"])
 
         assert result.exit_code != 0
@@ -132,7 +133,7 @@ def test_status_requires_explicit_target(runner: CliRunner) -> None:
 def test_status_rejects_project_mismatch(runner: CliRunner) -> None:
     """A mismatched --project filter should raise a CommandError."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         write_plan(project_name="widgets", default_engine="sqlite", entries=(), plan_path=plan_path)
         _ensure_config()
@@ -155,16 +156,16 @@ def test_status_rejects_project_mismatch(runner: CliRunner) -> None:
 def test_status_rejects_registry_project_mismatch(runner: CliRunner) -> None:
     """Plan and registry project disagreements should raise a CommandError."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         write_plan(
             project_name="widgets",
             default_engine="sqlite",
             entries=(),
-            plan_path=Path("sqlitch.plan"),
+            plan_path=(temp_dir / "sqlitch.plan"),
         )
         _ensure_config()
 
-        registry_path = _prepare_workspace(Path("registry.db"))
+        registry_path = _prepare_workspace((temp_dir / "registry.db"))
         _create_registry(registry_path)
         connection = sqlite3.connect(registry_path)
         try:
@@ -219,15 +220,15 @@ def test_status_rejects_registry_project_mismatch(runner: CliRunner) -> None:
 def test_status_outputs_human_summary_when_in_sync(runner: CliRunner) -> None:
     """Successful human output should be emitted when plan and registry align."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         write_plan(
             project_name="widgets",
             default_engine="sqlite",
             entries=(),
-            plan_path=Path("sqlitch.plan"),
+            plan_path=(temp_dir / "sqlitch.plan"),
         )
         _ensure_config()
-        registry_path = _prepare_workspace(Path("registry.db"))
+        registry_path = _prepare_workspace((temp_dir / "registry.db"))
         _create_registry(registry_path)
 
         result = runner.invoke(
@@ -248,15 +249,15 @@ def test_status_outputs_human_summary_when_in_sync(runner: CliRunner) -> None:
 def test_status_outputs_json_with_pending_changes(runner: CliRunner) -> None:
     """JSON format should include pending entries and exit non-zero when behind."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         write_plan(
             project_name="widgets",
             default_engine="sqlite",
             entries=(_make_change("users"),),
-            plan_path=Path("sqlitch.plan"),
+            plan_path=(temp_dir / "sqlitch.plan"),
         )
         _ensure_config()
-        registry_path = _prepare_workspace(Path("registry.db"))
+        registry_path = _prepare_workspace((temp_dir / "registry.db"))
         _create_registry(registry_path)
 
         result = runner.invoke(

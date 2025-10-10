@@ -16,6 +16,7 @@ import pytest
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 
 
 class TestDeployCommandContract:
@@ -33,7 +34,7 @@ class TestDeployCommandContract:
         Contract: CC-DEPLOY-001
         Perl behavior: target argument is optional (uses default from config)
         """
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["deploy"])
 
             # Should not be parsing error
@@ -49,7 +50,7 @@ class TestDeployCommandContract:
         Contract: CC-DEPLOY-002
         Perl behavior: target can be specified as positional argument
         """
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["deploy", "db:sqlite:test.db"])
 
             # Should not be parsing error
@@ -65,7 +66,7 @@ class TestDeployCommandContract:
         Contract: CC-DEPLOY-003
         Perl behavior: target can be specified via --target option
         """
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["deploy", "--target", "db:sqlite:test.db"])
 
             assert result.exit_code != 2 or "no such option" not in result.output.lower(), (
@@ -85,7 +86,7 @@ class TestDeployGlobalContracts:
     # GC-001: Help flag support
     def test_deploy_help_flag(self, runner: CliRunner) -> None:
         """Test that 'sqlitch deploy --help' displays help and exits 0."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["deploy", "--help"])
             assert result.exit_code == 0
             assert "deploy" in result.output.lower()
@@ -94,28 +95,28 @@ class TestDeployGlobalContracts:
     # GC-002: Global options recognition
     def test_deploy_accepts_quiet_flag(self, runner: CliRunner) -> None:
         """Test that 'sqlitch deploy' accepts --quiet global option."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["deploy", "--quiet"])
             assert "no such option" not in result.output.lower()
             assert result.exit_code != 2
 
     def test_deploy_accepts_verbose_flag(self, runner: CliRunner) -> None:
         """Test that 'sqlitch deploy' accepts --verbose global option."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["deploy", "--verbose"])
             assert "no such option" not in result.output.lower()
             assert result.exit_code != 2
 
     def test_deploy_accepts_chdir_option(self, runner: CliRunner) -> None:
         """Test that 'sqlitch deploy' accepts --chdir global option."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["deploy", "--chdir", "/tmp"])
             assert "no such option" not in result.output.lower()
             assert result.exit_code != 2
 
     def test_deploy_accepts_no_pager_flag(self, runner: CliRunner) -> None:
         """Test that 'sqlitch deploy' accepts --no-pager global option."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["deploy", "--no-pager"])
             assert "no such option" not in result.output.lower()
             assert result.exit_code != 2
@@ -123,7 +124,7 @@ class TestDeployGlobalContracts:
     # GC-005: Unknown option rejection
     def test_deploy_rejects_unknown_option(self, runner: CliRunner) -> None:
         """Test that 'sqlitch deploy' rejects unknown options with exit code 2."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["deploy", "--nonexistent"])
             assert result.exit_code == 2
             assert "no such option" in result.output.lower()

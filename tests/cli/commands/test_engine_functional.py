@@ -8,6 +8,7 @@ import pytest
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 
 
 @pytest.fixture
@@ -23,7 +24,7 @@ class TestEngineAliasResolution:
     def test_engine_add_resolves_target_alias(self, runner: CliRunner) -> None:
         """Engine add should resolve target aliases to their stored URIs."""
 
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             env = os.environ.copy()
             env["SQLITCH_CONFIG_ROOT"] = str(Path.cwd())
             env["HOME"] = str(Path.cwd())
@@ -59,7 +60,7 @@ class TestEngineAliasResolution:
     def test_engine_add_errors_for_unknown_target_alias(self, runner: CliRunner) -> None:
         """Engine add should emit Sqitch-parity error when alias is unknown."""
 
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             env = os.environ.copy()
             env["SQLITCH_CONFIG_ROOT"] = str(Path.cwd())
             env["HOME"] = str(Path.cwd())

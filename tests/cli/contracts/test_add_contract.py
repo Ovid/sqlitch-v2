@@ -10,6 +10,7 @@ import pytest
 
 from sqlitch.cli.commands import add as add_module
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 from sqlitch.plan.model import Change
 from sqlitch.plan.formatter import write_plan
 from sqlitch.utils.templates import default_template_body, render_template
@@ -51,15 +52,15 @@ def test_add_appends_change_and_creates_scripts(monkeypatch: pytest.MonkeyPatch)
     except ImportError:
         pass
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         seed_changes = (
             Change.create(
                 name="roles",
                 script_paths={
-                    "deploy": Path("deploy/seed_roles.sql"),
-                    "revert": Path("revert/seed_roles.sql"),
-                    "verify": Path("verify/seed_roles.sql"),
+                    "deploy": (temp_dir / "deploy/seed_roles.sql"),
+                    "revert": (temp_dir / "revert/seed_roles.sql"),
+                    "verify": (temp_dir / "verify/seed_roles.sql"),
                 },
                 planner="Seeder",
                 planned_at=datetime(2024, 1, 1, 0, 0, tzinfo=timezone.utc),
@@ -67,9 +68,9 @@ def test_add_appends_change_and_creates_scripts(monkeypatch: pytest.MonkeyPatch)
             Change.create(
                 name="users",
                 script_paths={
-                    "deploy": Path("deploy/seed_users.sql"),
-                    "revert": Path("revert/seed_users.sql"),
-                    "verify": Path("verify/seed_users.sql"),
+                    "deploy": (temp_dir / "deploy/seed_users.sql"),
+                    "revert": (temp_dir / "revert/seed_users.sql"),
+                    "verify": (temp_dir / "verify/seed_users.sql"),
                 },
                 planner="Seeder",
                 planned_at=datetime(2024, 1, 1, 1, 0, tzinfo=timezone.utc),
@@ -142,14 +143,14 @@ def test_add_rejects_duplicate_change(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(add_module, "_utcnow", lambda: timestamp)
     monkeypatch.setenv("SQLITCH_USER_NAME", "Grace Hopper")
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         existing_change = Change.create(
             name="widgets",
             script_paths={
-                "deploy": Path("deploy/existing.sql"),
-                "revert": Path("revert/existing.sql"),
-                "verify": Path("verify/existing.sql"),
+                "deploy": (temp_dir / "deploy/existing.sql"),
+                "revert": (temp_dir / "revert/existing.sql"),
+                "verify": (temp_dir / "verify/existing.sql"),
             },
             planner="Existing Planner",
             planned_at=datetime(2023, 1, 1, 0, 0, tzinfo=timezone.utc),
@@ -185,14 +186,14 @@ def test_add_uses_explicit_plan_override(monkeypatch: pytest.MonkeyPatch) -> Non
     except ImportError:
         pass
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         override_plan = Path("custom.plan")
         _write_plan(override_plan)
 
         result = runner.invoke(main, ["--plan-file", str(override_plan), "add", "reports"])
 
         assert result.exit_code == 0, result.stderr
-        assert not Path("sqlitch.plan").exists()
+        assert not (temp_dir / "sqlitch.plan").exists()
 
         plan_content = override_plan.read_text(encoding="utf-8")
         # Compact format: reports 2025-07-08T09:10:11Z Katherine Johnson <kjohnson@example.com>
@@ -207,7 +208,7 @@ def test_add_honours_project_templates(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(add_module, "_utcnow", lambda: timestamp)
     monkeypatch.setenv("SQLITCH_USER_NAME", "Custom User")
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         _write_plan(plan_path)
 
@@ -232,9 +233,9 @@ def test_add_honours_project_templates(monkeypatch: pytest.MonkeyPatch) -> None:
         result = runner.invoke(main, ["add", "widgets"])
 
         assert result.exit_code == 0, result.stderr
-        deploy_content = Path("deploy/widgets.sql").read_text(encoding="utf-8")
-        revert_content = Path("revert/widgets.sql").read_text(encoding="utf-8")
-        verify_content = Path("verify/widgets.sql").read_text(encoding="utf-8")
+        deploy_content = (temp_dir / "deploy/widgets.sql").read_text(encoding="utf-8")
+        revert_content = (temp_dir / "revert/widgets.sql").read_text(encoding="utf-8")
+        verify_content = (temp_dir / "verify/widgets.sql").read_text(encoding="utf-8")
 
         assert deploy_content == "-- Custom deploy widgets for demo\n"
         assert revert_content == "-- Custom revert widgets\n"
@@ -246,7 +247,7 @@ def test_add_template_override_by_name(monkeypatch: pytest.MonkeyPatch) -> None:
     timestamp = datetime(2025, 11, 1, 2, 3, 4, tzinfo=timezone.utc)
     monkeypatch.setattr(add_module, "_utcnow", lambda: timestamp)
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         _write_plan(plan_path)
 
@@ -268,6 +269,6 @@ def test_add_template_override_by_name(monkeypatch: pytest.MonkeyPatch) -> None:
         result = runner.invoke(main, ["add", "widgets", "--template", "custom"])
 
         assert result.exit_code == 0, result.stderr
-        assert Path("deploy/widgets.sql").read_text(encoding="utf-8") == "deploy widgets\n"
-        assert Path("revert/widgets.sql").read_text(encoding="utf-8") == "revert widgets\n"
-        assert Path("verify/widgets.sql").read_text(encoding="utf-8") == "verify widgets\n"
+        assert (temp_dir / "deploy/widgets.sql").read_text(encoding="utf-8") == "deploy widgets\n"
+        assert (temp_dir / "revert/widgets.sql").read_text(encoding="utf-8") == "revert widgets\n"
+        assert (temp_dir / "verify/widgets.sql").read_text(encoding="utf-8") == "verify widgets\n"

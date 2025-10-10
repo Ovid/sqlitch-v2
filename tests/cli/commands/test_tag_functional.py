@@ -9,6 +9,7 @@ import pytest
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 from sqlitch.plan.parser import parse_plan
 
 
@@ -27,7 +28,7 @@ class TestTagParity:
 
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path):
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, temp_dir):
             result = runner.invoke(
                 main,
                 ["init", "flipr", "--engine", "sqlite"],
@@ -55,7 +56,7 @@ class TestTagParity:
 
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path):
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, temp_dir):
             result = runner.invoke(
                 main,
                 ["init", "flipr", "--engine", "sqlite"],
@@ -86,7 +87,7 @@ class TestTagCreation:
         """Test tag is added to plan file."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             project_dir = Path(td)
 
             # Initialize project
@@ -127,7 +128,7 @@ class TestTagCreation:
         """Test tag references the last change when no change specified."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             project_dir = Path(td)
 
             # Initialize project
@@ -167,7 +168,7 @@ class TestTagCreation:
         """Test tag can reference a specific change."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             project_dir = Path(td)
 
             # Initialize project
@@ -207,7 +208,7 @@ class TestTagCreation:
         """Test tag can reference a specific change using --change option."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             project_dir = Path(td)
 
             # Initialize project
@@ -247,7 +248,7 @@ class TestTagCreation:
         """Test tag validates tag names (Sqitch convention: starts with 'v')."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             # Initialize project
             result = runner.invoke(
                 main,
@@ -276,7 +277,7 @@ class TestTagCreation:
         """Test tag fails if tag name already exists."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             # Initialize project
             result = runner.invoke(
                 main,
@@ -314,7 +315,7 @@ class TestTagCreation:
         """Test tag fails if specified change doesn't exist."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             # Initialize project
             result = runner.invoke(
                 main,
@@ -344,7 +345,7 @@ class TestTagCreation:
         """Test tag fails if no changes exist in plan."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             # Initialize project
             result = runner.invoke(
                 main,
@@ -366,7 +367,7 @@ class TestTagCreation:
         """Test tag output format matches Sqitch convention."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             # Initialize project
             result = runner.invoke(
                 main,
@@ -402,7 +403,7 @@ class TestTagListing:
         """Test tag with no arguments lists all tags."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             # Initialize project
             result = runner.invoke(
                 main,
@@ -444,7 +445,7 @@ class TestTagListing:
         """Test tag --list shows all tags."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             # Initialize project
             result = runner.invoke(
                 main,
@@ -482,7 +483,7 @@ class TestTagListing:
         """Test list shows tag names in expected format."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             # Initialize project
             result = runner.invoke(
                 main,
@@ -521,7 +522,7 @@ class TestTagListing:
         """Test listing tags on plan with no tags shows nothing."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             # Initialize project
             result = runner.invoke(
                 main,
@@ -553,7 +554,7 @@ class TestTagListing:
         """Test --list cannot be combined with other arguments."""
         runner = CliRunner()
 
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        with isolated_test_context(runner, base_dir=tmp_path) as (runner, td):
             # Initialize project
             result = runner.invoke(
                 main,
