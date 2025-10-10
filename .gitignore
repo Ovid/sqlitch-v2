@@ -46,3 +46,5 @@ REPORT-TASKS.md
 /deploy/
 /revert/
 /verify/
+uat/sqitch_results/
+uat/sqlitch_results/
