@@ -29,7 +29,7 @@ import sqlite3
 import subprocess
 import sys
 from pathlib import Path
-from typing import List, Tuple, Dict, Any, Set
+from typing import Any, Dict, List, Set, Tuple
 
 # ---------------- Configuration ----------------
 UAT_LOG = "uat.log"
@@ -174,7 +174,7 @@ def fail_and_exit(step: int, reason: str, cmd_str: str, diff_text: str = ""):
         color_print(
             YELLOW,
             f"Execution failed. Test directories and logs ('{SQITCH_DIR}', '{SQLITCH_DIR}', "
-            f"'{SQITCH_LOG}', '{SQLITCH_LOG}') are left for inspection."
+            f"'{SQITCH_LOG}', '{SQLITCH_LOG}') are left for inspection.",
         )
         color_print(YELLOW, "\nTo reproduce this failure:")
         color_print(YELLOW, f"  1. Check logs: {SQITCH_LOG} and {SQLITCH_LOG}")
@@ -229,7 +229,8 @@ def compare_user_dbs(sqitch_db: Path, sqlitch_db: Path) -> Tuple[bool, str]:
     def get_user_tables(cur):
         cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
         return [
-            name for (name,) in cur.fetchall()
+            name
+            for (name,) in cur.fetchall()
             if not name.startswith("sqlite_") and not name.startswith("sqitch_")
         ]
 
@@ -239,7 +240,10 @@ def compare_user_dbs(sqitch_db: Path, sqlitch_db: Path) -> Tuple[bool, str]:
     if tables1 != tables2:
         conn1.close()
         conn2.close()
-        return False, f"User table sets differ:\n  sqitch: {sorted(tables1)}\n  sqlitch: {sorted(tables2)}"
+        return (
+            False,
+            f"User table sets differ:\n  sqitch: {sorted(tables1)}\n  sqlitch: {sorted(tables2)}",
+        )
 
     diffs = []
     for table in sorted(tables1):
@@ -301,7 +305,7 @@ def run_and_compare(description: str, cmd_base: str, *args: str):
         fail_and_exit(
             STEP_COUNTER,
             f"Exit codes differ. sqitch: {sqitch_rc}, sqlitch: {sqlitch_rc}",
-            f"{cmd_base} {' '.join(args)}"
+            f"{cmd_base} {' '.join(args)}",
         )
         return
 
@@ -327,7 +331,7 @@ def run_and_compare(description: str, cmd_base: str, *args: str):
                     STEP_COUNTER,
                     f"User-visible database state differs for '{db_file}'",
                     f"{cmd_base} {' '.join(args)}",
-                    diff
+                    diff,
                 )
                 return
             else:
@@ -338,23 +342,36 @@ def run_and_compare(description: str, cmd_base: str, *args: str):
     # --- Check for stop condition ---
     global STOP_AFTER_STEP
     if STOP_AFTER_STEP is not None and STEP_COUNTER >= STOP_AFTER_STEP:
-        color_print(CYAN, f"\n🛑 Stopping after step {STEP_COUNTER} as requested (--stop {STOP_AFTER_STEP})")
+        color_print(
+            CYAN, f"\n🛑 Stopping after step {STEP_COUNTER} as requested (--stop {STOP_AFTER_STEP})"
+        )
         sys.exit(0)
 
+
 def run_test_sequence():
-    run_and_compare("Initialize Project",
-                    "sqlitch", "init", "flipr",
-                    "--uri", "https://github.com/sqitchers/sqitch-sqlite-intro/",
-                    "--engine", "sqlite")
-    
+    run_and_compare(
+        "Initialize Project",
+        "sqlitch",
+        "init",
+        "flipr",
+        "--uri",
+        "https://github.com/sqitchers/sqitch-sqlite-intro/",
+        "--engine",
+        "sqlite",
+    )
+
     run_and_compare("Configure User Name", "sqlitch", "config", "user.name", "Test User")
     run_and_compare("Configure User Email", "sqlitch", "config", "user.email", "test@example.com")
     run_and_compare("Disable Pager", "sqlitch", "config", "--bool", "core.pager", "false")
-    
-    run_and_compare("Add 'users' Table", "sqlitch", "add", "users", "-n", "Creates table to track our users.")
-    
+
+    run_and_compare(
+        "Add 'users' Table", "sqlitch", "add", "users", "-n", "Creates table to track our users."
+    )
+
     # Create SQL files for 'users'
-    write_files("deploy/users.sql", """-- Deploy flipr:users to sqlite
+    write_files(
+        "deploy/users.sql",
+        """-- Deploy flipr:users to sqlite
 
 BEGIN;
 
@@ -367,18 +384,24 @@ CREATE TABLE users (
 );
 
 COMMIT;
-""")
-    
-    write_files("revert/users.sql", """-- Revert flipr:users from sqlite
+""",
+    )
+
+    write_files(
+        "revert/users.sql",
+        """-- Revert flipr:users from sqlite
 
 BEGIN;
 
 DROP TABLE users;
 
 COMMIT;
-""")
-    
-    write_files("verify/users.sql", """-- Verify flipr:users on sqlite
+""",
+    )
+
+    write_files(
+        "verify/users.sql",
+        """-- Verify flipr:users on sqlite
 
 BEGIN;
 
@@ -387,28 +410,50 @@ FROM users
 WHERE 0;
 
 ROLLBACK;
-""")
-    
+""",
+    )
+
     run_and_compare("Deploy 'users' Table", "sqlitch", "deploy", "db:sqlite:flipr_test.db")
     run_and_compare("Verify 'users' Deployment", "sqlitch", "verify", "db:sqlite:flipr_test.db")
     run_and_compare("Check Status After Deploy", "sqlitch", "status", "db:sqlite:flipr_test.db")
     run_and_compare("Check DB Schema with sqlite3", "sqlite3", "flipr_test.db", ".tables")
-    
+
     run_and_compare("Revert 'users' Table", "sqlitch", "revert", "db:sqlite:flipr_test.db", "-y")
     run_and_compare("Verify Revert with sqlite3", "sqlite3", "flipr_test.db", ".tables")
     run_and_compare("Check Sqitch Log", "sqlitch", "log", "db:sqlite:flipr_test.db")
-    
-    run_and_compare("Add Target 'flipr_test'", "sqlitch", "target", "add", "flipr_test", "db:sqlite:flipr_test.db")
+
+    run_and_compare(
+        "Add Target 'flipr_test'",
+        "sqlitch",
+        "target",
+        "add",
+        "flipr_test",
+        "db:sqlite:flipr_test.db",
+    )
     run_and_compare("Add Engine for Target", "sqlitch", "engine", "add", "sqlite", "flipr_test")
-    run_and_compare("Enable Deploy Verification", "sqlitch", "config", "--bool", "deploy.verify", "true")
-    run_and_compare("Enable Rebase Verification", "sqlitch", "config", "--bool", "rebase.verify", "true")
-    
+    run_and_compare(
+        "Enable Deploy Verification", "sqlitch", "config", "--bool", "deploy.verify", "true"
+    )
+    run_and_compare(
+        "Enable Rebase Verification", "sqlitch", "config", "--bool", "rebase.verify", "true"
+    )
+
     run_and_compare("Deploy Again with Target", "sqlitch", "deploy")
-    
-    run_and_compare("Add 'flips' Table", "sqlitch", "add", "flips", "--requires", "users",
-                    "-n", "Adds table for storing flips.")
-    
-    write_files("deploy/flips.sql", """-- Deploy flipr:flips to sqlite
+
+    run_and_compare(
+        "Add 'flips' Table",
+        "sqlitch",
+        "add",
+        "flips",
+        "--requires",
+        "users",
+        "-n",
+        "Adds table for storing flips.",
+    )
+
+    write_files(
+        "deploy/flips.sql",
+        """-- Deploy flipr:flips to sqlite
 -- requires: users
 
 BEGIN;
@@ -421,18 +466,24 @@ CREATE TABLE flips (
 );
 
 COMMIT;
-""")
-    
-    write_files("revert/flips.sql", """-- Revert flipr:flips from sqlite
+""",
+    )
+
+    write_files(
+        "revert/flips.sql",
+        """-- Revert flipr:flips from sqlite
 
 BEGIN;
 
 DROP TABLE flips;
 
 COMMIT;
-""")
-    
-    write_files("verify/flips.sql", """-- Verify flipr:flips on sqlite
+""",
+    )
+
+    write_files(
+        "verify/flips.sql",
+        """-- Verify flipr:flips on sqlite
 
 BEGIN;
 
@@ -441,21 +492,35 @@ FROM flips
 WHERE 0;
 
 ROLLBACK;
-""")
-    
+""",
+    )
+
     run_and_compare("Deploy 'flips' Table", "sqlitch", "deploy")
     run_and_compare("Verify All Deployments", "sqlitch", "verify")
-    run_and_compare("Check DB Schema for 'users' and 'flips'", "sqlite3", "flipr_test.db", ".tables")
-    
+    run_and_compare(
+        "Check DB Schema for 'users' and 'flips'", "sqlite3", "flipr_test.db", ".tables"
+    )
+
     run_and_compare("Partial Revert to HEAD^", "sqlitch", "revert", "--to", "@HEAD^", "-y")
     run_and_compare("Verify Partial Revert", "sqlite3", "flipr_test.db", ".tables")
     run_and_compare("Deploy All Again", "sqlitch", "deploy")
-    
-    run_and_compare("Add 'userflips' View", "sqlitch", "add", "userflips",
-                    "--requires", "users", "--requires", "flips",
-                    "-n", "Creates the userflips view.")
-    
-    write_files("deploy/userflips.sql", """-- Deploy flipr:userflips to sqlite
+
+    run_and_compare(
+        "Add 'userflips' View",
+        "sqlitch",
+        "add",
+        "userflips",
+        "--requires",
+        "users",
+        "--requires",
+        "flips",
+        "-n",
+        "Creates the userflips view.",
+    )
+
+    write_files(
+        "deploy/userflips.sql",
+        """-- Deploy flipr:userflips to sqlite
 -- requires: users
 -- requires: flips
 
@@ -467,18 +532,24 @@ FROM users u
 JOIN flips f ON u.nickname = f.nickname;
 
 COMMIT;
-""")
-    
-    write_files("revert/userflips.sql", """-- Revert flipr:userflips from sqlite
+""",
+    )
+
+    write_files(
+        "revert/userflips.sql",
+        """-- Revert flipr:userflips from sqlite
 
 BEGIN;
 
 DROP VIEW userflips;
 
 COMMIT;
-""")
-    
-    write_files("verify/userflips.sql", """-- Verify flipr:userflips on sqlite
+""",
+    )
+
+    write_files(
+        "verify/userflips.sql",
+        """-- Verify flipr:userflips on sqlite
 
 BEGIN;
 
@@ -487,15 +558,17 @@ FROM userflips
 WHERE 0;
 
 ROLLBACK;
-""")
-    
+""",
+    )
+
     run_and_compare("Deploy 'userflips' View", "sqlitch", "deploy")
     run_and_compare("Full Revert", "sqlitch", "revert", "-y")
     run_and_compare("Full Redeploy", "sqlitch", "deploy")
-    
-    run_and_compare("Tag Release v1.0.0-dev1", "sqlitch", "tag", "v1.0.0-dev1",
-                    "-n", "Tag v1.0.0-dev1.")
-    
+
+    run_and_compare(
+        "Tag Release v1.0.0-dev1", "sqlitch", "tag", "v1.0.0-dev1", "-n", "Tag v1.0.0-dev1."
+    )
+
     # Create dev directories
     if SQITCH_DIR.exists():
         shutil.rmtree(SQITCH_DIR)
@@ -503,18 +576,29 @@ ROLLBACK;
     if SQLITCH_DIR.exists():
         shutil.rmtree(SQLITCH_DIR)
     (SQLITCH_DIR / "dev").mkdir(parents=True, exist_ok=True)
-    
+
     run_and_compare("Deploy Tag to New DB", "sqlitch", "deploy", "db:sqlite:dev/flipr.db")
     run_and_compare("Check Status of Tagged DB", "sqlitch", "status", "db:sqlite:dev/flipr.db")
-    
+
     run_and_compare("Create Bundle", "sqlitch", "bundle")
-    run_and_compare("Deploy Bundle to New DB", "sqlitch", "deploy",
-                    "db:sqlite:flipr_prod.db", "-C", "bundle")
-    
-    run_and_compare("Add 'hashtags' Table", "sqlitch", "add", "hashtags",
-                    "--requires", "flips", "-n", "Adds table for storing hashtags.")
-    
-    write_files("deploy/hashtags.sql", """-- Deploy flipr:hashtags to sqlite
+    run_and_compare(
+        "Deploy Bundle to New DB", "sqlitch", "deploy", "db:sqlite:flipr_prod.db", "-C", "bundle"
+    )
+
+    run_and_compare(
+        "Add 'hashtags' Table",
+        "sqlitch",
+        "add",
+        "hashtags",
+        "--requires",
+        "flips",
+        "-n",
+        "Adds table for storing hashtags.",
+    )
+
+    write_files(
+        "deploy/hashtags.sql",
+        """-- Deploy flipr:hashtags to sqlite
 -- requires: flips
 
 BEGIN;
@@ -526,38 +610,49 @@ CREATE TABLE hashtags (
 );
 
 COMMIT;
-""")
-    
-    write_files("revert/hashtags.sql", """-- Revert flipr:hashtags from sqlite
+""",
+    )
+
+    write_files(
+        "revert/hashtags.sql",
+        """-- Revert flipr:hashtags from sqlite
 
 BEGIN;
 
 DROP TABLE hashtags;
 
 COMMIT;
-""")
-    
-    write_files("verify/hashtags.sql", """-- Verify flipr:hashtags on sqlite
+""",
+    )
+
+    write_files(
+        "verify/hashtags.sql",
+        """-- Verify flipr:hashtags on sqlite
 
 BEGIN;
 
 SELECT flip_id, hashtag FROM hashtags WHERE 0;
 
 ROLLBACK;
-""")
-    
+""",
+    )
+
     run_and_compare("Deploy 'hashtags' Table", "sqlitch", "deploy")
     run_and_compare("Check Status with Tags", "sqlitch", "status", "--show-tags")
     run_and_compare("Rebase Plan", "sqlitch", "rebase", "-y")
-    
-    run_and_compare("Tag Release v1.0.0-dev2", "sqlitch", "tag", "v1.0.0-dev2",
-                    "-n", "Tag v1.0.0-dev2.")
-    
-    run_and_compare("Rework 'userflips' View", "sqlitch", "rework", "userflips",
-                    "-n", "Adds userflips.twitter.")
-    
+
+    run_and_compare(
+        "Tag Release v1.0.0-dev2", "sqlitch", "tag", "v1.0.0-dev2", "-n", "Tag v1.0.0-dev2."
+    )
+
+    run_and_compare(
+        "Rework 'userflips' View", "sqlitch", "rework", "userflips", "-n", "Adds userflips.twitter."
+    )
+
     # Rework SQL update
-    write_files("deploy/userflips.sql", """-- Deploy flipr:userflips to sqlite
+    write_files(
+        "deploy/userflips.sql",
+        """-- Deploy flipr:userflips to sqlite
 -- requires: users
 -- requires: flips
 
@@ -571,9 +666,12 @@ FROM users u
 JOIN flips f ON u.nickname = f.nickname;
 
 COMMIT;
-""")
-    
-    write_files("revert/userflips.sql", """-- Revert flipr:userflips from sqlite
+""",
+    )
+
+    write_files(
+        "revert/userflips.sql",
+        """-- Revert flipr:userflips from sqlite
 
 BEGIN;
 
@@ -585,9 +683,12 @@ FROM users u
 JOIN flips f ON u.nickname = f.nickname;
 
 COMMIT;
-""")
-    
-    write_files("verify/userflips.sql", """-- Verify flipr:userflips on sqlite
+""",
+    )
+
+    write_files(
+        "verify/userflips.sql",
+        """-- Verify flipr:userflips on sqlite
 
 BEGIN;
 
@@ -596,17 +697,17 @@ FROM userflips
 WHERE 0;
 
 ROLLBACK;
-""")
-    
+""",
+    )
+
     run_and_compare("Deploy Reworked View", "sqlitch", "deploy")
     run_and_compare("Verify Reworked Schema", "sqlite3", "flipr_test.db", ".schema", "userflips")
     run_and_compare("Revert Reworked Change", "sqlitch", "revert", "--to", "@HEAD^", "-y")
     run_and_compare("Verify Revert of Rework", "sqlite3", "flipr_test.db", ".schema", "userflips")
-    
+
     run_and_compare("Final Deployment", "sqlitch", "deploy")
     run_and_compare("Final Verification", "sqlitch", "verify")
     run_and_compare("Final Status Check", "sqlitch", "status")
-    
 
     print()
     print(f"{GREEN}{'='*60}{NC}")
@@ -629,19 +730,34 @@ ROLLBACK;
             tee.close()
 
         sys.exit(0)
+
+
 # ---------------- Main ----------------
 def main():
     global CONTINUE_ON_FAIL, HAD_FAILURE, IGNORE_STEPS, STOP_AFTER_STEP
 
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--continue", dest="cont", action="store_true",
-                        help="Continue even if a step fails")
-    parser.add_argument("--out", dest="outfile",
-                        help="Write full output to this file (colors stripped)")
-    parser.add_argument("--ignore", dest="ignore_steps", type=int, nargs='+',
-                        help="A list of step numbers to ignore on failure.")
-    parser.add_argument("--stop", dest="stop_step", type=int,
-                        help="Stop execution after completing this step number.")
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        "--continue", dest="cont", action="store_true", help="Continue even if a step fails"
+    )
+    parser.add_argument(
+        "--out", dest="outfile", help="Write full output to this file (colors stripped)"
+    )
+    parser.add_argument(
+        "--ignore",
+        dest="ignore_steps",
+        type=int,
+        nargs="+",
+        help="A list of step numbers to ignore on failure.",
+    )
+    parser.add_argument(
+        "--stop",
+        dest="stop_step",
+        type=int,
+        help="Stop execution after completing this step number.",
+    )
 
     args = parser.parse_args()
 
@@ -656,9 +772,9 @@ def main():
         sys.stdout = tee
         sys.stderr = tee
 
-    color_print(GREEN, "="*60)
+    color_print(GREEN, "=" * 60)
     color_print(GREEN, "Sqitch vs. Sqlitch Functional Equivalence Test (User-Focused)")
-    color_print(GREEN, "="*60)
+    color_print(GREEN, "=" * 60)
 
     print("\nChecking for required commands...")
     for cmd in ("sqitch", "sqlitch", "sqlite3"):
@@ -672,6 +788,7 @@ def main():
 
     run_test_sequence()
 
+
 if __name__ == "__main__":
     try:
         main()
@@ -679,4 +796,3 @@ if __name__ == "__main__":
         fail_and_exit(STEP_COUNTER, "Interrupted by user.", "")
     except Exception as e:
         fail_and_exit(STEP_COUNTER, f"Unexpected error: {e}", "")
-

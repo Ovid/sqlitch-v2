@@ -1,0 +1,1341 @@
+[7;33m************* Module sqlitch.config.loader[0m
+sqlitch/config/loader.py:45:0: R0914: [1;3;35mToo many local variables (24/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/config/loader.py:45:0: R0912: [1;3;35mToo many branches (13/12)[0m ([1;3;35mtoo-many-branches[0m)
+[7;33m************* Module sqlitch.config.resolver[0m
+sqlitch/config/resolver.py:246:0: R0917: [1;3;35mToo many positional arguments (6/5)[0m ([1;3;35mtoo-many-positional-arguments[0m)
+[7;33m************* Module sqlitch.plan.formatter[0m
+sqlitch/plan/formatter.py:99:35: W0613: [35mUnused argument 'base_path'[0m ([35munused-argument[0m)
+[7;33m************* Module sqlitch.plan.model[0m
+sqlitch/plan/model.py:155:0: C0301: [1mLine too long (101/100)[0m ([1mline-too-long[0m)
+sqlitch/plan/model.py:139:4: R0912: [1;3;35mToo many branches (14/12)[0m ([1;3;35mtoo-many-branches[0m)
+sqlitch/plan/model.py:185:4: C0116: [1mMissing function or method docstring[0m ([1mmissing-function-docstring[0m)
+sqlitch/plan/model.py:189:4: C0116: [1mMissing function or method docstring[0m ([1mmissing-function-docstring[0m)
+sqlitch/plan/model.py:192:4: C0116: [1mMissing function or method docstring[0m ([1mmissing-function-docstring[0m)
+sqlitch/plan/model.py:200:4: C0116: [1mMissing function or method docstring[0m ([1mmissing-function-docstring[0m)
+sqlitch/plan/model.py:203:4: C0116: [1mMissing function or method docstring[0m ([1mmissing-function-docstring[0m)
+[7;33m************* Module sqlitch.plan.parser[0m
+sqlitch/plan/parser.py:48:0: C0116: [1mMissing function or method docstring[0m ([1mmissing-function-docstring[0m)
+sqlitch/plan/parser.py:48:0: R0914: [1;3;35mToo many local variables (24/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/plan/parser.py:119:0: R0914: [1;3;35mToo many local variables (18/15)[0m ([1;3;35mtoo-many-locals[0m)
+[7;33m************* Module sqlitch.utils.logging[0m
+sqlitch/utils/logging.py:77:0: R0911: [1;3;35mToo many return statements (7/6)[0m ([1;3;35mtoo-many-return-statements[0m)
+sqlitch/utils/logging.py:159:4: C0116: [1mMissing function or method docstring[0m ([1mmissing-function-docstring[0m)
+sqlitch/utils/logging.py:169:4: C0116: [1mMissing function or method docstring[0m ([1mmissing-function-docstring[0m)
+sqlitch/utils/logging.py:179:4: C0116: [1mMissing function or method docstring[0m ([1mmissing-function-docstring[0m)
+sqlitch/utils/logging.py:189:4: C0116: [1mMissing function or method docstring[0m ([1mmissing-function-docstring[0m)
+sqlitch/utils/logging.py:199:4: C0116: [1mMissing function or method docstring[0m ([1mmissing-function-docstring[0m)
+sqlitch/utils/logging.py:209:4: C0116: [1mMissing function or method docstring[0m ([1mmissing-function-docstring[0m)
+[7;33m************* Module sqlitch.utils.templates[0m
+sqlitch/utils/templates.py:45:0: C0301: [1mLine too long (104/100)[0m ([1mline-too-long[0m)
+[7;33m************* Module sqlitch.utils.fs[0m
+sqlitch/utils/fs.py:6:0: W0611: [35mUnused Iterable imported from collections.abc[0m ([35munused-import[0m)
+[7;33m************* Module sqlitch.utils.identity[0m
+sqlitch/utils/identity.py:148:0: C0301: [1mLine too long (105/100)[0m ([1mline-too-long[0m)
+sqlitch/utils/identity.py:24:4: C0103: [1mConstant name "pwd" doesn't conform to UPPER_CASE naming style[0m ([1minvalid-name[0m)
+sqlitch/utils/identity.py:57:0: R0917: [1;3;35mToo many positional arguments (8/5)[0m ([1;3;35mtoo-many-positional-arguments[0m)
+sqlitch/utils/identity.py:57:0: R0914: [1;3;35mToo many local variables (16/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/utils/identity.py:93:4: C0415: [1mImport outside toplevel (sqlitch.utils.time.isoformat_utc)[0m ([1mimport-outside-toplevel[0m)
+sqlitch/utils/identity.py:211:35: E0606: [1;31mPossibly using variable 'win32api' before assignment[0m ([1;31mpossibly-used-before-assignment[0m)
+sqlitch/utils/identity.py:214:15: W0718: [35mCatching too general exception Exception[0m ([35mbroad-exception-caught[0m)
+sqlitch/utils/identity.py:221:0: R0911: [1;3;35mToo many return statements (8/6)[0m ([1;3;35mtoo-many-return-statements[0m)
+sqlitch/utils/identity.py:284:0: R0911: [1;3;35mToo many return statements (8/6)[0m ([1;3;35mtoo-many-return-statements[0m)
+sqlitch/utils/identity.py:360:35: E0606: [1;31mPossibly using variable 'win32net' before assignment[0m ([1;31mpossibly-used-before-assignment[0m)
+sqlitch/utils/identity.py:366:15: W0718: [35mCatching too general exception Exception[0m ([35mbroad-exception-caught[0m)
+sqlitch/utils/identity.py:394:11: W0718: [35mCatching too general exception Exception[0m ([35mbroad-exception-caught[0m)
+sqlitch/utils/identity.py:28:8: W0611: [35mUnused import win32netcon[0m ([35munused-import[0m)
+[7;33m************* Module sqlitch.cli.main[0m
+sqlitch/cli/main.py:68:0: R0914: [1;3;35mToo many local variables (16/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/main.py:210:0: R0913: [1;3;35mToo many arguments (11/10)[0m ([1;3;35mtoo-many-arguments[0m)
+sqlitch/cli/main.py:295:4: E1120: [1;31mNo value for argument 'ctx' in function call[0m ([1;31mno-value-for-parameter[0m)
+sqlitch/cli/main.py:295:4: E1125: [1;31mMissing mandatory keyword argument 'config_root' in function call[0m ([1;31mmissing-kwoa[0m)
+sqlitch/cli/main.py:295:4: E1125: [1;31mMissing mandatory keyword argument 'engine' in function call[0m ([1;31mmissing-kwoa[0m)
+sqlitch/cli/main.py:295:4: E1125: [1;31mMissing mandatory keyword argument 'target' in function call[0m ([1;31mmissing-kwoa[0m)
+sqlitch/cli/main.py:295:4: E1125: [1;31mMissing mandatory keyword argument 'registry' in function call[0m ([1;31mmissing-kwoa[0m)
+sqlitch/cli/main.py:295:4: E1125: [1;31mMissing mandatory keyword argument 'plan_file' in function call[0m ([1;31mmissing-kwoa[0m)
+sqlitch/cli/main.py:295:4: E1125: [1;31mMissing mandatory keyword argument 'json_mode' in function call[0m ([1;31mmissing-kwoa[0m)
+sqlitch/cli/main.py:295:4: E1125: [1;31mMissing mandatory keyword argument 'verbose' in function call[0m ([1;31mmissing-kwoa[0m)
+sqlitch/cli/main.py:295:4: E1125: [1;31mMissing mandatory keyword argument 'quiet' in function call[0m ([1;31mmissing-kwoa[0m)
+sqlitch/cli/main.py:295:4: E1125: [1;31mMissing mandatory keyword argument 'chdir_path' in function call[0m ([1;31mmissing-kwoa[0m)
+sqlitch/cli/main.py:295:4: E1125: [1;31mMissing mandatory keyword argument 'no_pager' in function call[0m ([1;31mmissing-kwoa[0m)
+[7;33m************* Module sqlitch.cli.__main__[0m
+sqlitch/cli/__main__.py:8:4: E1120: [1;31mNo value for argument 'ctx' in function call[0m ([1;31mno-value-for-parameter[0m)
+sqlitch/cli/__main__.py:8:4: E1125: [1;31mMissing mandatory keyword argument 'config_root' in function call[0m ([1;31mmissing-kwoa[0m)
+sqlitch/cli/__main__.py:8:4: E1125: [1;31mMissing mandatory keyword argument 'engine' in function call[0m ([1;31mmissing-kwoa[0m)
+sqlitch/cli/__main__.py:8:4: E1125: [1;31mMissing mandatory keyword argument 'target' in function call[0m ([1;31mmissing-kwoa[0m)
+sqlitch/cli/__main__.py:8:4: E1125: [1;31mMissing mandatory keyword argument 'registry' in function call[0m ([1;31mmissing-kwoa[0m)
+sqlitch/cli/__main__.py:8:4: E1125: [1;31mMissing mandatory keyword argument 'plan_file' in function call[0m ([1;31mmissing-kwoa[0m)
+sqlitch/cli/__main__.py:8:4: E1125: [1;31mMissing mandatory keyword argument 'json_mode' in function call[0m ([1;31mmissing-kwoa[0m)
+sqlitch/cli/__main__.py:8:4: E1125: [1;31mMissing mandatory keyword argument 'verbose' in function call[0m ([1;31mmissing-kwoa[0m)
+sqlitch/cli/__main__.py:8:4: E1125: [1;31mMissing mandatory keyword argument 'quiet' in function call[0m ([1;31mmissing-kwoa[0m)
+sqlitch/cli/__main__.py:8:4: E1125: [1;31mMissing mandatory keyword argument 'chdir_path' in function call[0m ([1;31mmissing-kwoa[0m)
+sqlitch/cli/__main__.py:8:4: E1125: [1;31mMissing mandatory keyword argument 'no_pager' in function call[0m ([1;31mmissing-kwoa[0m)
+[7;33m************* Module sqlitch.cli.commands.rebase[0m
+sqlitch/cli/commands/rebase.py:63:0: R0914: [1;3;35mToo many local variables (18/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/rebase.py:66:4: W0613: [35mUnused argument 'target_args'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/rebase.py:72:4: W0613: [35mUnused argument 'json_mode'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/rebase.py:73:4: W0613: [35mUnused argument 'verbose'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/rebase.py:74:4: W0613: [35mUnused argument 'quiet'[0m ([35munused-argument[0m)
+[7;33m************* Module sqlitch.cli.commands.bundle[0m
+sqlitch/cli/commands/bundle.py:41:4: W0613: [35mUnused argument 'json_mode'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/bundle.py:42:4: W0613: [35mUnused argument 'verbose'[0m ([35munused-argument[0m)
+[7;33m************* Module sqlitch.cli.commands.plan[0m
+sqlitch/cli/commands/plan.py:134:0: C0301: [1mLine too long (101/100)[0m ([1mline-too-long[0m)
+sqlitch/cli/commands/plan.py:311:0: C0301: [1mLine too long (110/100)[0m ([1mline-too-long[0m)
+sqlitch/cli/commands/plan.py:64:0: R0913: [1;3;35mToo many arguments (12/10)[0m ([1;3;35mtoo-many-arguments[0m)
+sqlitch/cli/commands/plan.py:64:0: R0914: [1;3;35mToo many local variables (29/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/plan.py:120:12: W0707: [35mConsider explicitly re-raising using 'except CommandError as exc' and 'raise engine_error from exc'[0m ([35mraise-missing-from[0m)
+sqlitch/cli/commands/plan.py:67:4: W0613: [35mUnused argument 'target_args'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/plan.py:68:4: W0613: [35mUnused argument 'target_option'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/plan.py:75:4: W0613: [35mUnused argument 'json_mode'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/plan.py:76:4: W0613: [35mUnused argument 'verbose'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/plan.py:77:4: W0613: [35mUnused argument 'quiet'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/plan.py:193:17: R1721: [1;3;35mUnnecessary use of a comprehension, use set(change_filters) instead.[0m ([1;3;35munnecessary-comprehension[0m)
+sqlitch/cli/commands/plan.py:194:14: R1721: [1;3;35mUnnecessary use of a comprehension, use set(tag_filters) instead.[0m ([1;3;35munnecessary-comprehension[0m)
+sqlitch/cli/commands/plan.py:15:0: W0611: [35mUnused ArtifactConflictError imported from sqlitch.utils.fs[0m ([35munused-import[0m)
+sqlitch/cli/commands/plan.py:15:0: W0611: [35mUnused resolve_plan_file imported from sqlitch.utils.fs[0m ([35munused-import[0m)
+[7;33m************* Module sqlitch.cli.commands.show[0m
+sqlitch/cli/commands/show.py:91:0: C0301: [1mLine too long (102/100)[0m ([1mline-too-long[0m)
+sqlitch/cli/commands/show.py:197:0: C0301: [1mLine too long (101/100)[0m ([1mline-too-long[0m)
+sqlitch/cli/commands/show.py:54:0: R0917: [1;3;35mToo many positional arguments (9/5)[0m ([1;3;35mtoo-many-positional-arguments[0m)
+sqlitch/cli/commands/show.py:54:0: R0914: [1;3;35mToo many local variables (20/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/show.py:57:4: W0613: [35mUnused argument 'target_option'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/show.py:61:4: W0613: [35mUnused argument 'json_mode'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/show.py:62:4: W0613: [35mUnused argument 'verbose'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/show.py:63:4: W0613: [35mUnused argument 'quiet'[0m ([35munused-argument[0m)
+[7;33m************* Module sqlitch.cli.commands.config[0m
+sqlitch/cli/commands/config.py:64:0: R0913: [1;3;35mToo many arguments (13/10)[0m ([1;3;35mtoo-many-arguments[0m)
+sqlitch/cli/commands/config.py:64:0: R0914: [1;3;35mToo many local variables (22/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/config.py:75:4: W0613: [35mUnused argument 'verbose'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/config.py:147:0: C0115: [1mMissing class docstring[0m ([1mmissing-class-docstring[0m)
+sqlitch/cli/commands/config.py:155:0: C0115: [1mMissing class docstring[0m ([1mmissing-class-docstring[0m)
+sqlitch/cli/commands/config.py:442:16: W0612: [35mUnused variable 'header_index'[0m ([35munused-variable[0m)
+[7;33m************* Module sqlitch.cli.commands.deploy[0m
+sqlitch/cli/commands/deploy.py:412:0: C0301: [1mLine too long (103/100)[0m ([1mline-too-long[0m)
+sqlitch/cli/commands/deploy.py:1108:0: C0301: [1mLine too long (116/100)[0m ([1mline-too-long[0m)
+sqlitch/cli/commands/deploy.py:1306:0: C0301: [1mLine too long (104/100)[0m ([1mline-too-long[0m)
+sqlitch/cli/commands/deploy.py:1:0: C0302: [1mToo many lines in module (1587/1000)[0m ([1mtoo-many-lines[0m)
+sqlitch/cli/commands/deploy.py:86:0: R0914: [1;3;35mToo many local variables (17/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/deploy.py:94:4: W0613: [35mUnused argument 'json_mode'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/deploy.py:95:4: W0613: [35mUnused argument 'verbose'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/deploy.py:96:4: W0613: [35mUnused argument 'quiet'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/deploy.py:145:0: R0913: [1;3;35mToo many arguments (12/10)[0m ([1;3;35mtoo-many-arguments[0m)
+sqlitch/cli/commands/deploy.py:183:0: R0914: [1;3;35mToo many local variables (19/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/deploy.py:317:12: R1720: [1;3;35mUnnecessary "else" after "raise", remove the "else" and de-indent the code inside it[0m ([1;3;35mno-else-raise[0m)
+sqlitch/cli/commands/deploy.py:371:15: W0718: [35mCatching too general exception Exception[0m ([35mbroad-exception-caught[0m)
+sqlitch/cli/commands/deploy.py:487:0: R0914: [1;3;35mToo many local variables (27/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/deploy.py:487:0: R0912: [1;3;35mToo many branches (13/12)[0m ([1;3;35mtoo-many-branches[0m)
+sqlitch/cli/commands/deploy.py:672:4: R1720: [1;3;35mUnnecessary "else" after "raise", remove the "else" and de-indent the code inside it[0m ([1;3;35mno-else-raise[0m)
+sqlitch/cli/commands/deploy.py:758:11: R1714: [1;3;35mConsider merging these comparisons with 'in' by using 'upper in ('BEGIN', 'COMMIT')'. Use a set instead if elements are hashable.[0m ([1;3;35mconsider-using-in[0m)
+sqlitch/cli/commands/deploy.py:867:0: R0914: [1;3;35mToo many local variables (24/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/deploy.py:1042:4: C0415: [1mImport outside toplevel (sqlitch.config.resolver.resolve_config)[0m ([1mimport-outside-toplevel[0m)
+sqlitch/cli/commands/deploy.py:1051:11: W0718: [35mCatching too general exception Exception[0m ([35mbroad-exception-caught[0m)
+sqlitch/cli/commands/deploy.py:1151:8: R1720: [1;3;35mUnnecessary "else" after "raise", remove the "else" and de-indent the code inside it[0m ([1;3;35mno-else-raise[0m)
+sqlitch/cli/commands/deploy.py:1175:4: R1720: [1;3;35mUnnecessary "else" after "raise", remove the "else" and de-indent the code inside it[0m ([1;3;35mno-else-raise[0m)
+sqlitch/cli/commands/deploy.py:1213:0: R0913: [1;3;35mToo many arguments (16/10)[0m ([1;3;35mtoo-many-arguments[0m)
+sqlitch/cli/commands/deploy.py:1213:0: R0914: [1;3;35mToo many local variables (18/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/deploy.py:1332:0: R0913: [1;3;35mToo many arguments (14/10)[0m ([1;3;35mtoo-many-arguments[0m)
+sqlitch/cli/commands/deploy.py:1332:0: R0914: [1;3;35mToo many local variables (18/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/deploy.py:1442:0: R0913: [1;3;35mToo many arguments (12/10)[0m ([1;3;35mtoo-many-arguments[0m)
+sqlitch/cli/commands/deploy.py:1493:0: R0914: [1;3;35mToo many local variables (20/15)[0m ([1;3;35mtoo-many-locals[0m)
+[7;33m************* Module sqlitch.cli.commands.add[0m
+sqlitch/cli/commands/add.py:126:0: R0913: [1;3;35mToo many arguments (13/10)[0m ([1;3;35mtoo-many-arguments[0m)
+sqlitch/cli/commands/add.py:126:0: R0917: [1;3;35mToo many positional arguments (13/5)[0m ([1;3;35mtoo-many-positional-arguments[0m)
+sqlitch/cli/commands/add.py:126:0: R0914: [1;3;35mToo many local variables (41/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/add.py:126:0: R0915: [1;3;35mToo many statements (51/50)[0m ([1;3;35mtoo-many-statements[0m)
+sqlitch/cli/commands/add.py:137:4: W0613: [35mUnused argument 'json_mode'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/add.py:138:4: W0613: [35mUnused argument 'verbose'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/add.py:6:0: W0611: [35mUnused Mapping imported from collections.abc[0m ([35munused-import[0m)
+[7;33m************* Module sqlitch.cli.commands.log[0m
+sqlitch/cli/commands/log.py:61:0: R0913: [1;3;35mToo many arguments (13/10)[0m ([1;3;35mtoo-many-arguments[0m)
+sqlitch/cli/commands/log.py:61:0: R0914: [1;3;35mToo many local variables (22/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/log.py:73:4: W0613: [35mUnused argument 'json_mode'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/log.py:74:4: W0613: [35mUnused argument 'verbose'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/log.py:75:4: W0613: [35mUnused argument 'quiet'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/log.py:161:0: R0914: [1;3;35mToo many local variables (19/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/log.py:205:19: W0718: [35mCatching too general exception Exception[0m ([35mbroad-exception-caught[0m)
+sqlitch/cli/commands/log.py:209:15: W0718: [35mCatching too general exception Exception[0m ([35mbroad-exception-caught[0m)
+sqlitch/cli/commands/log.py:7:0: W0611: [35mUnused Iterable imported from typing[0m ([35munused-import[0m)
+[7;33m************* Module sqlitch.cli.commands.rework[0m
+sqlitch/cli/commands/rework.py:105:0: R0917: [1;3;35mToo many positional arguments (10/5)[0m ([1;3;35mtoo-many-positional-arguments[0m)
+sqlitch/cli/commands/rework.py:105:0: R0914: [1;3;35mToo many local variables (38/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/rework.py:105:0: R0915: [1;3;35mToo many statements (56/50)[0m ([1;3;35mtoo-many-statements[0m)
+sqlitch/cli/commands/rework.py:113:4: W0613: [35mUnused argument 'json_mode'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/rework.py:114:4: W0613: [35mUnused argument 'verbose'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/rework.py:5:0: W0611: [35mUnused Mapping imported from collections.abc[0m ([35munused-import[0m)
+sqlitch/cli/commands/rework.py:8:0: W0611: [35mUnused Callable imported from typing[0m ([35munused-import[0m)
+[7;33m************* Module sqlitch.cli.commands.upgrade[0m
+sqlitch/cli/commands/upgrade.py:26:0: R0917: [1;3;35mToo many positional arguments (8/5)[0m ([1;3;35mtoo-many-positional-arguments[0m)
+sqlitch/cli/commands/upgrade.py:28:4: W0613: [35mUnused argument 'target_args'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/upgrade.py:29:4: W0613: [35mUnused argument 'target'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/upgrade.py:30:4: W0613: [35mUnused argument 'registry'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/upgrade.py:32:4: W0613: [35mUnused argument 'json_mode'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/upgrade.py:33:4: W0613: [35mUnused argument 'verbose'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/upgrade.py:34:4: W0613: [35mUnused argument 'quiet'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/upgrade.py:5:0: W0611: [35mUnused Path imported from pathlib[0m ([35munused-import[0m)
+[7;33m************* Module sqlitch.cli.commands.revert[0m
+sqlitch/cli/commands/revert.py:674:0: C0301: [1mLine too long (103/100)[0m ([1mline-too-long[0m)
+sqlitch/cli/commands/revert.py:216:34: W0511: [35mTODO: support registry override[0m ([35mfixme[0m)
+sqlitch/cli/commands/revert.py:75:0: R0913: [1;3;35mToo many arguments (11/10)[0m ([1;3;35mtoo-many-arguments[0m)
+sqlitch/cli/commands/revert.py:75:0: R0914: [1;3;35mToo many local variables (19/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/revert.py:85:4: W0613: [35mUnused argument 'json_mode'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/revert.py:86:4: W0613: [35mUnused argument 'verbose'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/revert.py:87:4: W0613: [35mUnused argument 'quiet'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/revert.py:150:0: R0913: [1;3;35mToo many arguments (11/10)[0m ([1;3;35mtoo-many-arguments[0m)
+sqlitch/cli/commands/revert.py:185:0: R0914: [1;3;35mToo many local variables (20/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/revert.py:208:4: C0415: [1mImport outside toplevel (sqlitch.engine.sqlite.SQLiteEngine)[0m ([1mimport-outside-toplevel[0m)
+sqlitch/cli/commands/revert.py:280:12: R1720: [1;3;35mUnnecessary "else" after "raise", remove the "else" and de-indent the code inside it[0m ([1;3;35mno-else-raise[0m)
+sqlitch/cli/commands/revert.py:185:0: R0912: [1;3;35mToo many branches (15/12)[0m ([1;3;35mtoo-many-branches[0m)
+sqlitch/cli/commands/revert.py:210:19: W0612: [35mUnused variable 'display_target'[0m ([35munused-variable[0m)
+sqlitch/cli/commands/revert.py:329:0: R0914: [1;3;35mToo many local variables (22/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/revert.py:340:4: W0613: [35mUnused argument 'emitter'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/revert.py:492:4: C0415: [1mImport outside toplevel (sqlitch.config.resolver.resolve_config)[0m ([1mimport-outside-toplevel[0m)
+sqlitch/cli/commands/revert.py:506:11: W0718: [35mCatching too general exception Exception[0m ([35mbroad-exception-caught[0m)
+sqlitch/cli/commands/revert.py:538:18: W0613: [35mUnused argument 'env'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/revert.py:557:0: R0914: [1;3;35mToo many local variables (24/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/revert.py:660:8: W0621: [35mRedefining name 'config_resolver' from outer scope (line 15)[0m ([35mredefined-outer-name[0m)
+sqlitch/cli/commands/revert.py:660:8: W0404: [35mReimport 'resolver' (imported line 15)[0m ([35mreimported[0m)
+sqlitch/cli/commands/revert.py:660:8: C0415: [1mImport outside toplevel (sqlitch.config.resolver)[0m ([1mimport-outside-toplevel[0m)
+sqlitch/cli/commands/revert.py:5:0: W0611: [35mUnused import hashlib[0m ([35munused-import[0m)
+sqlitch/cli/commands/revert.py:17:0: W0611: [35mUnused derive_sqlite_registry_uri imported from sqlitch.engine.sqlite[0m ([35munused-import[0m)
+sqlitch/cli/commands/revert.py:17:0: W0611: [35mUnused resolve_sqlite_filesystem_path imported from sqlitch.engine.sqlite[0m ([35munused-import[0m)
+[7;33m************* Module sqlitch.cli.commands.engine[0m
+sqlitch/cli/commands/engine.py:47:4: W0613: [35mUnused argument 'json_mode'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/engine.py:48:4: W0613: [35mUnused argument 'verbose'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/engine.py:49:4: W0613: [35mUnused argument 'quiet'[0m ([35munused-argument[0m)
+[7;33m************* Module sqlitch.cli.commands.checkout[0m
+sqlitch/cli/commands/checkout.py:62:4: W0613: [35mUnused argument 'json_mode'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/checkout.py:63:4: W0613: [35mUnused argument 'verbose'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/checkout.py:64:4: W0613: [35mUnused argument 'quiet'[0m ([35munused-argument[0m)
+[7;33m************* Module sqlitch.cli.commands.target[0m
+sqlitch/cli/commands/target.py:30:4: W0613: [35mUnused argument 'json_mode'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/target.py:31:4: W0613: [35mUnused argument 'verbose'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/target.py:32:4: W0613: [35mUnused argument 'quiet'[0m ([35munused-argument[0m)
+[7;33m************* Module sqlitch.cli.commands.verify[0m
+sqlitch/cli/commands/verify.py:66:0: R0914: [1;3;35mToo many local variables (27/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/verify.py:83:8: W0621: [35mRedefining name 'config_resolver' from outer scope (line 12)[0m ([35mredefined-outer-name[0m)
+sqlitch/cli/commands/verify.py:83:8: W0404: [35mReimport 'resolver' (imported line 12)[0m ([35mreimported[0m)
+sqlitch/cli/commands/verify.py:83:8: C0415: [1mImport outside toplevel (sqlitch.config.resolver)[0m ([1mimport-outside-toplevel[0m)
+sqlitch/cli/commands/verify.py:126:8: W0404: [35mReimport 'resolver' (imported line 12)[0m ([35mreimported[0m)
+sqlitch/cli/commands/verify.py:126:8: C0415: [1mImport outside toplevel (sqlitch.config.resolver)[0m ([1mimport-outside-toplevel[0m)
+sqlitch/cli/commands/verify.py:171:0: R0913: [1;3;35mToo many arguments (11/10)[0m ([1;3;35mtoo-many-arguments[0m)
+sqlitch/cli/commands/verify.py:171:0: R0917: [1;3;35mToo many positional arguments (11/5)[0m ([1;3;35mtoo-many-positional-arguments[0m)
+sqlitch/cli/commands/verify.py:171:0: R0914: [1;3;35mToo many local variables (40/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/verify.py:230:8: W0621: [35mRedefining name 'config_resolver' from outer scope (line 12)[0m ([35mredefined-outer-name[0m)
+sqlitch/cli/commands/verify.py:230:8: W0404: [35mReimport 'resolver' (imported line 12)[0m ([35mreimported[0m)
+sqlitch/cli/commands/verify.py:230:8: C0415: [1mImport outside toplevel (sqlitch.config.resolver)[0m ([1mimport-outside-toplevel[0m)
+sqlitch/cli/commands/verify.py:311:23: W0718: [35mCatching too general exception Exception[0m ([35mbroad-exception-caught[0m)
+sqlitch/cli/commands/verify.py:171:0: R0912: [1;3;35mToo many branches (23/12)[0m ([1;3;35mtoo-many-branches[0m)
+sqlitch/cli/commands/verify.py:171:0: R0915: [1;3;35mToo many statements (90/50)[0m ([1;3;35mtoo-many-statements[0m)
+sqlitch/cli/commands/verify.py:180:4: W0613: [35mUnused argument 'json_mode'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/verify.py:181:4: W0613: [35mUnused argument 'verbose'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/verify.py:182:4: W0613: [35mUnused argument 'quiet'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/verify.py:12:0: W0611: [35mUnused resolver imported from sqlitch.config as config_resolver[0m ([35munused-import[0m)
+[7;33m************* Module sqlitch.cli.commands.init[0m
+sqlitch/cli/commands/init.py:54:0: R0917: [1;3;35mToo many positional arguments (10/5)[0m ([1;3;35mtoo-many-positional-arguments[0m)
+sqlitch/cli/commands/init.py:54:0: R0914: [1;3;35mToo many local variables (32/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/init.py:62:4: W0613: [35mUnused argument 'json_mode'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/init.py:63:4: W0613: [35mUnused argument 'verbose'[0m ([35munused-argument[0m)
+[7;33m************* Module sqlitch.cli.commands.help[0m
+sqlitch/cli/commands/help.py:29:4: W0613: [35mUnused argument 'json_mode'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/help.py:30:4: W0613: [35mUnused argument 'verbose'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/help.py:31:4: W0613: [35mUnused argument 'quiet'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/help.py:84:4: W0613: [35mUnused argument 'ctx'[0m ([35munused-argument[0m)
+[7;33m************* Module sqlitch.cli.commands._plan_utils[0m
+sqlitch/cli/commands/_plan_utils.py:76:12: C0415: [1mImport outside toplevel (sqlitch.plan.parser.PlanParseError, sqlitch.plan.parser.parse_plan)[0m ([1mimport-outside-toplevel[0m)
+[7;33m************* Module sqlitch.cli.commands.tag[0m
+sqlitch/cli/commands/tag.py:42:0: R0917: [1;3;35mToo many positional arguments (9/5)[0m ([1;3;35mtoo-many-positional-arguments[0m)
+sqlitch/cli/commands/tag.py:49:4: W0613: [35mUnused argument 'json_mode'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/tag.py:50:4: W0613: [35mUnused argument 'verbose'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/tag.py:51:4: W0613: [35mUnused argument 'quiet'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/tag.py:106:0: R0914: [1;3;35mToo many local variables (20/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/tag.py:6:0: W0611: [35mUnused Path imported from pathlib[0m ([35munused-import[0m)
+[7;33m************* Module sqlitch.cli.commands.status[0m
+sqlitch/cli/commands/status.py:128:0: C0301: [1mLine too long (105/100)[0m ([1mline-too-long[0m)
+sqlitch/cli/commands/status.py:68:0: R0914: [1;3;35mToo many local variables (30/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/status.py:74:4: W0613: [35mUnused argument 'show_tags'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/status.py:76:4: W0613: [35mUnused argument 'json_mode'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/status.py:77:4: W0613: [35mUnused argument 'verbose'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/status.py:78:4: W0613: [35mUnused argument 'quiet'[0m ([35munused-argument[0m)
+sqlitch/cli/commands/status.py:202:0: R0914: [1;3;35mToo many local variables (18/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/status.py:202:0: R0912: [1;3;35mToo many branches (19/12)[0m ([1;3;35mtoo-many-branches[0m)
+sqlitch/cli/commands/status.py:285:0: R0914: [1;3;35mToo many local variables (17/15)[0m ([1;3;35mtoo-many-locals[0m)
+sqlitch/cli/commands/status.py:343:11: W0718: [35mCatching too general exception Exception[0m ([35mbroad-exception-caught[0m)
+sqlitch/cli/commands/status.py:356:19: W0718: [35mCatching too general exception Exception[0m ([35mbroad-exception-caught[0m)
+sqlitch/cli/commands/status.py:360:15: W0718: [35mCatching too general exception Exception[0m ([35mbroad-exception-caught[0m)
+sqlitch/cli/commands/status.py:285:0: R0915: [1;3;35mToo many statements (52/50)[0m ([1;3;35mtoo-many-statements[0m)
+sqlitch/cli/commands/status.py:451:19: W0718: [35mCatching too general exception Exception[0m ([35mbroad-exception-caught[0m)
+[7;33m************* Module sqlitch.registry.state[0m
+sqlitch/registry/state.py:211:4: C0116: [1mMissing function or method docstring[0m ([1mmissing-function-docstring[0m)
+sqlitch/registry/state.py:238:4: C0116: [1mMissing function or method docstring[0m ([1mmissing-function-docstring[0m)
+[7;33m************* Module sqlitch.engine.base[0m
+sqlitch/engine/base.py:85:0: R0903: [1;3;35mToo few public methods (1/2)[0m ([1;3;35mtoo-few-public-methods[0m)
+sqlitch/engine/base.py:136:0: C0103: [1mType variable name "EngineType" doesn't conform to predefined naming style[0m ([1minvalid-name[0m)
+[7;33m************* Module sqlitch.engine.mysql[0m
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.revert:[567:614]
+==sqlitch.cli.commands.verify:[77:127]
+    candidate = target.strip()
+
+    # Check if the candidate is a target alias and resolve it
+    if not candidate.startswith("db:"):
+        # Might be a target alias - try to resolve it
+        from sqlitch.config import resolver as config_resolver
+
+        config_profile = config_resolver.resolve_config(
+            root_dir=project_root,
+            config_root=config_root,
+            env=env,
+        )
+        target_section = f'target "{candidate}"'
+        target_data = config_profile.settings.get(target_section)
+        if target_data is not None:
+            target_uri = target_data.get("uri")
+            if target_uri:
+                # Found a target alias - use the resolved URI
+                candidate = target_uri
+                original_display = target  # Keep the original alias name for display
+            else:
+                # Target section exists but no URI - treat as plain value
+                original_display = candidate
+        else:
+            # Not a target alias - treat as plain value
+            original_display = candidate
+    else:
+        original_display = candidate
+
+    if candidate.startswith("db:"):
+        remainder = candidate[3:]
+        engine_token, separator, payload = remainder.partition(":")
+        if not separator:
+            raise CommandError(f"Malformed target URI: {target}")
+        engine_hint = engine_token or default_engine
+        workspace_payload = payload
+        original_display = candidate
+    else:
+        engine_hint = default_engine
+        workspace_payload = candidate
+        original_display = candidate
+
+    try:
+        engine_name = canonicalize_engine_name(engine_hint)
+    except Exception as exc:
+        raise CommandError(f"Unsupported engine '{engine_hint}'") from exc
+
+    if engine_name == "sqlite":
+        from sqlitch.config import resolver as config_resolver
+[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[499:541]
+==sqlitch.cli.commands.verify:[77:121]
+    candidate = target.strip()
+
+    # Check if the candidate is a target alias and resolve it
+    if not candidate.startswith("db:"):
+        # Might be a target alias - try to resolve it
+        from sqlitch.config import resolver as config_resolver
+
+        config_profile = config_resolver.resolve_config(
+            root_dir=project_root,
+            config_root=config_root,
+            env=env,
+        )
+        target_section = f'target "{candidate}"'
+        target_data = config_profile.settings.get(target_section)
+        if target_data is not None:
+            target_uri = target_data.get("uri")
+            if target_uri:
+                # Found a target alias - use the resolved URI
+                candidate = target_uri
+                original_display = target  # Keep the original alias name for display
+            else:
+                # Target section exists but no URI - treat as plain value
+                original_display = candidate
+        else:
+            # Not a target alias - treat as plain value
+            original_display = candidate
+    else:
+        original_display = candidate
+
+    if candidate.startswith("db:"):
+        remainder = candidate[3:]
+        engine_token, separator, payload = remainder.partition(":")
+        if not separator:
+            raise CommandError(f"Malformed target URI: {target}")
+        engine_hint = engine_token or default_engine
+        workspace_payload = payload
+        original_display = candidate
+    else:
+        engine_hint = default_engine
+        workspace_payload = candidate
+        original_display = candidate
+
+    try:
+        engine_name = canonicalize_engine_name(engine_hint)[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[542:566]
+==sqlitch.cli.commands.verify:[122:148]
+        raise CommandError(f"Unsupported engine '{engine_hint}'") from exc
+
+    if engine_name == "sqlite":
+        from sqlitch.config import resolver as config_resolver
+
+        workspace_uri, display_target = _resolve_sqlite_workspace_uri(
+            payload=workspace_payload,
+            project_root=project_root,
+            plan_path=plan_path,
+            original_target=original_display,
+        )
+        registry_uri = config_resolver.resolve_registry_uri(
+            engine=engine_name,
+            workspace_uri=workspace_uri,
+            project_root=project_root,
+            registry_override=registry_override,
+        )
+        display_name = display_target or workspace_uri
+        engine_target = EngineTarget(
+            name=display_name,
+            engine=engine_name,
+            uri=workspace_uri,
+            registry_uri=registry_uri,
+        )
+        return engine_target, display_name
+[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[104:128]
+==sqlitch.cli.commands.revert:[110:134]
+    plan_path_for_engine = _resolve_plan_path(
+        project_root=project_root, override=plan_override, env=env
+    )
+
+    default_engine = resolve_default_engine(
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=env,
+        engine_override=cli_context.engine,
+        plan_path=plan_path_for_engine,
+    )
+
+    target = _resolve_target(
+        option_value=target_option,
+        configured_target=cli_context.target,
+        positional_targets=target_args,
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=env,
+        default_engine=default_engine,
+    )
+
+    request = _build_request(
+        project_root=project_root,[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[1369:1429]
+==sqlitch.cli.commands.revert:[372:428]
+        cursor.execute(
+            f"""
+            INSERT INTO {registry_schema}.events (
+                event,
+                change_id,
+                change,
+                project,
+                note,
+                requires,
+                conflicts,
+                tags,
+                committed_at,
+                committer_name,
+                committer_email,
+                planned_at,
+                planner_name,
+                planner_email
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "deploy_fail",
+                change_id,
+                change.name,
+                project,
+                normalized_note,
+                " ".join(str(dependency) for dependency in dependencies),
+                "",
+                " ".join(str(tag) for tag in tags),
+                committed_at,
+                committer_name,
+                committer_email,
+                planned_at,
+                planner_name,
+                planner_email,
+            ),
+        )
+    except sqlite3.Error as exc:
+        _rollback_savepoint(connection, savepoint)
+        try:
+            connection.execute("ROLLBACK")
+        except sqlite3.Error:  # pragma: no cover - defensive guard
+            pass
+        raise CommandError(
+            f"Failed to record failure event for change '{change.name}': {exc}"
+        ) from exc
+    else:
+        _release_savepoint(connection, savepoint)
+        try:
+            connection.execute("COMMIT")
+        except sqlite3.Error as exc:  # pragma: no cover - defensive guard
+            raise CommandError(
+                f"Failed to finalise failure event for change '{change.name}': {exc}"
+            ) from exc
+    finally:
+        cursor.close()
+
+
+def _normalize_failure_event_note(*, change: Change, note: str) -> str:
+    """Return a registry note value consistent with Sqitch failure events."""
+[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.add:[176:195]
+==sqlitch.cli.commands.tag:[82:101]
+    )
+
+    default_engine = resolve_default_engine(
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=environment,
+        engine_override=cli_context.engine,
+        plan_path=plan_path,
+    )
+
+    try:
+        plan = parse_plan(plan_path, default_engine=default_engine)
+    except FileNotFoundError as exc:
+        raise CommandError(f"Plan file {plan_path} is missing") from exc
+    except OSError as exc:
+        raise CommandError(f"Unable to read plan file {plan_path}: {exc}") from exc
+    except PlanParseError as exc:
+        raise CommandError(str(exc)) from exc
+[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[1266:1309]
+==sqlitch.cli.commands.revert:[374:428]
+            INSERT INTO {registry_schema}.events (
+                event,
+                change_id,
+                change,
+                project,
+                note,
+                requires,
+                conflicts,
+                tags,
+                committed_at,
+                committer_name,
+                committer_email,
+                planned_at,
+                planner_name,
+                planner_email
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "revert",
+                change_id,
+                change.name,
+                project,
+                note,
+                " ".join(change.dependencies),
+                "",
+                " ".join(change.tags),
+                committed_at,
+                committer_name,
+                committer_email,
+                planned_at,
+                planner_name,
+                planner_email,
+            ),
+        )
+
+    try:
+        _execute_change_transaction(
+            connection, script_body, _record, manages_transactions=manages_transactions
+        )
+    except sqlite3.Error as exc:
+        raise CommandError(f"Revert failed for change '{change.name}': {exc}") from exc
+
+    # Remove from deployed dict
+    deployed.pop(change.name, None)
+
+
+def _execute_change_transaction(
+    connection: sqlite3.Connection,
+    script_body: str,
+    record_callback: Callable[[sqlite3.Cursor], None],
+    *,
+    manages_transactions: bool,
+) -> None:
+    """Execute script and record registry entries within appropriate transaction scope."""[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[592:617]
+==sqlitch.cli.commands.verify:[45:77]
+    if payload == ":memory:":
+        raise CommandError("In-memory SQLite targets are not supported")
+
+    if payload.startswith("file:"):
+        workspace_uri = f"db:sqlite:{payload}"
+        display = original_target or workspace_uri
+        return workspace_uri, display
+
+    if payload:
+        candidate = Path(payload)
+    else:
+        candidate = plan_path.with_suffix(".db")
+
+    database_path = candidate if candidate.is_absolute() else project_root / candidate
+    database_path = database_path.resolve()
+    workspace_uri = f"db:sqlite:{database_path.as_posix()}"
+    display = original_target or workspace_uri
+    return workspace_uri, display
+
+
+def _resolve_engine_target(
+    *,
+    target: str,
+    project_root: Path,
+    config_root: Path,
+    env: Mapping[str, str],
+    default_engine: str,
+    plan_path: Path,
+    registry_override: str | None,
+) -> tuple[EngineTarget, str]:
+    """Return an EngineTarget for the requested target."""
+[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[384:441]
+==sqlitch.cli.commands.revert:[644:708]
+    if option_value and positional_targets:
+        raise CommandError("Provide either --target or a positional target, not both.")
+
+    if len(positional_targets) > 1:
+        raise CommandError("Multiple positional targets are not supported yet.")
+
+    if positional_targets:
+        target = positional_targets[0]
+    elif option_value:
+        target = option_value
+    else:
+        target = configured_target
+
+    # If no target from CLI/env, check if the default engine has a target configured
+    if not target and default_engine:
+        config_profile = config_resolver.resolve_config(
+            root_dir=project_root,
+            config_root=config_root,
+            env=env,
+        )
+        engine_section = f'engine "{default_engine}"'
+        engine_target = config_profile.settings.get(engine_section, {}).get("target")
+        if engine_target:
+            target = engine_target
+
+    if not target:
+        raise CommandError(
+            "A deployment target must be provided via --target, positional argument, or configuration."
+        )
+
+    return target
+
+
+def _resolve_plan_path(
+    *,
+    project_root: Path,
+    override: Path | None,
+    env: Mapping[str, str],
+) -> Path:
+    return resolve_plan_path(
+        project_root=project_root,
+        override=override,
+        env=env,
+        missing_plan_message="Cannot read plan file sqitch.plan",
+    )
+
+
+def _load_plan(plan_path: Path, default_engine: str | None) -> Plan:
+    try:
+        return parse_plan(plan_path, default_engine=default_engine)
+    except (PlanParseError, ValueError) as exc:  # pragma: no cover - delegated to parser tests
+        raise CommandError(str(exc)) from exc
+    except OSError as exc:  # pragma: no cover - IO failures surfaced to the CLI user
+        raise CommandError(f"Unable to read plan file {plan_path}: {exc}") from exc
+
+
+def _assert_plan_dependencies_present(*, plan: Plan, plan_path: Path) -> None:[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.rebase:[160:194]
+==sqlitch.cli.commands.revert:[676:710]
+    return target
+
+
+def _resolve_plan_path(
+    *,
+    project_root: Path,
+    override: Path | None,
+    env: Mapping[str, str],
+) -> Path:
+    return resolve_plan_path(
+        project_root=project_root,
+        override=override,
+        env=env,
+        missing_plan_message="Cannot read plan file sqitch.plan",
+    )
+
+
+def _load_plan(plan_path: Path, default_engine: str | None) -> Plan:
+    try:
+        return parse_plan(plan_path, default_engine=default_engine)
+    except (PlanParseError, ValueError) as exc:  # pragma: no cover - delegated to parser tests
+        raise CommandError(str(exc)) from exc
+    except OSError as exc:  # pragma: no cover - IO failures surfaced to the CLI user
+        raise CommandError(f"Unable to read plan file {plan_path}: {exc}") from exc
+
+
+def _select_changes(
+    *,
+    plan: Plan,
+    to_change: str | None,
+    to_tag: str | None,
+) -> tuple[Change, ...]:
+    changes = plan.changes
+    if not changes:[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[99:116]
+==sqlitch.cli.commands.rebase:[77:94]
+    cli_context = require_cli_context(ctx)
+    project_root = project_root_from(ctx)
+    env = environment_from(ctx)
+    plan_override = plan_override_from(ctx)
+
+    plan_path_for_engine = _resolve_plan_path(
+        project_root=project_root, override=plan_override, env=env
+    )
+
+    default_engine = resolve_default_engine(
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=env,
+        engine_override=cli_context.engine,
+        plan_path=plan_path_for_engine,
+    )
+[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[414:441]
+==sqlitch.cli.commands.rebase:[160:192]
+    return target
+
+
+def _resolve_plan_path(
+    *,
+    project_root: Path,
+    override: Path | None,
+    env: Mapping[str, str],
+) -> Path:
+    return resolve_plan_path(
+        project_root=project_root,
+        override=override,
+        env=env,
+        missing_plan_message="Cannot read plan file sqitch.plan",
+    )
+
+
+def _load_plan(plan_path: Path, default_engine: str | None) -> Plan:
+    try:
+        return parse_plan(plan_path, default_engine=default_engine)
+    except (PlanParseError, ValueError) as exc:  # pragma: no cover - delegated to parser tests
+        raise CommandError(str(exc)) from exc
+    except OSError as exc:  # pragma: no cover - IO failures surfaced to the CLI user
+        raise CommandError(f"Unable to read plan file {plan_path}: {exc}") from exc
+
+
+def _assert_plan_dependencies_present(*, plan: Plan, plan_path: Path) -> None:[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.log:[170:183]
+==sqlitch.cli.commands.status:[288:301]
+    try:
+        engine = create_engine(engine_target)
+    except UnsupportedEngineError as exc:  # pragma: no cover - delegated to create_engine tests
+        raise CommandError(f"Unsupported engine '{engine_target.engine}': {exc}") from exc
+
+    try:
+        connection = engine.connect_registry()
+    except Exception as exc:  # pragma: no cover - connection failures propagated to users
+        raise CommandError(
+            f"Failed to connect to registry target {engine_target.registry_uri}: {exc}"
+        ) from exc
+
+    cursor = None[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.log:[120:133]
+==sqlitch.cli.commands.status:[86:99]
+    target_value = None
+    if target_args:
+        if len(target_args) > 1:
+            raise CommandError("Only one target may be specified")
+        target_value = target_args[0]
+    elif target_option:
+        target_value = target_option
+    else:
+        target_value = cli_context.target
+
+    if not target_value:
+        raise CommandError("A target must be provided via --target or configuration.")
+[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.rebase:[82:94]
+==sqlitch.cli.commands.revert:[110:122]
+    plan_path_for_engine = _resolve_plan_path(
+        project_root=project_root, override=plan_override, env=env
+    )
+
+    default_engine = resolve_default_engine(
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=env,
+        engine_override=cli_context.engine,
+        plan_path=plan_path_for_engine,
+    )
+[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.add:[259:270]
+==sqlitch.cli.commands.tag:[191:201]
+    write_plan(
+        project_name=plan.project_name,
+        default_engine=plan.default_engine,
+        entries=entries,
+        plan_path=plan.file_path,
+        syntax_version=plan.syntax_version,
+        uri=plan.uri,
+    )
+
+    if not quiet:[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[318:327]
+==sqlitch.cli.commands.revert:[281:290]
+                    connection=connection,
+                    project=request.plan.project_name,
+                    plan_root=request.plan_path.parent,
+                    change=change,
+                    env=request.env,
+                    committer_name=committer_name,
+                    committer_email=committer_email,
+                    deployed=deployed,
+                    registry_schema=registry_schema,[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.status:[100:109]
+==sqlitch.cli.commands.verify:[218:228]
+    default_engine = resolve_default_engine(
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=environment,
+        engine_override=cli_context.engine,
+        plan_path=plan_path,
+    )
+    plan = _load_plan(plan_path, default_engine)
+[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.add:[176:186]
+==sqlitch.cli.commands.verify:[217:225]
+    )
+
+    default_engine = resolve_default_engine(
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=environment,
+        engine_override=cli_context.engine,
+        plan_path=plan_path,
+    )
+[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.add:[186:195]
+==sqlitch.cli.commands.rework:[153:162]
+    try:
+        plan = parse_plan(plan_path, default_engine=default_engine)
+    except FileNotFoundError as exc:  # pragma: no cover - defensive
+        raise CommandError(f"Plan file {plan_path} is missing") from exc
+    except OSError as exc:  # pragma: no cover - IO failure propagated as command error
+        raise CommandError(f"Unable to read plan file {plan_path}: {exc}") from exc
+    except PlanParseError as exc:
+        raise CommandError(str(exc)) from exc
+[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[474:499]
+==sqlitch.cli.commands.revert:[717:730]
+        return changes[: index + 1]
+
+    if to_tag:
+        try:
+            tag_entry = next(tag for tag in plan.tags if tag.name == to_tag)
+        except StopIteration as exc:
+            raise CommandError(f"Plan does not contain tag '{to_tag}'.") from exc
+        return _select_changes(plan=plan, to_change=tag_entry.change_ref, to_tag=None)
+
+    return changes
+
+
+def _resolve_engine_target(
+    *,
+    target: str,
+    project_root: Path,
+    config_root: Path,
+    env: Mapping[str, str],
+    default_engine: str,
+    plan_path: Path,
+    registry_override: str | None,
+    logger: StructuredLogger,
+) -> tuple[EngineTarget, str]:
+    """Return an :class:`EngineTarget` for the requested deployment target."""
+[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.rework:[134:144]
+==sqlitch.cli.commands.show:[76:86]
+    )
+
+    default_engine = resolve_default_engine(
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=env,
+        engine_override=cli_context.engine,
+        plan_path=plan_path,
+    )
+[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.status:[100:107]
+==sqlitch.cli.commands.tag:[84:92]
+    default_engine = resolve_default_engine(
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=environment,
+        engine_override=cli_context.engine,
+        plan_path=plan_path,
+    )[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.add:[160:167]
+==sqlitch.cli.commands.tag:[74:81]
+    cli_context = require_cli_context(ctx)
+    project_root = cli_context.project_root
+    environment = cli_context.env
+    plan_path = resolve_plan_path(
+        project_root=project_root,
+        override=cli_context.plan_file,
+        env=environment,[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[465:473]
+==sqlitch.cli.commands.revert:[708:716]
+    changes = plan.changes
+    if not changes:
+        return ()
+
+    if to_change:
+        try:
+            index = next(i for i, change in enumerate(changes) if change.name == to_change)
+        except StopIteration as exc:[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[558:566]
+==sqlitch.cli.commands.revert:[622:630]
+        engine_target = EngineTarget(
+            name=display_name,
+            engine=engine_name,
+            uri=workspace_uri,
+            registry_uri=registry_uri,
+        )
+        return engine_target, display_name
+[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[499:541]
+==sqlitch.cli.commands.revert:[567:609]
+    candidate = target.strip()
+
+    # Check if the candidate is a target alias and resolve it
+    if not candidate.startswith("db:"):
+        # Might be a target alias - try to resolve it
+        config_profile = config_resolver.resolve_config(
+            root_dir=project_root,
+            config_root=config_root,
+            env=env,
+        )
+        target_section = f'target "{candidate}"'
+        target_data = config_profile.settings.get(target_section)
+        if target_data is not None:
+            target_uri = target_data.get("uri")
+            if target_uri:
+                # Found a target alias - use the resolved URI
+                candidate = target_uri
+                original_display = target  # Keep the original alias name for display
+            else:
+                # Target section exists but no URI - treat as plain value
+                original_display = candidate
+        else:
+            # Not a target alias - treat as plain value
+            original_display = candidate
+    else:
+        original_display = candidate
+
+    if candidate.startswith("db:"):
+        remainder = candidate[3:]
+        engine_token, separator, payload = remainder.partition(":")
+        if not separator:
+            raise CommandError(f"Malformed target URI: {target}")
+        engine_hint = engine_token or default_engine
+        workspace_payload = payload
+        original_display = candidate
+    else:
+        engine_hint = default_engine
+        workspace_payload = candidate
+        original_display = candidate
+
+    try:
+        engine_name = canonicalize_engine_name(engine_hint)[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[1158:1172]
+==sqlitch.cli.commands.revert:[441:448]
+                connection.execute("COMMIT")
+            except Exception:
+                try:
+                    connection.execute("ROLLBACK")
+                except sqlite3.Error:
+                    pass
+                raise[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[631:641]
+==sqlitch.cli.commands.revert:[225:234]
+    try:
+        connection = engine.connect_workspace()
+    except Exception as exc:
+        raise CommandError(
+            f"Failed to connect to deployment target {engine_target.uri}: {exc}"
+        ) from exc
+
+    # Set manual transaction control
+    connection.isolation_level = None[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[169:176]
+==sqlitch.cli.commands.revert:[171:178]
+        env=env,
+        plan_path=plan_path,
+        plan=plan,
+        target=target,
+        to_change=to_change,
+        to_tag=to_tag,
+        log_only=log_only,[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[60:67]
+==sqlitch.cli.commands.revert:[43:50]
+    env: Mapping[str, str]
+    plan_path: Path
+    plan: Plan
+    target: str
+    to_change: str | None
+    to_tag: str | None
+    log_only: bool[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.add:[178:186]
+==sqlitch.cli.commands.plan:[104:111]
+        default_engine = resolve_default_engine(
+            project_root=project_root,
+            config_root=cli_context.config_root,
+            env=environment,
+            engine_override=cli_context.engine,
+            plan_path=plan_path,
+        )[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.bundle:[115:125]
+==sqlitch.cli.commands.rebase:[169:179]
+    return resolve_plan_path(
+        project_root=project_root,
+        override=override,
+        env=env,
+        missing_plan_message="Cannot read plan file sqitch.plan",
+    )
+
+
+def _copy_file(source: Path, destination: Path) -> None:
+    try:[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.status:[263:269]
+==sqlitch.cli.commands.verify:[133:139]
+        registry_uri = config_resolver.resolve_registry_uri(
+            engine=engine_name,
+            workspace_uri=workspace_uri,
+            project_root=project_root,
+            registry_override=registry_override,
+        )[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[551:557]
+==sqlitch.cli.commands.revert:[615:621]
+        registry_uri = config_resolver.resolve_registry_uri(
+            engine=engine_name,
+            workspace_uri=workspace_uri,
+            project_root=project_root,
+            registry_override=registry_override,
+        )[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[682:688]
+==sqlitch.cli.commands.revert:[442:448]
+            except Exception:
+                try:
+                    connection.execute("ROLLBACK")
+                except sqlite3.Error:
+                    pass
+                raise[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[1241:1247]
+==sqlitch.cli.commands.revert:[383:389]
+            committed_at,
+            committer_name,
+            committer_email,
+            planned_at,
+            planner_name,
+            planner_email[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[836:843]
+==sqlitch.cli.commands.revert:[312:319]
+        (project,),
+    )
+    try:
+        rows = cursor.fetchall()
+    finally:
+        cursor.close()
+[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[216:222]
+==sqlitch.cli.commands.revert:[209:215]
+    engine_target, display_target = _resolve_engine_target(
+        target=request.target,
+        project_root=request.project_root,
+        config_root=request.config_root,
+        env=request.env,
+        default_engine=request.plan.default_engine,[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[129:135]
+==sqlitch.cli.commands.revert:[134:140]
+        env=env,
+        plan_override=plan_override,
+        to_change=to_change,
+        to_tag=to_tag,
+        target=target,
+        log_only=log_only,[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[106:113]
+==sqlitch.cli.commands.rework:[134:141]
+    )
+
+    default_engine = resolve_default_engine(
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=env,
+        engine_override=cli_context.engine,[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.add:[188:195]
+==sqlitch.cli.commands.show:[115:124]
+    except FileNotFoundError as exc:  # pragma: no cover - defensive guard
+        raise CommandError(f"Plan file {plan_path} is missing") from exc
+    except OSError as exc:  # pragma: no cover - surfaced to user
+        raise CommandError(f"Unable to read plan file {plan_path}: {exc}") from exc
+    except PlanParseError as exc:
+        raise CommandError(str(exc)) from exc
+
+
+def _resolve_change(plan: Plan, reference: str) -> Change:[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.checkout:[159:169]
+==sqlitch.cli.commands.rebase:[169:178]
+    return resolve_plan_path(
+        project_root=project_root,
+        override=override,
+        env=env,
+        missing_plan_message="Cannot read plan file sqitch.plan",
+    )
+
+
+def _load_plan(plan_path: Path, default_engine: str | None) -> Plan:[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.rebase:[84:91]
+==sqlitch.cli.commands.show:[76:83]
+    )
+
+    default_engine = resolve_default_engine(
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=env,
+        engine_override=cli_context.engine,[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.plan:[176:189]
+==sqlitch.cli.commands.rebase:[178:192]
+    try:
+        return parse_plan(plan_path, default_engine=default_engine)
+    except (PlanParseError, ValueError) as exc:  # pragma: no cover - delegated to parser tests
+        raise CommandError(str(exc)) from exc
+    except OSError as exc:  # pragma: no cover - IO failures surfaced to the CLI user
+        raise CommandError(f"Unable to read plan file {plan_path}: {exc}") from exc
+
+
+def _plan_rebase_actions(
+    *,
+    plan: Plan,
+    onto_ref: str | None,
+    from_ref: str | None,
+) -> tuple[tuple[Change, ...], tuple[Change, ...]]:[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.options:[94:121]
+==sqlitch.config.resolver:[54:67]
+        data: dict[str, str] = {}
+        if self.username is not None:
+            data["username"] = self.username
+        if self.password is not None:
+            data["password"] = self.password
+        return data
+
+
+def build_log_configuration(
+    *,
+    verbosity: int,
+    quiet: bool,
+    json_mode: bool,
+    env: Mapping[str, str] | None = None,
+) -> LogConfiguration:
+    """Build a :class:`LogConfiguration` from global CLI flag values.
+
+    Args:
+        verbosity: Number of times the ``--verbose`` flag was supplied.
+        quiet: Whether quiet mode was enabled for the invocation.
+        json_mode: Whether JSON output was requested globally.
+        env: Optional environment mapping used to honour run identifier overrides.
+
+    Returns:
+        A :class:`LogConfiguration` instance suitable for downstream logging.
+    """
+[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.log:[25:30]
+==sqlitch.registry.state:[79:84]
+    event: str
+    change_id: str
+    change: str
+    project: str
+    note: str[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[856:861]
+==sqlitch.cli.commands.revert:[319:324]
+    deployed: dict[str, dict[str, str]] = {}
+    for change_name, change_id, script_hash in rows:
+        deployed[str(change_name)] = {
+            "change_id": str(change_id),
+            "script_hash": str(script_hash) if script_hash is not None else "",[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.config:[392:405]
+==sqlitch.cli.commands.engine:[263:271]
+    parser = configparser.ConfigParser(interpolation=None)
+    parser.optionxform = str
+    if path.exists():
+        parser.read(path, encoding="utf-8")
+    return parser
+
+
+def _write_parser(path: Path, parser: configparser.ConfigParser) -> None:[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.add:[49:59]
+==sqlitch.cli.commands.bundle:[139:150]
+    try:
+        relative = path.relative_to(project_root)
+        return relative.as_posix()
+    except ValueError:
+        return os.path.relpath(path, project_root).replace(os.sep, "/")
+
+
+@register_command("bundle")
+def _register_bundle(group: click.Group) -> None:
+    """Attach the bundle command to the root Click group."""
+[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.checkout:[75:80]
+==sqlitch.cli.commands.rebase:[96:101]
+    request = _build_request(
+        project_root=project_root,
+        env=env,
+        plan_override=plan_override,
+        target=target,[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.checkout:[35:72]
+==sqlitch.cli.commands.rebase:[39:82]
+    quiet: bool
+
+
+@click.command("rebase")
+@click.argument("target_args", nargs=-1)
+@click.option("--target", "target_option", help="Deployment target alias or URI.")
+@click.option("--onto", "onto_ref", help="Rebase onto the specified change or tag.")
+@click.option("--from", "from_ref", help="Redeploy starting from the specified change or tag.")
+@click.option(
+    "--mode",
+    type=click.Choice(("latest", "all"), case_sensitive=False),
+    default="latest",
+    show_default=True,
+    help="Control how many deployed changes are considered when determining drift.",
+)
+@click.option(
+    "--log-only",
+    is_flag=True,
+    help="Show the rebase actions without executing any scripts.",
+)
+@global_sqitch_options
+@global_output_options
+@click.pass_context
+def rebase_command(
+    ctx: click.Context,
+    *,
+    target_args: tuple[str, ...],
+    target_option: str | None,
+    onto_ref: str | None,
+    from_ref: str | None,
+    mode: str,
+    log_only: bool,
+    json_mode: bool,
+    verbose: int,
+    quiet: bool,
+) -> None:
+    """Rebase deployed plan changes to align with the current plan state."""
+
+    cli_context = require_cli_context(ctx)
+    project_root = project_root_from(ctx)
+    env = environment_from(ctx)
+    plan_override = plan_override_from(ctx)
+[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.rebase:[129:134]
+==sqlitch.cli.commands.revert:[170:175]
+        project_root=project_root,
+        env=env,
+        plan_path=plan_path,
+        plan=plan,
+        target=target,[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.rebase:[30:35]
+==sqlitch.cli.commands.revert:[42:47]
+    project_root: Path
+    env: Mapping[str, str]
+    plan_path: Path
+    plan: Plan
+    target: str[0m ([1;3;35mduplicate-code[0m)
+sqlitch/engine/mysql.py:1:0: R0801: [1;3;35mSimilar lines in 2 files
+==sqlitch.cli.commands.deploy:[1569:1586]
+==sqlitch.cli.commands.rebase:[245:262]
+        emitter(f"Would deploy change {change.name}")
+
+    emitter("Log-only run; no database changes were applied.")
+
+
+def _build_emitter(quiet: bool) -> Callable[[str], None]:
+    def _emit(message: str) -> None:
+        if not quiet:
+            click.echo(message)
+
+    return _emit
+
+
+@register_command("rebase")
+def _register_rebase(group: click.Group) -> None:
+    """Attach the rebase command to the root Click group."""
+[0m ([1;3;35mduplicate-code[0m)

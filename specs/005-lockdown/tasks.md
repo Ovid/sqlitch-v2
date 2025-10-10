@@ -21,11 +21,11 @@
 ---
 
 ## Phase 3.1 · Setup & Baseline (must precede all other work)
-- [ ] **T001 [P1]** Create/refresh local dev environment and editable install (`python3 -m venv .venv && pip install -e .[dev]`)  *(root)*
-- [ ] **T002 [P1]** Run baseline quality gates (coverage, mypy, pydocstyle, pip-audit, bandit) and archive outputs under `specs/005-lockdown/artifacts/baseline/`
-- [ ] **T003 [P1]** Execute pylint with the project config, remediate or document warnings, and store the report in `specs/005-lockdown/artifacts/baseline/`
-- [ ] **T004 [P1]** Summarize baseline findings in `specs/005-lockdown/research.md` (coverage deltas, security hits, doc gaps)
-- [ ] **T005 [P1]** Execute `black --check` and `isort --check-only` across the repository; if either fails, record the failing paths, reformat with `black .` / `isort .`, and capture the before/after notes in `specs/005-lockdown/artifacts/baseline/formatting.md`
+- [X] **T001 [P1]** Create/refresh local dev environment and editable install (`python3 -m venv .venv && pip install -e .[dev]`)  *(root)*
+- [X] **T002 [P1]** Run baseline quality gates (coverage, mypy, pydocstyle, pip-audit, bandit) and archive outputs under `specs/005-lockdown/artifacts/baseline/`
+- [X] **T003 [P1]** Execute pylint with the project config, remediate or document warnings, and store the report in `specs/005-lockdown/artifacts/baseline/`
+- [X] **T004 [P1]** Summarize baseline findings in `specs/005-lockdown/research.md` (coverage deltas, security hits, doc gaps)
+- [X] **T005 [P1]** Execute `black --check` and `isort --check-only` across the repository; if either fails, record the failing paths, reformat with `black .` / `isort .`, and capture the before/after notes in `specs/005-lockdown/artifacts/baseline/formatting.md`
 
 ## Phase 3.2 · Tests First (TDD) — all MUST fail before implementation
 - [ ] **T010 [P1]** Add resolver edge-case tests covering missing scopes, duplicate files, and path validation in `tests/config/test_resolver_lockdown.py`

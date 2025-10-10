@@ -1,0 +1,382 @@
+sqlitch/config/loader.py:51 in public function `load_config`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/config/resolver.py:53 in public method `as_dict`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/config/resolver.py:66 in public function `determine_config_root`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/config/resolver.py:97 in public function `resolve_config`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/config/resolver.py:151 in public function `resolve_registry_uri`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/config/resolver.py:176 in public function `resolve_credentials`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/plan/formatter.py:16 in public function `compute_checksum`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/plan/formatter.py:32 in public function `format_plan`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/plan/formatter.py:70 in public function `write_plan`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/plan/model.py:39 in public method `__post_init__`:
+        D105: Missing docstring in magic method
+sqlitch/plan/model.py:64 in public method `__post_init__`:
+        D105: Missing docstring in magic method
+sqlitch/plan/model.py:97 in public method `create`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/plan/model.py:97 in public method `create`:
+        D401: First line should be in imperative mood; try rephrasing (found 'Factory')
+sqlitch/plan/model.py:139 in public method `__post_init__`:
+        D105: Missing docstring in magic method
+sqlitch/plan/model.py:185 in public method `changes`:
+        D102: Missing docstring in public method
+sqlitch/plan/model.py:189 in public method `tags`:
+        D102: Missing docstring in public method
+sqlitch/plan/model.py:192 in public method `get_change`:
+        D102: Missing docstring in public method
+sqlitch/plan/model.py:200 in public method `has_change`:
+        D102: Missing docstring in public method
+sqlitch/plan/model.py:203 in public method `iter_changes`:
+        D102: Missing docstring in public method
+sqlitch/plan/parser.py:48 in public function `parse_plan`:
+        D103: Missing docstring in public function
+sqlitch/plan/parser.py:244 in private function `_apply_rework_metadata`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/plan/parser.py:285 in private function `_resolve_reworked_script_paths`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/plan/utils.py:9 in public function `slugify_change_name`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/utils/time.py:17 in public function `ensure_timezone`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/utils/time.py:25 in public function `parse_iso_datetime`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/utils/time.py:48 in public function `coerce_datetime`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/utils/time.py:58 in public function `coerce_optional_datetime`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/utils/time.py:72 in public function `isoformat_utc`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/utils/logging.py:115 in public method `to_dict`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/utils/logging.py:133 in public method `__init__`:
+        D107: Missing docstring in __init__
+sqlitch/utils/logging.py:159 in public method `trace`:
+        D102: Missing docstring in public method
+sqlitch/utils/logging.py:169 in public method `debug`:
+        D102: Missing docstring in public method
+sqlitch/utils/logging.py:179 in public method `info`:
+        D102: Missing docstring in public method
+sqlitch/utils/logging.py:189 in public method `warning`:
+        D102: Missing docstring in public method
+sqlitch/utils/logging.py:199 in public method `error`:
+        D102: Missing docstring in public method
+sqlitch/utils/logging.py:209 in public method `critical`:
+        D102: Missing docstring in public method
+sqlitch/utils/logging.py:228 in public method `emit`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/utils/logging.py:306 in public function `create_logger`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/utils/logging.py:306 in public function `create_logger`:
+        D401: First line should be in imperative mood; try rephrasing (found 'Convenience')
+sqlitch/utils/templates.py:52 in public function `default_template_body`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/utils/templates.py:61 in public function `write_default_templates`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/utils/templates.py:83 in public function `resolve_template_path`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/utils/templates.py:129 in public function `render_template`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/utils/templates.py:164 in private function `_template_dir_candidates`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/utils/fs.py:25 in public function `resolve_plan_file`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/utils/fs.py:31 in public function `resolve_config_file`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/utils/fs.py:37 in public function `cleanup_artifacts`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/utils/fs.py:51 in public function `remove_path`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/utils/identity.py:67 in public function `generate_change_id`:
+        D301: Use r""" if any backslashes in a docstring
+sqlitch/cli/options.py:47 in public method `level`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/options.py:58 in public method `as_dict`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/options.py:74 in public method `structured_logging_enabled`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/options.py:80 in public function `generate_run_identifier`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/options.py:93 in public method `as_dict`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/options.py:110 in public function `build_log_configuration`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/options.py:133 in public function `global_output_options`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/main.py:63 in public method `run_identifier`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/main.py:80 in private function `_build_cli_context`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/main.py:126 in public method `invoke`:
+        D102: Missing docstring in public method
+sqlitch/cli/main.py:224 in public function `main`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/rebase.py:76 in public function `rebase_command`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/rebase.py:261 in private function `_register_rebase`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/bundle.py:45 in public function `bundle_command`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/bundle.py:149 in private function `_register_bundle`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/plan.py:79 in public function `plan_command`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/plan.py:162 in private function `_register_plan`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/show.py:65 in public function `show_command`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/show.py:239 in private function `_register_show`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/config.py:80 in public function `config_command`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/config.py:585 in private function `_register_config`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:98 in public function `deploy_command`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:498 in private function `_resolve_engine_target`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:616 in private function `_create_engine_connection`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:646 in private function `_ensure_sqlite_parent_directory`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:669 in private function `_initialise_registry_state`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:704 in private function `_ensure_registry_ready`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:730 in private function `_registry_tables_exist`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:744 in private function `_apply_registry_baseline`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:780 in private function `_ensure_release_entry`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:808 in private function `_ensure_project_entry`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:832 in private function `_load_deployed_state`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:879 in private function `_apply_change`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:1005 in private function `_resolve_script_path`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:1018 in private function `_compute_script_hash`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:1066 in private function `_resolve_planner_identity`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:1083 in private function `_parse_identity`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:1096 in private function `_validate_dependencies`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:1119 in private function `_execute_change_transaction`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:1232 in private function `_record_deployment_entries`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:1349 in private function `_record_failure_event`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:1428 in private function `_normalize_failure_event_note`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:1457 in private function `_insert_registry_tags`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:1504 in private function `_synchronise_registry_tags`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/deploy.py:1585 in private function `_register_deploy`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/add.py:30 in private function `_utcnow`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/add.py:141 in public function `add_command`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/add.py:281 in private function `_register_add`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/log.py:77 in public function `log_command`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/log.py:356 in private function `_register_log`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/rework.py:29 in private function `_utcnow`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/rework.py:54 in private function `_resolve_rework_suffix`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/rework.py:117 in public function `rework_command`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/rework.py:257 in private function `_register_rework`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/__init__.py:54 in public method `__init__`:
+        D107: Missing docstring in __init__
+sqlitch/cli/commands/__init__.py:58 in public method `show`:
+        D102: Missing docstring in public method
+sqlitch/cli/commands/__init__.py:65 in public function `register_command`:
+        D401: First line should be in imperative mood (perhaps 'Decorate', not 'Decorator')
+sqlitch/cli/commands/__init__.py:94 in public function `add_command`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/__init__.py:106 in public function `iter_command_registrars`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/__init__.py:112 in public function `load_commands`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/__init__.py:126 in private function `_clear_registry`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/upgrade.py:36 in public function `upgrade_command`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/upgrade.py:52 in private function `_register_upgrade`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/_context.py:21 in public function `require_cli_context`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/_context.py:71 in public function `project_root_from`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/_context.py:77 in public function `environment_from`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/_context.py:83 in public function `plan_override_from`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/_context.py:89 in public function `config_root_from`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/_context.py:95 in public function `quiet_mode_enabled`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/revert.py:89 in public function `revert_command`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/revert.py:566 in private function `_resolve_engine_target`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/revert.py:768 in private function `_introductory_message`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/revert.py:779 in private function `_register_revert`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/engine.py:51 in public function `engine_group`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/engine.py:83 in private function `add_engine`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/engine.py:132 in private function `update_engine`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/engine.py:163 in private function `remove_engine`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/engine.py:185 in private function `list_engines`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/engine.py:243 in private function `_engine_config_path`:
+        D205: 1 blank line required between summary line and description (found 0)
+sqlitch/cli/commands/engine.py:322 in private function `_resolve_engine_uri`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/engine.py:366 in private function `_register_engine`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/checkout.py:66 in public function `checkout_command`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/checkout.py:178 in private function `_register_checkout`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/target.py:34 in public function `target_command`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/target.py:54 in private function `target_add`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/target.py:111 in private function `target_alter`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/target.py:153 in private function `target_show`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/target.py:187 in private function `target_remove`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/target.py:217 in private function `target_list`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/target.py:317 in private function `_resolve_config_path`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/target.py:338 in private function `_register_target`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/verify.py:76 in private function `_resolve_engine_target`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/verify.py:184 in public function `verify_command`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/verify.py:344 in private function `_register_verify`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/init.py:66 in public function `init_command`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/init.py:139 in private function `_register_init`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/help.py:33 in public function `help_command`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/help.py:114 in private function `_register_help`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/_plan_utils.py:23 in public function `resolve_plan_path`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/_plan_utils.py:56 in public function `resolve_default_engine`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/tag.py:25 in private function `_utcnow`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/tag.py:53 in public function `tag_command`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/tag.py:73 in private function `_list_tags`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/tag.py:112 in private function `_add_tag`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/tag.py:207 in private function `_register_tag`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/status.py:80 in public function `status_command`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/status.py:170 in private function `_register_status`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/cli/commands/status.py:180 in private function `_resolve_plan_path`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/registry/migrations.py:660 in public function `get_registry_migrations`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/registry/migrations.py:667 in public function `list_registry_engines`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/registry/state.py:172 in public method `__post_init__`:
+        D105: Missing docstring in magic method
+sqlitch/registry/state.py:198 in public method `__init__`:
+        D107: Missing docstring in __init__
+sqlitch/registry/state.py:204 in public method `__iter__`:
+        D105: Missing docstring in magic method
+sqlitch/registry/state.py:208 in public method `__len__`:
+        D105: Missing docstring in magic method
+sqlitch/registry/state.py:211 in public method `records`:
+        D102: Missing docstring in public method
+sqlitch/registry/state.py:215 in public method `record_deploy`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/registry/state.py:231 in public method `remove_change`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/registry/state.py:238 in public method `get_record`:
+        D102: Missing docstring in public method
+sqlitch/registry/state.py:247 in public function `sort_registry_entries_by_deployment`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/registry/state.py:261 in public function `deserialize_registry_rows`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/registry/state.py:283 in public function `serialize_registry_entries`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/engine/sqlite.py:33 in public method `__init__`:
+        D107: Missing docstring in __init__
+sqlitch/engine/sqlite.py:50 in public method `connect_workspace`:
+        D102: Missing docstring in public method
+sqlitch/engine/sqlite.py:56 in public method `registry_filesystem_path`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/engine/sqlite.py:94 in public function `derive_sqlite_registry_uri`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/engine/sqlite.py:197 in public function `resolve_sqlite_filesystem_path`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/engine/sqlite.py:271 in public function `script_manages_transactions`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/engine/postgres.py:20 in public method `__init__`:
+        D107: Missing docstring in __init__
+sqlitch/engine/postgres.py:29 in public method `build_registry_connect_arguments`:
+        D102: Missing docstring in public method
+sqlitch/engine/postgres.py:32 in public method `build_workspace_connect_arguments`:
+        D102: Missing docstring in public method
+sqlitch/engine/postgres.py:35 in public method `connect_registry`:
+        D102: Missing docstring in public method
+sqlitch/engine/postgres.py:38 in public method `connect_workspace`:
+        D102: Missing docstring in public method
+sqlitch/engine/base.py:28 in public method `__post_init__`:
+        D105: Missing docstring in magic method
+sqlitch/engine/base.py:51 in public function `canonicalize_engine_name`:
+        D202: No blank lines allowed after function docstring (found 1)
+sqlitch/engine/base.py:74 in public method `__post_init__`:
+        D105: Missing docstring in magic method
+sqlitch/engine/base.py:96 in public method `__init__`:
+        D107: Missing docstring in __init__
+sqlitch/engine/base.py:146 in public method `__init__`:
+        D107: Missing docstring in __init__
+sqlitch/engine/mysql.py:20 in public method `__init__`:
+        D107: Missing docstring in __init__
+sqlitch/engine/mysql.py:29 in public method `build_registry_connect_arguments`:
+        D102: Missing docstring in public method
+sqlitch/engine/mysql.py:32 in public method `build_workspace_connect_arguments`:
+        D102: Missing docstring in public method
+sqlitch/engine/mysql.py:35 in public method `connect_registry`:
+        D102: Missing docstring in public method
+sqlitch/engine/mysql.py:38 in public method `connect_workspace`:
+        D102: Missing docstring in public method
