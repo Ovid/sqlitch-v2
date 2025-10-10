@@ -16,6 +16,7 @@ Options:
   --continue        Continue even if a step fails (log failures, exit 1 if any failed)
   --out filename    Write all output to this file (stripped of ANSI colors)
   --ignore STEPS    A list of step numbers to ignore if they fail.
+  --stop STEP       Stop after this step
 """
 
 import argparse
@@ -31,10 +32,11 @@ from pathlib import Path
 from typing import List, Tuple, Dict, Any, Set
 
 # ---------------- Configuration ----------------
-SQITCH_DIR = Path("sqitch_results")
-SQLITCH_DIR = Path("sqlitch_results")
-SQITCH_LOG = Path("sqitch.log")
-SQLITCH_LOG = Path("sqlitch.log")
+UAT_LOG = "uat.log"
+SQITCH_DIR = Path("uat/sqitch_results")
+SQITCH_LOG = SQITCH_DIR.joinpath(UAT_LOG)
+SQLITCH_DIR = Path("uat/sqlitch_results")
+SQLITCH_LOG = SQLITCH_DIR.joinpath(UAT_LOG)
 KEEP_DIRS_ON_FAIL = True
 STEP_COUNTER = 0
 
@@ -42,6 +44,7 @@ STEP_COUNTER = 0
 CONTINUE_ON_FAIL = False
 IGNORE_STEPS: Set[int] = set()
 HAD_FAILURE = False
+STOP_AFTER_STEP = None
 
 # Colors
 GREEN = "\033[0;32m"
@@ -332,45 +335,13 @@ def run_and_compare(description: str, cmd_base: str, *args: str):
 
     print(f"\n{GREEN}    ✅ Step completed successfully{NC}")
 
+    # --- Check for stop condition ---
+    global STOP_AFTER_STEP
+    if STOP_AFTER_STEP is not None and STEP_COUNTER >= STOP_AFTER_STEP:
+        color_print(CYAN, f"\n🛑 Stopping after step {STEP_COUNTER} as requested (--stop {STOP_AFTER_STEP})")
+        sys.exit(0)
 
-# ---------------- Main ----------------
-def main():
-    global CONTINUE_ON_FAIL, HAD_FAILURE, IGNORE_STEPS
-
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--continue", dest="cont", action="store_true",
-                        help="Continue even if a step fails")
-    parser.add_argument("--out", dest="outfile",
-                        help="Write full output to this file (colors stripped)")
-    parser.add_argument("--ignore", dest="ignore_steps", type=int, nargs='+',
-                        help="A list of step numbers to ignore on failure.")
-    args = parser.parse_args()
-
-    CONTINUE_ON_FAIL = args.cont
-    if args.ignore_steps:
-        IGNORE_STEPS = set(args.ignore_steps)
-
-    tee = None
-    if args.outfile:
-        tee = Tee(args.outfile)
-        sys.stdout = tee
-        sys.stderr = tee
-
-    color_print(GREEN, "="*60)
-    color_print(GREEN, "Sqitch vs. Sqlitch Functional Equivalence Test (User-Focused)")
-    color_print(GREEN, "="*60)
-
-    print("\nChecking for required commands...")
-    for cmd in ("sqitch", "sqlitch", "sqlite3"):
-        check_command(cmd)
-
-    print("Setting up test environment...")
-    cleanup_dirs()
-    SQITCH_DIR.mkdir(parents=True, exist_ok=True)
-    SQLITCH_DIR.mkdir(parents=True, exist_ok=True)
-    print("Test directories created.\n")
-
-    # === Test Sequence (SQLite Tutorial) ===
+def run_test_sequence():
     run_and_compare("Initialize Project",
                     "sqlitch", "init", "flipr",
                     "--uri", "https://github.com/sqitchers/sqitch-sqlite-intro/",
@@ -526,7 +497,11 @@ ROLLBACK;
                     "-n", "Tag v1.0.0-dev1.")
     
     # Create dev directories
+    if SQITCH_DIR.exists():
+        shutil.rmtree(SQITCH_DIR)
     (SQITCH_DIR / "dev").mkdir(parents=True, exist_ok=True)
+    if SQLITCH_DIR.exists():
+        shutil.rmtree(SQLITCH_DIR)
     (SQLITCH_DIR / "dev").mkdir(parents=True, exist_ok=True)
     
     run_and_compare("Deploy Tag to New DB", "sqlitch", "deploy", "db:sqlite:dev/flipr.db")
@@ -654,7 +629,48 @@ ROLLBACK;
             tee.close()
 
         sys.exit(0)
+# ---------------- Main ----------------
+def main():
+    global CONTINUE_ON_FAIL, HAD_FAILURE, IGNORE_STEPS, STOP_AFTER_STEP
 
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--continue", dest="cont", action="store_true",
+                        help="Continue even if a step fails")
+    parser.add_argument("--out", dest="outfile",
+                        help="Write full output to this file (colors stripped)")
+    parser.add_argument("--ignore", dest="ignore_steps", type=int, nargs='+',
+                        help="A list of step numbers to ignore on failure.")
+    parser.add_argument("--stop", dest="stop_step", type=int,
+                        help="Stop execution after completing this step number.")
+
+    args = parser.parse_args()
+
+    STOP_AFTER_STEP = args.stop_step
+    CONTINUE_ON_FAIL = args.cont
+    if args.ignore_steps:
+        IGNORE_STEPS = set(args.ignore_steps)
+
+    tee = None
+    if args.outfile:
+        tee = Tee(args.outfile)
+        sys.stdout = tee
+        sys.stderr = tee
+
+    color_print(GREEN, "="*60)
+    color_print(GREEN, "Sqitch vs. Sqlitch Functional Equivalence Test (User-Focused)")
+    color_print(GREEN, "="*60)
+
+    print("\nChecking for required commands...")
+    for cmd in ("sqitch", "sqlitch", "sqlite3"):
+        check_command(cmd)
+
+    print("Setting up test environment...")
+    cleanup_dirs()
+    SQITCH_DIR.mkdir(parents=True, exist_ok=True)
+    SQLITCH_DIR.mkdir(parents=True, exist_ok=True)
+    print("Test directories created.\n")
+
+    run_test_sequence()
 
 if __name__ == "__main__":
     try:
