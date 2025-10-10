@@ -2,7 +2,8 @@
 
 **Status**: 🆕 Ready for execution (2025-10-10)  
 **Input**: Design artifacts under `/specs/005-lockdown/`  
-**Prerequisites**: Feature 004 parity complete, current branch `005-lockdown`
+**Prerequisites**: Feature 004 parity complete, current branch `005-lockdown`  
+**Session Guide**: See [SESSION_CONTINUITY.md](./SESSION_CONTINUITY.md) for workflow and continuity across sessions
 
 ## Execution Flow (main)
 ```
@@ -17,6 +18,33 @@
 ## Format: `[ID] [Priority] Description`
 - **Priority Levels**: P1 (critical) · P2 (important) · P3 (nice-to-have)  
 - **[P]** flag means the task can run in parallel with others in the same block (independent files / no deps)
+
+## 🔧 Task Execution Protocol (for all tasks)
+**Before starting ANY task:**
+```bash
+cd /Users/poecurt/projects/sqlitch
+source .venv/bin/activate
+```
+
+**While working on a task:**
+```bash
+# Run specific test for the task
+pytest tests/path/to/test_file.py -v
+
+# Or run with coverage
+pytest tests/path/to/test_file.py --cov=sqlitch
+```
+
+**After completing each task:**
+```bash
+# Run full test suite to ensure no regressions
+pytest
+
+# Verify coverage still meets gate
+pytest --cov=sqlitch --cov-report=term
+```
+
+**Mark task complete:** Change `[ ]` to `[X]` in tasks.md after full suite passes.
 
 ---
 
@@ -36,7 +64,7 @@
 - [X] **T015 [P1][P]** Add unit tests for new helper modules (`uat/sanitization.py`, `uat/comparison.py`, `uat/test_steps.py`) in `tests/uat/test_helpers.py`
 - [X] **T016 [P1][P]** Add CLI contract test covering `python uat/forward-compat.py` happy path per tutorial in `tests/uat/test_forward_compat.py`
 - [X] **T017 [P1][P]** Add CLI contract test covering `python uat/backward-compat.py` happy path per tutorial in `tests/uat/test_backward_compat.py`
-- [ ] **T018 [P2][P]** Add documentation validation tests ensuring README quickstart / CONTRIBUTING instructions stay in sync (`tests/docs/test_quickstart_lockdown.py`)
+- [X] **T018 [P2][P]** Add documentation validation tests ensuring README quickstart / CONTRIBUTING instructions stay in sync (`tests/docs/test_quickstart_lockdown.py`)
 - [ ] **T019 [P1][P]** Add CLI contract test for `sqlitch bundle` (or document exemption) in `tests/cli/commands/test_bundle_lockdown.py`
 - [ ] **T020 [P1][P]** Add CLI contract test for `sqlitch checkout` in `tests/cli/commands/test_checkout_lockdown.py`
 - [ ] **T021 [P1][P]** Add CLI contract test for `sqlitch config` in `tests/cli/commands/test_config_lockdown.py`
@@ -97,19 +125,50 @@
 - Validation tasks (T060–T065) run last and require all earlier phases complete
 
 ## Parallel Execution Example
-```
+```bash
+# ALWAYS activate venv first
+source .venv/bin/activate
+
 # After baseline (T001–T003), run the following tests in parallel:
-Task.run("T015")
-Task.run("T016")
-Task.run("T017")
-Task.run("T018")
+pytest tests/uat/test_uat_helpers.py -v &
+pytest tests/uat/test_forward_compat.py -v &
+pytest tests/uat/test_backward_compat.py -v &
+pytest tests/docs/test_quickstart_lockdown.py -v &
+wait
+
+# After all pass, run full suite
+pytest
 ```
 (Shared helpers and CLI contract tests touch independent files, so they can execute simultaneously once setup is complete.)
 
 ---
 
 ## Notes
+- **CRITICAL**: Always run `source .venv/bin/activate` at the start of each session before any task
 - Always follow Test-First workflow: ensure new tests fail before fixing code
+- Run `pytest` (full suite) after completing each task to catch regressions
+- Only mark task `[X]` after full suite passes with coverage ≥90%
 - Respect Sqitch parity: consult `sqitch/` references before adjusting behavior
 - Retain sanitized logs for audit; never commit long-running raw outputs to git
 - Commit after each task for traceable history and easier reviews
+
+## Quick Reference Commands
+```bash
+# Start session
+cd /Users/poecurt/projects/sqlitch && source .venv/bin/activate
+
+# Run specific test
+pytest tests/path/to/test.py -v
+
+# Run with coverage
+pytest --cov=sqlitch --cov-report=term
+
+# Full validation
+pytest && echo "✅ All tests pass"
+
+# Quality gates
+mypy --strict sqlitch/
+pydocstyle sqlitch/
+black --check .
+isort --check-only .
+```
