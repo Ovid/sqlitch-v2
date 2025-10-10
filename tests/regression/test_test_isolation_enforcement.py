@@ -78,6 +78,8 @@ def test_no_direct_isolated_filesystem_usage() -> None:
         "tests/support/test_helpers.py",  # Defines the helper
         "tests/support/test_test_helpers.py",  # Tests the helper
         "tests/support/README.md",  # Documentation
+        "tests/conftest.py",  # Session hook - checks for violations
+        "tests/regression/test_test_isolation_enforcement.py",  # This file
     }
 
     # Search for test files using isolated_filesystem
@@ -100,46 +102,44 @@ def test_no_direct_isolated_filesystem_usage() -> None:
                 violating_files.append(line)
 
         if violating_files:
-            error_message = (
-                "\n"
-                "❌ CONSTITUTION VIOLATION: Test Isolation Not Enforced\n"
-                "\n"
-                f"Found {len(violating_files)} test file(s) using isolated_filesystem() directly:\n"
-                "\n"
-            )
-            for file in violating_files:
-                error_message += f"  - {file}\n"
+            files_list = "\n".join(f"  - {file}" for file in violating_files)
+            
+            error_message = f"""
 
-            error_message += (
-                "\n"
-                "This violates Constitution I: Test Isolation and Cleanup (MANDATORY)\n"
-                "\n"
-                "WHY THIS IS CRITICAL:\n"
-                "Direct use of isolated_filesystem() does NOT isolate environment variables.\n"
-                "Tests can write config files to ~/.config/sqlitch/ or ~/.sqitch/, polluting\n"
-                "the user's home directory and potentially DESTROYING existing Sqitch/SQLitch\n"
-                "configuration.\n"
-                "\n"
-                "HOW TO FIX:\n"
-                "1. Import the helper:\n"
-                "   from tests.support.test_helpers import isolated_test_context\n"
-                "\n"
-                "2. Replace:\n"
-                "   with runner.isolated_filesystem():\n"
-                "       # test code\n"
-                "\n"
-                "   With:\n"
-                "   with isolated_test_context(runner) as (runner, temp_dir):\n"
-                "       # test code\n"
-                "\n"
-                "3. Update paths:\n"
-                "   Change Path('file.txt') to (temp_dir / 'file.txt')\n"
-                "\n"
-                "4. For batch processing:\n"
-                "   python scripts/migrate_test_isolation.py <test_file>\n"
-                "\n"
-                "See tests/support/README.md for detailed migration guide.\n"
-            )
+❌ CONSTITUTION VIOLATION: Test Isolation Not Enforced
+
+Found {len(violating_files)} test file(s) using isolated_filesystem() directly:
+
+{files_list}
+
+This violates Constitution I: Test Isolation and Cleanup (MANDATORY)
+
+WHY THIS IS CRITICAL:
+Direct use of isolated_filesystem() does NOT isolate environment variables.
+Tests can write config files to ~/.config/sqlitch/ or ~/.sqitch/, polluting
+the user's home directory and potentially DESTROYING existing Sqitch/SQLitch
+configuration.
+
+HOW TO FIX:
+1. Import the helper:
+   from tests.support.test_helpers import isolated_test_context
+
+2. Replace:
+   with runner.isolated_filesystem():
+       # test code
+
+   With:
+   with isolated_test_context(runner) as (runner, temp_dir):
+       # test code
+
+3. Update paths:
+   Change Path('file.txt') to (temp_dir / 'file.txt')
+
+4. For batch processing:
+   python scripts/migrate_test_isolation.py <test_file>
+
+See tests/support/README.md for detailed migration guide.
+"""
             pytest.fail(error_message)
 
     # Any other return code is an error
