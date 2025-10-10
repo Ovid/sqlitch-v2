@@ -169,7 +169,7 @@ def test_target_honours_config_root_override(runner: CliRunner) -> None:
     """Targets should be persisted under the resolved config root when provided."""
 
     with isolated_test_context(runner) as (runner, temp_dir):
-        config_root = Path(tmp_dir) / "config-home"
+        config_root = Path(temp_dir) / "config-home"
         result = runner.invoke(
             main,
             [

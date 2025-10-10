@@ -122,25 +122,27 @@ def isolated_test_context(
 
     try:
         if base_dir is not None:
-            # Use provided base directory (e.g., pytest's tmp_path)
-            temp_dir = Path(base_dir)
+            # Use provided base directory with Click's isolated_filesystem to change cwd
+            # This provides both env isolation AND directory change behavior
+            with runner.isolated_filesystem(temp_dir=base_dir) as temp_dir_str:
+                temp_dir = Path(temp_dir_str)
 
-            # Set up isolated config paths within the base directory
-            system_config_dir = temp_dir / "etc" / "sqitch"
-            user_config_dir = temp_dir / ".sqitch"
-            local_config = temp_dir / "sqitch.conf"
+                # Set up isolated config paths within the base directory
+                system_config_dir = temp_dir / "etc" / "sqitch"
+                user_config_dir = temp_dir / ".sqitch"
+                local_config = temp_dir / "sqitch.conf"
 
-            # Create the directory structure
-            system_config_dir.mkdir(parents=True, exist_ok=True)
-            user_config_dir.mkdir(parents=True, exist_ok=True)
+                # Create the directory structure
+                system_config_dir.mkdir(parents=True, exist_ok=True)
+                user_config_dir.mkdir(parents=True, exist_ok=True)
 
-            # Set environment variables to point to isolated locations
-            os.environ["SQLITCH_SYSTEM_CONFIG"] = str(system_config_dir / "sqitch.conf")
-            os.environ["SQLITCH_USER_CONFIG"] = str(user_config_dir / "sqitch.conf")
-            os.environ["SQLITCH_CONFIG"] = str(local_config)
+                # Set environment variables to point to isolated locations
+                os.environ["SQLITCH_SYSTEM_CONFIG"] = str(system_config_dir / "sqitch.conf")
+                os.environ["SQLITCH_USER_CONFIG"] = str(user_config_dir / "sqitch.conf")
+                os.environ["SQLITCH_CONFIG"] = str(local_config)
 
-            # Yield control to the test
-            yield runner, temp_dir
+                # Yield control to the test
+                yield runner, temp_dir
         else:
             # Use Click's isolated_filesystem() to create temp directory
             with runner.isolated_filesystem() as temp_dir_str:

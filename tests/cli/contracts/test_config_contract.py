@@ -28,7 +28,7 @@ def test_config_gets_value_from_local_scope(runner: CliRunner) -> None:
     """Retrieving a key should honour local scope precedence by default."""
 
     with isolated_test_context(runner) as (runner, temp_dir):
-        _write_config((temp_dir / "sqlitch.conf"), "[core]\nengine = sqlite\n")
+        _write_config((temp_dir / "sqitch.conf"), "[core]\nengine = sqlite\n")
 
         env = {"SQLITCH_CONFIG_ROOT": str((temp_dir / "config-root"))}
         result = runner.invoke(main, ["config", "core.engine"], env=env)
@@ -41,9 +41,9 @@ def test_config_user_scope_override(runner: CliRunner) -> None:
     """Explicit scope flags should select the requested configuration file."""
 
     with isolated_test_context(runner) as (runner, temp_dir):
-        _write_config((temp_dir / "sqlitch.conf"), "[core]\nengine = sqlite\n")
+        _write_config((temp_dir / "sqitch.conf"), "[core]\nengine = sqlite\n")
         user_root = Path("config-root")
-        _write_config(user_root / "sqlitch.conf", "[core]\nengine = postgres\n")
+        _write_config(user_root / "sqitch.conf", "[core]\nengine = postgres\n")
 
         env = {"SQLITCH_CONFIG_ROOT": str(user_root)}
 
@@ -78,7 +78,7 @@ def test_config_unset_removes_value(runner: CliRunner) -> None:
     """Unsetting a value should remove it from the configuration file."""
 
     with isolated_test_context(runner) as (runner, temp_dir):
-        _write_config((temp_dir / "sqlitch.conf"), "[core]\nengine = sqlite\n")
+        _write_config((temp_dir / "sqitch.conf"), "[core]\nengine = sqlite\n")
         env = {"SQLITCH_CONFIG_ROOT": str((temp_dir / "config-root"))}
 
         result = runner.invoke(
@@ -89,7 +89,7 @@ def test_config_unset_removes_value(runner: CliRunner) -> None:
 
         assert result.exit_code == 0, result.stderr
         assert "Unset core.engine in local scope" in result.stdout
-        content = (temp_dir / "sqlitch.conf").read_text(encoding="utf-8")
+        content = (temp_dir / "sqitch.conf").read_text(encoding="utf-8")
         assert "engine" not in content
 
 
@@ -113,9 +113,9 @@ def test_config_list_json_outputs_settings(runner: CliRunner) -> None:
     """Listing with --json should emit a JSON payload of merged settings."""
 
     with isolated_test_context(runner) as (runner, temp_dir):
-        _write_config((temp_dir / "sqlitch.conf"), "[core]\nengine = sqlite\n")
+        _write_config((temp_dir / "sqitch.conf"), "[core]\nengine = sqlite\n")
         user_root = Path("config-root")
-        _write_config(user_root / "sqlitch.conf", "[deploy]\nuri = sqlite.db\n")
+        _write_config(user_root / "sqitch.conf", "[deploy]\nuri = sqlite.db\n")
 
         env = {"SQLITCH_CONFIG_ROOT": str(user_root)}
         result = runner.invoke(main, ["config", "--list", "--json"], env=env)
@@ -130,7 +130,7 @@ def test_config_list_plain_outputs_lines(runner: CliRunner) -> None:
     """Plain --list should emit key=value pairs sorted alphabetically."""
 
     with isolated_test_context(runner) as (runner, temp_dir):
-        _write_config((temp_dir / "sqlitch.conf"), "[DEFAULT]\ncolor = blue\n[core]\nengine = sqlite\n")
+        _write_config((temp_dir / "sqitch.conf"), "[DEFAULT]\ncolor = blue\n[core]\nengine = sqlite\n")
         env = {"SQLITCH_CONFIG_ROOT": str((temp_dir / "config-root"))}
 
         result = runner.invoke(main, ["config", "--list"], env=env)
@@ -232,7 +232,7 @@ def test_config_get_missing_option_errors(runner: CliRunner) -> None:
     """Looking up a missing option without an explicit scope should raise an error."""
 
     with isolated_test_context(runner) as (runner, temp_dir):
-        _write_config((temp_dir / "sqlitch.conf"), "[core]\nengine = sqlite\n")
+        _write_config((temp_dir / "sqitch.conf"), "[core]\nengine = sqlite\n")
         env = {"SQLITCH_CONFIG_ROOT": str((temp_dir / "config-root"))}
 
         result = runner.invoke(main, ["config", "core.uri"], env=env)
@@ -293,14 +293,14 @@ def test_config_unset_default_section(runner: CliRunner) -> None:
     """Unsetting a DEFAULT.* key should remove it from the defaults mapping."""
 
     with isolated_test_context(runner) as (runner, temp_dir):
-        _write_config((temp_dir / "sqlitch.conf"), "[DEFAULT]\ncolor = blue\n")
+        _write_config((temp_dir / "sqitch.conf"), "[DEFAULT]\ncolor = blue\n")
         env = {"SQLITCH_CONFIG_ROOT": str((temp_dir / "config-root"))}
 
         result = runner.invoke(main, ["config", "--unset", "DEFAULT.color"], env=env)
 
         assert result.exit_code == 0, result.stderr
         assert "Unset DEFAULT.color in local scope" in result.stdout
-        content = (temp_dir / "sqlitch.conf").read_text(encoding="utf-8")
+        content = (temp_dir / "sqitch.conf").read_text(encoding="utf-8")
         assert "color" not in content
 
 
@@ -308,7 +308,7 @@ def test_config_gets_default_value(runner: CliRunner) -> None:
     """DEFAULT section lookups should succeed without explicit scope flags."""
 
     with isolated_test_context(runner) as (runner, temp_dir):
-        _write_config((temp_dir / "sqlitch.conf"), "[DEFAULT]\ncolor = blue\n")
+        _write_config((temp_dir / "sqitch.conf"), "[DEFAULT]\ncolor = blue\n")
         env = {"SQLITCH_CONFIG_ROOT": str((temp_dir / "config-root"))}
 
         result = runner.invoke(main, ["config", "DEFAULT.color"], env=env)
@@ -322,7 +322,7 @@ def test_config_gets_default_value_from_explicit_scope(runner: CliRunner) -> Non
 
     with isolated_test_context(runner) as (runner, temp_dir):
         user_root = Path("config-root")
-        _write_config(user_root / "sqlitch.conf", "[DEFAULT]\ncolor = blue\n")
+        _write_config(user_root / "sqitch.conf", "[DEFAULT]\ncolor = blue\n")
         env = {"SQLITCH_CONFIG_ROOT": str(user_root)}
 
         result = runner.invoke(main, ["config", "--user", "DEFAULT.color"], env=env)
