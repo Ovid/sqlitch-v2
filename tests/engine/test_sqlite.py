@@ -575,8 +575,9 @@ def test_filesystem_path_from_split_with_localhost() -> None:
 
 def test_filesystem_path_from_split_with_empty_path() -> None:
     """Test _filesystem_path_from_split handles empty path."""
-    from sqlitch.engine.sqlite import _filesystem_path_from_split
     from urllib.parse import SplitResult
+
+    from sqlitch.engine.sqlite import _filesystem_path_from_split
 
     split = SplitResult(scheme="file", netloc="", path="", query="", fragment="")
     path = _filesystem_path_from_split(split)
@@ -585,8 +586,9 @@ def test_filesystem_path_from_split_with_empty_path() -> None:
 
 def test_filesystem_path_from_split_with_url_encoded_chars() -> None:
     """Test _filesystem_path_from_split handles URL encoding."""
-    from sqlitch.engine.sqlite import _filesystem_path_from_split
     from urllib.parse import SplitResult
+
+    from sqlitch.engine.sqlite import _filesystem_path_from_split
 
     # Path with spaces encoded as %20
     split = SplitResult(

@@ -12,9 +12,10 @@ Tests for T028: Config implementation (validation)
 from __future__ import annotations
 
 import os
+from pathlib import Path
+
 import pytest
 from click.testing import CliRunner
-from pathlib import Path
 
 from sqlitch.cli.main import main
 from tests.support.test_helpers import isolated_test_context

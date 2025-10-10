@@ -5,16 +5,15 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from pathlib import Path
 
-from click.testing import CliRunner
 import pytest
+from click.testing import CliRunner
 
 from sqlitch.cli.commands import rework as rework_module
 from sqlitch.cli.main import main
-from tests.support.test_helpers import isolated_test_context
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change
 from sqlitch.plan.parser import parse_plan
-
+from tests.support.test_helpers import isolated_test_context
 
 TAG_NAME = "v1.0.0"
 
@@ -89,8 +88,8 @@ def test_rework_creates_rework_scripts_and_updates_plan(
     # Mock system functions to prevent system full name from taking precedence
     monkeypatch.setattr("os.getlogin", lambda: "test")
     try:
-        import pwd
         import collections
+        import pwd
 
         MockPwRecord = collections.namedtuple("MockPwRecord", ["pw_name", "pw_gecos"])
         monkeypatch.setattr("pwd.getpwuid", lambda uid: MockPwRecord(pw_name="test", pw_gecos=""))

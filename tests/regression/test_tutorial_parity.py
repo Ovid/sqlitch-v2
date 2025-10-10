@@ -12,10 +12,10 @@ import pytest
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
-from tests.support.test_helpers import isolated_test_context
 from sqlitch.engine.sqlite import derive_sqlite_registry_uri, resolve_sqlite_filesystem_path
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change
+from tests.support.test_helpers import isolated_test_context
 
 __all__ = []
 

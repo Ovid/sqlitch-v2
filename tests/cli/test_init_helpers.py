@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from sqlitch.cli.commands import CommandError
 import sqlitch.cli.commands.init as init_module
+from sqlitch.cli.commands import CommandError
 
 
 def test_determine_project_name_variants(tmp_path: Path) -> None:

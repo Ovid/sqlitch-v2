@@ -14,10 +14,10 @@ from sqlitch.plan.model import Change, Plan, PlanEntry, Tag
 from sqlitch.plan.parser import PlanParseError, parse_plan
 from sqlitch.utils.fs import ArtifactConflictError, resolve_plan_file
 
-from . import CommandError, register_command
-from ._plan_utils import resolve_default_engine, resolve_plan_path
-from ._context import environment_from, plan_override_from, project_root_from, require_cli_context
 from ..options import global_output_options, global_sqitch_options
+from . import CommandError, register_command
+from ._context import environment_from, plan_override_from, project_root_from, require_cli_context
+from ._plan_utils import resolve_default_engine, resolve_plan_path
 
 __all__ = ["plan_command"]
 

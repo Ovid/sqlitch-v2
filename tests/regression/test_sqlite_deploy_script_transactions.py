@@ -8,7 +8,6 @@ from contextlib import chdir, closing
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
-
 from tests.support.sqlite_fixtures import ChangeScript, create_sqlite_project
 
 

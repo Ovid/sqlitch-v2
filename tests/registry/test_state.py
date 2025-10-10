@@ -8,8 +8,8 @@ from sqlitch.registry.state import (
     RegistryEntry,
     RegistryState,
     deserialize_registry_rows,
-    sort_registry_entries_by_deployment,
     serialize_registry_entries,
+    sort_registry_entries_by_deployment,
 )
 
 

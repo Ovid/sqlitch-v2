@@ -10,7 +10,6 @@ from click.testing import CliRunner
 
 from sqlitch.cli.main import main
 
-
 # All 19 Sqitch commands
 COMMANDS = [
     "add",

@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Iterator
 
 import click
-from click.testing import CliRunner
 import pytest
+from click.testing import CliRunner
 
 from sqlitch.cli import CLIContext
 from sqlitch.cli.commands import CommandError

@@ -7,28 +7,28 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-from click.testing import CliRunner
 import pytest
+from click.testing import CliRunner
 
-from sqlitch.cli.main import main
-from tests.support.test_helpers import isolated_test_context
 from sqlitch.cli.commands import CommandError
 from sqlitch.cli.commands.status import (
     CurrentChange,
     _build_json_payload,
     _calculate_pending,
     _determine_status,
-    _render_human_output,
-    _resolve_registry_target,
-    _resolve_plan_path,
     _load_plan,
     _load_registry_rows,
+    _render_human_output,
+    _resolve_plan_path,
+    _resolve_registry_target,
 )
+from sqlitch.cli.main import main
 from sqlitch.engine.sqlite import derive_sqlite_registry_uri, resolve_sqlite_filesystem_path
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change
 from sqlitch.plan.parser import PlanParseError
 from sqlitch.utils.fs import ArtifactConflictError, ArtifactResolution
+from tests.support.test_helpers import isolated_test_context
 
 
 @pytest.fixture()

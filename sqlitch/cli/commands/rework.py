@@ -11,16 +11,16 @@ import click
 
 from sqlitch.config.resolver import resolve_config
 from sqlitch.plan.formatter import write_plan
-from sqlitch.plan.model import Change, PlanEntry, Plan, Tag
+from sqlitch.plan.model import Change, Plan, PlanEntry, Tag
 from sqlitch.plan.parser import PlanParseError, parse_plan
 from sqlitch.plan.utils import slugify_change_name
 from sqlitch.utils.identity import resolve_planner_identity
 
+from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
 from ._context import require_cli_context
 from ._plan_utils import resolve_default_engine, resolve_plan_path
 from .add import _ensure_script_path, _format_display_path
-from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["rework_command"]
 

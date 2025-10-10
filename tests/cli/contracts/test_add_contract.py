@@ -5,15 +5,15 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from pathlib import Path
 
-from click.testing import CliRunner
 import pytest
+from click.testing import CliRunner
 
 from sqlitch.cli.commands import add as add_module
 from sqlitch.cli.main import main
-from tests.support.test_helpers import isolated_test_context
-from sqlitch.plan.model import Change
 from sqlitch.plan.formatter import write_plan
+from sqlitch.plan.model import Change
 from sqlitch.utils.templates import default_template_body, render_template
+from tests.support.test_helpers import isolated_test_context
 
 
 def _write_plan(path: Path, entries: tuple[Change, ...] = ()) -> None:
@@ -44,8 +44,8 @@ def test_add_appends_change_and_creates_scripts(monkeypatch: pytest.MonkeyPatch)
     # Mock system functions to prevent system name from taking precedence
     monkeypatch.setattr("os.getlogin", lambda: "test")
     try:
-        import pwd
         import collections
+        import pwd
 
         MockPwRecord = collections.namedtuple("MockPwRecord", ["pw_name", "pw_gecos"])
         monkeypatch.setattr("pwd.getpwuid", lambda uid: MockPwRecord(pw_name="test", pw_gecos=""))
@@ -178,8 +178,8 @@ def test_add_uses_explicit_plan_override(monkeypatch: pytest.MonkeyPatch) -> Non
     # Mock system functions to prevent system name from taking precedence
     monkeypatch.setattr("os.getlogin", lambda: "test")
     try:
-        import pwd
         import collections
+        import pwd
 
         MockPwRecord = collections.namedtuple("MockPwRecord", ["pw_name", "pw_gecos"])
         monkeypatch.setattr("pwd.getpwuid", lambda uid: MockPwRecord(pw_name="test", pw_gecos=""))

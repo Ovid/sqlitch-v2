@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import io
+from datetime import datetime, timezone
 
 from sqlitch.cli.options import LogConfiguration
 from sqlitch.utils.logging import StructuredLogger

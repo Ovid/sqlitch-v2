@@ -6,7 +6,6 @@ import pytest
 
 from sqlitch.plan import model, parser
 
-
 PLAN_TEXT = """%project=widgets
 %default_engine=pg
 change core:init deploy/core.sql revert/core.sql planner=alice@example.com planned_at=2025-10-03T12:30:00Z

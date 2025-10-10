@@ -12,6 +12,7 @@ from sqlitch.plan.model import Change, Plan
 from sqlitch.plan.parser import PlanParseError, parse_plan
 from sqlitch.utils.time import isoformat_utc
 
+from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
 from ._context import (
     environment_from,
@@ -21,7 +22,6 @@ from ._context import (
 )
 from ._plan_utils import resolve_default_engine, resolve_plan_path
 from .add import _format_display_path
-from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["show_command"]
 

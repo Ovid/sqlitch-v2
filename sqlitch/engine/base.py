@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+import importlib
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-import importlib
 from types import MappingProxyType, ModuleType
 from typing import Any, TypeVar
 

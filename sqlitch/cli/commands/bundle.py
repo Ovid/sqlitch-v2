@@ -9,10 +9,10 @@ from pathlib import Path
 
 import click
 
+from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
 from ._context import environment_from, plan_override_from, project_root_from, quiet_mode_enabled
 from ._plan_utils import resolve_plan_path
-from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["bundle_command"]
 

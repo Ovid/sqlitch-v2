@@ -11,7 +11,6 @@ from click.testing import CliRunner
 from sqlitch.cli.main import main
 from tests.support.test_helpers import isolated_test_context
 
-
 # All 19 Sqitch commands
 COMMANDS = [
     "add",

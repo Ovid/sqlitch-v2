@@ -25,8 +25,8 @@ def test_resolve_planner_prioritises_sqlitch_env(monkeypatch: pytest.MonkeyPatch
     # Mock system functions to prevent real system lookups
     monkeypatch.setattr("os.getlogin", lambda: "fallback")
     try:
-        import pwd
         import collections
+        import pwd
 
         MockPwRecord = collections.namedtuple("MockPwRecord", ["pw_name", "pw_gecos"])
         monkeypatch.setattr(
@@ -51,8 +51,8 @@ def test_resolve_planner_fallbacks_when_no_email(monkeypatch: pytest.MonkeyPatch
 
     # Mock pwd module if it exists (Unix/macOS)
     try:
-        import pwd
         import collections
+        import pwd
 
         MockPwRecord = collections.namedtuple("MockPwRecord", ["pw_name", "pw_gecos"])
         monkeypatch.setattr("pwd.getpwuid", lambda uid: MockPwRecord(pw_name="backup", pw_gecos=""))

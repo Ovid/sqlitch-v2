@@ -18,10 +18,10 @@ from sqlitch.plan.utils import slugify_change_name
 from sqlitch.utils.identity import resolve_planner_identity
 from sqlitch.utils.templates import default_template_body, render_template, resolve_template_path
 
+from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
 from ._context import require_cli_context
 from ._plan_utils import resolve_default_engine, resolve_plan_path
-from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["add_command"]
 

@@ -15,10 +15,10 @@ from sqlitch.engine.scripts import Script
 from sqlitch.plan.model import Plan
 from sqlitch.plan.parser import parse_plan
 
+from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
 from ._context import require_cli_context
 from ._plan_utils import resolve_default_engine, resolve_plan_path
-from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["verify_command"]
 

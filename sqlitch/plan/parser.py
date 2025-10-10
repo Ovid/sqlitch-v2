@@ -2,17 +2,18 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
 import hashlib
 import re
 import shlex
+from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
 from uuid import UUID
 
-from .model import Change, Plan, PlanEntry, Tag
 from sqlitch.plan.utils import slugify_change_name
 from sqlitch.utils.time import parse_iso_datetime
+
+from .model import Change, Plan, PlanEntry, Tag
 
 
 class PlanParseError(ValueError):

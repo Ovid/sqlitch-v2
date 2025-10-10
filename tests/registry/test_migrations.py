@@ -11,7 +11,6 @@ from sqlitch.registry.migrations import (
     get_registry_migrations,
 )
 
-
 _ROOT = Path(__file__).resolve().parent.parent.parent
 _SQITCH_DIR = _ROOT / "sqitch" / "lib" / "App" / "Sqitch" / "Engine"
 _REFERENCE_FILENAMES = {

@@ -7,9 +7,8 @@ from typing import Iterator
 from uuid import UUID
 
 import click
-from click.testing import CliRunner
 import pytest
-
+from click.testing import CliRunner
 
 cli_main = importlib.import_module("sqlitch.cli.main")
 

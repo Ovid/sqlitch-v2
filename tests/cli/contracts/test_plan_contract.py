@@ -6,13 +6,13 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from click.testing import CliRunner
 import pytest
+from click.testing import CliRunner
 
 from sqlitch.cli.main import main
-from tests.support.test_helpers import isolated_test_context
 from sqlitch.plan.formatter import format_plan, write_plan
 from sqlitch.plan.model import Change, Tag
+from tests.support.test_helpers import isolated_test_context
 
 
 @pytest.fixture()

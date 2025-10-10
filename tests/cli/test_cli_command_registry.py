@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-import types
 import sys
+import types
 from typing import Iterator
 
 import click
 import pytest
 
+from sqlitch.cli.commands import _clear_registry  # type: ignore[attr-defined]
 from sqlitch.cli.commands import (
     CommandError,
     CommandRegistrationError,
@@ -16,7 +17,6 @@ from sqlitch.cli.commands import (
     iter_command_registrars,
     load_commands,
     register_command,
-    _clear_registry,  # type: ignore[attr-defined]
 )
 
 

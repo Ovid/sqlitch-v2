@@ -10,17 +10,17 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from sqlitch.cli.main import main
-from tests.support.test_helpers import isolated_test_context
 from sqlitch.cli.commands import CommandError
 from sqlitch.cli.commands.verify import (
     _execute_sqlite_verify_script,
+    _load_plan,
     _resolve_engine_target,
     _resolve_sqlite_workspace_uri,
     _strip_sqlite_uri_prefix,
-    _load_plan,
 )
+from sqlitch.cli.main import main
 from sqlitch.config import resolver as config_resolver
+from tests.support.test_helpers import isolated_test_context
 
 
 @contextmanager

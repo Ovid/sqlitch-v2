@@ -9,9 +9,10 @@ Tests for T052: Engine validation
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from click.testing import CliRunner
-from pathlib import Path
 
 from sqlitch.cli.main import main
 from tests.support.test_helpers import isolated_test_context

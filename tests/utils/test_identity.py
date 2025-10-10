@@ -2,22 +2,23 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 import sys
-import pytest
-import hashlib
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from sqlitch.utils.identity import (
     UserIdentity,
     generate_change_id,
+    get_hostname,
+    get_system_fullname,
+    resolve_email,
+    resolve_fullname,
     resolve_planner_identity,
     resolve_username,
-    resolve_fullname,
-    resolve_email,
-    get_system_fullname,
-    get_hostname,
 )
 
 

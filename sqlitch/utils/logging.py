@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+import json
+import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
-import json
-import re
 from types import MappingProxyType
 from typing import Any, TextIO
 

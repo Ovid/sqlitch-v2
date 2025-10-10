@@ -12,10 +12,11 @@ from typing import Callable
 
 import click
 
-from sqlitch.config.loader import ConfigScope
 from sqlitch.config import resolver as config_resolver
+from sqlitch.config.loader import ConfigScope
 from sqlitch.utils.fs import ArtifactConflictError, resolve_config_file
 
+from ..options import global_sqitch_options
 from . import CommandError, register_command
 from ._context import (
     environment_from,
@@ -23,7 +24,6 @@ from ._context import (
     quiet_mode_enabled,
     require_cli_context,
 )
-from ..options import global_sqitch_options
 
 __all__ = ["config_command"]
 

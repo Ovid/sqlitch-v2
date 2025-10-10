@@ -14,9 +14,9 @@ from sqlitch.engine.sqlite import (
 )
 from sqlitch.utils.fs import ArtifactConflictError, resolve_config_file
 
+from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
 from ._context import quiet_mode_enabled, require_cli_context
-from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["target_command"]
 

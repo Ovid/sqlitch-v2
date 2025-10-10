@@ -11,10 +11,10 @@ import click
 from sqlitch.engine import EngineTarget, create_engine
 from sqlitch.engine.base import UnsupportedEngineError
 
+from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
 from ._context import require_cli_context
 from .status import _resolve_registry_target
-from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["log_command"]
 

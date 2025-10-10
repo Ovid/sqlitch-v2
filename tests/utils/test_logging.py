@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import io
 import json
+from datetime import datetime, timezone
 
 from rich.console import Console
 

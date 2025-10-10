@@ -11,9 +11,8 @@ from typing import Iterable
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
-from tests.support.test_helpers import isolated_test_context
 from sqlitch.engine.sqlite import derive_sqlite_registry_uri, resolve_sqlite_filesystem_path
-
+from tests.support.test_helpers import isolated_test_context
 
 GOLDEN_ROOT = Path(__file__).resolve().parents[2] / "support" / "golden" / "registry" / "sqlite"
 

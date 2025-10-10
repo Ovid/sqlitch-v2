@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-import re
 
 __all__ = [
     "DEFAULT_TEMPLATE_BODIES",

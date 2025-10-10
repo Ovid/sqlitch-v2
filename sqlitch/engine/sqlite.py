@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 import sqlite3
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
-from urllib.parse import SplitResult, urlsplit, urlunsplit, unquote
+from urllib.parse import SplitResult, unquote, urlsplit, urlunsplit
 
 from .base import (
     ConnectArguments,
