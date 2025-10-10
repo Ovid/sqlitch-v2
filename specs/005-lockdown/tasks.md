@@ -32,7 +32,7 @@
 - [X] **T011 [P1]** Add registry state mutation/error tests in `tests/registry/test_state_lockdown.py`
 - [X] **T012 [P1]** Add identity fallback/OS variance tests in `tests/utils/test_identity_lockdown.py`
 - [X] **T013 [P1]** Add CLI context and flag regression tests (init/add/deploy error paths) using `CliRunner` in `tests/cli/test_main_lockdown.py`
-- [ ] **T014 [P1]** Add SQLite engine failure-mode tests (transaction safety, PRAGMA validation) in `tests/engine/test_sqlite_lockdown.py`
+- [X] **T014 [P1]** Add SQLite engine failure-mode tests (transaction safety, PRAGMA validation) in `tests/engine/test_sqlite_lockdown.py`
 - [ ] **T015 [P1][P]** Add unit tests for new helper modules (`uat/sanitization.py`, `uat/comparison.py`, `uat/test_steps.py`) in `tests/uat/test_helpers.py`
 - [ ] **T016 [P1][P]** Add CLI contract test covering `python uat/forward-compat.py` happy path per tutorial in `tests/uat/test_forward_compat.py`
 - [ ] **T017 [P1][P]** Add CLI contract test covering `python uat/backward-compat.py` happy path per tutorial in `tests/uat/test_backward_compat.py`
@@ -59,7 +59,7 @@
 - [X] **T111 [P1]** Raise `sqlitch/registry/state.py` coverage ≥90% with deterministic state transitions and failure summaries from T011
 - [ ] **T112 [P1]** Harden `sqlitch/utils/identity.py` cross-platform fallbacks per T012; document OS-specific branches
 - [ ] **T113 [P1]** Expand `sqlitch/cli/main.py` error handling and option validation to satisfy T013
-- [ ] **T114 [P1]** Patch `sqlitch/engine/sqlite.py` to cover PRAGMA/transactional edge cases surfaced by T014
+- [X] **T114 [P1]** Patch `sqlitch/engine/sqlite.py` to cover PRAGMA/transactional edge cases surfaced by T014
 - [ ] **T115 [P1]** Extract shared helpers (`uat/sanitization.py`, `uat/comparison.py`, `uat/test_steps.py`, `uat/__init__.py`) and refactor `uat/side-by-side.py` to use them (green T015)
 - [ ] **T116 [P1]** Implement `uat/forward-compat.py` using shared helpers and ensure parity with Sqitch sequencing (green T016)
 - [ ] **T117 [P1]** Implement `uat/backward-compat.py` using shared helpers and ensure parity with SQLitch sequencing (green T017)

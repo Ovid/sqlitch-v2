@@ -19,6 +19,7 @@ from sqlitch.engine.sqlite import (
     extract_sqlite_statements,
     resolve_sqlite_filesystem_path,
     script_manages_transactions,
+    validate_sqlite_script,
 )
 from sqlitch.plan.model import Change, Plan
 from sqlitch.plan.parser import PlanParseError, parse_plan
@@ -346,6 +347,7 @@ def _revert_change(
         raise CommandError(f"Revert script {script_path} is missing for change '{change.name}'.")
 
     script_body = script_path.read_text(encoding="utf-8")
+    validate_sqlite_script(script_body)
     manages_transactions = script_manages_transactions(script_body)
 
     # Get change metadata from deployed state
