@@ -83,9 +83,9 @@ pytest --cov=sqlitch --cov-report=term
 - [ ] **T034 [P1][P]** Add CLI contract test for `sqlitch verify` in `tests/cli/commands/test_verify_lockdown.py`
 
 ## Phase 3.3 · Implementation & Coverage (execute only after corresponding tests are red)
-- [ ] **T110 [P1]** Raise `sqlitch/config/resolver.py` coverage ≥90% by implementing edge cases and error messaging referenced by T010
+- [X] **T110 [P1]** Raise `sqlitch/config/resolver.py` coverage ≥90% by implementing edge cases and error messaging referenced by T010
 - [X] **T111 [P1]** Raise `sqlitch/registry/state.py` coverage ≥90% with deterministic state transitions and failure summaries from T011
-- [ ] **T112 [P1]** Harden `sqlitch/utils/identity.py` cross-platform fallbacks per T012; document OS-specific branches
+- [X] **T112 [P1]** Harden `sqlitch/utils/identity.py` cross-platform fallbacks per T012; document OS-specific branches
 - [ ] **T113 [P1]** Expand `sqlitch/cli/main.py` error handling and option validation to satisfy T013
 - [X] **T114 [P1]** Patch `sqlitch/engine/sqlite.py` to cover PRAGMA/transactional edge cases surfaced by T014
 - [ ] **T115 [P1]** Extract shared helpers (`uat/sanitization.py`, `uat/comparison.py`, `uat/test_steps.py`, `uat/__init__.py`) and refactor `uat/side-by-side.py` to use them (green T015)
