@@ -89,12 +89,30 @@ For the complete tutorial workflow with all commands, see:
 
 ### Running the Test Suite
 
-Tests enforce ≥90% coverage and fail when skip guards are violated.
+⚠️ **IMPORTANT SAFETY WARNING**: While we've implemented extensive test isolation measures to prevent the test suite from modifying your actual configuration files, we **strongly recommend running tests in an isolated environment** such as:
+- A Docker container
+- A dedicated VM or cloud instance
+- A separate user account with its own home directory
+
+**Why?** The test suite exercises configuration file operations extensively. Although all tests use isolated filesystem contexts and environment variable overrides to prevent pollution of `~/.sqitch/` and `~/.config/`, bugs in the isolation layer could potentially modify your actual Sqitch/SQLitch configuration files. If you have existing Sqitch projects, losing those configurations could be catastrophic.
+
+**Safe Testing:**
 
 ```bash
+# Option 1: Run in a Docker container (recommended)
+docker run -v $(pwd):/workspace -w /workspace python:3.11 bash -c "
+  python3 -m venv .venv && 
+  source .venv/bin/activate && 
+  pip install -e .[dev] && 
+  python -m pytest
+"
+
+# Option 2: Run locally (ensure you've backed up ~/.sqitch/ first)
 source .venv/bin/activate
 python -m pytest
 ```
+
+Tests enforce ≥90% coverage and fail when skip guards are violated.
 
 ### Code Quality Gates
 

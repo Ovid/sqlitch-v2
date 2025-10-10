@@ -22,11 +22,13 @@
 - Implement the minimum command functionality required to complete the SQLite tutorial end-to-end
 - Focus on the "happy path" workflows: init, add, deploy, revert, verify, status, log, tag
 - Maintain CLI parity established in Feature 003
+- **CRITICAL: 100% Configuration Compatibility** - SQLitch MUST use the SAME config file paths as Sqitch (`~/.sqitch/sqitch.conf`, `/etc/sqitch/sqitch.conf`, `./sqitch.conf`) and NEVER create SQLitch-specific paths like `~/.config/sqlitch/` unless explicitly redirected via `SQLITCH_*` environment variables. Users must be able to switch between `sqitch` and `sqlitch` commands seamlessly.
 - Ensure all tutorial examples work identically with `sqlitch` as they do with `sqitch`
 - Default output MUST remain byte-aligned with Sqitch
 - Structured logging remains available via flags but not in default output
 - ≥90% test coverage maintained
 - All public APIs documented with docstrings
+- **All tests MUST use isolated test helpers** that set `SQLITCH_*` environment variables to prevent pollution of user's actual config files during test execution
 
 ---
 
@@ -422,6 +424,25 @@ Database developers following the SQLite tutorial need to successfully complete 
 
 - **NFR-006**: Before any task is marked complete, the full test suite MUST be executed. If a failure surfaces for behavior where implementation already exists, that failure MUST be fixed immediately. If the corresponding implementation has not yet been delivered, the failing test MUST be skipped with a clear rationale, and the follow-on implementation task is responsible for removing that skip and delivering the passing behavior.
 
+- **NFR-007**: **Test Isolation and Configuration Compatibility (MANDATORY)**: All tests that invoke CLI commands or modify configuration MUST use a dedicated test helper module (`tests/support/test_helpers.py` or similar) that:
+  - Automatically sets `SQLITCH_SYSTEM_CONFIG`, `SQLITCH_USER_CONFIG`, and `SQLITCH_CONFIG` environment variables to point to temporary isolated paths
+  - Returns a Click `CliRunner` configured with these isolated environment variables
+  - Provides a context manager that wraps `runner.isolated_filesystem()` to ensure complete test isolation
+  - Prevents ANY configuration files from being created in the user's actual home directory (`~/.sqitch/`, `~/.config/sqlitch/`, etc.) during test execution
+  - This requirement directly enforces the Constitution's "Test Isolation and Cleanup (MANDATORY)" principle and ensures FR-001b configuration compatibility is preserved during testing
+  - Example usage pattern:
+    ```python
+    from tests.support.test_helpers import isolated_test_context
+    
+    def test_init_command():
+        with isolated_test_context() as (runner, temp_dir):
+            # All config operations now isolated to temp_dir
+            result = runner.invoke(main, ["config", "--user", "user.name", "Test User"])
+            assert result.exit_code == 0
+            # Verify no pollution of ~/.sqitch/ or ~/.config/sqlitch/
+    ```
+  - Any test creating configuration artifacts outside isolated contexts is a CRITICAL BUG and violates both the Constitution and FR-001b
+
 ### Key Entities *(include if feature involves data)*
 
 - **Project**: Initialized SQLitch project with name, URI, engine config
@@ -469,6 +490,15 @@ Database developers following the SQLite tutorial need to successfully complete 
 
 ### Known Parity Gaps (2025-10-09)
 - ~~UAT Step 14 (`sqlitch engine add sqlite flipr_test`) fails because SQLitch currently rejects target aliases when adding an engine. Sqitch accepts a previously defined target name and resolves its URI. This behavior is now captured in **FR-022** and must be implemented before closing Feature 004.~~ **RESOLVED 2025-10-09**: `engine add` now implements upsert semantics, allowing it to be called multiple times with the same engine name. The command succeeds and updates the configuration rather than raising a duplicate error, matching Sqitch's behavior.
+
+### Critical Bugs (2025-10-10)
+- **CRITICAL: Test Suite Polluting User Config Files**: The test suite is creating `~/.config/sqlitch/sqitch.conf` during test execution, violating both:
+  1. **Constitution**: "Test Isolation and Cleanup (MANDATORY)" - tests MUST NOT leave artifacts in the repository or user directories
+  2. **FR-001b**: "100% Configuration Compatibility" - SQLitch MUST NOT create SQLitch-specific config paths like `~/.config/sqlitch/` unless explicitly redirected via `SQLITCH_*` environment variables
+  - **Root Cause**: Tests invoking `sqlitch config --user` are writing to the actual user home directory instead of isolated test environments
+  - **Impact**: Breaks 100% compatibility with Sqitch; users cannot seamlessly switch between `sqitch` and `sqlitch` commands
+  - **Required Fix**: Implement NFR-007 test helper module that automatically sets `SQLITCH_SYSTEM_CONFIG`, `SQLITCH_USER_CONFIG`, and `SQLITCH_CONFIG` to isolated temporary paths for ALL tests
+  - **Blocker**: Until fixed, the test suite violates constitutional mandates and feature requirements
 
 ### Implementation Order (Tutorial Sequence)
 
