@@ -33,9 +33,9 @@
 - [X] **T012 [P1]** Add identity fallback/OS variance tests in `tests/utils/test_identity_lockdown.py`
 - [X] **T013 [P1]** Add CLI context and flag regression tests (init/add/deploy error paths) using `CliRunner` in `tests/cli/test_main_lockdown.py`
 - [X] **T014 [P1]** Add SQLite engine failure-mode tests (transaction safety, PRAGMA validation) in `tests/engine/test_sqlite_lockdown.py`
-- [ ] **T015 [P1][P]** Add unit tests for new helper modules (`uat/sanitization.py`, `uat/comparison.py`, `uat/test_steps.py`) in `tests/uat/test_helpers.py`
-- [ ] **T016 [P1][P]** Add CLI contract test covering `python uat/forward-compat.py` happy path per tutorial in `tests/uat/test_forward_compat.py`
-- [ ] **T017 [P1][P]** Add CLI contract test covering `python uat/backward-compat.py` happy path per tutorial in `tests/uat/test_backward_compat.py`
+- [X] **T015 [P1][P]** Add unit tests for new helper modules (`uat/sanitization.py`, `uat/comparison.py`, `uat/test_steps.py`) in `tests/uat/test_helpers.py`
+- [X] **T016 [P1][P]** Add CLI contract test covering `python uat/forward-compat.py` happy path per tutorial in `tests/uat/test_forward_compat.py`
+- [X] **T017 [P1][P]** Add CLI contract test covering `python uat/backward-compat.py` happy path per tutorial in `tests/uat/test_backward_compat.py`
 - [ ] **T018 [P2][P]** Add documentation validation tests ensuring README quickstart / CONTRIBUTING instructions stay in sync (`tests/docs/test_quickstart_lockdown.py`)
 - [ ] **T019 [P1][P]** Add CLI contract test for `sqlitch bundle` (or document exemption) in `tests/cli/commands/test_bundle_lockdown.py`
 - [ ] **T020 [P1][P]** Add CLI contract test for `sqlitch checkout` in `tests/cli/commands/test_checkout_lockdown.py`
