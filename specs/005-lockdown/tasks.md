@@ -29,7 +29,7 @@
 
 ## Phase 3.2 · Tests First (TDD) — all MUST fail before implementation
 - [X] **T010 [P1]** Add resolver edge-case tests covering missing scopes, duplicate files, and path validation in `tests/config/test_resolver_lockdown.py`
-- [ ] **T011 [P1]** Add registry state mutation/error tests in `tests/registry/test_state_lockdown.py`
+- [X] **T011 [P1]** Add registry state mutation/error tests in `tests/registry/test_state_lockdown.py`
 - [ ] **T012 [P1]** Add identity fallback/OS variance tests in `tests/utils/test_identity_lockdown.py`
 - [ ] **T013 [P1]** Add CLI context and flag regression tests (init/add/deploy error paths) using `CliRunner` in `tests/cli/test_main_lockdown.py`
 - [ ] **T014 [P1]** Add SQLite engine failure-mode tests (transaction safety, PRAGMA validation) in `tests/engine/test_sqlite_lockdown.py`
@@ -56,7 +56,7 @@
 
 ## Phase 3.3 · Implementation & Coverage (execute only after corresponding tests are red)
 - [ ] **T110 [P1]** Raise `sqlitch/config/resolver.py` coverage ≥90% by implementing edge cases and error messaging referenced by T010
-- [ ] **T111 [P1]** Raise `sqlitch/registry/state.py` coverage ≥90% with deterministic state transitions and failure summaries from T011
+- [X] **T111 [P1]** Raise `sqlitch/registry/state.py` coverage ≥90% with deterministic state transitions and failure summaries from T011
 - [ ] **T112 [P1]** Harden `sqlitch/utils/identity.py` cross-platform fallbacks per T012; document OS-specific branches
 - [ ] **T113 [P1]** Expand `sqlitch/cli/main.py` error handling and option validation to satisfy T013
 - [ ] **T114 [P1]** Patch `sqlitch/engine/sqlite.py` to cover PRAGMA/transactional edge cases surfaced by T014

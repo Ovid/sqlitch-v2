@@ -231,7 +231,7 @@ class RegistryState:
         """Remove a change from the state (e.g., after a revert)."""
 
         if change_id not in self._records:
-            raise KeyError(change_id)
+            raise KeyError(f"RegistryState missing change_id '{change_id}'")
         del self._records[change_id]
         self._ordered = [item for item in self._ordered if item[1] != change_id]
 
@@ -250,11 +250,24 @@ def sort_registry_entries_by_deployment(
     return tuple(ordered)
 
 
-def _resolve_value(row: Mapping[str, object], *candidates: str) -> object:
+def _require_registry_value(row: Mapping[str, object], *candidates: str) -> object:
     for key in candidates:
         if key in row:
-            return row[key]
-    raise KeyError(f"Row is missing required keys: {', '.join(candidates)}")
+            value = row[key]
+            if value is None:
+                raise ValueError(f"registry row field '{key}' cannot be None")
+            return value
+    keys = ", ".join(candidates)
+    raise ValueError(f"registry row missing required keys: {keys}")
+
+
+def _coerce_required_text(value: object, *, field: str) -> str:
+    if value is None:
+        raise ValueError(f"registry row field '{field}' cannot be None")
+    text = str(value)
+    if text == "":
+        raise ValueError(f"registry row field '{field}' cannot be empty")
+    return text
 
 
 def deserialize_registry_rows(rows: Iterable[Mapping[str, object]]) -> Sequence[RegistryEntry]:
@@ -263,15 +276,29 @@ def deserialize_registry_rows(rows: Iterable[Mapping[str, object]]) -> Sequence[
     entries = []
     for row in rows:
         entry = RegistryEntry(
-            project=str(_resolve_value(row, "project")),
-            change_id=str(_resolve_value(row, "change_id")),
-            change_name=str(_resolve_value(row, "change", "change_name")),
-            committed_at=_resolve_value(row, "committed_at"),
-            committer_name=str(_resolve_value(row, "committer_name")),
-            committer_email=str(_resolve_value(row, "committer_email")),
-            planned_at=_resolve_value(row, "planned_at"),
-            planner_name=str(_resolve_value(row, "planner_name")),
-            planner_email=str(_resolve_value(row, "planner_email")),
+            project=_coerce_required_text(
+                _require_registry_value(row, "project"), field="project"
+            ),
+            change_id=_coerce_required_text(
+                _require_registry_value(row, "change_id"), field="change_id"
+            ),
+            change_name=_coerce_required_text(
+                _require_registry_value(row, "change", "change_name"), field="change"
+            ),
+            committed_at=_require_registry_value(row, "committed_at"),
+            committer_name=_coerce_required_text(
+                _require_registry_value(row, "committer_name"), field="committer_name"
+            ),
+            committer_email=_coerce_required_text(
+                _require_registry_value(row, "committer_email"), field="committer_email"
+            ),
+            planned_at=_require_registry_value(row, "planned_at"),
+            planner_name=_coerce_required_text(
+                _require_registry_value(row, "planner_name"), field="planner_name"
+            ),
+            planner_email=_coerce_required_text(
+                _require_registry_value(row, "planner_email"), field="planner_email"
+            ),
             script_hash=(str(value) if (value := row.get("script_hash")) is not None else None),
             note=str(row.get("note", "")),
         )
