@@ -96,7 +96,7 @@ def revert_command(
     # Validate --to option usage
     if to and (to_change or to_tag):
         raise CommandError("Cannot specify both --to and --to-change/--to-tag options.")
-    
+
     # If --to is provided, determine if it's a tag or change
     if to:
         # Tags in Sqitch start with '@'
@@ -566,7 +566,7 @@ def _resolve_engine_target(
     """Return an EngineTarget for the requested target."""
 
     candidate = target.strip()
-    
+
     # Check if the candidate is a target alias and resolve it
     if not candidate.startswith("db:"):
         # Might be a target alias - try to resolve it
@@ -591,7 +591,7 @@ def _resolve_engine_target(
             original_display = candidate
     else:
         original_display = candidate
-    
+
     if candidate.startswith("db:"):
         remainder = candidate[3:]
         engine_token, separator, payload = remainder.partition(":")

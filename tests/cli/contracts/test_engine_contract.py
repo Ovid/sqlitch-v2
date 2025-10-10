@@ -45,11 +45,11 @@ def test_engine_add_accepts_target_alias(tmp_path: Path) -> None:
 
     with isolated_test_context(runner) as (runner, temp_dir):
         env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
-        
+
         # First, need to init project to create sqitch.conf in project root
         init_result = runner.invoke(main, ["init", "testproj", "--engine", "sqlite"], env=env)
         assert init_result.exit_code == 0, init_result.output
-        
+
         target_result = runner.invoke(
             main,
             ["target", "add", "flipr_test", "db:sqlite:flipr_test.db"],
@@ -97,11 +97,11 @@ def test_engine_add_writes_definition(tmp_path: Path) -> None:
 
     with isolated_test_context(runner) as (runner, temp_dir):
         env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
-        
+
         # Init project first
         init_result = runner.invoke(main, ["init", "testproj", "--engine", "sqlite"], env=env)
         assert init_result.exit_code == 0, init_result.output
-        
+
         result = runner.invoke(
             main,
             ["engine", "add", "widgets", "db:sqlite:widgets.db"],
@@ -125,11 +125,11 @@ def test_engine_add_allows_upsert(tmp_path: Path) -> None:
 
     with isolated_test_context(runner) as (runner, temp_dir):
         env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
-        
+
         # Init project first
         init_result = runner.invoke(main, ["init", "testproj", "--engine", "sqlite"], env=env)
         assert init_result.exit_code == 0, init_result.output
-        
+
         first = runner.invoke(
             main,
             ["engine", "add", "widgets", "db:sqlite:widgets.db"],
@@ -144,7 +144,7 @@ def test_engine_add_allows_upsert(tmp_path: Path) -> None:
             env=env,
         )
         assert second.exit_code == 0, second.output
-        
+
         # Verify the URI was updated
         config_path = Path.cwd() / "sqitch.conf"
         contents = _read_engine_section(config_path, "widgets")
@@ -162,10 +162,10 @@ def test_engine_update_overwrites_existing_values(tmp_path: Path) -> None:
         env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
         init_result = runner.invoke(main, ["init", "testproj", "--engine", "sqlite"], env=env)
         assert init_result.exit_code == 0, init_result.output
-        
+
         config_path = Path.cwd() / "sqitch.conf"
         _write_engine_section(config_path, "widgets", target="db:sqlite:widgets.db")
-        
+
         result = runner.invoke(
             main,
             [
@@ -202,10 +202,10 @@ def test_engine_remove_deletes_definition(tmp_path: Path) -> None:
         env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
         init_result = runner.invoke(main, ["init", "testproj", "--engine", "sqlite"], env=env)
         assert init_result.exit_code == 0, init_result.output
-        
+
         config_path = Path.cwd() / "sqitch.conf"
         _write_engine_section(config_path, "widgets", target="db:sqlite:widgets.db")
-        
+
         result = runner.invoke(
             main,
             ["engine", "remove", "widgets", "--yes"],
@@ -231,7 +231,7 @@ def test_engine_list_outputs_table(tmp_path: Path) -> None:
         env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
         init_result = runner.invoke(main, ["init", "testproj", "--engine", "sqlite"], env=env)
         assert init_result.exit_code == 0, init_result.output
-        
+
         config_path = Path.cwd() / "sqitch.conf"
         _write_engine_section(config_path, "widgets", target="db:sqlite:widgets.db")
         _write_engine_section(

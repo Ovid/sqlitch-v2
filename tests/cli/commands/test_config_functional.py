@@ -49,9 +49,7 @@ class TestConfigGetOperation:
             user_config = user_dir / "sqitch.conf"
             user_config.write_text("[user]\n\tname = Test User\n")
 
-            result = runner.invoke(
-                main, ["config", "--user", "user.name"]
-            )
+            result = runner.invoke(main, ["config", "--user", "user.name"])
 
             # Should read from user config
             assert result.exit_code == 0, f"Config get --user failed: {result.output}"
@@ -67,9 +65,7 @@ class TestConfigGetOperation:
             user_config.write_text("[user]\n\tname = Global Test User\n")
 
             # --global should be accepted as alias for --user
-            result = runner.invoke(
-                main, ["config", "--global", "user.name"]
-            )
+            result = runner.invoke(main, ["config", "--global", "user.name"])
 
             assert result.exit_code == 0, f"Config get --global failed: {result.output}"
             assert "Global Test User" in result.output, "Should return user name via --global"
@@ -236,9 +232,7 @@ class TestConfigListOperation:
             user_config = user_dir / "sqitch.conf"
             user_config.write_text("[user]\n\tname = Test User\n")
 
-            result = runner.invoke(
-                main, ["config", "--list", "--user"]
-            )
+            result = runner.invoke(main, ["config", "--list", "--user"])
 
             assert result.exit_code == 0, f"Config --list --user failed: {result.output}"
             # Should show user config
@@ -259,9 +253,7 @@ class TestConfigListOperation:
             user_config.write_text("[user]\n\tname = Global User\n")
 
             # --global should be accepted as alias for --user
-            result = runner.invoke(
-                main, ["config", "--list", "--global"]
-            )
+            result = runner.invoke(main, ["config", "--list", "--global"])
 
             assert result.exit_code == 0, f"Config --list --global failed: {result.output}"
             assert (
@@ -360,11 +352,13 @@ class TestConfigEnvironmentOverrides:
 
             # Merge with existing environment from isolated_test_context
             env = os.environ.copy()
-            env.update({
-                "SQITCH_SYSTEM_CONFIG": str(system_conf),
-                "SQITCH_USER_CONFIG": str(user_conf),
-                "SQITCH_CONFIG": str(local_conf),
-            })
+            env.update(
+                {
+                    "SQITCH_SYSTEM_CONFIG": str(system_conf),
+                    "SQITCH_USER_CONFIG": str(user_conf),
+                    "SQITCH_CONFIG": str(local_conf),
+                }
+            )
 
             result = runner.invoke(main, ["config", "core.engine"], env=env)
 
@@ -383,10 +377,12 @@ class TestConfigEnvironmentOverrides:
 
             # Merge with existing environment from isolated_test_context
             env = os.environ.copy()
-            env.update({
-                "SQITCH_CONFIG": str(fallback_conf),
-                "SQLITCH_CONFIG": str(preferred_conf),
-            })
+            env.update(
+                {
+                    "SQITCH_CONFIG": str(fallback_conf),
+                    "SQLITCH_CONFIG": str(preferred_conf),
+                }
+            )
 
             result = runner.invoke(main, ["config", "core.engine"], env=env)
 

@@ -499,7 +499,7 @@ def _resolve_engine_target(
     """Return an :class:`EngineTarget` for the requested deployment target."""
 
     candidate = target.strip()
-    
+
     # Check if the candidate is a target alias and resolve it
     if not candidate.startswith("db:"):
         # Might be a target alias - try to resolve it
@@ -524,7 +524,7 @@ def _resolve_engine_target(
             original_display = candidate
     else:
         original_display = candidate
-    
+
     if candidate.startswith("db:"):
         remainder = candidate[3:]
         engine_token, separator, payload = remainder.partition(":")

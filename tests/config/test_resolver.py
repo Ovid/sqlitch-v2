@@ -98,7 +98,7 @@ def test_determine_config_root_prefers_existing_sqitch_directory(tmp_path: Path)
 
 def test_determine_config_root_uses_sqitch_for_compatibility(tmp_path: Path) -> None:
     """FR-001b: Always use ~/.sqitch/ for Sqitch compatibility, not ~/.config/sqlitch/.
-    
+
     Even if ~/.config/sqlitch/ exists, we must use ~/.sqitch/ to maintain
     100% compatibility with Sqitch. Users must be able to seamlessly switch
     between sqitch and sqlitch commands.

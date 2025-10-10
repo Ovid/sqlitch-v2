@@ -105,7 +105,7 @@ def test_no_direct_isolated_filesystem_usage() -> None:
 
         if violating_files:
             files_list = "\n".join(f"  - {file}" for file in violating_files)
-            
+
             error_message = f"""
 
 ❌ CONSTITUTION VIOLATION: Test Isolation Not Enforced

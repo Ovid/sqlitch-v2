@@ -26,22 +26,22 @@ def pytest_configure(config: pytest.Config) -> None:
 def pytest_sessionstart(session: pytest.Session) -> None:
     """
     Run critical sanity checks before test session begins.
-    
+
     This hook runs BEFORE any test collection or execution, ensuring that
     constitutional requirements are met before wasting time on tests that
     would pollute the user's environment.
-    
+
     CRITICAL: Test Isolation Enforcement
     ====================================
     We check that no test files use runner.isolated_filesystem() directly,
     which would violate Constitution I: Test Isolation and Cleanup (MANDATORY).
-    
+
     If violations are found, the entire test session is aborted with a clear
     error message explaining how to fix the issue.
     """
     # Define the repo root
     repo_root = Path(__file__).parent.parent
-    
+
     # Define exceptions - files that are allowed to use isolated_filesystem
     exceptions = {
         "tests/support/test_helpers.py",  # Defines the helper
@@ -52,7 +52,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
         "tests/regression/MIGRATION_COMPLETE.md",  # Migration documentation
         "tests/regression/README_ENFORCEMENT.md",  # Enforcement documentation
     }
-    
+
     # Search for test files using isolated_filesystem
     result = subprocess.run(
         ["git", "grep", "-l", "isolated_filesystem", "tests/"],
@@ -60,21 +60,21 @@ def pytest_sessionstart(session: pytest.Session) -> None:
         capture_output=True,
         text=True,
     )
-    
+
     # If git grep returns 1, no matches found (which is what we want)
     if result.returncode == 1:
         return  # All tests properly use isolated_test_context()
-    
+
     # If git grep returns 0, matches found - check if they're exceptions
     if result.returncode == 0:
         violating_files = []
         for line in result.stdout.strip().split("\n"):
             if line and line not in exceptions:
                 violating_files.append(line)
-        
+
         if violating_files:
             files_list = "\n".join(f"  - {file}" for file in violating_files)
-            
+
             error_message = f"""
 
 ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -121,7 +121,7 @@ See tests/support/README.md for detailed migration guide.
 Constitutional Reference: Constitution I: Test Isolation and Cleanup (MANDATORY)
 """
             pytest.exit(error_message, returncode=1)
-    
+
     # Any other return code is an error
     if result.returncode not in (0, 1):
         error_message = f"""

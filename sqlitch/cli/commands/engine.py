@@ -83,11 +83,11 @@ def add_engine(
     """Create a new engine definition in the configuration root."""
 
     cli_context = require_cli_context(ctx)
-    
+
     # Resolve to validate, but store the original value if it's a target name
     resolved_uri = _resolve_engine_uri(cli_context=cli_context, candidate=uri)
     _validate_engine_uri(resolved_uri)
-    
+
     # If the original value wasn't a URI, it was a target name - store the name, not the URI
     is_target_alias = not _is_supported_engine_uri(uri)
     target_value = uri if is_target_alias else resolved_uri
@@ -132,11 +132,11 @@ def update_engine(
     """Update an existing engine definition."""
 
     cli_context = require_cli_context(ctx)
-    
+
     # Resolve to validate, but store the original value if it's a target name
     resolved_uri = _resolve_engine_uri(cli_context=cli_context, candidate=uri)
     _validate_engine_uri(resolved_uri)
-    
+
     # If the original value wasn't a URI, it was a target name - store the name, not the URI
     is_target_alias = not _is_supported_engine_uri(uri)
     target_value = uri if is_target_alias else resolved_uri

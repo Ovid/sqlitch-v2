@@ -127,7 +127,9 @@ class TestDeployWithEngineTarget:
             assert target_result.exit_code == 0, f"Target add failed: {target_result.output}"
 
             # Configure engine to use the target alias
-            engine_result = runner.invoke(main, ["engine", "add", "sqlite", "default_target"], env=env)
+            engine_result = runner.invoke(
+                main, ["engine", "add", "sqlite", "default_target"], env=env
+            )
             assert engine_result.exit_code == 0, f"Engine add failed: {engine_result.output}"
 
             # Add a change

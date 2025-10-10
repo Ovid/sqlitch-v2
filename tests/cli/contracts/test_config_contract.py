@@ -130,7 +130,9 @@ def test_config_list_plain_outputs_lines(runner: CliRunner) -> None:
     """Plain --list should emit key=value pairs sorted alphabetically."""
 
     with isolated_test_context(runner) as (runner, temp_dir):
-        _write_config((temp_dir / "sqitch.conf"), "[DEFAULT]\ncolor = blue\n[core]\nengine = sqlite\n")
+        _write_config(
+            (temp_dir / "sqitch.conf"), "[DEFAULT]\ncolor = blue\n[core]\nengine = sqlite\n"
+        )
         env = {"SQLITCH_CONFIG_ROOT": str((temp_dir / "config-root"))}
 
         result = runner.invoke(main, ["config", "--list"], env=env)
