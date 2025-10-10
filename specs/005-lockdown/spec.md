@@ -19,6 +19,15 @@
 
 ---
 
+## Clarifications
+
+### Session 2025-10-10
+- Q: Which environments must the new compatibility scripts exercise to count as "complete"? → A: Only the existing SQLite tutorial workflow
+- Q: How should the three compatibility scripts integrate into our workflows once implemented? → A: Manual runs only (documented checklist)
+- Q: Where must results from each manual UAT run be recorded? → A: Post a comment in the release pull request summarizing the outcomes
+
+---
+
 ## ⚡ Quick Guidelines
 - **NO new features** - Only bug fixes, tests, documentation, and stability improvements
 - Achieve and maintain ≥90% test coverage across all modules
@@ -28,7 +37,6 @@
 - All CLI commands MUST have contract tests
 - **UAT compatibility tests MUST pass** - Side-by-side, forward, and backward compatibility
 - Security audit MUST pass
-- Performance profiling MUST identify no critical bottlenecks
 - Documentation MUST be complete and accurate
 
 ---
@@ -55,7 +63,6 @@
 
 ### 4. Performance
 - **Profiling**: Profile common operations
-- **Optimization**: Address performance bottlenecks
 - **Resource Usage**: Monitor memory and file handle usage
 - **Scalability**: Test with large plan files and many changes
 
@@ -66,6 +73,7 @@
 - **Troubleshooting**: Common issues and solutions documented
 
 ### 6. UAT Compatibility Testing
+- **Scope**: All compatibility scripts validate the SQLite tutorial workflow only; other engines remain out of scope for lockdown.
 - **Side-by-Side Testing**: `uat/side-by-side.py` validates functional equivalence between sqitch and sqlitch
   - Follows `sqitch/lib/sqitchtutorial-sqlite.pod` tutorial steps
   - Compares command output (semantically equivalent, minor formatting differences acceptable)
@@ -80,6 +88,8 @@
   - Ensures sqitch → sqlitch handoff works correctly
   - Validates that sqlitch can continue from sqitch state
   - Tests migration scenario: users can adopt sqlitch from existing sqitch projects
+- **Execution Expectation**: All three scripts run as part of the documented release checklist; CI integration is optional.
+- **Evidence**: Each manual run must be summarized in a comment on the release pull request with links to sanitized logs.
 
 ---
 
@@ -119,6 +129,7 @@
 - [ ] All CLI commands documented
 - [ ] API reference generated
 - [ ] Common troubleshooting scenarios documented
+- [ ] Implementation report (`specs/005-lockdown/IMPLEMENTATION_REPORT_LOCKDOWN.md`) summarizes final quality gate results, links to logs, and notes any deferred follow-ups
 
 ### UAT Gates
 - [ ] Side-by-side test (`uat/side-by-side.py`) passes all tutorial steps
@@ -194,6 +205,8 @@ Tests sqlitch → sqitch handoff:
 - Log both tools' operations for debugging
 - Test with both tagged and untagged changes
 - Validate plan file parsing compatibility
+- Document manual execution steps within the release checklist and developer guide.
+- Record outcomes in the release pull request with links to relevant logs.
 
 #### 3. Backward Compatibility Test (`uat/backward-compat.py`)
 **Status**: 🔲 To Implement
@@ -217,6 +230,8 @@ Tests sqitch → sqlitch handoff:
 - Log both tools' operations for debugging
 - Test with both tagged and untagged changes
 - Validate plan file parsing compatibility
+- Document manual execution steps within the release checklist and developer guide.
+- Record outcomes in the release pull request with links to relevant logs.
 
 #### Shared Infrastructure
 All three scripts should share:

@@ -1,250 +1,114 @@
 # Tasks: Quality Lockdown and Stabilization
 
-**Status**: 🚧 In Progress (2025-10-10)  
-**Input**: Spec and plan documents from `/specs/005-lockdown/`  
-**Prerequisites**: Feature 004 complete, all tests passing  
-**Report**: See `IMPLEMENTATION_REPORT_LOCKDOWN.md` for progress details
+**Status**: 🆕 Ready for execution (2025-10-10)  
+**Input**: Design artifacts under `/specs/005-lockdown/`  
+**Prerequisites**: Feature 004 parity complete, current branch `005-lockdown`
 
 ## Execution Flow (main)
 ```
-1. Run baseline assessments (coverage, types, docs, security)
-2. Prioritize gaps based on risk and impact
-3. Systematically improve test coverage to ≥90%
-4. Complete documentation for all public APIs
-5. Fix identified bugs and security issues
-6. Validate all quality gates pass
-7. Prepare for 1.0 release
+1. Bootstrap development environment and capture baseline quality signals
+2. Add failing tests for every targeted module, CLI flow, and UAT harness helper
+3. Implement fixes and shared helpers to satisfy new tests while preserving Sqitch parity
+4. Tighten documentation, security, and performance guardrails
+5. Execute manual UAT scripts and publish evidence in release PR
+6. Verify constitutional gates, update release collateral, and prepare for v1.0 tag
 ```
 
 ## Format: `[ID] [Priority] Description`
-- **[P1]**: Critical - Must complete before release
-- **[P2]**: High - Should complete before release
-- **[P3]**: Medium - Nice to have before release
-- **[P4]**: Low - Can defer to post-1.0
+- **Priority Levels**: P1 (critical) · P2 (important) · P3 (nice-to-have)  
+- **[P]** flag means the task can run in parallel with others in the same block (independent files / no deps)
 
 ---
 
-## Phase 1: Baseline Assessment
+## Phase 3.1 · Setup & Baseline (must precede all other work)
+- [ ] **T001 [P1]** Create/refresh local dev environment and editable install (`python3 -m venv .venv && pip install -e .[dev]`)  *(root)*
+- [ ] **T002 [P1]** Run baseline quality gates (coverage, mypy, pydocstyle, pip-audit, bandit) and archive outputs under `specs/005-lockdown/artifacts/baseline/`
+- [ ] **T003 [P1]** Execute pylint with the project config, remediate or document warnings, and store the report in `specs/005-lockdown/artifacts/baseline/`
+- [ ] **T004 [P1]** Summarize baseline findings in `specs/005-lockdown/research.md` (coverage deltas, security hits, doc gaps)
 
-### Coverage Analysis
-- [ ] **L001 [P1]** Generate full test coverage report with `pytest --cov=sqlitch --cov-report=html --cov-report=term`
-- [ ] **L002 [P1]** Identify all modules with <90% coverage
-- [ ] **L003 [P1]** Create coverage improvement plan prioritizing critical modules
-- [ ] **L004 [P2]** Document coverage exceptions with rationale
+## Phase 3.2 · Tests First (TDD) — all MUST fail before implementation
+- [ ] **T010 [P1]** Add resolver edge-case tests covering missing scopes, duplicate files, and path validation in `tests/config/test_resolver_lockdown.py`
+- [ ] **T011 [P1]** Add registry state mutation/error tests in `tests/registry/test_state_lockdown.py`
+- [ ] **T012 [P1]** Add identity fallback/OS variance tests in `tests/utils/test_identity_lockdown.py`
+- [ ] **T013 [P1]** Add CLI context and flag regression tests (init/add/deploy error paths) using `CliRunner` in `tests/cli/test_main_lockdown.py`
+- [ ] **T014 [P1]** Add SQLite engine failure-mode tests (transaction safety, PRAGMA validation) in `tests/engine/test_sqlite_lockdown.py`
+- [ ] **T015 [P1][P]** Add unit tests for new helper modules (`uat/sanitization.py`, `uat/comparison.py`, `uat/test_steps.py`) in `tests/uat/test_helpers.py`
+- [ ] **T016 [P1][P]** Add CLI contract test covering `python uat/forward-compat.py` happy path per tutorial in `tests/uat/test_forward_compat.py`
+- [ ] **T017 [P1][P]** Add CLI contract test covering `python uat/backward-compat.py` happy path per tutorial in `tests/uat/test_backward_compat.py`
+- [ ] **T018 [P2][P]** Add documentation validation tests ensuring README quickstart / CONTRIBUTING instructions stay in sync (`tests/docs/test_quickstart_lockdown.py`)
+- [ ] **T019 [P1][P]** Add CLI contract test for `sqlitch bundle` (or document exemption) in `tests/cli/commands/test_bundle_lockdown.py`
+- [ ] **T020 [P1][P]** Add CLI contract test for `sqlitch checkout` in `tests/cli/commands/test_checkout_lockdown.py`
+- [ ] **T021 [P1][P]** Add CLI contract test for `sqlitch config` in `tests/cli/commands/test_config_lockdown.py`
+- [ ] **T022 [P1][P]** Add CLI contract test for `sqlitch engine` in `tests/cli/commands/test_engine_lockdown.py`
+- [ ] **T023 [P1][P]** Add CLI contract test for `sqlitch help` (ensure parity with `--help` output) in `tests/cli/commands/test_help_lockdown.py`
+- [ ] **T024 [P1][P]** Add CLI contract test for `sqlitch log` in `tests/cli/commands/test_log_lockdown.py`
+- [ ] **T025 [P1][P]** Add CLI contract test for `sqlitch plan` in `tests/cli/commands/test_plan_lockdown.py`
+- [ ] **T026 [P1][P]** Add CLI contract test for `sqlitch rebase` in `tests/cli/commands/test_rebase_lockdown.py`
+- [ ] **T027 [P1][P]** Add CLI contract test for `sqlitch revert` in `tests/cli/commands/test_revert_lockdown.py`
+- [ ] **T028 [P1][P]** Add CLI contract test for `sqlitch rework` in `tests/cli/commands/test_rework_lockdown.py`
+- [ ] **T029 [P1][P]** Add CLI contract test for `sqlitch show` in `tests/cli/commands/test_show_lockdown.py`
+- [ ] **T030 [P1][P]** Add CLI contract test for `sqlitch status` in `tests/cli/commands/test_status_lockdown.py`
+- [ ] **T031 [P1][P]** Add CLI contract test for `sqlitch tag` in `tests/cli/commands/test_tag_lockdown.py`
+- [ ] **T032 [P1][P]** Add CLI contract test for `sqlitch target` in `tests/cli/commands/test_target_lockdown.py`
+- [ ] **T033 [P1][P]** Add CLI contract test for `sqlitch upgrade` in `tests/cli/commands/test_upgrade_lockdown.py`
+- [ ] **T034 [P1][P]** Add CLI contract test for `sqlitch verify` in `tests/cli/commands/test_verify_lockdown.py`
 
-### Type Coverage Analysis  
-- [ ] **L005 [P2]** Run `mypy --strict sqlitch/` and document all errors
-- [ ] **L006 [P2]** Categorize type issues (missing hints, incompatible types, etc.)
-- [ ] **L007 [P2]** Create type hint improvement plan
-- [ ] **L008 [P3]** Add py.typed marker for library consumers
+## Phase 3.3 · Implementation & Coverage (execute only after corresponding tests are red)
+- [ ] **T110 [P1]** Raise `sqlitch/config/resolver.py` coverage ≥90% by implementing edge cases and error messaging referenced by T010
+- [ ] **T111 [P1]** Raise `sqlitch/registry/state.py` coverage ≥90% with deterministic state transitions and failure summaries from T011
+- [ ] **T112 [P1]** Harden `sqlitch/utils/identity.py` cross-platform fallbacks per T012; document OS-specific branches
+- [ ] **T113 [P1]** Expand `sqlitch/cli/main.py` error handling and option validation to satisfy T013
+- [ ] **T114 [P1]** Patch `sqlitch/engine/sqlite.py` to cover PRAGMA/transactional edge cases surfaced by T014
+- [ ] **T115 [P1]** Extract shared helpers (`uat/sanitization.py`, `uat/comparison.py`, `uat/test_steps.py`, `uat/__init__.py`) and refactor `uat/side-by-side.py` to use them (green T015)
+- [ ] **T116 [P1]** Implement `uat/forward-compat.py` using shared helpers and ensure parity with Sqitch sequencing (green T016)
+- [ ] **T117 [P1]** Implement `uat/backward-compat.py` using shared helpers and ensure parity with SQLitch sequencing (green T017)
+- [ ] **T118 [P1]** Wire helper modules into packaging/import paths (update `uat/__init__.py`, `pyproject.toml` entry points if needed)
+- [ ] **T119 [P1]** Update quickstart automation scripts or Make targets for running new UAT harnesses (align with T016-T017)
 
-### Documentation Audit
-- [ ] **L009 [P1]** Run `pydocstyle sqlitch/` to find missing docstrings
-- [ ] **L010 [P1]** List all public APIs without documentation
-- [ ] **L011 [P2]** Verify all CLI commands have comprehensive --help
-- [ ] **L012 [P2]** Check README examples actually work
+## Phase 3.4 · Documentation & Guidance
+- [ ] **T040 [P1]** Ensure all touched public APIs/docstrings updated (run `pydocstyle` after edits) across `sqlitch/*`
+- [ ] **T041 [P1]** Refresh README quickstart, troubleshooting, and add release checklist details per manual UAT workflow (`README.md`, `docs/`)
+- [ ] **T042 [P1]** Update `CONTRIBUTING.md` with lockdown workflow, UAT evidence requirements, and manual gate instructions
+- [ ] **T043 [P2]** Document helper modules and UAT process in `docs/architecture/` (diagram parity flow, helper reuse)
+- [ ] **T044 [P1]** Generate and publish the API reference (trigger the docs build, verify outputs, and update release artifacts/links)
 
-### Security Baseline
-- [ ] **L013 [P1]** Run `pip-audit` to check for known vulnerabilities
-- [ ] **L014 [P1]** Run `bandit -r sqlitch/` for security issues
-- [ ] **L015 [P1]** Search for dangerous patterns (eval, exec, shell=True)
-- [ ] **L016 [P2]** Review all SQL query construction for injection risks
+## Phase 3.5 · Security & Performance Gates
+- [ ] **T050 [P1]** Fix/triage findings from `pip-audit` and `bandit`; add suppression docs if false positives (update dependencies & `bandit.yaml`)
+- [ ] **T051 [P1]** Audit SQL statements for parameterization & path traversal; add regression tests where gaps exist (`sqlitch/config`, `sqlitch/engine`)
+- [ ] **T052 [P2]** Benchmark critical CLI commands (`init`, `deploy`, `status`, `log`) capturing metrics in `specs/005-lockdown/perf-report.md`
+- [ ] **T053 [P2]** Add optional progress/log verbosity flags documentation ensuring default human-readable output (align with Constitution V)
 
----
-
-## Phase 2: Test Coverage Enhancement
-
-### Critical Modules (Must reach ≥90%)
-- [ ] **L020 [P1]** Improve `sqlitch/config/resolver.py` coverage
-- [ ] **L021 [P1]** Improve `sqlitch/config/loader.py` coverage  
-- [ ] **L022 [P1]** Improve `sqlitch/plan/parser.py` coverage
-- [ ] **L023 [P1]** Improve `sqlitch/cli/main.py` coverage
-- [ ] **L024 [P1]** Improve `sqlitch/engine/sqlite.py` coverage
-
-### Error Path Testing
-- [ ] **L025 [P1]** Test all exception handling paths
-- [ ] **L026 [P1]** Test invalid input handling (all commands)
-- [ ] **L027 [P1]** Test missing file scenarios
-- [ ] **L028 [P1]** Test corrupted config file handling
-- [ ] **L029 [P1]** Test malformed plan file handling
-
-### Edge Case Testing
-- [ ] **L030 [P2]** Test empty plan files
-- [ ] **L031 [P2]** Test large plan files (1000+ changes)
-- [ ] **L032 [P2]** Test Unicode in change names and notes
-- [ ] **L033 [P2]** Test special characters in file paths
-- [ ] **L034 [P3]** Test concurrent access scenarios
-
----
-
-## Phase 3: Documentation Enhancement
-
-### API Documentation
-- [ ] **L040 [P1]** Add docstrings to all public functions
-- [ ] **L041 [P1]** Document all parameters with type hints and descriptions
-- [ ] **L042 [P1]** Document all return values
-- [ ] **L043 [P2]** Add usage examples to complex functions
-- [ ] **L044 [P2]** Document all exceptions that can be raised
-
-### CLI Documentation
-- [ ] **L045 [P1]** Ensure all commands have complete --help output
-- [ ] **L046 [P1]** Document all command-line options
-- [ ] **L047 [P2]** Add usage examples to help text
-- [ ] **L048 [P2]** Document common patterns and workflows
-
-### User Documentation
-- [ ] **L050 [P1]** Update README with comprehensive quickstart
-- [ ] **L051 [P1]** Add troubleshooting guide to docs/
-- [ ] **L052 [P2]** Document all configuration options
-- [ ] **L053 [P2]** Create migration guide from Sqitch
-- [ ] **L054 [P3]** Add architecture documentation
-
-### Developer Documentation  
-- [ ] **L055 [P2]** Update CONTRIBUTING.md with current workflow
-- [ ] **L056 [P2]** Document test helper patterns and usage
-- [ ] **L057 [P3]** Add architecture decision records (ADRs)
-- [ ] **L058 [P3]** Document development environment setup
-
----
-
-## Phase 4: Bug Fixes and Stability
-
-### Known Issues
-- [ ] **L060 [P1]** Review and address all TODO comments
-- [ ] **L061 [P1]** Review and address all FIXME comments
-- [ ] **L062 [P2]** Test on macOS, Linux, Windows (if supported)
-- [ ] **L063 [P2]** Verify Python 3.11+ compatibility
-
-### Error Message Improvements
-- [ ] **L065 [P1]** Audit all error messages for clarity
-- [ ] **L066 [P1]** Add context to generic errors
-- [ ] **L067 [P2]** Suggest fixes in error messages where possible
-- [ ] **L068 [P2]** Use consistent error formatting
-
-### Input Validation
-- [ ] **L070 [P1]** Validate all user inputs with clear errors
-- [ ] **L071 [P1]** Validate all file paths (prevent traversal)
-- [ ] **L072 [P1]** Validate all configuration values
-- [ ] **L073 [P2]** Provide examples in validation errors
-
----
-
-## Phase 5: Security Audit
-
-### Input Validation Security
-- [ ] **L080 [P1]** Verify all SQL uses parameterized queries
-- [ ] **L081 [P1]** Verify no path traversal vulnerabilities
-- [ ] **L082 [P1]** Verify no command injection (shell=True usage)
-- [ ] **L083 [P1]** Verify config parsing prevents injection
-
-### File Operations Security
-- [ ] **L085 [P1]** Audit file permission checks
-- [ ] **L086 [P1]** Audit temporary file handling
-- [ ] **L087 [P2]** Check for symlink attack vectors
-- [ ] **L088 [P2]** Verify proper error handling
-
-### Dependency Security
-- [ ] **L090 [P1]** Update all dependencies to latest stable
-- [ ] **L091 [P1]** Remove any unused dependencies
-- [ ] **L092 [P1]** Verify no dependencies with critical CVEs
-- [ ] **L093 [P2]** Pin dependency versions appropriately
-
----
-
-## Phase 6: Performance Profiling
-
-### Baseline Measurements
-- [ ] **L100 [P2]** Profile `sqlitch init` command
-- [ ] **L101 [P2]** Profile `sqlitch add` command  
-- [ ] **L102 [P2]** Profile `sqlitch deploy` command
-- [ ] **L103 [P2]** Profile `sqlitch status` command
-- [ ] **L104 [P2]** Profile `sqlitch log` command
-
-### Optimization (if needed)
-- [ ] **L105 [P2]** Optimize plan file parsing (if >100ms)
-- [ ] **L106 [P3]** Optimize config resolution (if >10ms)
-- [ ] **L107 [P3]** Ensure database transactions used properly
-- [ ] **L108 [P3]** Minimize redundant file I/O
-
-### Scalability Testing
-- [ ] **L110 [P2]** Test with 1000+ change plan files
-- [ ] **L111 [P2]** Test with 1000+ deployed changes
-- [ ] **L112 [P3]** Test with large SQL scripts (10+ MB)
-- [ ] **L113 [P3]** Monitor memory usage under load
-
----
-
-## Phase 7: Final Validation
-
-### Smoke Tests
-- [ ] **L120 [P1]** SQLite tutorial completes successfully
-- [ ] **L121 [P1]** All README examples work
-- [ ] **L122 [P1]** All help text is accurate
-- [ ] **L123 [P1]** Error messages tested and clear
-
-### Regression Tests  
-- [ ] **L125 [P1]** All features 001-004 still work
-- [ ] **L126 [P1]** No performance regressions detected
-- [ ] **L127 [P1]** No breaking changes to public APIs
-- [ ] **L128 [P1]** Configuration compatibility maintained
-
-### Release Checklist
-- [ ] **L130 [P1]** CHANGELOG.md updated with all changes
-- [ ] **L131 [P1]** Version bumped to 1.0.0
-- [ ] **L132 [P1]** All documentation reviewed and updated
-- [ ] **L133 [P1]** CI tests passing on all platforms
-- [ ] **L134 [P1]** Test coverage ≥90% verified
-- [ ] **L135 [P1]** Security audit passed and documented
-- [ ] **L136 [P1]** Performance benchmarks documented
-- [ ] **L137 [P2]** Release notes prepared
-- [ ] **L138 [P2]** Migration guide tested
+## Phase 3.6 · Validation & Release Prep
+- [ ] **T060 [P1]** Execute all three UAT scripts sequentially, attach sanitized logs under `specs/005-lockdown/artifacts/uat/`, and post release PR comment (per quickstart template)
+- [ ] **T061 [P1]** Re-run full quality gate suite (`pytest`, `mypy --strict`, `pydocstyle`, `pip-audit`, `bandit`, `tox`) and record pass/fail in `IMPLEMENTATION_REPORT_LOCKDOWN.md`
+- [ ] **T062 [P1]** Verify coverage ≥90% and update `coverage.xml` plus quickstart instructions (include CLI commands used)
+- [ ] **T063 [P1]** Prepare release collateral: `CHANGELOG.md`, version bump, release notes, migration guide referencing manual UAT evidence
+- [ ] **T064 [P2]** Capture lessons learned / follow-ups in `TODO.md` for post-1.0 improvements (multi-engine UAT, automation ideas)
 
 ---
 
 ## Dependencies
+- **T001 → T002 → T003 → T004** bootstrap baseline insight before new tests
+- Tests T010–T034 must complete (and fail) prior to implementation tasks T110–T119 they unlock
+- T115 must precede T116 & T117 (shared helper extraction before new scripts)
+- Documentation tasks (T040–T044) depend on implementation completion (T110–T119)
+- Security/performance audits (T050–T053) depend on core implementation stabilizing
+- Validation tasks (T060–T063) run last and require all earlier phases complete
 
-**Blocking Chain**:
-- Phase 1 (Assessment) must complete before prioritizing work
-- Phase 2-6 can proceed in parallel once assessment done
-- Phase 7 (Validation) requires all previous phases complete
-
-**Parallel Execution**:
-- Coverage improvements (L020-L034) can proceed independently
-- Documentation (L040-L058) can proceed independently
-- Bug fixes (L060-L073) can proceed as discovered
-- Security audit (L080-L093) can proceed independently
-- Performance profiling (L100-L113) can proceed independently
-
----
-
-## Success Criteria
-
-1. ✅ Test coverage ≥90% in all modules
-2. ✅ All public APIs have comprehensive docstrings
-3. ✅ mypy --strict passes with zero errors (or documented exceptions)
-4. ✅ Zero critical security vulnerabilities
-5. ✅ All CLI commands have contract tests
-6. ✅ All error paths tested
-7. ✅ Performance benchmarks documented
-8. ✅ README and CONTRIBUTING.md complete
-9. ✅ Tutorial works end-to-end
-10. ✅ Ready for v1.0.0 release
+## Parallel Execution Example
+```
+# After baseline (T001–T003), run the following tests in parallel:
+Task.run("T015")
+Task.run("T016")
+Task.run("T017")
+Task.run("T018")
+```
+(Shared helpers and CLI contract tests touch independent files, so they can execute simultaneously once setup is complete.)
 
 ---
 
-## Risk Mitigation
-
-**Risk**: Scope creep from feature requests  
-**Mitigation**: Strict no-new-features policy. Document requests for post-1.0.
-
-**Risk**: Coverage requirements too strict  
-**Mitigation**: Allow documented exceptions for untestable code.
-
-**Risk**: Timeline overruns  
-**Mitigation**: Focus P1 tasks first, defer P3/P4 to post-1.0 if needed.
-
----
-
-**Last Updated**: 2025-10-10  
-**Priority**: HIGH - Blocks v1.0.0 release  
-**Estimated Effort**: 3-4 weeks
+## Notes
+- Always follow Test-First workflow: ensure new tests fail before fixing code
+- Respect Sqitch parity: consult `sqitch/` references before adjusting behavior
+- Retain sanitized logs for audit; never commit long-running raw outputs to git
+- Commit after each task for traceable history and easier reviews
