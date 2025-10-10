@@ -9,7 +9,7 @@
 1. Bootstrap development environment and capture baseline quality signals
 2. Add failing tests for every targeted module, CLI flow, and UAT harness helper
 3. Implement fixes and shared helpers to satisfy new tests while preserving Sqitch parity
-4. Tighten documentation, security, and performance guardrails
+4. Tighten documentation and security guardrails
 5. Execute manual UAT scripts and publish evidence in release PR
 6. Verify constitutional gates, update release collateral, and prepare for v1.0 tag
 ```
@@ -25,6 +25,7 @@
 - [ ] **T002 [P1]** Run baseline quality gates (coverage, mypy, pydocstyle, pip-audit, bandit) and archive outputs under `specs/005-lockdown/artifacts/baseline/`
 - [ ] **T003 [P1]** Execute pylint with the project config, remediate or document warnings, and store the report in `specs/005-lockdown/artifacts/baseline/`
 - [ ] **T004 [P1]** Summarize baseline findings in `specs/005-lockdown/research.md` (coverage deltas, security hits, doc gaps)
+- [ ] **T005 [P1]** Execute `black --check` and `isort --check-only` across the repository; if either fails, record the failing paths, reformat with `black .` / `isort .`, and capture the before/after notes in `specs/005-lockdown/artifacts/baseline/formatting.md`
 
 ## Phase 3.2 · Tests First (TDD) — all MUST fail before implementation
 - [ ] **T010 [P1]** Add resolver edge-case tests covering missing scopes, duplicate files, and path validation in `tests/config/test_resolver_lockdown.py`
@@ -72,28 +73,28 @@
 - [ ] **T043 [P2]** Document helper modules and UAT process in `docs/architecture/` (diagram parity flow, helper reuse)
 - [ ] **T044 [P1]** Generate and publish the API reference (trigger the docs build, verify outputs, and update release artifacts/links)
 
-## Phase 3.5 · Security & Performance Gates
+## Phase 3.5 · Security Gates
 - [ ] **T050 [P1]** Fix/triage findings from `pip-audit` and `bandit`; add suppression docs if false positives (update dependencies & `bandit.yaml`)
 - [ ] **T051 [P1]** Audit SQL statements for parameterization & path traversal; add regression tests where gaps exist (`sqlitch/config`, `sqlitch/engine`)
-- [ ] **T052 [P2]** Benchmark critical CLI commands (`init`, `deploy`, `status`, `log`) capturing metrics in `specs/005-lockdown/perf-report.md`
-- [ ] **T053 [P2]** Add optional progress/log verbosity flags documentation ensuring default human-readable output (align with Constitution V)
 
 ## Phase 3.6 · Validation & Release Prep
 - [ ] **T060 [P1]** Execute all three UAT scripts sequentially, attach sanitized logs under `specs/005-lockdown/artifacts/uat/`, and post release PR comment (per quickstart template)
-- [ ] **T061 [P1]** Re-run full quality gate suite (`pytest`, `mypy --strict`, `pydocstyle`, `pip-audit`, `bandit`, `tox`) and record pass/fail in `IMPLEMENTATION_REPORT_LOCKDOWN.md`
+- [ ] **T061 [P1]** Re-run full quality gate suite (`pytest`, `mypy --strict`, `pydocstyle`, `black --check`, `isort --check-only`, `pip-audit`, `bandit`, `tox`) and record pass/fail in `IMPLEMENTATION_REPORT_LOCKDOWN.md`, noting remediation commands when any check fails
 - [ ] **T062 [P1]** Verify coverage ≥90% and update `coverage.xml` plus quickstart instructions (include CLI commands used)
 - [ ] **T063 [P1]** Prepare release collateral: `CHANGELOG.md`, version bump, release notes, migration guide referencing manual UAT evidence
-- [ ] **T064 [P2]** Capture lessons learned / follow-ups in `TODO.md` for post-1.0 improvements (multi-engine UAT, automation ideas)
+- [ ] **T064 [P1]** Audit repository for lingering TODO/FIXME markers, resolve or link follow-up tickets, and document outcomes in `IMPLEMENTATION_REPORT_LOCKDOWN.md`
+- [ ] **T065 [P1]** Review integration coverage (run `pytest tests/integration` with tutorial parity fixtures); add or update tests to close gaps and summarize findings in `IMPLEMENTATION_REPORT_LOCKDOWN.md`
+- [ ] **T066 [P2]** Capture lessons learned / follow-ups in `TODO.md` for post-1.0 improvements (multi-engine UAT, automation ideas)
 
 ---
 
 ## Dependencies
-- **T001 → T002 → T003 → T004** bootstrap baseline insight before new tests
+- **T001 → T002 → T003 → T004 → T005** bootstrap baseline insight before new tests
 - Tests T010–T034 must complete (and fail) prior to implementation tasks T110–T119 they unlock
 - T115 must precede T116 & T117 (shared helper extraction before new scripts)
 - Documentation tasks (T040–T044) depend on implementation completion (T110–T119)
-- Security/performance audits (T050–T053) depend on core implementation stabilizing
-- Validation tasks (T060–T063) run last and require all earlier phases complete
+- Security audits (T050–T051) depend on core implementation stabilizing
+- Validation tasks (T060–T065) run last and require all earlier phases complete
 
 ## Parallel Execution Example
 ```

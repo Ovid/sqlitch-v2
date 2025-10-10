@@ -15,7 +15,7 @@
 9. ⏹️ Ready for `/tasks` execution once this plan is approved.
 
 ## Summary
-The lockdown feature prepares SQLitch for a stable 1.0 release by driving coverage, documentation, security, and performance to the constitutional bar while proving Sqitch parity through new UAT compatibility scripts. Work emphasizes tightening existing modules (`config/resolver`, `registry/state`, `utils/identity`), codifying documentation and manual gates, and introducing forward/backward compatibility scripts that reuse the SQLite tutorial workflow. All compatibility validation remains manual via the release checklist, with evidence captured in release PR comments.
+The lockdown feature prepares SQLitch for a stable 1.0 release by driving coverage, documentation, and security to the constitutional bar while proving Sqitch parity through new UAT compatibility scripts. Work emphasizes tightening existing modules (`config/resolver`, `registry/state`, `utils/identity`), codifying documentation and manual gates, and introducing forward/backward compatibility scripts that reuse the SQLite tutorial workflow. All compatibility validation remains manual via the release checklist, with evidence captured in release PR comments.
 
 ## Technical Context
 **Language/Version**: Python 3.11  
@@ -24,7 +24,6 @@ The lockdown feature prepares SQLitch for a stable 1.0 release by driving covera
 **Testing**: pytest (unit/integration/golden), click.testing `CliRunner`, manual UAT harnesses under `uat/`  
 **Target Platform**: macOS & Linux command-line environments  
 **Project Type**: Single CLI + library repository  
-**Performance Goals**: Core CLI commands complete in <100ms; parity with Sqitch tutorial timelines  
 **Constraints**: Maintain ≥90% coverage, pass mypy --strict, document manual UAT runs, no new feature work during lockdown  
 **Scale/Scope**: Sqitch tutorial workflow, existing config/plan/engine modules, release preparations for v1.0.0
 
@@ -89,9 +88,9 @@ Post-design constitution check: ✅ unchanged (still compliant).
 ## Phase 2: Task Planning Approach (preview)
 - `/tasks` will transform design artifacts into actionable steps:
   - Coverage and docstring gaps → failing tests then fixes per module.
-  - Security/performance gates → scripted checks plus remediation tasks.
+  - Security gates → scripted checks plus remediation tasks.
   - UAT scripts → shared helper extraction, forward/backward script implementation, manual checklist updates, evidence-review tasks.
-- Tasks remain grouped by phase (Assessment, Coverage, Documentation, Stability, Security, Performance, UAT Validation) with P1 priority for constitutional gates and manual UAT deliverables.
+- Tasks remain grouped by phase (Assessment, Coverage, Documentation, Stability, Security, UAT Validation) with P1 priority for constitutional gates and manual UAT deliverables.
 
 ## Complexity Tracking
 _None required; plan remains within constitutional constraints._

@@ -61,18 +61,13 @@
 - **Configuration**: Audit config parsing for security issues
 - **Dependencies**: Update dependencies with known vulnerabilities
 
-### 4. Performance
-- **Profiling**: Profile common operations
-- **Resource Usage**: Monitor memory and file handle usage
-- **Scalability**: Test with large plan files and many changes
-
-### 5. User Experience
+### 4. User Experience
 - **Error Messages**: Clear, actionable error messages
 - **Help Text**: Comprehensive --help output for all commands
 - **Examples**: Add usage examples to documentation
 - **Troubleshooting**: Common issues and solutions documented
 
-### 6. UAT Compatibility Testing
+### 5. UAT Compatibility Testing
 - **Scope**: All compatibility scripts validate the SQLite tutorial workflow only; other engines remain out of scope for lockdown.
 - **Side-by-Side Testing**: `uat/side-by-side.py` validates functional equivalence between sqitch and sqlitch
   - Follows `sqitch/lib/sqitchtutorial-sqlite.pod` tutorial steps
@@ -117,12 +112,6 @@
 - [ ] Dependencies have no critical CVEs
 - [ ] Configuration validation prevents malicious inputs
 
-### Performance Gates
-- [ ] Common operations complete in <100ms
-- [ ] Large plan files (1000+ changes) handle gracefully
-- [ ] Memory usage stays under reasonable bounds
-- [ ] No resource leaks detected
-
 ### Documentation Gates
 - [ ] README complete with quickstart
 - [ ] CONTRIBUTING.md updated
@@ -145,7 +134,6 @@
 - **New Features**: No new functionality added in this phase
 - **API Changes**: No breaking changes to existing APIs
 - **Refactoring**: Only refactor if it improves quality/testability
-- **Performance Optimization**: Only if critical issues found
 
 ---
 
@@ -265,9 +253,6 @@ uat/
 
 **Risk**: Security issues found late in process  
 **Mitigation**: Security audit early in lockdown phase.
-
-**Risk**: Performance issues discovered  
-**Mitigation**: Profile early. Most issues likely architectural, can be addressed post-1.0.
 
 **Risk**: UAT scripts may have false positives from output formatting differences  
 **Mitigation**: Sophisticated sanitization (timestamps, SHA1s). Document acceptable cosmetic differences. Focus on behavioral equivalence, not byte-for-byte output matching.
