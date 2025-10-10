@@ -30,7 +30,7 @@
 ## Phase 3.2 · Tests First (TDD) — all MUST fail before implementation
 - [X] **T010 [P1]** Add resolver edge-case tests covering missing scopes, duplicate files, and path validation in `tests/config/test_resolver_lockdown.py`
 - [X] **T011 [P1]** Add registry state mutation/error tests in `tests/registry/test_state_lockdown.py`
-- [ ] **T012 [P1]** Add identity fallback/OS variance tests in `tests/utils/test_identity_lockdown.py`
+- [X] **T012 [P1]** Add identity fallback/OS variance tests in `tests/utils/test_identity_lockdown.py`
 - [ ] **T013 [P1]** Add CLI context and flag regression tests (init/add/deploy error paths) using `CliRunner` in `tests/cli/test_main_lockdown.py`
 - [ ] **T014 [P1]** Add SQLite engine failure-mode tests (transaction safety, PRAGMA validation) in `tests/engine/test_sqlite_lockdown.py`
 - [ ] **T015 [P1][P]** Add unit tests for new helper modules (`uat/sanitization.py`, `uat/comparison.py`, `uat/test_steps.py`) in `tests/uat/test_helpers.py`
