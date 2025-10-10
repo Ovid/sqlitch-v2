@@ -52,7 +52,7 @@ class LogEvent:
 @click.option(
     "--event",
     "event_filter",
-    type=click.Choice(("deploy", "revert", "fail", "merge"), case_sensitive=False),
+    type=click.Choice(("deploy", "deploy_fail", "revert", "fail", "merge"), case_sensitive=False),
     help="Filter events by event type.",
 )
 @global_sqitch_options
@@ -127,7 +127,7 @@ def log_command(
         target_value = target_option
     else:
         target_value = cli_context.target
-        
+
     if not target_value:
         raise CommandError("A target must be provided via --target or configuration.")
 
@@ -320,12 +320,13 @@ def _format_human(target: str, events: Sequence[LogEvent]) -> str:
         lines.append(f"Name:      {event.change}")
         lines.append(f"Committer: {event.committer_name} <{event.committer_email}>")
         lines.append(f"Date:      {event.committed_at}")
-        lines.append("")
+        if index == 0:
+            lines.append("")
+
         note_lines = event.note.splitlines() or [""]
         for note_line in note_lines:
             lines.append(f"    {note_line}" if note_line else "")
-        if index != len(events) - 1:
-            lines.append("")
+        lines.append("")
 
     return "\n".join(lines) + "\n"
 

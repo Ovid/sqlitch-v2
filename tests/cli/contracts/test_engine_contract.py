@@ -8,6 +8,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 
 
 def _read_engine_section(path: Path, name: str) -> dict[str, str]:
@@ -36,14 +37,71 @@ def _runner() -> CliRunner:
     return CliRunner()
 
 
+def test_engine_add_accepts_target_alias(tmp_path: Path) -> None:
+    """Engine definitions should resolve target aliases like Sqitch."""
+
+    runner = _runner()
+    config_root = tmp_path / "config-root"
+
+    with isolated_test_context(runner) as (runner, temp_dir):
+        env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
+        
+        # First, need to init project to create sqitch.conf in project root
+        init_result = runner.invoke(main, ["init", "testproj", "--engine", "sqlite"], env=env)
+        assert init_result.exit_code == 0, init_result.output
+        
+        target_result = runner.invoke(
+            main,
+            ["target", "add", "flipr_test", "db:sqlite:flipr_test.db"],
+            env=env,
+        )
+        assert target_result.exit_code == 0, target_result.output
+
+        add_result = runner.invoke(
+            main,
+            ["engine", "add", "sqlite", "flipr_test"],
+            env=env,
+        )
+
+        assert add_result.exit_code == 0, add_result.output
+
+        # Engine config is written to project root, not config_root
+        config_path = Path.cwd() / "sqitch.conf"
+        contents = _read_engine_section(config_path, "sqlite")
+        assert contents["target"] == "flipr_test"
+
+
+def test_engine_add_unknown_target_alias_errors(tmp_path: Path) -> None:
+    """Using an unknown target alias should raise Sqitch-parity errors."""
+
+    runner = _runner()
+    config_root = tmp_path / "config-root"
+
+    with isolated_test_context(runner) as (runner, temp_dir):
+        env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
+        result = runner.invoke(
+            main,
+            ["engine", "add", "sqlite", "missing_alias"],
+            env=env,
+        )
+
+        assert result.exit_code != 0
+        assert 'Unknown target "missing_alias"' in result.output
+
+
 def test_engine_add_writes_definition(tmp_path: Path) -> None:
     """Adding an engine should persist the definition to the config root."""
 
     runner = _runner()
     config_root = tmp_path / "config-root"
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
+        
+        # Init project first
+        init_result = runner.invoke(main, ["init", "testproj", "--engine", "sqlite"], env=env)
+        assert init_result.exit_code == 0, init_result.output
+        
         result = runner.invoke(
             main,
             ["engine", "add", "widgets", "db:sqlite:widgets.db"],
@@ -52,20 +110,26 @@ def test_engine_add_writes_definition(tmp_path: Path) -> None:
 
         assert result.exit_code == 0, result.output
 
-        config_path = config_root / "sqitch.conf"
+        # Engine config is written to project root
+        config_path = Path.cwd() / "sqitch.conf"
         contents = _read_engine_section(config_path, "widgets")
-        assert contents["uri"] == "db:sqlite:widgets.db"
+        assert contents["target"] == "db:sqlite:widgets.db"
         assert "registry" not in contents
 
 
-def test_engine_add_rejects_duplicate(tmp_path: Path) -> None:
-    """Adding an engine twice should raise a parity-preserving error."""
+def test_engine_add_allows_upsert(tmp_path: Path) -> None:
+    """Adding an engine twice should succeed and update the URI (Sqitch parity)."""
 
     runner = _runner()
     config_root = tmp_path / "config-root"
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
+        
+        # Init project first
+        init_result = runner.invoke(main, ["init", "testproj", "--engine", "sqlite"], env=env)
+        assert init_result.exit_code == 0, init_result.output
+        
         first = runner.invoke(
             main,
             ["engine", "add", "widgets", "db:sqlite:widgets.db"],
@@ -73,13 +137,18 @@ def test_engine_add_rejects_duplicate(tmp_path: Path) -> None:
         )
         assert first.exit_code == 0, first.output
 
-        duplicate = runner.invoke(
+        # Re-adding with different URI should succeed (upsert behavior)
+        second = runner.invoke(
             main,
-            ["engine", "add", "widgets", "db:sqlite:widgets.db"],
+            ["engine", "add", "widgets", "db:sqlite:widgets_v2.db"],
             env=env,
         )
-        assert duplicate.exit_code != 0
-        assert "Engine 'widgets' already exists" in duplicate.output
+        assert second.exit_code == 0, second.output
+        
+        # Verify the URI was updated
+        config_path = Path.cwd() / "sqitch.conf"
+        contents = _read_engine_section(config_path, "widgets")
+        assert contents["target"] == "db:sqlite:widgets_v2.db"
 
 
 def test_engine_update_overwrites_existing_values(tmp_path: Path) -> None:
@@ -87,11 +156,16 @@ def test_engine_update_overwrites_existing_values(tmp_path: Path) -> None:
 
     runner = _runner()
     config_root = tmp_path / "config-root"
-    config_path = config_root / "sqitch.conf"
-    _write_engine_section(config_path, "widgets", uri="db:sqlite:widgets.db")
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
+        # Init and write initial engine config to project root
         env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
+        init_result = runner.invoke(main, ["init", "testproj", "--engine", "sqlite"], env=env)
+        assert init_result.exit_code == 0, init_result.output
+        
+        config_path = Path.cwd() / "sqitch.conf"
+        _write_engine_section(config_path, "widgets", target="db:sqlite:widgets.db")
+        
         result = runner.invoke(
             main,
             [
@@ -111,7 +185,7 @@ def test_engine_update_overwrites_existing_values(tmp_path: Path) -> None:
         assert result.exit_code == 0, result.output
 
         contents = _read_engine_section(config_path, "widgets")
-        assert contents["uri"] == "db:mysql://example.com/widgets"
+        assert contents["target"] == "db:mysql://example.com/widgets"
         assert contents["registry"] == "db:mysql://example.com/registry"
         assert contents["client"] == "mysql"
         assert contents["verify"] == "true"
@@ -122,11 +196,16 @@ def test_engine_remove_deletes_definition(tmp_path: Path) -> None:
 
     runner = _runner()
     config_root = tmp_path / "config-root"
-    config_path = config_root / "sqitch.conf"
-    _write_engine_section(config_path, "widgets", uri="db:sqlite:widgets.db")
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
+        # Init and write initial engine config to project root
         env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
+        init_result = runner.invoke(main, ["init", "testproj", "--engine", "sqlite"], env=env)
+        assert init_result.exit_code == 0, init_result.output
+        
+        config_path = Path.cwd() / "sqitch.conf"
+        _write_engine_section(config_path, "widgets", target="db:sqlite:widgets.db")
+        
         result = runner.invoke(
             main,
             ["engine", "remove", "widgets", "--yes"],
@@ -146,24 +225,29 @@ def test_engine_list_outputs_table(tmp_path: Path) -> None:
 
     runner = _runner()
     config_root = tmp_path / "config-root"
-    config_path = config_root / "sqitch.conf"
-    _write_engine_section(config_path, "widgets", uri="db:sqlite:widgets.db")
-    _write_engine_section(
-        config_path,
-        "analytics",
-        uri="db:pg://example.com/analytics",
-        registry="db:pg://example.com/registry",
-        client="psql",
-        verify="false",
-        plan="analytics.plan",
-    )
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
+        # Init and write engine configs to project root
         env = {"SQLITCH_CONFIG_ROOT": str(config_root)}
+        init_result = runner.invoke(main, ["init", "testproj", "--engine", "sqlite"], env=env)
+        assert init_result.exit_code == 0, init_result.output
+        
+        config_path = Path.cwd() / "sqitch.conf"
+        _write_engine_section(config_path, "widgets", target="db:sqlite:widgets.db")
+        _write_engine_section(
+            config_path,
+            "analytics",
+            target="db:pg://example.com/analytics",
+            registry="db:pg://example.com/registry",
+            client="psql",
+            verify="false",
+            plan="analytics.plan",
+        )
+
         result = runner.invoke(main, ["engine", "list"], env=env)
 
         assert result.exit_code == 0, result.output
-        output = result.stdout.strip().splitlines()
+        output = result.output.strip().splitlines()
         assert output[0].startswith("NAME")
         assert "widgets" in output[1]
         assert "db:sqlite:widgets.db" in output[1]

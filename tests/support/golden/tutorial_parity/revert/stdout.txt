@@ -1,0 +1,5 @@
+Reverting changes to db:sqlite:flipr_test.db
+  - flips
+  - users
+Revert complete. Removed 2 change(s).
+

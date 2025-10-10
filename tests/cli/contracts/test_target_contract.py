@@ -8,6 +8,7 @@ from click.testing import CliRunner
 import pytest
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 
 
 @pytest.fixture()
@@ -20,7 +21,7 @@ def runner() -> CliRunner:
 def test_target_list_empty(runner: CliRunner) -> None:
     """sqlitch target list shows no targets initially."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
         assert result.exit_code == 0
 
@@ -32,7 +33,7 @@ def test_target_list_empty(runner: CliRunner) -> None:
 def test_target_add_and_list(runner: CliRunner) -> None:
     """sqlitch target add creates a target and list shows it."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
         assert result.exit_code == 0
 
@@ -60,7 +61,7 @@ def test_target_add_and_list(runner: CliRunner) -> None:
 def test_target_add_rejects_duplicates(runner: CliRunner) -> None:
     """Adding the same target twice should error."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
         assert result.exit_code == 0
 
@@ -75,7 +76,7 @@ def test_target_add_rejects_duplicates(runner: CliRunner) -> None:
 def test_target_show(runner: CliRunner) -> None:
     """sqlitch target show displays target details."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
         assert result.exit_code == 0
 
@@ -90,7 +91,7 @@ def test_target_show(runner: CliRunner) -> None:
 def test_target_remove(runner: CliRunner) -> None:
     """sqlitch target remove deletes a target."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
         assert result.exit_code == 0
 
@@ -108,7 +109,7 @@ def test_target_remove(runner: CliRunner) -> None:
 def test_target_alter_updates_existing_target(runner: CliRunner) -> None:
     """target alter should update stored attributes."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
         assert result.exit_code == 0
 
@@ -142,7 +143,7 @@ def test_target_alter_updates_existing_target(runner: CliRunner) -> None:
 def test_target_unknown_show_error(runner: CliRunner) -> None:
     """Showing unknown target fails."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
         assert result.exit_code == 0
 
@@ -154,7 +155,7 @@ def test_target_unknown_show_error(runner: CliRunner) -> None:
 def test_target_remove_unknown_error(runner: CliRunner) -> None:
     """Removing an unknown target should raise a CommandError."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["init", "flipr", "--engine", "sqlite"])
         assert result.exit_code == 0
 
@@ -167,8 +168,8 @@ def test_target_remove_unknown_error(runner: CliRunner) -> None:
 def test_target_honours_config_root_override(runner: CliRunner) -> None:
     """Targets should be persisted under the resolved config root when provided."""
 
-    with runner.isolated_filesystem() as tmp_dir:
-        config_root = Path(tmp_dir) / "config-home"
+    with isolated_test_context(runner) as (runner, temp_dir):
+        config_root = Path(temp_dir) / "config-home"
         result = runner.invoke(
             main,
             [
@@ -191,7 +192,7 @@ def test_target_honours_config_root_override(runner: CliRunner) -> None:
 def test_target_suppresses_output_when_quiet(runner: CliRunner) -> None:
     """Global --quiet flag suppresses informational messages."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(
             main,
             [

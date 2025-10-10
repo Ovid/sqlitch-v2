@@ -9,6 +9,7 @@ from click.testing import CliRunner
 import pytest
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change
 
@@ -44,7 +45,7 @@ def _seed_plan(plan_path: Path) -> None:
 def test_checkout_requires_vcs_configuration(runner: CliRunner) -> None:
     """Checkout should fail when no VCS command is configured."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         _seed_plan(plan_path)
 
@@ -65,7 +66,7 @@ def test_checkout_requires_vcs_configuration(runner: CliRunner) -> None:
 def test_checkout_log_only_reports_pipeline(runner: CliRunner) -> None:
     """Log-only mode should describe the checkout pipeline and exit successfully."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         _seed_plan(plan_path)
 

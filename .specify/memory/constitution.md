@@ -1,17 +1,16 @@
 <!--
 - Sync Impact Report
-- Version change: 1.9.0 → 1.10.0 (MINOR bump)
+- Version change: 1.10.0 → 1.10.1 (PATCH bump)
 - Modified sections:
-  • I. Test-First Development — Added "Test Isolation and Cleanup" requirement
-- Added sections:
-  • Test Isolation and Cleanup principle (mandatory use of isolated filesystem for all CLI tests)
+  • Development Workflow & Quality Gates — Added "Terminal Command Decomposition" requirement
+- Added sections: None
 - Removed sections: None
-- Rationale: Restored critical test discipline requirement that was lost from earlier versions.
-  Tests must not pollute the repository with artifacts. All CLI tests must use Click's
-  `isolated_filesystem()` context manager or equivalent isolation to ensure automatic cleanup.
-  This prevents test artifacts (sqitch.conf, sqitch.plan, deploy/, revert/, verify/, bundle/)
-  from being left in the repository root.
-- Templates requiring updates: None (enforcement rule, not template change)
+- Rationale: Added workflow principle requiring AI agents to decompose compound shell commands
+  into separate sequential steps. Environment setup (source .venv/bin/activate) should run once,
+  followed by commands that depend on it. This reduces repeated approval friction and improves
+  automation flow. This is a clarification/process improvement, not a semantic change to existing
+  principles, warranting a PATCH version bump.
+- Templates requiring updates: None (workflow guidance, not template change)
 - Follow-up TODOs: None
 -->
 
@@ -209,6 +208,15 @@ by making behavior discoverable without reverse-engineering the implementation.
   (flake8, pylint), type checking (mypy), and security scanning (bandit) with
   zero warnings before merge. Import grouping MUST follow PEP 8 (stdlib,
   third-party, local with blank lines between groups).
+- Terminal Command Decomposition: AI agents MUST decompose compound shell
+  commands (those using `&&`, `;`, or `|`) into separate sequential commands.
+  Environment setup commands (e.g., `source .venv/bin/activate`) MUST be run
+  once as a standalone command, followed by subsequent commands that rely on
+  that environment state. This allows users to approve environment setup once
+  and automatically run subsequent commands without repeated approval.
+  Rationale: Compound commands require user approval for each execution,
+  creating workflow friction. Decomposed commands improve automation flow and
+  reduce repeated approvals for identical environment setup steps.
 
 ## Governance
 
@@ -224,4 +232,6 @@ by making behavior discoverable without reverse-engineering the implementation.
 - Compliance: All specs, plans, tasks, and PRs MUST reference and adhere to this
   document. Non-compliance is a change request, not a discretionary choice.
 
-**Version**: 1.10.0 | **Ratified**: 2025-10-03 | **Last Amended**: 2025-10-05
+**Version**: 1.10.1 | **Ratified**: 2025-10-03 | **Last Amended**: 2025-10-07
+
+```

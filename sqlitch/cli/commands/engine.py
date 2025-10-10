@@ -10,6 +10,7 @@ from pathlib import Path
 import click
 
 from sqlitch.cli.main import CLIContext
+from sqlitch.config.resolver import resolve_config
 from sqlitch.utils.fs import ArtifactConflictError, resolve_config_file
 
 from . import CommandError, register_command
@@ -50,7 +51,7 @@ def engine_group(
     """Manage engine definitions for SQLitch deployments."""
 
     require_cli_context(ctx)
-    
+
     # If no subcommand was invoked, run the 'list' command by default
     if ctx.invoked_subcommand is None:
         ctx.invoke(list_engines)
@@ -82,17 +83,24 @@ def add_engine(
     """Create a new engine definition in the configuration root."""
 
     cli_context = require_cli_context(ctx)
-    _validate_engine_uri(uri)
+    
+    # Resolve to validate, but store the original value if it's a target name
+    resolved_uri = _resolve_engine_uri(cli_context=cli_context, candidate=uri)
+    _validate_engine_uri(resolved_uri)
+    
+    # If the original value wasn't a URI, it was a target name - store the name, not the URI
+    is_target_alias = not _is_supported_engine_uri(uri)
+    target_value = uri if is_target_alias else resolved_uri
 
     _mutate_engine_definition(
         cli_context=cli_context,
         name=name,
-        uri=uri,
+        uri=target_value,  # Store target name if alias, URI if direct
         registry=registry,
         client=client,
         plan_file=plan_file,
         verify_flag=verify_flag,
-        allow_existing=False,
+        allow_existing=True,  # Allow upsert behavior like Sqitch
     )
 
     _emit(ctx, f"Created engine '{name}'")
@@ -124,12 +132,19 @@ def update_engine(
     """Update an existing engine definition."""
 
     cli_context = require_cli_context(ctx)
-    _validate_engine_uri(uri)
+    
+    # Resolve to validate, but store the original value if it's a target name
+    resolved_uri = _resolve_engine_uri(cli_context=cli_context, candidate=uri)
+    _validate_engine_uri(resolved_uri)
+    
+    # If the original value wasn't a URI, it was a target name - store the name, not the URI
+    is_target_alias = not _is_supported_engine_uri(uri)
+    target_value = uri if is_target_alias else resolved_uri
 
     _mutate_engine_definition(
         cli_context=cli_context,
         name=name,
-        uri=uri,
+        uri=target_value,  # Store target name if alias, URI if direct
         registry=registry,
         client=client,
         plan_file=plan_file,
@@ -200,12 +215,15 @@ def _mutate_engine_definition(
     if parser.has_section(section) and not allow_existing:
         raise CommandError(f"Engine '{name}' already exists.")
     if not parser.has_section(section):
-        if not allow_existing:
+        if allow_existing:
+            # Upsert mode: create section if it doesn't exist
             parser.add_section(section)
         else:
+            # Update mode: section must exist
             raise CommandError(f"Engine '{name}' is not defined.")
 
-    parser.set(section, "uri", uri)
+    # Sqitch uses "target" field in engine sections, not "uri"
+    parser.set(section, "target", uri)
     if registry is not None:
         parser.set(section, "registry", registry)
 
@@ -222,16 +240,20 @@ def _mutate_engine_definition(
 
 
 def _engine_config_path(cli_context: CLIContext) -> Path:
-    directory = cli_context.config_root
+    """
+    Resolve the config file path for engines.
+    Prefers project-level config over user config (Sqitch parity).
+    """
+    # Always prefer project-level config for engine definitions
     try:
-        resolution = resolve_config_file(directory)
+        resolution = resolve_config_file(cli_context.project_root)
     except ArtifactConflictError as exc:  # pragma: no cover - defensive guard
         raise CommandError(str(exc)) from exc
 
     if resolution.path is not None:
         return resolution.path
 
-    return directory / "sqitch.conf"
+    return cli_context.project_root / "sqitch.conf"
 
 
 def _section_name(name: str) -> str:
@@ -261,7 +283,7 @@ def _load_engines(path: Path) -> Iterable[EngineDefinition]:
         data = parser[section]
         yield EngineDefinition(
             name=name,
-            uri=data.get("uri", ""),
+            uri=data.get("target", ""),  # Sqitch stores this in "target" field
             registry=data.get("registry"),
             client=data.get("client"),
             verify=data.get("verify"),
@@ -296,11 +318,39 @@ def _format_engine_table(entries: Iterable[EngineDefinition]) -> list[str]:
     return lines
 
 
-def _validate_engine_uri(uri: str) -> None:
+def _resolve_engine_uri(*, cli_context: CLIContext, candidate: str) -> str:
+    """Return the engine URI, resolving target aliases when necessary."""
+
+    if _is_supported_engine_uri(candidate):
+        return candidate
+
+    profile = resolve_config(
+        root_dir=cli_context.project_root,
+        config_root=cli_context.config_root,
+        env=cli_context.env,
+    )
+
+    section = f'target "{candidate}"'
+    data = profile.settings.get(section)
+    if data is not None:
+        target_uri = data.get("uri")
+        if target_uri:
+            return target_uri
+
+    raise CommandError(f'Unknown target "{candidate}"')
+
+
+def _is_supported_engine_uri(uri: str) -> bool:
     lowered = uri.lower()
-    for _, prefixes in _SUPPORTED_ENGINES.items():
-        if any(lowered.startswith(prefix) for prefix in prefixes):
-            return
+    return any(
+        any(lowered.startswith(prefix) for prefix in prefixes)
+        for prefixes in _SUPPORTED_ENGINES.values()
+    )
+
+
+def _validate_engine_uri(uri: str) -> None:
+    if _is_supported_engine_uri(uri):
+        return
     supported = ", ".join(sorted(_SUPPORTED_ENGINES))
     raise CommandError(f"Unsupported engine URI '{uri}'. Supported engines: {supported}.")
 

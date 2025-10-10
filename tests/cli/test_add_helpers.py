@@ -9,26 +9,80 @@ import pytest
 
 from sqlitch.cli.commands import CommandError
 from sqlitch.cli.commands import add as add_module
+from sqlitch.config.loader import ConfigProfile
+from sqlitch.utils.identity import resolve_planner_identity
 from sqlitch.utils.templates import default_template_body
 
 
-def test_resolve_planner_prioritises_sqlitch_env() -> None:
+def test_resolve_planner_prioritises_sqlitch_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that SQLITCH_* env vars work (backward compatibility)."""
     env = {
         "SQLITCH_USER_NAME": "Ada",
         "SQLITCH_USER_EMAIL": "ada@example.com",
         "USER": "fallback",
     }
 
-    assert add_module._resolve_planner(env) == "Ada <ada@example.com>"
+    # Mock system functions to prevent real system lookups
+    monkeypatch.setattr("os.getlogin", lambda: "fallback")
+    try:
+        import pwd
+        import collections
+
+        MockPwRecord = collections.namedtuple("MockPwRecord", ["pw_name", "pw_gecos"])
+        monkeypatch.setattr(
+            "pwd.getpwuid", lambda uid: MockPwRecord(pw_name="fallback", pw_gecos="")
+        )
+    except ImportError:
+        pass
+
+    assert resolve_planner_identity(env, None) == "Ada <ada@example.com>"
 
 
-def test_resolve_planner_fallbacks_when_no_email() -> None:
+def test_resolve_planner_fallbacks_when_no_email(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that email is always synthesized when not provided."""
     env = {
         "GIT_AUTHOR_NAME": "Ada",
         "USERNAME": "backup",
     }
 
-    assert add_module._resolve_planner(env) == "Ada"
+    # Mock system functions to avoid using real user info
+    monkeypatch.setattr("socket.gethostname", lambda: "testhost")
+    monkeypatch.setattr("os.getlogin", lambda: "backup")
+
+    # Mock pwd module if it exists (Unix/macOS)
+    try:
+        import pwd
+        import collections
+
+        MockPwRecord = collections.namedtuple("MockPwRecord", ["pw_name", "pw_gecos"])
+        monkeypatch.setattr("pwd.getpwuid", lambda uid: MockPwRecord(pw_name="backup", pw_gecos=""))
+    except ImportError:
+        pass
+
+    # Should synthesize email
+    result = resolve_planner_identity(env, None)
+    assert result == "Ada <backup@testhost>"
+
+
+def test_resolve_planner_from_config() -> None:
+    """Test that config file user.name and user.email are used."""
+    # Mock config with user.name and user.email
+    config = ConfigProfile(
+        root_dir=Path("/tmp"),
+        files=(),
+        settings={
+            "user": {
+                "name": "Test User",
+                "email": "test@example.com",
+            }
+        },
+        active_engine=None,
+    )
+
+    env = {}  # No env vars
+
+    result = resolve_planner_identity(env, config)
+    assert result == "Test User <test@example.com>"
 
 
 def test_resolve_script_path_prefers_absolute(tmp_path: Path) -> None:

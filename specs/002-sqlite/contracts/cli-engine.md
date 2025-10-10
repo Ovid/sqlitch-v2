@@ -18,6 +18,7 @@ Manage engine definitions (add, update, remove, list) for SQLitch deployments, m
 3. When listing, output tabular representation identical to Sqitch (optional JSON).
 4. On add/update, validate engine type is within MVP scope; unsupported types raise immediate error.
 5. When removing, confirm deletion unless `--yes` provided.
+6. **`engine add` uses upsert semantics** (Sqitch parity): if an engine with the same name already exists, the command succeeds and updates the existing definition rather than raising an error. This allows iterative configuration and matches Sqitch's behavior where `sqitch engine add <name>` can be called multiple times to update the engine URI or options.
 
 ## Outputs
 - **STDOUT**: success messages matching Sqitch (e.g., `Created engine <name>`).
@@ -25,9 +26,9 @@ Manage engine definitions (add, update, remove, list) for SQLitch deployments, m
 - **Exit Code**: `0` on success; `1` on invalid requests.
 
 ## Error Conditions
-- Duplicate engine name on add → exit 1 `Engine "<name>" already exists`.
 - Unknown engine on update/remove → exit 1 `Unknown engine "<name>"`.
 - Unsupported engine type (outside sqlite/mysql/pg) → exit 1 with parity message.
+- **Note**: `engine add` does NOT raise an error for duplicate engine names; it updates the existing definition (upsert behavior).
 
 ## Parity Checks
 - Formatting of `sqlitch engine list` matches exact Sqitch column widths.

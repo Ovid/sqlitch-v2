@@ -41,6 +41,7 @@ REPORT-TASKS.md
 # Test artifacts (should be cleaned up by tests, but added as safety)
 /sqitch.conf
 /sqitch.plan
+*.db
 /bundle/
 /deploy/
 /revert/

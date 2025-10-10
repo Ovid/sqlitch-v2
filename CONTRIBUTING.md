@@ -4,6 +4,40 @@ Thanks for helping build the SQLitch Python parity fork! The guidelines below do
 
 ## 1. Environment Setup
 
+⚠️ **CRITICAL SAFETY NOTICE**: Before running tests or developing SQLitch, please read this carefully.
+
+### Test Suite Safety
+
+The SQLitch test suite extensively exercises configuration file operations. While we have implemented comprehensive test isolation measures (using isolated filesystem contexts and environment variable overrides), **we strongly recommend running tests in an isolated environment** to protect your existing Sqitch/SQLitch configurations.
+
+**Recommended Safe Environments:**
+- **Docker container** (safest option)
+- Dedicated VM or cloud instance
+- Separate user account with its own home directory
+- Fresh development machine without existing Sqitch projects
+
+**Why This Matters:**
+If you have existing Sqitch projects with configurations in `~/.sqitch/sqitch.conf` or are actively using Sqitch/SQLitch, a bug in the test isolation layer could potentially modify or overwrite these files. Losing production database configuration could be catastrophic.
+
+**Before Running Tests Locally:**
+1. Back up your `~/.sqitch/` directory if it exists
+2. Consider whether you have any critical Sqitch configurations
+3. If in doubt, use Docker (see example below)
+
+### Safe Docker Testing (Recommended)
+
+```bash
+# Build and run tests in complete isolation
+docker run -v $(pwd):/workspace -w /workspace python:3.11 bash -c "
+  python3 -m venv .venv && 
+  source .venv/bin/activate && 
+  pip install -e .[dev] && 
+  python -m pytest
+"
+```
+
+### Local Setup (Use with Caution)
+
 1. Create and activate a virtual environment (Python 3.11+).
 2. Install runtime and tooling dependencies (includes pytest, coverage plugins, linters, tox, etc.).
 
@@ -56,6 +90,109 @@ Remove these skip markers (or update the active task list) before proceeding wit
 ```
 
 Fix the offending tests by removing—or intentionally keeping—the skip markers and re-running the script until it passes.
+
+## 3a. Writing Tests - Isolation Requirements (MANDATORY)
+
+**All new tests MUST use isolated test contexts to prevent configuration pollution.**
+
+### The Rule
+
+When writing tests that invoke CLI commands or perform configuration operations:
+
+1. **ALWAYS** import and use `isolated_test_context()` from `tests/support/test_helpers.py`
+2. **NEVER** use bare `runner.isolated_filesystem()` for tests that create config files
+3. **VERIFY** your test doesn't create artifacts in `~/.sqitch/` or `~/.config/sqlitch/`
+
+### Why This Matters
+
+The Constitution mandates: **"Test Isolation and Cleanup (MANDATORY)"** - tests must not leave artifacts in the repository or user directories. The spec requirement **FR-001b** mandates 100% Sqitch compatibility, which means never creating SQLitch-specific paths like `~/.config/sqlitch/`.
+
+### Correct Pattern
+
+```python
+from tests.support.test_helpers import isolated_test_context
+
+def test_config_operation():
+    with isolated_test_context() as (runner, temp_dir):
+        # All config operations are now isolated to temp_dir
+        result = runner.invoke(main, ["config", "--user", "user.name", "Test User"])
+        assert result.exit_code == 0
+        
+        # Config file created inside temp_dir, not ~/.sqitch/
+        config_path = temp_dir / ".sqitch" / "sqitch.conf"
+        assert config_path.exists()
+```
+
+### What `isolated_test_context()` Does
+
+- Wraps Click's `runner.isolated_filesystem()` 
+- Automatically sets `SQLITCH_SYSTEM_CONFIG`, `SQLITCH_USER_CONFIG`, and `SQLITCH_CONFIG` environment variables
+- Points these variables to subdirectories INSIDE the isolated temp directory
+- Restores original environment after test completes
+- Ensures zero pollution of your actual home directory
+
+### Verification
+
+## 3. Test Writing Guidelines
+
+### MANDATORY: Test Isolation
+
+**All tests that invoke CLI commands or manipulate configuration files MUST use `isolated_test_context()`.**
+
+This is a **CONSTITUTIONAL REQUIREMENT** to prevent tests from polluting the user's actual configuration directories.
+
+```python
+from click.testing import CliRunner
+from tests.support.test_helpers import isolated_test_context
+from sqlitch.cli.main import main
+
+def test_config_operations():
+    """Example: Properly isolated config test."""
+    runner = CliRunner()
+    
+    # ✅ CORRECT: Use isolated_test_context()
+    with isolated_test_context(runner) as (runner, temp_dir):
+        result = runner.invoke(main, ['config', '--user', 'user.name', 'Test'])
+        assert result.exit_code == 0
+        
+        # Config written to temp_dir/.sqitch/, not ~/.sqitch/
+        user_config = temp_dir / '.sqitch' / 'sqitch.conf'
+        assert user_config.exists()
+```
+
+**Why This Matters:**
+- Without isolation, tests write to `~/.sqitch/sqitch.conf` or (worse) `~/.config/sqlitch/`
+- This violates FR-001b (100% Sqitch Compatibility)
+- Could destroy user's existing configuration files
+- Makes tests non-deterministic and environment-dependent
+
+**Never do this:**
+```python
+def test_config_bad_example():
+    """❌ WRONG: Will pollute user's home directory!"""
+    runner = CliRunner()
+    with runner.isolated_filesystem():  # ❌ Not enough isolation
+        result = runner.invoke(main, ['config', '--user', 'user.name', 'Test'])
+        # This writes to actual ~/.sqitch/ or ~/.config/sqlitch/!
+```
+
+**Documentation:** See `tests/support/README.md` for complete usage patterns and examples.
+
+**Verification:**
+
+Before committing new tests, manually verify:
+
+```bash
+# Check for config pollution
+ls -la ~/.sqitch/          # Should be unchanged or non-existent
+ls -la ~/.config/sqlitch/  # Should NEVER exist
+
+# Run your specific test
+pytest tests/path/to/test_yourtest.py -v
+
+# Verify again - no new files should appear
+ls -la ~/.sqitch/
+```
 
 ## 4. Local Quality Gates
 

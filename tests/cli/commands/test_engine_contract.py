@@ -50,9 +50,10 @@ class TestEngineAction:
         # - Exit 0 and list engines (implemented behavior)
         # - Exit 1 with "not implemented" (stub behavior)
         # - Exit 2 only if there's a parsing error (not expected)
-        assert result.exit_code in (0, 1), (
-            f"Expected exit 0 (success/list) or 1 (not implemented), got {result.exit_code}"
-        )
+        assert result.exit_code in (
+            0,
+            1,
+        ), f"Expected exit 0 (success/list) or 1 (not implemented), got {result.exit_code}"
         # Should not be a parsing error
         if result.exit_code == 2:
             pytest.fail(f"Unexpected parsing error: {result.output}")

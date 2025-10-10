@@ -7,6 +7,11 @@ from pathlib import Path
 
 import click
 
+from sqlitch.engine.sqlite import (
+    SQLITE_SCHEME_PREFIX,
+    derive_sqlite_registry_uri,
+    resolve_sqlite_filesystem_path,
+)
 from sqlitch.utils.fs import ArtifactConflictError, resolve_config_file
 
 from . import CommandError, register_command
@@ -27,7 +32,7 @@ def target_command(
     quiet: bool,
 ) -> None:
     """Manage target aliases that map to deployment URIs."""
-    
+
     # If no subcommand was invoked, run the 'list' command by default
     if ctx.invoked_subcommand is None:
         ctx.invoke(target_list)
@@ -55,7 +60,8 @@ def target_add(
         cli_context.config_root_overridden,
     )
 
-    config = configparser.ConfigParser()
+    config = configparser.ConfigParser(interpolation=None)
+    config.optionxform = str
     if config_path.exists():
         config.read(config_path, encoding="utf-8")
 
@@ -66,11 +72,20 @@ def target_add(
     if not config.has_section(section):
         config.add_section(section)
 
-    config.set(section, "uri", uri)
+    normalised_uri, inferred_registry = _normalise_target_entry(
+        project_root=cli_context.project_root,
+        uri=uri,
+        registry_override=registry,
+    )
+
+    config.set(section, "uri", normalised_uri)
     if engine:
         config.set(section, "engine", engine)
-    if registry:
-        config.set(section, "registry", registry)
+    registry_value = inferred_registry if inferred_registry is not None else registry
+    if registry_value:
+        config.set(section, "registry", registry_value)
+    elif config.has_option(section, "registry"):
+        config.remove_option(section, "registry")
 
     config_path.parent.mkdir(parents=True, exist_ok=True)
     with config_path.open("w", encoding="utf-8") as f:
@@ -102,7 +117,8 @@ def target_alter(
         cli_context.config_root_overridden,
     )
 
-    config = configparser.ConfigParser()
+    config = configparser.ConfigParser(interpolation=None)
+    config.optionxform = str
     if config_path.exists():
         config.read(config_path, encoding="utf-8")
 
@@ -110,11 +126,18 @@ def target_alter(
     if not config.has_section(section):
         raise CommandError(f'Unknown target "{name}"')
 
-    config.set(section, "uri", uri)
+    normalised_uri, inferred_registry = _normalise_target_entry(
+        project_root=cli_context.project_root,
+        uri=uri,
+        registry_override=registry,
+    )
+
+    config.set(section, "uri", normalised_uri)
     if engine:
         config.set(section, "engine", engine)
-    if registry:
-        config.set(section, "registry", registry)
+    registry_value = inferred_registry if inferred_registry is not None else registry
+    if registry_value:
+        config.set(section, "registry", registry_value)
 
     with config_path.open("w", encoding="utf-8") as f:
         config.write(f)
@@ -136,7 +159,8 @@ def target_show(ctx: click.Context, name: str) -> None:
         cli_context.config_root_overridden,
     )
 
-    config = configparser.ConfigParser()
+    config = configparser.ConfigParser(interpolation=None)
+    config.optionxform = str
     if config_path.exists():
         config.read(config_path, encoding="utf-8")
 
@@ -169,7 +193,8 @@ def target_remove(ctx: click.Context, name: str) -> None:
         cli_context.config_root_overridden,
     )
 
-    config = configparser.ConfigParser()
+    config = configparser.ConfigParser(interpolation=None)
+    config.optionxform = str
     if config_path.exists():
         config.read(config_path, encoding="utf-8")
 
@@ -198,7 +223,8 @@ def target_list(ctx: click.Context) -> None:
         cli_context.config_root_overridden,
     )
 
-    config = configparser.ConfigParser()
+    config = configparser.ConfigParser(interpolation=None)
+    config.optionxform = str
     if config_path.exists():
         config.read(config_path, encoding="utf-8")
 
@@ -220,6 +246,67 @@ def target_list(ctx: click.Context) -> None:
     else:
         if not quiet_mode_enabled(ctx):
             click.echo("No targets configured.")
+
+
+def _normalise_target_entry(
+    *,
+    project_root: Path,
+    uri: str,
+    registry_override: str | None,
+) -> tuple[str, str | None]:
+    if not uri.startswith(SQLITE_SCHEME_PREFIX):
+        return uri, registry_override
+
+    payload = uri[len(SQLITE_SCHEME_PREFIX) :]
+    if payload in {"", ":memory:"}:
+        normalised_uri = f"{SQLITE_SCHEME_PREFIX}:memory:"
+        registry_uri = derive_sqlite_registry_uri(
+            workspace_uri=normalised_uri,
+            project_root=project_root,
+            registry_override=registry_override,
+        )
+        return normalised_uri, registry_uri
+
+    filesystem_path = resolve_sqlite_filesystem_path(uri)
+    if str(filesystem_path) == ":memory:":
+        normalised_uri = f"{SQLITE_SCHEME_PREFIX}:memory:"
+        registry_uri = derive_sqlite_registry_uri(
+            workspace_uri=normalised_uri,
+            project_root=project_root,
+            registry_override=registry_override,
+        )
+        return normalised_uri, registry_uri
+
+    original_path = filesystem_path
+    if not filesystem_path.is_absolute():
+        resolved_path = (project_root / filesystem_path).resolve()
+    else:
+        resolved_path = filesystem_path.resolve()
+
+    is_file_uri = payload.startswith("file:")
+    is_simple_relative = (
+        not is_file_uri and not original_path.is_absolute() and len(original_path.parts) == 1
+    )
+
+    if is_file_uri:
+        normalised_uri = f"{SQLITE_SCHEME_PREFIX}file:{resolved_path.as_posix()}"
+    elif is_simple_relative:
+        normalised_uri = uri
+    else:
+        normalised_uri = f"{SQLITE_SCHEME_PREFIX}{resolved_path.as_posix()}"
+
+    canonical_workspace_uri = (
+        f"{SQLITE_SCHEME_PREFIX}file:{resolved_path.as_posix()}"
+        if is_file_uri
+        else f"{SQLITE_SCHEME_PREFIX}{resolved_path.as_posix()}"
+    )
+
+    registry_uri = derive_sqlite_registry_uri(
+        workspace_uri=canonical_workspace_uri,
+        project_root=project_root,
+        registry_override=registry_override,
+    )
+    return normalised_uri, registry_uri
 
 
 def _resolve_config_path(

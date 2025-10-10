@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -24,17 +25,28 @@ from ..options import global_output_options, global_sqitch_options
 __all__ = ["status_command"]
 
 
-@dataclass(frozen=True, slots=True)
-class RegistryRow:
-    """Represents a deployment entry sourced from the registry."""
+@dataclass(frozen=True)
+class CurrentChange:
+    """Represents the currently deployed change for a project."""
 
     project: str
     change_id: str
     change_name: str
     deployed_at: str
-    deployer_name: str
-    deployer_email: str
+    committer_name: str
+    committer_email: str
     tag: str | None
+
+
+@dataclass(frozen=True)
+class FailureMetadata:
+    """Represents the most recent failure event recorded in the registry."""
+
+    change: str
+    note: str
+    committed_at: str
+    committer_name: str
+    committer_email: str
 
 
 @click.command("status")
@@ -81,7 +93,7 @@ def status_command(
         target_value = target_option
     else:
         target_value = cli_context.target
-        
+
     if not target_value:
         raise CommandError("A target must be provided via --target or configuration.")
 
@@ -107,7 +119,7 @@ def status_command(
         plan.default_engine,
         registry_override=cli_context.registry,
     )
-    registry_rows = _load_registry_rows(engine_target, resolved_project)
+    registry_rows, last_failure = _load_registry_state(engine_target, resolved_project)
 
     if registry_rows:
         registry_project = registry_rows[-1].project
@@ -131,6 +143,7 @@ def status_command(
             plan=plan,
             rows=registry_rows,
             pending_changes=pending,
+            last_failure=last_failure,
         )
         click.echo(json.dumps(payload, indent=2, sort_keys=False))
     else:
@@ -140,6 +153,7 @@ def status_command(
             rows=registry_rows,
             status=status,
             pending_changes=pending,
+            last_failure=last_failure,
         )
         click.echo(text, nl=False)
 
@@ -192,20 +206,24 @@ def _resolve_registry_target(
     *,
     registry_override: str | None = None,
 ) -> tuple[EngineTarget, str]:
-    display_target = target
+    stripped_target = target.strip()
+    if not stripped_target:
+        raise CommandError("Target value cannot be empty.")
+
+    display_target = stripped_target
 
     workspace_payload: str
 
-    if target.startswith("db:"):
-        remainder = target[3:]
+    if stripped_target.startswith("db:"):
+        remainder = stripped_target[3:]
         engine_token, separator, payload = remainder.partition(":")
         if not separator:
-            raise CommandError(f"Malformed target URI: {target}")
+            raise CommandError(f"Malformed target URI: {stripped_target}")
         candidate_engine = engine_token or default_engine
         workspace_payload = payload
     else:
         candidate_engine = default_engine
-        workspace_payload = target
+        workspace_payload = stripped_target
 
     try:
         engine_name = canonicalize_engine_name(candidate_engine)
@@ -215,21 +233,33 @@ def _resolve_registry_target(
     if engine_name == "sqlite":
         if not workspace_payload:
             raise CommandError("SQLite targets require an explicit database path")
-        if workspace_payload == ":memory:":
-            raise CommandError("In-memory SQLite targets are not supported")
 
         if workspace_payload.startswith("file:"):
-            workspace_uri = f"db:sqlite:{workspace_payload}"
-            workspace_path = resolve_sqlite_filesystem_path(workspace_uri)
+            workspace_path = resolve_sqlite_filesystem_path(f"db:sqlite:{workspace_payload}")
         else:
             workspace_path = Path(workspace_payload)
-            if not workspace_path.is_absolute():
-                workspace_path = project_root / workspace_path
+
+        if str(workspace_path) == ":memory:":
+            raise CommandError("In-memory SQLite targets are not supported")
+
+        if not workspace_path.is_absolute():
+            workspace_path = (project_root / workspace_path).resolve()
+        else:
             workspace_path = workspace_path.resolve()
+
+        workspace_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if workspace_payload.startswith("file:"):
+            workspace_uri = f"db:sqlite:file:{workspace_path.as_posix()}"
+        else:
             workspace_uri = f"db:sqlite:{workspace_path.as_posix()}"
 
-        if not workspace_path.exists():
-            raise CommandError(f"Workspace database {workspace_path} is missing")
+        if stripped_target.startswith("db:"):
+            if workspace_payload.startswith("file:"):
+                display_target = workspace_uri
+            elif workspace_payload not in {":memory:"}:
+                if workspace_payload.startswith(("./", "../", ".\\", "..\\")):
+                    display_target = workspace_uri
 
         registry_uri = config_resolver.resolve_registry_uri(
             engine=engine_name,
@@ -252,10 +282,10 @@ def _resolve_registry_target(
     return engine_target, display_target
 
 
-def _load_registry_rows(
+def _load_registry_state(
     engine_target: EngineTarget,
     expected_project: str,
-) -> tuple[RegistryRow, ...]:
+) -> tuple[tuple[CurrentChange, ...], FailureMetadata | None]:
     try:
         engine = create_engine(engine_target)
     except UnsupportedEngineError as exc:
@@ -269,6 +299,9 @@ def _load_registry_rows(
         ) from exc
 
     cursor = None
+    rows: list[object] = []
+    columns: list[str] = []
+    failure_row: FailureMetadata | None = None
     try:
         cursor = connection.cursor()
         cursor.execute("SELECT project FROM changes GROUP BY project")
@@ -305,14 +338,17 @@ def _load_registry_rows(
         rows = cursor.fetchall()
         description = getattr(cursor, "description", None)
         columns = [column[0] for column in description] if description else []
+
+        failure_row = _load_last_failure_event(connection, expected_project)
     except Exception as exc:  # pragma: no cover - query failures propagated
         if _registry_schema_missing(exc):
+            rows = []
+            columns = []
+            failure_row = None
+        else:
             raise CommandError(
-                f"Database {engine_target.registry_uri} has not been initialized for Sqitch"
+                f"Failed to read registry database {engine_target.registry_uri}: {exc}"
             ) from exc
-        raise CommandError(
-            f"Failed to read registry database {engine_target.registry_uri}: {exc}"
-        ) from exc
     finally:
         if cursor is not None:
             try:
@@ -325,7 +361,7 @@ def _load_registry_rows(
             pass
 
     if not rows:
-        return ()
+        return (), failure_row
 
     def _row_mapping(row: object) -> Mapping[str, object]:
         if isinstance(row, Mapping):
@@ -340,25 +376,80 @@ def _load_registry_rows(
             )
         return {columns[index]: row[index] for index in range(min(len(columns), len(row)))}
 
-    registry_rows: list[RegistryRow] = []
+    registry_rows: list[CurrentChange] = []
     for raw in rows:
         mapping = _row_mapping(raw)
         tag_value = mapping.get("latest_tag")
         registry_rows.append(
-            RegistryRow(
+            CurrentChange(
                 project=str(mapping.get("project", "")),
                 change_id=str(mapping.get("change_id", "")),
                 change_name=str(mapping.get("change_name", "")),
                 deployed_at=str(mapping.get("committed_at", mapping.get("deployed_at", ""))),
-                deployer_name=str(mapping.get("committer_name", mapping.get("deployer_name", ""))),
-                deployer_email=str(
+                committer_name=str(mapping.get("committer_name", mapping.get("deployer_name", ""))),
+                committer_email=str(
                     mapping.get("committer_email", mapping.get("deployer_email", ""))
                 ),
                 tag=str(tag_value) if tag_value is not None else None,
             )
         )
 
-    return tuple(registry_rows)
+    return tuple(registry_rows), failure_row
+
+
+def _load_registry_rows(
+    engine_target: EngineTarget,
+    expected_project: str,
+) -> tuple[CurrentChange, ...]:
+    rows, _ = _load_registry_state(engine_target, expected_project)
+    return rows
+
+
+def _load_last_failure_event(
+    connection: sqlite3.Connection, expected_project: str
+) -> FailureMetadata | None:
+    failure_cursor: sqlite3.Cursor | None = None
+    try:
+        failure_cursor = connection.cursor()
+        try:
+            failure_cursor.execute(
+                """
+                SELECT change, note, committed_at, committer_name, committer_email
+                FROM events
+                WHERE project = ? AND lower(event) = 'deploy_fail'
+                ORDER BY committed_at DESC, change_id DESC
+                LIMIT 1
+                """,
+                (expected_project,),
+            )
+        except sqlite3.Error as exc:
+            message = str(exc).lower()
+            missing_indicators = (
+                "no such table: events",
+                'relation "events" does not exist',
+                'table "events" does not exist',
+                'missing from-clause entry for table "events"',
+            )
+            if any(indicator in message for indicator in missing_indicators):
+                return None
+            raise
+
+        row = failure_cursor.fetchone()
+        if not row:
+            return None
+        return FailureMetadata(
+            change=str(row[0] or ""),
+            note=str(row[1] or ""),
+            committed_at=str(row[2] or ""),
+            committer_name=str(row[3] or ""),
+            committer_email=str(row[4] or ""),
+        )
+    finally:
+        if failure_cursor is not None:
+            try:
+                failure_cursor.close()
+            except Exception:  # pragma: no cover - best effort cleanup
+                pass
 
 
 def _registry_schema_missing(error: Exception) -> bool:
@@ -412,9 +503,10 @@ def _render_human_output(
     *,
     project: str,
     target: str,
-    rows: Sequence[RegistryRow],
+    rows: Sequence[CurrentChange],
     status: str,
     pending_changes: Sequence[str],
+    last_failure: FailureMetadata | None = None,
 ) -> str:
     lines: list[str] = [
         f"# On database {target}",
@@ -430,11 +522,12 @@ def _render_human_output(
             ]
         )
         if current.tag:
-            lines.append(f"# Tag:      {current.tag}")
+            tag_display = current.tag if current.tag.startswith("@") else f"@{current.tag}"
+            lines.append(f"# Tag:      {tag_display}")
         lines.extend(
             [
                 f"# Deployed: {current.deployed_at}",
-                f"# By:       {current.deployer_name} <{current.deployer_email}>",
+                f"# By:       {current.committer_name} <{current.committer_email}>",
             ]
         )
     else:
@@ -447,7 +540,19 @@ def _render_human_output(
             ]
         )
 
-    lines.append("# ")
+    if last_failure is not None:
+        lines.append("# Last failure:")
+        lines.append(f"#   Change:   {last_failure.change}")
+        if last_failure.note:
+            lines.append(f"#   Note:     {last_failure.note}")
+        if last_failure.committed_at:
+            lines.append(f"#   At:       {last_failure.committed_at}")
+        lines.append(
+            f"#   By:       {last_failure.committer_name} <{last_failure.committer_email}>"
+        )
+        lines.append("# ")
+    else:
+        lines.append("# ")
 
     if status == "behind":
         header = "Undeployed change:" if len(pending_changes) == 1 else "Undeployed changes:"
@@ -469,8 +574,9 @@ def _build_json_payload(
     target: str,
     status: str,
     plan: Plan,
-    rows: Sequence[RegistryRow],
+    rows: Sequence[CurrentChange],
     pending_changes: Sequence[str],
+    last_failure: FailureMetadata | None = None,
 ) -> dict[str, object]:
     change_payload: dict[str, object] | None = None
     if rows:
@@ -480,13 +586,13 @@ def _build_json_payload(
             "deploy_id": current.change_id,
             "deployed_at": current.deployed_at,
             "by": {
-                "name": current.deployer_name,
-                "email": current.deployer_email,
+                "name": current.committer_name,
+                "email": current.committer_email,
             },
             "tag": current.tag,
         }
 
-    return {
+    payload: dict[str, object] = {
         "project": project,
         "target": target,
         "status": status,
@@ -494,3 +600,16 @@ def _build_json_payload(
         "change": change_payload,
         "pending_changes": list(pending_changes),
     }
+
+    if last_failure is not None:
+        payload["last_failure"] = {
+            "change": last_failure.change,
+            "note": last_failure.note,
+            "committed_at": last_failure.committed_at,
+            "by": {
+                "name": last_failure.committer_name,
+                "email": last_failure.committer_email,
+            },
+        }
+
+    return payload

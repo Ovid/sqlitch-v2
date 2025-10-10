@@ -1,0 +1,4 @@
+Created deploy/users.sql
+Created revert/users.sql
+Created verify/users.sql
+Added "users" to sqitch.plan

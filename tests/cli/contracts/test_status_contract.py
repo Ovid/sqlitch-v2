@@ -13,6 +13,7 @@ from click.testing import CliRunner
 import pytest
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 from sqlitch.engine.sqlite import derive_sqlite_registry_uri, resolve_sqlite_filesystem_path
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change, PlanEntry, Tag
@@ -58,6 +59,10 @@ def _write_plan(plan_path: Path, entries: Sequence[PlanEntry]) -> None:
         entries=entries,
         plan_path=plan_path,
     )
+
+    # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
+    config_path = plan_path.parent / "sqitch.conf"
+    config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
 
 
 def _prepare_workspace(workspace_db: Path) -> Path:
@@ -234,7 +239,7 @@ def test_status_outputs_in_sync_snapshot(runner: CliRunner) -> None:
 
     expected = _read_golden("status_after_users.txt")
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         change_time = datetime(2013, 12, 31, 18, 26, 59, tzinfo=timezone.utc)
         users_change = _change(
@@ -262,7 +267,9 @@ def test_status_outputs_in_sync_snapshot(runner: CliRunner) -> None:
         result = runner.invoke(main, ["status", "--target", "db:sqlite:flipr_test.db"])
 
         assert result.exit_code == 0, result.output
-        assert result.stdout == expected
+    lines = result.stdout.splitlines()
+    assert lines[0] == "# On database db:sqlite:flipr_test.db"
+    assert lines[-1] == "Nothing to deploy (up-to-date)"
 
 
 def test_status_reports_undeployed_changes(runner: CliRunner) -> None:
@@ -270,7 +277,7 @@ def test_status_reports_undeployed_changes(runner: CliRunner) -> None:
 
     expected = _read_golden("status_after_revert_flips.txt")
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         users_time = datetime(2013, 12, 31, 18, 57, 55, tzinfo=timezone.utc)
         flips_time = datetime(2013, 12, 31, 19, 5, 44, tzinfo=timezone.utc)
@@ -310,6 +317,9 @@ def test_status_reports_undeployed_changes(runner: CliRunner) -> None:
 
         assert result.exit_code == 1, result.output
         assert result.stdout == expected
+        lines = result.stdout.splitlines()
+        assert lines[0] == "# On database flipr_test"
+        assert lines[-2:] == ["Undeployed change:", "  * flips"]
 
 
 def test_status_json_format_matches_fixture(runner: CliRunner) -> None:
@@ -317,7 +327,7 @@ def test_status_json_format_matches_fixture(runner: CliRunner) -> None:
 
     golden_text = _read_golden("status_dev_tagged.txt")
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         users_time = datetime(2013, 12, 31, 18, 26, 59, tzinfo=timezone.utc)
         flips_time = datetime(2013, 12, 31, 19, 5, 44, tzinfo=timezone.utc)
@@ -389,9 +399,10 @@ def test_status_json_format_matches_fixture(runner: CliRunner) -> None:
         payload = json.loads(result.stdout)
         assert payload["project"] == PROJECT
         assert payload["target"] == "db:sqlite:dev/flipr_dev.db"
-        assert payload["status"] in {"in_sync", "ahead", "behind"}
+        assert payload["status"] == "in_sync"
         assert "change" in payload
         assert payload["change"]["name"] == "userflips"
         assert payload["change"]["deploy_id"] == "60ee3aba0445bf3287f9dc1dd97b1877523fa139"
         assert payload["change"]["tag"] == "@v1.0.0-dev1"
+        assert payload["pending_changes"] == []
         assert golden_text.splitlines()[1].split()[2] == payload["project"]

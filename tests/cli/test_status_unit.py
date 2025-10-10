@@ -11,9 +11,10 @@ from click.testing import CliRunner
 import pytest
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 from sqlitch.cli.commands import CommandError
 from sqlitch.cli.commands.status import (
-    RegistryRow,
+    CurrentChange,
     _build_json_payload,
     _calculate_pending,
     _determine_status,
@@ -35,6 +36,18 @@ def runner() -> CliRunner:
     """Return a Click CLI runner that isolates filesystem side-effects."""
 
     return CliRunner()
+
+
+def _ensure_config(project_root: Path | None = None, engine: str = "sqlite") -> None:
+    """Create minimal sqitch.conf if it doesn't exist.
+
+    Sqitch doesn't store engine in plan file - it comes from config.
+    """
+    if project_root is None:
+        project_root = Path.cwd()
+    config_path = project_root / "sqitch.conf"
+    if not config_path.exists():
+        config_path.write_text(f"[core]\n\tengine = {engine}\n", encoding="utf-8")
 
 
 def _prepare_workspace(workspace_db: Path) -> Path:
@@ -110,7 +123,7 @@ def _make_change(name: str) -> Change:
 def test_status_requires_explicit_target(runner: CliRunner) -> None:
     """Invoking status without a target should raise a user-facing error."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["status"])
 
         assert result.exit_code != 0
@@ -120,9 +133,10 @@ def test_status_requires_explicit_target(runner: CliRunner) -> None:
 def test_status_rejects_project_mismatch(runner: CliRunner) -> None:
     """A mismatched --project filter should raise a CommandError."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         write_plan(project_name="widgets", default_engine="sqlite", entries=(), plan_path=plan_path)
+        _ensure_config()
 
         result = runner.invoke(
             main,
@@ -142,15 +156,16 @@ def test_status_rejects_project_mismatch(runner: CliRunner) -> None:
 def test_status_rejects_registry_project_mismatch(runner: CliRunner) -> None:
     """Plan and registry project disagreements should raise a CommandError."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         write_plan(
             project_name="widgets",
             default_engine="sqlite",
             entries=(),
-            plan_path=Path("sqlitch.plan"),
+            plan_path=(temp_dir / "sqlitch.plan"),
         )
+        _ensure_config()
 
-        registry_path = _prepare_workspace(Path("registry.db"))
+        registry_path = _prepare_workspace((temp_dir / "registry.db"))
         _create_registry(registry_path)
         connection = sqlite3.connect(registry_path)
         try:
@@ -205,14 +220,15 @@ def test_status_rejects_registry_project_mismatch(runner: CliRunner) -> None:
 def test_status_outputs_human_summary_when_in_sync(runner: CliRunner) -> None:
     """Successful human output should be emitted when plan and registry align."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         write_plan(
             project_name="widgets",
             default_engine="sqlite",
             entries=(),
-            plan_path=Path("sqlitch.plan"),
+            plan_path=(temp_dir / "sqlitch.plan"),
         )
-        registry_path = _prepare_workspace(Path("registry.db"))
+        _ensure_config()
+        registry_path = _prepare_workspace((temp_dir / "registry.db"))
         _create_registry(registry_path)
 
         result = runner.invoke(
@@ -233,14 +249,15 @@ def test_status_outputs_human_summary_when_in_sync(runner: CliRunner) -> None:
 def test_status_outputs_json_with_pending_changes(runner: CliRunner) -> None:
     """JSON format should include pending entries and exit non-zero when behind."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         write_plan(
             project_name="widgets",
             default_engine="sqlite",
             entries=(_make_change("users"),),
-            plan_path=Path("sqlitch.plan"),
+            plan_path=(temp_dir / "sqlitch.plan"),
         )
-        registry_path = _prepare_workspace(Path("registry.db"))
+        _ensure_config()
+        registry_path = _prepare_workspace((temp_dir / "registry.db"))
         _create_registry(registry_path)
 
         result = runner.invoke(
@@ -296,13 +313,13 @@ def test_render_human_output_includes_ahead_marker() -> None:
     """Human rendering should report ahead status when applicable."""
 
     rows = (
-        RegistryRow(
+        CurrentChange(
             project="widgets",
             change_id="abc",
             change_name="users",
             deployed_at="2025-01-01T00:00:00Z",
-            deployer_name="Ada",
-            deployer_email="ada@example.com",
+            committer_name="Ada",
+            committer_email="ada@example.com",
             tag=None,
         ),
     )
@@ -333,17 +350,37 @@ def test_render_human_output_handles_not_deployed() -> None:
     assert "No deployments have been recorded yet." in rendered
 
 
+def test_render_human_output_uses_supplied_target(tmp_path: Path) -> None:
+    """Human output should echo the original target URI without normalization."""
+
+    _, display_target = _resolve_registry_target(
+        "db:sqlite:registry.db",
+        tmp_path,
+        "sqlite",
+    )
+
+    rendered = _render_human_output(
+        project="widgets",
+        target=display_target,
+        rows=(),
+        status="not_deployed",
+        pending_changes=(),
+    )
+
+    assert "# On database db:sqlite:registry.db" in rendered
+
+
 def test_render_human_output_lists_pending_changes() -> None:
     """Behind status should enumerate pending change names."""
 
     rows = (
-        RegistryRow(
+        CurrentChange(
             project="widgets",
             change_id="abc",
             change_name="users",
             deployed_at="2025-01-01T00:00:00Z",
-            deployer_name="Ada",
-            deployer_email="ada@example.com",
+            committer_name="Ada",
+            committer_email="ada@example.com",
             tag=None,
         ),
     )
@@ -365,13 +402,13 @@ def test_render_human_output_reports_in_sync() -> None:
     """Default branch should report that nothing remains to deploy."""
 
     rows = (
-        RegistryRow(
+        CurrentChange(
             project="widgets",
             change_id="abc",
             change_name="users",
             deployed_at="2025-01-01T00:00:00Z",
-            deployer_name="Ada",
-            deployer_email="ada@example.com",
+            committer_name="Ada",
+            committer_email="ada@example.com",
             tag="v1.0",
         ),
     )
@@ -396,6 +433,7 @@ def test_build_json_payload_without_registry_rows(tmp_path: Path) -> None:
         entries=(),
         plan_path=tmp_path / "plan.plan",
     )
+    _ensure_config()
 
     payload = _build_json_payload(
         project="widgets",
@@ -419,14 +457,15 @@ def test_build_json_payload_with_registry_rows(tmp_path: Path) -> None:
         entries=(),
         plan_path=tmp_path / "sqlitch.plan",
     )
+    _ensure_config()
     rows = (
-        RegistryRow(
+        CurrentChange(
             project="widgets",
             change_id="abc",
             change_name="users",
             deployed_at="2025-01-01T00:00:00Z",
-            deployer_name="Ada",
-            deployer_email="ada@example.com",
+            committer_name="Ada",
+            committer_email="ada@example.com",
             tag="v1.0",
         ),
     )
@@ -557,10 +596,14 @@ def test_resolve_registry_target_normalizes_relative_path(tmp_path: Path) -> Non
 
 
 def test_load_registry_rows_missing_database(tmp_path: Path) -> None:
-    """Missing registry databases should surface as CommandError instances."""
+    """Missing registry databases should create empty database and return empty rows."""
 
-    with pytest.raises(CommandError, match="Workspace database"):
-        _resolve_registry_target("missing.db", tmp_path, "sqlite")
+    engine_target, _ = _resolve_registry_target("missing.db", tmp_path, "sqlite")
+
+    # SQLite creates the database file if it doesn't exist, then queries fail
+    # with "no such table" which is caught and returns empty rows
+    rows = _load_registry_rows(engine_target, "widgets")
+    assert rows == ()
 
 
 def test_determine_status_handles_not_deployed() -> None:

@@ -51,6 +51,7 @@ def parse_plan(path: Path | str, *, default_engine: str | None = None) -> Plan:
 
     headers: dict[str, str] = {}
     entries: list[PlanEntry] = []
+    change_tags: dict[str, list[str]] = {}
     last_change: Change | None = None
 
     for line_no, raw_line in enumerate(content.splitlines(), start=1):
@@ -77,6 +78,8 @@ def parse_plan(path: Path | str, *, default_engine: str | None = None) -> Plan:
         entries.append(entry)
         if isinstance(entry, Change):
             last_change = entry
+        elif isinstance(entry, Tag):
+            change_tags.setdefault(entry.change_ref, []).append(entry.name)
 
     project = headers.get("project")
     header_engine = headers.get("default_engine")
@@ -87,10 +90,16 @@ def parse_plan(path: Path | str, *, default_engine: str | None = None) -> Plan:
     if not project or not resolved_engine:
         raise PlanParseError("plan file is missing project header or default engine header")
 
+    adjusted_entries = _apply_rework_metadata(
+        entries=tuple(entries),
+        change_tags=change_tags,
+        base_dir=plan_path.parent,
+    )
+
     return Plan(
         project_name=project,
         file_path=plan_path,
-        entries=entries,
+        entries=adjusted_entries,
         checksum=checksum,
         default_engine=resolved_engine,
         syntax_version=syntax_version,
@@ -223,6 +232,83 @@ def _parse_compact_change(line: str, note: str | None, line_no: int, base_dir: P
         dependencies=dependencies,
         tags=(),
     )
+
+
+def _apply_rework_metadata(
+    *,
+    entries: Sequence[PlanEntry],
+    change_tags: dict[str, list[str]],
+    base_dir: Path,
+) -> tuple[PlanEntry, ...]:
+    """Attach tag metadata and reworked script paths to change entries."""
+
+    adjusted: list[PlanEntry] = []
+    for entry in entries:
+        if not isinstance(entry, Change):
+            adjusted.append(entry)
+            continue
+
+        tags = tuple(change_tags.get(entry.name, ()))
+        script_paths = dict(entry.script_paths)
+        if tags:
+            script_paths = _resolve_reworked_script_paths(
+                change_name=entry.name,
+                script_paths=script_paths,
+                tags=tags,
+                base_dir=base_dir,
+            )
+
+        adjusted.append(
+            Change.create(
+                name=entry.name,
+                script_paths=script_paths,
+                planner=entry.planner,
+                planned_at=entry.planned_at,
+                notes=entry.notes,
+                change_id=entry.change_id,
+                dependencies=entry.dependencies,
+                tags=tags or entry.tags,
+            )
+        )
+
+    return tuple(adjusted)
+
+
+def _resolve_reworked_script_paths(
+    *,
+    change_name: str,
+    script_paths: dict[str, Path | None],
+    tags: Sequence[str],
+    base_dir: Path,
+) -> dict[str, Path | None]:
+    """Compute script paths for reworked changes preferring ``@tag`` suffixes."""
+
+    if not tags:
+        return script_paths
+
+    slug = slugify_change_name(change_name)
+    suffixes = [f"@{tag}" for tag in tags]
+
+    resolved: dict[str, Path | None] = {}
+    for kind, original in script_paths.items():
+        if original is None:
+            resolved[kind] = None
+            continue
+
+        original_path = original if original.is_absolute() else base_dir / original
+        parent = original_path.parent
+        extension = original_path.suffix
+
+        selected: Path | None = None
+        for suffix in reversed(suffixes):
+            candidate = parent / f"{slug}{suffix}{extension}"
+            if candidate.exists():
+                selected = candidate
+                break
+
+        resolved[kind] = selected or original_path
+
+    return resolved
 
 
 def _parse_compact_tag(

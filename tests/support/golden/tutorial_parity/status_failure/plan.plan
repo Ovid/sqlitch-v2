@@ -1,0 +1,9 @@
+%syntax-version=1.0.0
+%project=flipr
+%uri=https://example.com/flipr
+%default_engine=sqlite
+
+users 2025-10-06T12:00:00Z Tutorial Runner <tutorial@example.com> # Creates users table.
+flips [users] 2025-10-06T12:05:00Z Tutorial Runner <tutorial@example.com> # Adds flips table.
+userflips [users flips] 2025-10-06T12:10:00Z Tutorial Runner <tutorial@example.com> # Creates userflips view.
+@v1.0.0-dev1 2025-10-06T12:15:00Z Tutorial Runner <tutorial@example.com> # First tutorial tag.

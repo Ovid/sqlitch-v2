@@ -9,15 +9,17 @@ from typing import Callable
 
 import click
 
+from sqlitch.config.resolver import resolve_config
 from sqlitch.plan.formatter import write_plan
-from sqlitch.plan.model import Change, PlanEntry
+from sqlitch.plan.model import Change, PlanEntry, Plan, Tag
 from sqlitch.plan.parser import PlanParseError, parse_plan
 from sqlitch.plan.utils import slugify_change_name
+from sqlitch.utils.identity import resolve_planner_identity
 
 from . import CommandError, register_command
 from ._context import require_cli_context
 from ._plan_utils import resolve_default_engine, resolve_plan_path
-from .add import _ensure_script_path, _format_display_path, _resolve_planner
+from .add import _ensure_script_path, _format_display_path
 from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["rework_command"]
@@ -35,6 +37,7 @@ def _resolve_new_path(
     original: Path | None,
     override: str | None,
     slug: str,
+    suffix: str,
 ) -> Path | None:
     if override:
         candidate = Path(override)
@@ -43,8 +46,24 @@ def _resolve_new_path(
     if original is None:
         return None
 
-    filename = f"{slug}_rework{original.suffix}"
+    filename = f"{slug}{suffix}{original.suffix}"
     return original.parent / filename
+
+
+def _resolve_rework_suffix(plan: Plan, change_name: str) -> str:
+    """Return the suffix (``@tag``) used for reworked script filenames."""
+
+    latest_tag: str | None = None
+    for entry in plan.entries:
+        if isinstance(entry, Tag) and entry.change_ref == change_name:
+            latest_tag = entry.name
+
+    if latest_tag is None:
+        raise CommandError(
+            f'Change "{change_name}" has not been tagged. Tag the change before reworking it.'
+        )
+
+    return f"@{latest_tag}"
 
 
 def _copy_script(source: Path | None, target: Path | None) -> None:
@@ -76,7 +95,7 @@ def _replace_change(
 @click.command("rework")
 @click.argument("change_name")
 @click.option("--requires", "requires", multiple=True, help="Override change dependencies.")
-@click.option("--note", "note", help="Update the change note.")
+@click.option("-n", "--note", "note", help="Update the change note.")
 @click.option("--deploy", "deploy_override", help="Explicit path for the reworked deploy script.")
 @click.option("--revert", "revert_override", help="Explicit path for the reworked revert script.")
 @click.option("--verify", "verify_override", help="Explicit path for the reworked verify script.")
@@ -101,6 +120,13 @@ def rework_command(
     project_root = cli_context.project_root
     env = cli_context.env
 
+    # Load configuration for planner identity resolution
+    config = resolve_config(
+        root_dir=project_root,
+        config_root=cli_context.config_root,
+        env=env,
+    )
+
     plan_path = resolve_plan_path(
         project_root=project_root,
         override=cli_context.plan_file,
@@ -115,6 +141,15 @@ def rework_command(
         engine_override=cli_context.engine,
         plan_path=plan_path,
     )
+
+    try:
+        original_plan_text = plan_path.read_text(encoding="utf-8")
+    except FileNotFoundError as exc:  # pragma: no cover - defensive
+        raise CommandError(f"Plan file {plan_path} is missing") from exc
+    except OSError as exc:  # pragma: no cover - IO propagated as command error
+        raise CommandError(f"Unable to read plan file {plan_path}: {exc}") from exc
+
+    include_default_engine_header = "%default_engine=" in original_plan_text
 
     try:
         plan = parse_plan(plan_path, default_engine=default_engine)
@@ -132,6 +167,7 @@ def rework_command(
 
     timestamp = _utcnow()
     slug = slugify_change_name(change_name)
+    suffix = _resolve_rework_suffix(plan, change_name)
 
     deploy_source = original_change.script_paths.get("deploy")
     revert_source = original_change.script_paths.get("revert")
@@ -142,18 +178,21 @@ def rework_command(
         original=deploy_source,
         override=deploy_override,
         slug=slug,
+        suffix=suffix,
     )
     revert_target = _resolve_new_path(
         project_root=project_root,
         original=revert_source,
         override=revert_override,
         slug=slug,
+        suffix=suffix,
     )
     verify_target = _resolve_new_path(
         project_root=project_root,
         original=verify_source,
         override=verify_override,
         slug=slug,
+        suffix=suffix,
     )
 
     _copy_script(deploy_source, deploy_target)
@@ -173,7 +212,7 @@ def rework_command(
     replacement = Change.create(
         name=original_change.name,
         script_paths=script_map,
-        planner=_resolve_planner(env),
+        planner=resolve_planner_identity(env, config),
         planned_at=timestamp,
         notes=new_notes,
         change_id=original_change.change_id,
@@ -192,6 +231,7 @@ def rework_command(
         plan_path=plan.file_path,
         syntax_version=plan.syntax_version,
         uri=plan.uri,
+        include_default_engine=include_default_engine_header,
     )
 
     quiet = bool(cli_context.quiet)
@@ -209,6 +249,7 @@ def rework_command(
             _emit(f"Created rework {kind} script {_format_display_path(target, project_root)}")
 
     _emit(f"Reworked {change_name}")
+    _emit("")
 
 
 @register_command("rework")

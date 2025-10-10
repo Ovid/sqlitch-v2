@@ -11,6 +11,7 @@ from click.testing import CliRunner
 import pytest
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change, Tag
 
@@ -63,6 +64,10 @@ def _seed_plan(plan_path: Path) -> tuple[Change, Change, Tag]:
         plan_path=plan_path,
     )
 
+    # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
+    config_path = plan_path.parent / "sqitch.conf"
+    config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
+
     return change_one, change_two, tag
 
 
@@ -92,7 +97,7 @@ def _write_change_scripts(
 def test_deploy_requires_target(runner: CliRunner) -> None:
     """Deploy should require a target to be provided explicitly or via config."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         _seed_plan(plan_path)
 
@@ -105,7 +110,7 @@ def test_deploy_requires_target(runner: CliRunner) -> None:
 def test_deploy_log_only_outputs_changes(runner: CliRunner) -> None:
     """Log-only mode should list the changes without executing them."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         change_one, change_two, _ = _seed_plan(plan_path)
 
@@ -123,7 +128,7 @@ def test_deploy_log_only_outputs_changes(runner: CliRunner) -> None:
 def test_deploy_to_change_limits_scope(runner: CliRunner) -> None:
     """Using --to-change should restrict the deployment set."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         change_one, change_two, _ = _seed_plan(plan_path)
 
@@ -147,7 +152,7 @@ def test_deploy_to_change_limits_scope(runner: CliRunner) -> None:
 def test_deploy_rejects_conflicting_filters(runner: CliRunner) -> None:
     """Providing both --to-change and --to-tag should raise an error."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         change_one, _, tag = _seed_plan(plan_path)
 
@@ -177,7 +182,7 @@ def test_deploy_executes_scripts_and_updates_registry(
     monkeypatch.setenv("SQLITCH_USER_NAME", "Grace Hopper")
     monkeypatch.setenv("SQLITCH_USER_EMAIL", "grace@example.com")
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         change_one, change_two, _ = _seed_plan(plan_path)
 

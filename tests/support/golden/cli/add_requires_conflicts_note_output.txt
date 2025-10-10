@@ -1,0 +1,4 @@
+Created deploy/flips.sql
+Created revert/flips.sql
+Created verify/flips.sql
+Added "flips" to sqitch.plan

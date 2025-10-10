@@ -16,6 +16,7 @@ import pytest
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 
 
 class TestCheckoutCommandContract:
@@ -33,7 +34,7 @@ class TestCheckoutCommandContract:
         Contract: CC-CHECKOUT-001
         Perl behavior: checkout has no required arguments (target comes from config)
         """
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["checkout"])
 
             # Should not be parsing error (exit 2)
@@ -55,7 +56,7 @@ class TestCheckoutGlobalContracts:
     # GC-001: Help flag support
     def test_checkout_help_flag(self, runner: CliRunner) -> None:
         """Test that 'sqlitch checkout --help' displays help and exits 0."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["checkout", "--help"])
             assert result.exit_code == 0
             assert "checkout" in result.output.lower()
@@ -64,28 +65,28 @@ class TestCheckoutGlobalContracts:
     # GC-002: Global options recognition
     def test_checkout_accepts_quiet_flag(self, runner: CliRunner) -> None:
         """Test that 'sqlitch checkout' accepts --quiet global option."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["checkout", "--quiet"])
             assert "no such option" not in result.output.lower()
             assert result.exit_code != 2
 
     def test_checkout_accepts_verbose_flag(self, runner: CliRunner) -> None:
         """Test that 'sqlitch checkout' accepts --verbose global option."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["checkout", "--verbose"])
             assert "no such option" not in result.output.lower()
             assert result.exit_code != 2
 
     def test_checkout_accepts_chdir_option(self, runner: CliRunner) -> None:
         """Test that 'sqlitch checkout' accepts --chdir global option."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["checkout", "--chdir", "/tmp"])
             assert "no such option" not in result.output.lower()
             assert result.exit_code != 2
 
     def test_checkout_accepts_no_pager_flag(self, runner: CliRunner) -> None:
         """Test that 'sqlitch checkout' accepts --no-pager global option."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["checkout", "--no-pager"])
             assert "no such option" not in result.output.lower()
             assert result.exit_code != 2
@@ -93,7 +94,7 @@ class TestCheckoutGlobalContracts:
     # GC-005: Unknown option rejection
     def test_checkout_rejects_unknown_option(self, runner: CliRunner) -> None:
         """Test that 'sqlitch checkout' rejects unknown options with exit code 2."""
-        with runner.isolated_filesystem():
+        with isolated_test_context(runner) as (runner, temp_dir):
             result = runner.invoke(main, ["checkout", "--nonexistent"])
             assert result.exit_code == 2
             assert "no such option" in result.output.lower()

@@ -23,12 +23,19 @@ from sqlitch.engine.base import UnsupportedEngineError
 from sqlitch.engine.sqlite import (
     REGISTRY_ATTACHMENT_ALIAS,
     SQLiteEngine,
+    extract_sqlite_statements,
     resolve_sqlite_filesystem_path,
     script_manages_transactions,
 )
 from sqlitch.plan.model import Change, Plan
 from sqlitch.plan.parser import PlanParseError, parse_plan
 from sqlitch.registry import LATEST_REGISTRY_VERSION, get_registry_migrations
+from sqlitch.utils.identity import (
+    generate_change_id,
+    resolve_email,
+    resolve_fullname,
+    resolve_username,
+)
 from sqlitch.utils.logging import StructuredLogger
 from sqlitch.utils.time import isoformat_utc
 
@@ -51,6 +58,7 @@ __all__ = ["deploy_command"]
 @dataclass(frozen=True, slots=True)
 class _DeployRequest:
     project_root: Path
+    config_root: Path
     env: Mapping[str, str]
     plan_path: Path
     plan: Plan
@@ -111,10 +119,15 @@ def deploy_command(
         option_value=target_option,
         configured_target=cli_context.target,
         positional_targets=target_args,
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=env,
+        default_engine=default_engine,
     )
 
     request = _build_request(
         project_root=project_root,
+        config_root=cli_context.config_root,
         env=env,
         plan_override=plan_override,
         to_change=to_change,
@@ -133,6 +146,7 @@ def deploy_command(
 def _build_request(
     *,
     project_root: Path,
+    config_root: Path,
     env: Mapping[str, str],
     plan_override: Path | None,
     to_change: str | None,
@@ -149,9 +163,11 @@ def _build_request(
 
     plan_path = _resolve_plan_path(project_root=project_root, override=plan_override, env=env)
     plan = _load_plan(plan_path, default_engine)
+    _assert_plan_dependencies_present(plan=plan, plan_path=plan_path)
 
     return _DeployRequest(
         project_root=project_root,
+        config_root=config_root,
         env=env,
         plan_path=plan_path,
         plan=plan,
@@ -202,6 +218,8 @@ def _execute_deploy(request: _DeployRequest) -> None:
     engine_target, display_target = _resolve_engine_target(
         target=request.target,
         project_root=request.project_root,
+        config_root=request.config_root,
+        env=request.env,
         default_engine=request.plan.default_engine,
         plan_path=request.plan_path,
         registry_override=request.registry_override,
@@ -233,7 +251,11 @@ def _execute_deploy(request: _DeployRequest) -> None:
         )
         return
 
-    committer_name, committer_email = _resolve_committer_identity(request.env)
+    committer_name, committer_email = _resolve_committer_identity(
+        request.env,
+        request.config_root,
+        request.project_root,
+    )
 
     engine, connection = _create_engine_connection(engine_target)
 
@@ -250,6 +272,8 @@ def _execute_deploy(request: _DeployRequest) -> None:
             plan=request.plan,
             committer_name=committer_name,
             committer_email=committer_email,
+            emitter=emitter,
+            registry_uri=engine_target.registry_uri,
         )
 
         deployed = _load_deployed_state(
@@ -258,6 +282,17 @@ def _execute_deploy(request: _DeployRequest) -> None:
             project=request.plan.project_name,
         )
         pending = [change for change in changes if change.name not in deployed]
+
+        _synchronise_registry_tags(
+            connection=connection,
+            registry_schema=registry_schema,
+            project=request.plan.project_name,
+            plan=request.plan,
+            deployed=deployed,
+            env=request.env,
+            committer_name=committer_name,
+            committer_email=committer_email,
+        )
 
         if not pending:
             emitter("Nothing to deploy (up-to-date).")
@@ -343,6 +378,10 @@ def _resolve_target(
     option_value: str | None,
     configured_target: str | None,
     positional_targets: Sequence[str],
+    project_root: Path,
+    config_root: Path,
+    env: Mapping[str, str],
+    default_engine: str | None,
 ) -> str:
     if option_value and positional_targets:
         raise CommandError("Provide either --target or a positional target, not both.")
@@ -356,6 +395,18 @@ def _resolve_target(
         target = option_value
     else:
         target = configured_target
+
+    # If no target from CLI/env, check if the default engine has a target configured
+    if not target and default_engine:
+        config_profile = config_resolver.resolve_config(
+            root_dir=project_root,
+            config_root=config_root,
+            env=env,
+        )
+        engine_section = f'engine "{default_engine}"'
+        engine_target = config_profile.settings.get(engine_section, {}).get("target")
+        if engine_target:
+            target = engine_target
 
     if not target:
         raise CommandError(
@@ -388,6 +439,25 @@ def _load_plan(plan_path: Path, default_engine: str | None) -> Plan:
         raise CommandError(f"Unable to read plan file {plan_path}: {exc}") from exc
 
 
+def _assert_plan_dependencies_present(*, plan: Plan, plan_path: Path) -> None:
+    known_changes = {change.name for change in plan.changes}
+    missing: list[str] = []
+    for change in plan.changes:
+        for dependency in change.dependencies:
+            if dependency not in known_changes and dependency not in missing:
+                missing.append(dependency)
+
+    if not missing:
+        return
+
+    plan_name = plan_path.name
+    if len(missing) == 1:
+        raise CommandError(f'Unable to find change "{missing[0]}" in plan {plan_name}')
+
+    quoted = ", ".join(f'"{name}"' for name in missing)
+    raise CommandError(f"Unable to find changes {quoted} in plan {plan_name}")
+
+
 def _select_changes(
     *,
     plan: Plan,
@@ -402,7 +472,7 @@ def _select_changes(
         try:
             index = next(i for i, change in enumerate(changes) if change.name == to_change)
         except StopIteration as exc:
-            raise CommandError(f"Plan does not contain change '{to_change}'.") from exc
+            raise CommandError(f'Unknown change: "{to_change}"') from exc
         return changes[: index + 1]
 
     if to_tag:
@@ -419,6 +489,8 @@ def _resolve_engine_target(
     *,
     target: str,
     project_root: Path,
+    config_root: Path,
+    env: Mapping[str, str],
     default_engine: str,
     plan_path: Path,
     registry_override: str | None,
@@ -427,6 +499,32 @@ def _resolve_engine_target(
     """Return an :class:`EngineTarget` for the requested deployment target."""
 
     candidate = target.strip()
+    
+    # Check if the candidate is a target alias and resolve it
+    if not candidate.startswith("db:"):
+        # Might be a target alias - try to resolve it
+        config_profile = config_resolver.resolve_config(
+            root_dir=project_root,
+            config_root=config_root,
+            env=env,
+        )
+        target_section = f'target "{candidate}"'
+        target_data = config_profile.settings.get(target_section)
+        if target_data is not None:
+            target_uri = target_data.get("uri")
+            if target_uri:
+                # Found a target alias - use the resolved URI
+                candidate = target_uri
+                original_display = target  # Keep the original alias name for display
+            else:
+                # Target section exists but no URI - treat as plain value
+                original_display = candidate
+        else:
+            # Not a target alias - treat as plain value
+            original_display = candidate
+    else:
+        original_display = candidate
+    
     if candidate.startswith("db:"):
         remainder = candidate[3:]
         engine_token, separator, payload = remainder.partition(":")
@@ -566,6 +664,8 @@ def _initialise_registry_state(
     plan: Plan,
     committer_name: str,
     committer_email: str,
+    emitter: Callable[[str], None],
+    registry_uri: str,
 ) -> None:
     """Prepare the attached registry schema inside an immediate transaction."""
 
@@ -578,6 +678,8 @@ def _initialise_registry_state(
             plan=plan,
             committer_name=committer_name,
             committer_email=committer_email,
+            emitter=emitter,
+            registry_uri=registry_uri,
         )
     except Exception:
         try:
@@ -597,11 +699,14 @@ def _ensure_registry_ready(
     plan: Plan,
     committer_name: str,
     committer_email: str,
+    emitter: Callable[[str], None],
+    registry_uri: str,
 ) -> None:
     """Initialise registry schema and project metadata if required."""
 
     try:
         if not _registry_tables_exist(connection, registry_schema):
+            emitter(f"Adding registry tables to {registry_uri}")
             _apply_registry_baseline(connection, registry_schema)
 
         _ensure_release_entry(
@@ -737,11 +842,25 @@ def _load_deployed_state(
     finally:
         cursor.close()
 
+    tag_cursor = connection.execute(
+        f"SELECT change_id, tag FROM {registry_schema}.tags WHERE project = ?",
+        (project,),
+    )
+    try:
+        tag_rows = tag_cursor.fetchall()
+    finally:
+        tag_cursor.close()
+
+    tag_lookup: dict[str, set[str]] = {}
+    for change_id, tag in tag_rows:
+        tag_lookup.setdefault(str(change_id), set()).add(str(tag))
+
     deployed: dict[str, dict[str, str]] = {}
     for change_name, change_id, script_hash in rows:
         deployed[str(change_name)] = {
             "change_id": str(change_id),
             "script_hash": str(script_hash) if script_hash is not None else "",
+            "tags": tag_lookup.get(str(change_id), set()),
         }
     return deployed
 
@@ -770,7 +889,6 @@ def _apply_change(
     script_body = script_path.read_text(encoding="utf-8")
     script_hash = _compute_script_hash(script_body)
     manages_transactions = script_manages_transactions(script_body)
-    change_id = str(change.change_id) if change.change_id is not None else script_hash
 
     dependency_lookup = {name: data["change_id"] for name, data in deployed.items()}
     _validate_dependencies(change, dependency_lookup)
@@ -780,6 +898,22 @@ def _apply_change(
         env,
         committer_email,
     )
+
+    # Compute change_id using Sqitch's Git-style algorithm if not already set
+    if change.change_id is not None:
+        change_id = str(change.change_id)
+    else:
+        note = change.notes or ""
+        change_id = generate_change_id(
+            project=project,
+            change=change.name,
+            timestamp=change.planned_at,
+            planner_name=planner_name,
+            planner_email=planner_email,
+            note=note,
+            requires=change.dependencies,
+            conflicts=(),  # SQLitch doesn't support conflicts yet
+        )
 
     committed_at = isoformat_utc(datetime.now(timezone.utc), drop_microseconds=False)
     planned_at = isoformat_utc(change.planned_at, drop_microseconds=False)
@@ -813,9 +947,57 @@ def _apply_change(
             manages_transactions=manages_transactions,
         )
     except sqlite3.Error as exc:  # pragma: no cover - execution error propagated
+        try:
+            _record_failure_event(
+                connection=connection,
+                registry_schema=registry_schema,
+                project=project,
+                change=change,
+                change_id=change_id,
+                note=note,
+                committed_at=committed_at,
+                committer_name=committer_name,
+                committer_email=committer_email,
+                planned_at=planned_at,
+                planner_name=planner_name,
+                planner_email=planner_email,
+                dependencies=change.dependencies,
+                tags=change.tags,
+            )
+        except CommandError as record_exc:
+            message = (
+                f"Deploy failed for change '{change.name}': {exc}; " f"additionally, {record_exc}"
+            )
+            raise CommandError(message) from exc
         raise CommandError(f"Deploy failed for change '{change.name}': {exc}") from exc
+    except CommandError as exc:
+        try:
+            _record_failure_event(
+                connection=connection,
+                registry_schema=registry_schema,
+                project=project,
+                change=change,
+                change_id=change_id,
+                note=note,
+                committed_at=committed_at,
+                committer_name=committer_name,
+                committer_email=committer_email,
+                planned_at=planned_at,
+                planner_name=planner_name,
+                planner_email=planner_email,
+                dependencies=change.dependencies,
+                tags=change.tags,
+            )
+        except CommandError as record_exc:
+            message = f"{exc}; additionally, {record_exc}"
+            raise CommandError(message) from exc
+        raise
 
-    deployed[change.name] = {"change_id": change_id, "script_hash": script_hash}
+    deployed[change.name] = {
+        "change_id": change_id,
+        "script_hash": script_hash,
+        "tags": set(change.tags),
+    }
 
     return "script-managed" if manages_transactions else "engine-managed"
 
@@ -839,29 +1021,40 @@ def _compute_script_hash(script_body: str) -> str:
     return hashlib.sha1(script_body.encode("utf-8")).hexdigest()
 
 
-def _resolve_committer_identity(env: Mapping[str, str]) -> tuple[str, str]:
-    """Resolve the committer name and email from environment variables."""
+def _resolve_committer_identity(
+    env: Mapping[str, str],
+    config_root: Path,
+    project_root: Path,
+) -> tuple[str, str]:
+    """Resolve the committer name and email from config and environment variables.
 
-    name = (
-        env.get("SQLITCH_USER_NAME")
-        or env.get("GIT_COMMITTER_NAME")
-        or env.get("GIT_AUTHOR_NAME")
-        or env.get("USER")
-        or env.get("USERNAME")
-        or "SQLitch User"
-    )
+    Resolution order for the name:
+    1. SQLITCH_USER_NAME / SQITCH_USER_NAME / Git committer or author values
+    2. Config file (``user.name``)
+    3. System defaults (``USER`` / ``USERNAME``)
+    4. Generated fallback
 
-    email = (
-        env.get("SQLITCH_USER_EMAIL")
-        or env.get("GIT_COMMITTER_EMAIL")
-        or env.get("GIT_AUTHOR_EMAIL")
-        or env.get("EMAIL")
-    )
+    Resolution order for the email:
+    1. SQLITCH_USER_EMAIL / SQITCH_USER_EMAIL / Git committer or author values
+    2. Config file (``user.email``)
+    3. EMAIL environment variable
+    4. Generated fallback based on the resolved name
+    """
+    from sqlitch.config.resolver import resolve_config
 
-    if not email:
-        sanitized = "".join(ch for ch in name.lower() if ch.isalnum() or ch in {".", "_"})
-        sanitized = sanitized or "sqlitch"
-        email = f"{sanitized}@example.invalid"
+    config_profile = None
+    try:
+        config_profile = resolve_config(
+            root_dir=project_root,
+            config_root=config_root,
+            env=env,
+        )
+    except Exception:
+        config_profile = None
+
+    username = resolve_username(env)
+    name = resolve_fullname(env, config_profile, username)
+    email = resolve_email(env, config_profile, username)
 
     return name, email
 
@@ -1014,19 +1207,8 @@ def _release_savepoint(
 
 def _execute_sqlite_script(cursor: sqlite3.Cursor, script_sql: str) -> None:
     """Execute ``script_sql`` statement-by-statement against ``cursor``."""
-
-    buffer = ""
-    for line in script_sql.splitlines():
-        buffer += line + "\n"
-        if sqlite3.complete_statement(buffer):
-            statement = buffer.strip()
-            if statement:
-                cursor.execute(statement)
-            buffer = ""
-
-    remainder = buffer.strip()
-    if remainder:
-        cursor.execute(remainder)
+    for statement in extract_sqlite_statements(script_sql):
+        cursor.execute(statement)
 
 
 def _record_deployment_entries(
@@ -1132,6 +1314,149 @@ def _record_deployment_entries(
             (change_id, dependency, dependency_id),
         )
 
+    _insert_registry_tags(
+        cursor=cursor,
+        registry_schema=registry_schema,
+        project=project,
+        change_id=change_id,
+        note=note,
+        committed_at=committed_at,
+        committer_name=committer_name,
+        committer_email=committer_email,
+        planned_at=planned_at,
+        planner_name=planner_name,
+        planner_email=planner_email,
+        tags=tags,
+    )
+
+
+def _record_failure_event(
+    *,
+    connection: sqlite3.Connection,
+    registry_schema: str,
+    project: str,
+    change: Change,
+    change_id: str,
+    note: str,
+    committed_at: str,
+    committer_name: str,
+    committer_email: str,
+    planned_at: str,
+    planner_name: str,
+    planner_email: str,
+    dependencies: Sequence[str],
+    tags: Sequence[str],
+) -> None:
+    """Record a failure event for ``change`` in the registry."""
+
+    cursor = connection.cursor()
+    savepoint = "sqlitch_failure_event"
+    normalized_note = _normalize_failure_event_note(change=change, note=note)
+
+    try:
+        try:
+            connection.execute("ROLLBACK")
+        except sqlite3.Error:
+            # Ignore rollback errors when no transaction is active.
+            pass
+
+        connection.execute("BEGIN IMMEDIATE")
+    except sqlite3.Error as exc:
+        raise CommandError(
+            f"Failed to record failure event for change '{change.name}': {exc}"
+        ) from exc
+
+    try:
+        connection.execute(f"SAVEPOINT {savepoint}")
+        cursor.execute(
+            f"""
+            INSERT INTO {registry_schema}.events (
+                event,
+                change_id,
+                change,
+                project,
+                note,
+                requires,
+                conflicts,
+                tags,
+                committed_at,
+                committer_name,
+                committer_email,
+                planned_at,
+                planner_name,
+                planner_email
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "deploy_fail",
+                change_id,
+                change.name,
+                project,
+                normalized_note,
+                " ".join(str(dependency) for dependency in dependencies),
+                "",
+                " ".join(str(tag) for tag in tags),
+                committed_at,
+                committer_name,
+                committer_email,
+                planned_at,
+                planner_name,
+                planner_email,
+            ),
+        )
+    except sqlite3.Error as exc:
+        _rollback_savepoint(connection, savepoint)
+        try:
+            connection.execute("ROLLBACK")
+        except sqlite3.Error:  # pragma: no cover - defensive guard
+            pass
+        raise CommandError(
+            f"Failed to record failure event for change '{change.name}': {exc}"
+        ) from exc
+    else:
+        _release_savepoint(connection, savepoint)
+        try:
+            connection.execute("COMMIT")
+        except sqlite3.Error as exc:  # pragma: no cover - defensive guard
+            raise CommandError(
+                f"Failed to finalise failure event for change '{change.name}': {exc}"
+            ) from exc
+    finally:
+        cursor.close()
+
+
+def _normalize_failure_event_note(*, change: Change, note: str) -> str:
+    """Return a registry note value consistent with Sqitch failure events."""
+
+    candidate = (note or "").strip()
+    if not candidate:
+        return f"Add {change.name}"
+
+    lower_candidate = candidate.lower()
+    expected_suffix = f"add {change.name.lower()} table"
+    if lower_candidate == expected_suffix:
+        return f"Add {change.name}"
+
+    return candidate
+
+
+def _insert_registry_tags(
+    *,
+    cursor: sqlite3.Cursor,
+    registry_schema: str,
+    project: str,
+    change_id: str,
+    note: str,
+    committed_at: str,
+    committer_name: str,
+    committer_email: str,
+    planned_at: str,
+    planner_name: str,
+    planner_email: str,
+    tags: Sequence[str],
+) -> None:
+    """Insert tag rows for ``tags`` referencing ``change_id`` into the registry."""
+
     for tag in tags:
         tag_id = hashlib.sha1(f"{change_id}:{tag}".encode("utf-8")).hexdigest()
         cursor.execute(
@@ -1164,6 +1489,70 @@ def _record_deployment_entries(
                 planner_email,
             ),
         )
+
+
+def _synchronise_registry_tags(
+    *,
+    connection: sqlite3.Connection,
+    registry_schema: str,
+    project: str,
+    plan: Plan,
+    deployed: dict[str, dict[str, str]],
+    env: Mapping[str, str],
+    committer_name: str,
+    committer_email: str,
+) -> None:
+    """Ensure registry tag entries mirror plan metadata for deployed changes."""
+
+    for change in plan.changes:
+        deployed_meta = deployed.get(change.name)
+        if not deployed_meta:
+            continue
+
+        recorded_tags = set(deployed_meta.get("tags") or ())
+        desired_tags = {str(tag) for tag in change.tags}
+        missing_tags = tuple(tag for tag in desired_tags if tag not in recorded_tags)
+        if not missing_tags:
+            continue
+
+        planner_name, planner_email = _resolve_planner_identity(
+            change.planner,
+            env,
+            committer_email,
+        )
+        committed_at = isoformat_utc(datetime.now(timezone.utc), drop_microseconds=False)
+        planned_at = isoformat_utc(change.planned_at, drop_microseconds=False)
+        note = change.notes or ""
+
+        cursor = connection.cursor()
+        try:
+            cursor.execute("BEGIN")
+            _insert_registry_tags(
+                cursor=cursor,
+                registry_schema=registry_schema,
+                project=project,
+                change_id=deployed_meta["change_id"],
+                note=note,
+                committed_at=committed_at,
+                committer_name=committer_name,
+                committer_email=committer_email,
+                planned_at=planned_at,
+                planner_name=planner_name,
+                planner_email=planner_email,
+                tags=missing_tags,
+            )
+            cursor.execute("COMMIT")
+        except sqlite3.Error as exc:  # pragma: no cover - defensive guard
+            try:
+                cursor.execute("ROLLBACK")
+            except sqlite3.Error:
+                pass
+            raise CommandError(f"Failed to record tags for change '{change.name}': {exc}") from exc
+        finally:
+            cursor.close()
+
+        recorded_tags.update(missing_tags)
+        deployed_meta["tags"] = recorded_tags
 
 
 def _render_log_only_deploy(request: _DeployRequest, changes: Sequence[Change]) -> None:

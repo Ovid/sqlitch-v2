@@ -163,9 +163,7 @@ def test_sqlite_engine_registry_filesystem_path_rejects_non_file_uri() -> None:
     )
 
     engine = sqlite_engine.SQLiteEngine(target)
-    with pytest.raises(
-        sqlite_engine.SQLiteEngineError, match="do not support remote file hosts"
-    ):
+    with pytest.raises(sqlite_engine.SQLiteEngineError, match="do not support remote file hosts"):
         engine.registry_filesystem_path()
 
 
@@ -363,10 +361,28 @@ def test_resolve_sqlite_filesystem_path_rejects_remote_file_hosts() -> None:
     """Test resolve_sqlite_filesystem_path rejects file: URIs with remote hosts."""
     import sqlitch.engine.sqlite as sqlite_engine
 
-    with pytest.raises(
-        sqlite_engine.SQLiteEngineError, match="do not support remote file hosts"
-    ):
-        sqlite_engine.resolve_sqlite_filesystem_path("db:sqlite:file://remote-host/path/to/db.sqlite")
+    with pytest.raises(sqlite_engine.SQLiteEngineError, match="do not support remote file hosts"):
+        sqlite_engine.resolve_sqlite_filesystem_path(
+            "db:sqlite:file://remote-host/path/to/db.sqlite"
+        )
+
+
+def test_resolve_sqlite_filesystem_path_with_relative_path() -> None:
+    """Test resolve_sqlite_filesystem_path handles relative paths."""
+    import sqlitch.engine.sqlite as sqlite_engine
+
+    result = sqlite_engine.resolve_sqlite_filesystem_path("db:sqlite:./relative/path.db")
+    assert result == Path("./relative/path.db")
+    assert not result.is_absolute()
+
+
+def test_resolve_sqlite_filesystem_path_with_relative_file_uri() -> None:
+    """Test resolve_sqlite_filesystem_path handles relative file: URIs."""
+    import sqlitch.engine.sqlite as sqlite_engine
+
+    result = sqlite_engine.resolve_sqlite_filesystem_path("db:sqlite:file:./relative/path.db")
+    assert result == Path("./relative/path.db")
+    assert not result.is_absolute()
 
 
 def test_extract_sqlite_statements_single_statement() -> None:

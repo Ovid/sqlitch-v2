@@ -74,7 +74,12 @@ def load_config(
         directory = resolved_scopes.get(scope)
         if directory is None:
             continue
-        candidates = [directory / name for name in search_names if (directory / name).exists()]
+        candidates: list[Path]
+        if directory.is_file():
+            candidates = [directory]
+        else:
+            candidates = [directory / name for name in search_names if (directory / name).exists()]
+
         if len(candidates) > 1:
             conflict_list = ", ".join(name.name for name in candidates)
             raise ConfigConflictError(
@@ -92,11 +97,21 @@ def load_config(
 
         if parser.defaults():
             defaults = merged_sections.setdefault("DEFAULT", {})
-            defaults.update(parser.defaults())
+            for option, value in parser.defaults().items():
+                normalized_option = option.lower()
+                _assert_no_plan_pragma(normalized_option)
+                defaults[option] = value
 
         for section in parser.sections():
-            target = merged_sections.setdefault(section, {})
-            target.update(parser[section])
+            normalized_section = _normalize_section_name(section)
+            target = merged_sections.setdefault(normalized_section, {})
+            for option, value in parser.items(section, raw=True):
+                normalized_option = option.lower()
+                _assert_no_plan_pragma(normalized_option)
+                if normalized_section == "env":
+                    target[option] = value
+                else:
+                    target[normalized_option] = value
 
     active_engine = None
     core_section = merged_sections.get("core")
@@ -114,3 +129,17 @@ def load_config(
 
 
 load_configuration = load_config
+
+
+def _normalize_section_name(section: str) -> str:
+    if '"' in section:
+        head, quote, tail = section.partition('"')
+        return f"{head.lower()}{quote}{tail}"
+    return section.lower()
+
+
+def _assert_no_plan_pragma(option: str) -> None:
+    if option.startswith("%"):
+        raise ValueError(
+            f"Plan pragmas are not permitted in configuration files (invalid option '{option}')"
+        )

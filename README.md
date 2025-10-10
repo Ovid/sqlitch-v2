@@ -26,20 +26,22 @@ Key characteristics:
 
 - ✅ Core domain models: plan parsing, configuration loader/resolver, registry state.
 - ✅ Registry migrations mirror Sqitch SQL for SQLite, MySQL, and PostgreSQL.
-- 🚧 Engine adapters, CLI commands, and Docker orchestration are **not** ready.
-- 🚧 Most integration tests remain skipped by design until their tasks are complete.
+- ✅ **SQLite Tutorial Commands**: All 10 commands needed to complete the Sqitch SQLite tutorial are implemented and functional:
+  - `init`, `config`, `add`, `deploy`, `verify`, `status`, `revert`, `log`, `tag`, `rework`
+- ✅ Plan format outputs compact Sqitch-compatible format
+- ✅ Identity resolution with full priority chain (config → env → system → fallback)
+- 🚧 MySQL and PostgreSQL engines are **not** ready yet.
+- 🚧 Some integration tests for edge cases remain skipped pending bug fixes.
 
-Follow the task tracker in `specs/001-we-re-going/tasks.md` for day-to-day
+Follow the task tracker in the relevant `specs/` directory for day-to-day
 progress across milestones.
 
 ## Getting Started
 
-> 💡 Until command handlers and engines are wired up, SQLitch is primarily a
-> domain-library and research sandbox. Expect many CLI commands to be stubs.
-
 ### Prerequisites
 
-- Python 3.11
+- Python 3.11+
+- SQLite (included in Python standard library)
 - (Optional) Docker, for future cross-engine parity tests
 
 ### Local Setup
@@ -50,14 +52,67 @@ source .venv/bin/activate
 pip install -e .[dev]
 ```
 
-### Running the Test Suite
+### Complete the SQLite Tutorial
 
-Tests enforce ≥90% coverage and fail when skip guards are violated.
+SQLitch now supports completing the full [Sqitch SQLite Tutorial](https://sqitch.org/docs/manual/sqitchtutorial-sqlite/)! 
+
+**Quick Start Example:**
 
 ```bash
+# Initialize a new project
+sqlitch init flipr --uri https://github.com/example/flipr/ --engine sqlite
+
+# Configure your identity
+sqlitch config --user user.name "Your Name"
+sqlitch config --user user.email "you@example.com"
+
+# Add your first change
+sqlitch add users -n "Creates table to track our users."
+
+# Edit the generated scripts in deploy/, revert/, verify/
+# Then deploy to your database
+sqlitch deploy db:sqlite:flipr.db
+
+# Verify the deployment
+sqlitch verify db:sqlite:flipr.db
+
+# Check deployment status
+sqlitch status db:sqlite:flipr.db
+
+# View deployment history
+sqlitch log db:sqlite:flipr.db
+```
+
+For the complete tutorial workflow with all commands, see:
+- [Tutorial Quick Start](specs/004-sqlitch-tutorial-parity/quickstart.md)
+- [Official Sqitch Tutorial](https://sqitch.org/docs/manual/sqitchtutorial-sqlite/)
+
+### Running the Test Suite
+
+⚠️ **IMPORTANT SAFETY WARNING**: While we've implemented extensive test isolation measures to prevent the test suite from modifying your actual configuration files, we **strongly recommend running tests in an isolated environment** such as:
+- A Docker container
+- A dedicated VM or cloud instance
+- A separate user account with its own home directory
+
+**Why?** The test suite exercises configuration file operations extensively. Although all tests use isolated filesystem contexts and environment variable overrides to prevent pollution of `~/.sqitch/` and `~/.config/`, bugs in the isolation layer could potentially modify your actual Sqitch/SQLitch configuration files. If you have existing Sqitch projects, losing those configurations could be catastrophic.
+
+**Safe Testing:**
+
+```bash
+# Option 1: Run in a Docker container (recommended)
+docker run -v $(pwd):/workspace -w /workspace python:3.11 bash -c "
+  python3 -m venv .venv && 
+  source .venv/bin/activate && 
+  pip install -e .[dev] && 
+  python -m pytest
+"
+
+# Option 2: Run locally (ensure you've backed up ~/.sqitch/ first)
 source .venv/bin/activate
 python -m pytest
 ```
+
+Tests enforce ≥90% coverage and fail when skip guards are violated.
 
 ### Code Quality Gates
 

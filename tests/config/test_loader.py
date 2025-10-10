@@ -91,3 +91,39 @@ def test_load_config_includes_defaults_and_handles_missing_scopes(tmp_path: Path
     assert profile.settings["DEFAULT"]["editor"] == "vim"
     assert profile.settings["deploy"]["verify"] == "1"
     assert profile.active_engine is None
+
+
+def test_load_config_normalises_section_and_option_case(tmp_path: Path) -> None:
+    local_dir = tmp_path / "project"
+    local_dir.mkdir()
+
+    _write_config(
+        local_dir / "sqitch.conf",
+        """[CORE]\nENGINE=sqlite\n[TARGET \"FLIPR_TEST\"]\nURI=db:sqlite:flipr_test.db\n""",
+    )
+
+    profile = loader.load_config(
+        root_dir=local_dir,
+        scope_dirs={loader.ConfigScope.LOCAL: local_dir},
+    )
+
+    assert "core" in profile.settings
+    assert profile.settings["core"]["engine"] == "sqlite"
+    target_section = profile.settings['target "FLIPR_TEST"']
+    assert target_section["uri"] == "db:sqlite:flipr_test.db"
+
+
+def test_load_config_rejects_plan_pragmas(tmp_path: Path) -> None:
+    local_dir = tmp_path / "project"
+    local_dir.mkdir()
+
+    _write_config(
+        local_dir / "sqitch.conf",
+        """[core]\n%core.uri=https://example.com/flipr\n""",
+    )
+
+    with pytest.raises(ValueError, match=r"core\.uri"):
+        loader.load_config(
+            root_dir=local_dir,
+            scope_dirs={loader.ConfigScope.LOCAL: local_dir},
+        )

@@ -7,15 +7,146 @@ from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlitch.utils.time import coerce_datetime, isoformat_utc
+from sqlitch.utils.time import coerce_datetime, isoformat_utc, parse_iso_datetime
 
 __all__ = [
+    "DeployedChange",
+    "DeploymentEvent",
+    "DeploymentStatus",
     "RegistryEntry",
     "RegistryState",
     "serialize_registry_entries",
     "sort_registry_entries_by_deployment",
     "deserialize_registry_rows",
 ]
+
+
+@dataclass(frozen=True, slots=True)
+class DeployedChange:
+    """Represents a change currently deployed to the database.
+
+    This model corresponds to rows from the registry `changes` table and is used
+    to track which changes have been deployed to a target database.
+    """
+
+    change_id: str
+    script_hash: str | None
+    change: str  # change name
+    project: str
+    note: str
+    committed_at: datetime
+    committer_name: str
+    committer_email: str
+    planned_at: datetime
+    planner_name: str
+    planner_email: str
+
+    @classmethod
+    def from_registry_row(cls, row: tuple) -> DeployedChange:
+        """Create DeployedChange from database row.
+
+        Args:
+            row: Database row tuple with 11 elements:
+                (change_id, script_hash, change, project, note,
+                 committed_at, committer_name, committer_email,
+                 planned_at, planner_name, planner_email)
+
+        Returns:
+            DeployedChange instance with timezone-aware datetimes.
+        """
+        return cls(
+            change_id=row[0],
+            script_hash=row[1],
+            change=row[2],
+            project=row[3],
+            note=row[4],
+            committed_at=parse_iso_datetime(row[5], label="committed_at"),
+            committer_name=row[6],
+            committer_email=row[7],
+            planned_at=parse_iso_datetime(row[8], label="planned_at"),
+            planner_name=row[9],
+            planner_email=row[10],
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class DeploymentEvent:
+    """Represents a deployment event in the registry.
+
+    This model corresponds to rows from the registry `events` table and is used
+    to track all deployment operations (deploy, revert, fail, merge).
+    """
+
+    event: str  # 'deploy', 'revert', 'fail', 'merge'
+    change_id: str
+    change: str  # change name
+    project: str
+    note: str
+    requires: str  # comma-separated list
+    conflicts: str  # comma-separated list
+    tags: str  # comma-separated list
+    committed_at: datetime
+    committer_name: str
+    committer_email: str
+    planned_at: datetime
+    planner_name: str
+    planner_email: str
+
+    @classmethod
+    def from_registry_row(cls, row: tuple) -> DeploymentEvent:
+        """Create DeploymentEvent from database row.
+
+        Args:
+            row: Database row tuple with 14 elements:
+                (event, change_id, change, project, note,
+                 requires, conflicts, tags,
+                 committed_at, committer_name, committer_email,
+                 planned_at, planner_name, planner_email)
+
+        Returns:
+            DeploymentEvent instance with timezone-aware datetimes.
+        """
+        return cls(
+            event=row[0],
+            change_id=row[1],
+            change=row[2],
+            project=row[3],
+            note=row[4],
+            requires=row[5],
+            conflicts=row[6],
+            tags=row[7],
+            committed_at=parse_iso_datetime(row[8], label="committed_at"),
+            committer_name=row[9],
+            committer_email=row[10],
+            planned_at=parse_iso_datetime(row[11], label="planned_at"),
+            planner_name=row[12],
+            planner_email=row[13],
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class DeploymentStatus:
+    """Represents the deployment status of a project target.
+
+    Tracks which changes are deployed, which are pending, and provides
+    convenience properties for checking deployment state.
+    """
+
+    project: str
+    deployed_changes: tuple[str, ...]
+    pending_changes: tuple[str, ...]
+    deployed_tags: tuple[str, ...]
+    last_deployed_change: str | None
+
+    @property
+    def is_up_to_date(self) -> bool:
+        """True if there are no pending changes to deploy."""
+        return len(self.pending_changes) == 0
+
+    @property
+    def deployment_count(self) -> int:
+        """Number of changes currently deployed."""
+        return len(self.deployed_changes)
 
 
 def _ordering_key(entry: "RegistryEntry") -> tuple[datetime, str, str]:

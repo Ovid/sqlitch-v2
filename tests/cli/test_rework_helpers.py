@@ -34,6 +34,7 @@ def test_resolve_new_path_with_override(tmp_path: Path) -> None:
         original=None,
         override=str(override),
         slug="widgets",
+        suffix="@v1.0",
     )
 
     assert result == override
@@ -46,9 +47,10 @@ def test_resolve_new_path_generates_when_original_present(tmp_path: Path) -> Non
         original=original,
         override=None,
         slug="widgets",
+        suffix="@v1.0",
     )
 
-    assert generated == original.parent / "widgets_rework.sql"
+    assert generated == original.parent / "widgets@v1.0.sql"
 
 
 def test_copy_script_missing_source_errors(tmp_path: Path) -> None:

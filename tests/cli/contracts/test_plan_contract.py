@@ -10,6 +10,7 @@ from click.testing import CliRunner
 import pytest
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 from sqlitch.plan.formatter import format_plan, write_plan
 from sqlitch.plan.model import Change, Tag
 
@@ -45,7 +46,7 @@ def _seed_plan(plan_path: Path) -> tuple[Change, Change, Tag]:
         planned_at=datetime(2025, 1, 2, 0, 0, tzinfo=timezone.utc),
         notes="Adds widgets table",
         dependencies=("core:init",),
-        tags=("v1.0",),
+        # Note: tags field is not used in compact format - tags are separate entries
     )
 
     tag = Tag(
@@ -62,13 +63,17 @@ def _seed_plan(plan_path: Path) -> tuple[Change, Change, Tag]:
         plan_path=plan_path,
     )
 
+    # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
+    config_path = plan_path.parent / "sqitch.conf"
+    config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
+
     return change_one, change_two, tag
 
 
 def test_plan_outputs_plan_file_by_default(runner: CliRunner) -> None:
     """sqlitch plan should emit the plan file verbatim when no filters apply."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         _seed_plan(plan_path)
 
@@ -82,7 +87,7 @@ def test_plan_outputs_plan_file_by_default(runner: CliRunner) -> None:
 def test_plan_supports_change_filter_and_no_header(runner: CliRunner) -> None:
     """Change filtering and header suppression should mirror Sqitch ergonomics."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         change_one, change_two, tag = _seed_plan(plan_path)
 
@@ -104,7 +109,7 @@ def test_plan_supports_change_filter_and_no_header(runner: CliRunner) -> None:
 def test_plan_supports_json_format(runner: CliRunner) -> None:
     """The JSON format should expose structured plan metadata."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         change_one, change_two, _ = _seed_plan(plan_path)
 
@@ -125,15 +130,17 @@ def test_plan_supports_json_format(runner: CliRunner) -> None:
         assert first["type"] == "change"
         assert first["scripts"]["deploy"].endswith("core_init.sql")
         assert second["dependencies"] == ["core:init"]
+        # Tags recorded on separate entries are surfaced in JSON metadata.
         assert second["tags"] == ["v1.0"]
         assert third["type"] == "tag"
+        assert third["name"] == "v1.0"
         assert third["change"] == change_two.name
 
 
 def test_plan_reports_missing_plan_file(runner: CliRunner) -> None:
     """Invoking sqlitch plan without a plan file should raise a command error."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         result = runner.invoke(main, ["plan"])
 
         assert result.exit_code != 0
@@ -143,7 +150,7 @@ def test_plan_reports_missing_plan_file(runner: CliRunner) -> None:
 def test_plan_tag_filter_outputs_tag_entry(runner: CliRunner) -> None:
     """Selecting a tag should limit the output to matching tag entries."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         _, change_two, tag = _seed_plan(plan_path)
 
@@ -163,7 +170,7 @@ def test_plan_tag_filter_outputs_tag_entry(runner: CliRunner) -> None:
 def test_plan_short_option_strips_notes_metadata(runner: CliRunner) -> None:
     """The --short flag should omit notes metadata from human output."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         _seed_plan(plan_path)
 
@@ -179,7 +186,7 @@ def test_plan_short_option_strips_notes_metadata(runner: CliRunner) -> None:
 def test_plan_reports_missing_change_filter(runner: CliRunner) -> None:
     """A missing change filter should produce a descriptive error."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         _seed_plan(plan_path)
 
@@ -192,7 +199,7 @@ def test_plan_reports_missing_change_filter(runner: CliRunner) -> None:
 def test_plan_reports_missing_tag_filter(runner: CliRunner) -> None:
     """A missing tag filter should produce a descriptive error."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         _seed_plan(plan_path)
 
@@ -205,7 +212,7 @@ def test_plan_reports_missing_tag_filter(runner: CliRunner) -> None:
 def test_plan_project_mismatch_errors(runner: CliRunner) -> None:
     """Filtering by project should enforce matching plan metadata."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         _seed_plan(plan_path)
 
@@ -218,7 +225,7 @@ def test_plan_project_mismatch_errors(runner: CliRunner) -> None:
 def test_plan_warns_for_forward_dependencies(runner: CliRunner) -> None:
     """Forward-referenced dependencies should emit warnings without failing."""
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         change = Change.create(
             name="widgets:add",
@@ -239,6 +246,10 @@ def test_plan_warns_for_forward_dependencies(runner: CliRunner) -> None:
             entries=(change,),
             plan_path=plan_path,
         )
+
+        # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
+        config_path = plan_path.parent / "sqitch.conf"
+        config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
 
         result = runner.invoke(main, ["plan"])
 

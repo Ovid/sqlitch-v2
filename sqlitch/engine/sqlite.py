@@ -245,18 +245,22 @@ def extract_sqlite_statements(script_sql: str) -> tuple[str, ...]:
     reuse the parsed statements for execution or analysis. Empty statements and
     whitespace-only chunks are discarded.
     """
-
     statements: list[str] = []
-    buffer = ""
-    for line in script_sql.splitlines():
-        buffer += line + "\n"
-        if sqlite3.complete_statement(buffer):
-            statement = buffer.strip()
-            if statement:
-                statements.append(statement)
-            buffer = ""
+    buffer: list[str] = []
 
-    remainder = buffer.strip()
+    def flush_buffer() -> None:
+        nonlocal buffer
+        statement = "".join(buffer).strip()
+        if statement:
+            statements.append(statement)
+        buffer = []
+
+    for char in script_sql:
+        buffer.append(char)
+        if sqlite3.complete_statement("".join(buffer)):
+            flush_buffer()
+
+    remainder = "".join(buffer).strip()
     if remainder:
         statements.append(remainder)
 

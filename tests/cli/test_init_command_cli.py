@@ -7,13 +7,14 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
+from tests.support.test_helpers import isolated_test_context
 
 
 def test_init_command_accepts_uri_option(tmp_path: Path) -> None:
     runner = CliRunner()
     uri = "https://github.com/sqitchers/sqitch-sqlite-intro/"
 
-    with runner.isolated_filesystem():
+    with isolated_test_context(runner) as (runner, temp_dir):
         config_root = Path("config-root")
         result = runner.invoke(
             main,

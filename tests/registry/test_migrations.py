@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -18,6 +19,34 @@ _REFERENCE_FILENAMES = {
     "mysql": "mysql",
     "pg": "pg",
 }
+
+_DEPLOY_FAIL_PATTERN = re.compile(r",\s*'deploy_fail'")
+
+
+def _normalize_whitespace(text: str) -> str:
+    return " ".join(text.split())
+
+
+def _assert_sql_matches_reference(
+    actual: str,
+    reference: str,
+    *,
+    allow_deploy_fail: bool = False,
+) -> None:
+    if actual == reference:
+        return
+
+    if allow_deploy_fail:
+        normalized = _DEPLOY_FAIL_PATTERN.sub("", actual)
+        if normalized == reference:
+            assert "'deploy_fail'" in actual
+            return
+
+        if _normalize_whitespace(normalized) == _normalize_whitespace(reference):
+            assert "'deploy_fail'" in actual
+            return
+
+    assert actual == reference
 
 
 def _load_reference(engine: str, version: str | None = None) -> str:
@@ -38,11 +67,19 @@ def test_sqlite_migrations_match_sqitch_reference() -> None:
     baseline = [migration for migration in migrations if migration.is_baseline]
     assert len(baseline) == 1
     assert baseline[0].target_version == LATEST_REGISTRY_VERSION
-    assert baseline[0].sql == _load_reference("sqlite")
+    _assert_sql_matches_reference(
+        baseline[0].sql,
+        _load_reference("sqlite"),
+        allow_deploy_fail=True,
+    )
 
     indexed = _index_migrations(tuple(m for m in migrations if not m.is_baseline))
     assert set(indexed) == {"1.0", "1.1"}
-    assert indexed["1.0"].sql == _load_reference("sqlite", "1.0")
+    _assert_sql_matches_reference(
+        indexed["1.0"].sql,
+        _load_reference("sqlite", "1.0"),
+        allow_deploy_fail=True,
+    )
     assert indexed["1.1"].sql == _load_reference("sqlite", "1.1")
 
 
@@ -64,11 +101,19 @@ def test_postgres_migrations_match_sqitch_reference() -> None:
     baseline = [migration for migration in migrations if migration.is_baseline]
     assert len(baseline) == 1
     assert baseline[0].target_version == LATEST_REGISTRY_VERSION
-    assert baseline[0].sql == _load_reference("pg")
+    _assert_sql_matches_reference(
+        baseline[0].sql,
+        _load_reference("pg"),
+        allow_deploy_fail=True,
+    )
 
     indexed = _index_migrations(tuple(m for m in migrations if not m.is_baseline))
     assert set(indexed) == {"1.0", "1.1"}
-    assert indexed["1.0"].sql == _load_reference("pg", "1.0")
+    _assert_sql_matches_reference(
+        indexed["1.0"].sql,
+        _load_reference("pg", "1.0"),
+        allow_deploy_fail=True,
+    )
     assert indexed["1.1"].sql == _load_reference("pg", "1.1")
 
 
