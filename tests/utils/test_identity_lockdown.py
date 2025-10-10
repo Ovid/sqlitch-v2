@@ -21,24 +21,24 @@ def _config_profile() -> MagicMock:
     return config
 
 
-def test_resolve_fullname_prefers_config_over_git_author(config_profile: MagicMock) -> None:
-    """Config user.name should outrank legacy Git author overrides."""
+def test_resolve_fullname_prefers_git_author_over_config(config_profile: MagicMock) -> None:
+    """Legacy Git author name should outrank config user.name."""
     config_profile.settings = {"user": {"name": "Config Name"}}
     env = {"GIT_AUTHOR_NAME": "Git Author"}
 
     result = resolve_fullname(env, config_profile, "fallback")
 
-    assert result == "Config Name"
+    assert result == "Git Author"
 
 
-def test_resolve_email_prefers_config_over_git_author(config_profile: MagicMock) -> None:
-    """Config user.email should outrank legacy Git author overrides."""
+def test_resolve_email_prefers_git_author_over_config(config_profile: MagicMock) -> None:
+    """Legacy Git author email should outrank config user.email."""
     config_profile.settings = {"user": {"email": "config@example.com"}}
     env = {"GIT_AUTHOR_EMAIL": "git@example.com"}
 
     result = resolve_email(env, config_profile, "fallback")
 
-    assert result == "config@example.com"
+    assert result == "git@example.com"
 
 
 def test_resolve_username_uses_win32_api_when_available(monkeypatch: pytest.MonkeyPatch) -> None:

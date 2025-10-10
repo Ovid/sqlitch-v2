@@ -229,9 +229,9 @@ def resolve_fullname(
         1. ``$SQITCH_FULLNAME`` environment variable
         2. Legacy ``$SQLITCH_USER_NAME`` (backward compatibility)
         3. ``$SQITCH_ORIG_FULLNAME`` (internal)
-        4. ``user.name`` from config
-        5. Full name from system (GECOS field on Unix/macOS, UserInfo on Windows)
-        6. Legacy ``$GIT_AUTHOR_NAME`` (backward compatibility)
+        4. Legacy ``$GIT_AUTHOR_NAME`` (backward compatibility)
+        5. ``user.name`` from config
+        6. Full name from system (GECOS field on Unix/macOS, UserInfo on Windows)
         7. ``username_fallback``
 
     Args:
@@ -265,7 +265,6 @@ def resolve_fullname(
     if value:
         return value
 
-    # Check config user.name after Git author overrides
     if config is not None:
         user_section = config.settings.get("user", {})
         value = user_section.get("name")
@@ -290,12 +289,12 @@ def resolve_email(
 
     Precedence (highest to lowest):
         1. ``$SQITCH_EMAIL`` environment variable
-    2. Legacy ``$SQLITCH_USER_EMAIL`` (backward compatibility)
-    3. ``$SQITCH_ORIG_EMAIL`` (internal)
-    4. ``user.email`` from config
-    5. Legacy ``$GIT_AUTHOR_EMAIL`` (backward compatibility)
-    6. Legacy ``$EMAIL`` (backward compatibility)
-    7. Synthesized as ``<username>@<hostname>``
+        2. Legacy ``$SQLITCH_USER_EMAIL`` (backward compatibility)
+        3. ``$SQITCH_ORIG_EMAIL`` (internal)
+        4. Legacy ``$GIT_AUTHOR_EMAIL`` (backward compatibility)
+        5. ``user.email`` from config
+        6. Legacy ``$EMAIL`` (backward compatibility)
+        7. Synthesized as ``<username>@<hostname>``
 
     Args:
         env: Environment variable mapping.
@@ -329,7 +328,6 @@ def resolve_email(
     if value:
         return value
 
-    # Check config user.email after Git author overrides
     if config is not None:
         user_section = config.settings.get("user", {})
         value = user_section.get("email")

@@ -15,7 +15,13 @@ import click
 from sqlitch.config import resolver as config_resolver
 from sqlitch.utils.logging import StructuredLogger, create_logger
 
-from .commands import CommandError, iter_command_registrars, load_commands
+from .commands import (
+    CommandError,
+    iter_command_registrars,
+    load_commands,
+    reset_global_json_mode,
+    set_global_json_mode,
+)
 from .options import LogConfiguration, build_log_configuration, global_output_options
 
 _CLI_CONTEXT_META_KEY = "sqlitch_cli_context"
@@ -226,6 +232,12 @@ def main(
     The function resolves global options into a shared context that downstream
     command handlers can consume via :func:`click.get_current_context`.
     """
+    token = set_global_json_mode(json_mode)
+
+    def _restore_json_mode() -> None:
+        reset_global_json_mode(token)
+
+    ctx.call_on_close(_restore_json_mode)
 
     # Handle --chdir before any other processing
     if chdir_path:
