@@ -28,7 +28,7 @@
 - [X] **T005 [P1]** Execute `black --check` and `isort --check-only` across the repository; if either fails, record the failing paths, reformat with `black .` / `isort .`, and capture the before/after notes in `specs/005-lockdown/artifacts/baseline/formatting.md`
 
 ## Phase 3.2 · Tests First (TDD) — all MUST fail before implementation
-- [ ] **T010 [P1]** Add resolver edge-case tests covering missing scopes, duplicate files, and path validation in `tests/config/test_resolver_lockdown.py`
+- [X] **T010 [P1]** Add resolver edge-case tests covering missing scopes, duplicate files, and path validation in `tests/config/test_resolver_lockdown.py`
 - [ ] **T011 [P1]** Add registry state mutation/error tests in `tests/registry/test_state_lockdown.py`
 - [ ] **T012 [P1]** Add identity fallback/OS variance tests in `tests/utils/test_identity_lockdown.py`
 - [ ] **T013 [P1]** Add CLI context and flag regression tests (init/add/deploy error paths) using `CliRunner` in `tests/cli/test_main_lockdown.py`
