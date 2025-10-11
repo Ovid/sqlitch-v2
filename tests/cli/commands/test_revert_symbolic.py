@@ -41,8 +41,8 @@ def test_revert_to_head_caret(tmp_path: Path, monkeypatch):
 
     # Deploy all changes
     db_path = tmp_path / "test.db"
-    result = runner.invoke(main, ["deploy", f"db:sqlite:{db_path}", "-y"])
-    assert result.exit_code == 0
+    result = runner.invoke(main, ["deploy", f"db:sqlite:{db_path}"])
+    assert result.exit_code == 0, f"Deploy failed: {result.output}"
 
     # Verify all three tables exist
     conn = sqlite3.connect(db_path)
@@ -93,7 +93,7 @@ def test_revert_to_root_symbolic_reference(tmp_path: Path, monkeypatch):
 
     # Deploy both
     db_path = tmp_path / "test.db"
-    result = runner.invoke(main, ["deploy", f"db:sqlite:{db_path}", "-y"])
+    result = runner.invoke(main, ["deploy", f"db:sqlite:{db_path}"])
     assert result.exit_code == 0
 
     # Revert to @ROOT (should keep only the first change)
@@ -131,7 +131,7 @@ def test_revert_to_change_with_caret(tmp_path: Path, monkeypatch):
 
     # Deploy all
     db_path = tmp_path / "test.db"
-    result = runner.invoke(main, ["deploy", f"db:sqlite:{db_path}", "-y"])
+    result = runner.invoke(main, ["deploy", f"db:sqlite:{db_path}"])
     assert result.exit_code == 0
 
     # Revert to change4^ (should keep change1, change2, change3)
