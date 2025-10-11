@@ -503,12 +503,26 @@ def _calculate_pending(
     if not deployed_changes:
         return tuple(plan_changes)
 
-    last_deployed = deployed_changes[-1]
-    if last_deployed not in plan_changes:
-        return tuple(plan_changes)
-
-    last_index = plan_changes.index(last_deployed)
-    return tuple(plan_changes[last_index + 1 :])
+    # For rework support: find where deployed and plan sequences diverge
+    # This handles cases where the same change name appears multiple times
+    deployed_count = len(deployed_changes)
+    plan_count = len(plan_changes)
+    
+    # Find the first position where they differ
+    matching_count = 0
+    for i in range(min(deployed_count, plan_count)):
+        if deployed_changes[i] == plan_changes[i]:
+            matching_count = i + 1
+        else:
+            break
+    
+    # If all deployed changes match the plan prefix, return the remaining plan changes
+    if matching_count == deployed_count:
+        return tuple(plan_changes[deployed_count:])
+    
+    # If they diverge, the database is ahead or inconsistent
+    # Return all remaining plan changes after the last match
+    return tuple(plan_changes[matching_count:])
 
 
 def _render_human_output(

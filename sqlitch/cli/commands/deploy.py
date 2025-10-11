@@ -861,8 +861,9 @@ def _compute_change_id_for_change(project: str, change: Change) -> str:
         planner_name = change.planner
         planner_email = ""
     
-    # Get dependencies (requires), excluding any @tag suffix
-    requires = tuple(dep.split("@")[0] if "@" in dep else dep for dep in change.dependencies)
+    # Get dependencies (requires) - keep the full dependency strings including @tag suffixes
+    # This must match what's used during deployment
+    requires = tuple(change.dependencies)
     
     # Change.planned_at is already a datetime object
     return generate_change_id(

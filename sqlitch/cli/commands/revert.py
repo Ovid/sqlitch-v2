@@ -262,15 +262,17 @@ def _execute_revert(request: _RevertRequest) -> None:
     registry_schema = "sqitch"
 
     try:
-        # Load currently deployed changes
+        # Load currently deployed changes (keyed by change_id for rework support)
         deployed = _load_deployed_changes(connection, registry_schema, request.plan.project_name)
+
+        # Import here to avoid circular dependency
+        from sqlitch.cli.commands.deploy import _compute_change_id_for_change
 
         # Filter to only revert deployed changes in reverse order
         # If --to-change or --to-tag specified, `changes` contains the target point
         # We revert everything AFTER the target (in deployment order)
         # 
-        # Important: For reworked changes, we need to track specific instances by their
-        # position in the plan, not just by name, since the same name can appear multiple times.
+        # Important: For reworked changes, we match by change_id, not name.
         changes_to_keep_indices = set()
         if request.to_change or request.to_tag:
             # Build a set of indices of changes to keep
@@ -280,7 +282,11 @@ def _execute_revert(request: _RevertRequest) -> None:
         changes_to_revert = []
         for i in range(len(request.plan.changes) - 1, -1, -1):
             change = request.plan.changes[i]
-            if change.name in deployed:
+            # Compute the change_id for this plan entry
+            change_id = _compute_change_id_for_change(request.plan.project_name, change)
+            
+            # Check if this specific instance is deployed
+            if change_id in deployed:
                 # If we have a target and this change (by position) should be kept, stop
                 if changes_to_keep_indices and i in changes_to_keep_indices:
                     break
@@ -339,7 +345,11 @@ def _execute_revert(request: _RevertRequest) -> None:
 def _load_deployed_changes(
     connection: sqlite3.Connection, registry_schema: str, project: str
 ) -> dict[str, dict[str, str]]:
-    """Load deployed changes from registry for the given project."""
+    """Load deployed changes from registry for the given project.
+    
+    Returns a dict mapping change_id to metadata. For reworked changes
+    (same name, different instances), each instance has a unique change_id.
+    """
     cursor = connection.execute(
         f'SELECT "change", change_id, script_hash FROM {registry_schema}.changes '
         f"WHERE project = ? ORDER BY committed_at DESC",
@@ -352,8 +362,11 @@ def _load_deployed_changes(
 
     deployed: dict[str, dict[str, str]] = {}
     for change_name, change_id, script_hash in rows:
-        deployed[str(change_name)] = {
-            "change_id": str(change_id),
+        change_id_str = str(change_id)
+        # Map by change_id, not name, to support reworked changes
+        deployed[change_id_str] = {
+            "change_name": str(change_name),
+            "change_id": change_id_str,
             "script_hash": str(script_hash) if script_hash is not None else "",
         }
     return deployed
@@ -389,12 +402,17 @@ def _revert_change(
     validate_sqlite_script(script_body)
     manages_transactions = script_manages_transactions(script_body)
 
-    # Get change metadata from deployed state
-    change_metadata = deployed.get(change.name)
+    # Compute change_id for this plan entry to look up deployment metadata
+    from sqlitch.cli.commands.deploy import _compute_change_id_for_change
+    change_id = _compute_change_id_for_change(project, change)
+
+    # Get change metadata from deployed state (keyed by change_id for rework support)
+    change_metadata = deployed.get(change_id)
     if not change_metadata:
         raise CommandError(f"Change '{change.name}' is not deployed.")
 
-    change_id = change_metadata["change_id"]
+    # Use the change_id from metadata (should match computed one)
+    registry_change_id = change_metadata["change_id"]
 
     # Parse planner identity
     planner_name, planner_email = _resolve_planner_identity(change.planner, env, committer_email)
@@ -407,26 +425,26 @@ def _revert_change(
         # Delete tags first (if this change has any tags pointing to it)
         cursor.execute(
             f"DELETE FROM {registry_schema}.tags WHERE change_id = ?",
-            (change_id,),
+            (registry_change_id,),
         )
 
         # Delete dependencies FROM this change (where this is the source)
         cursor.execute(
             f"DELETE FROM {registry_schema}.dependencies WHERE change_id = ?",
-            (change_id,),
+            (registry_change_id,),
         )
 
         # Delete dependencies TO this change (where this is the target)
         # This is necessary because dependency_id FK doesn't have ON DELETE CASCADE
         cursor.execute(
             f"DELETE FROM {registry_schema}.dependencies WHERE dependency_id = ?",
-            (change_id,),
+            (registry_change_id,),
         )
 
         # Delete from changes table
         cursor.execute(
             f"DELETE FROM {registry_schema}.changes WHERE change_id = ?",
-            (change_id,),
+            (registry_change_id,),
         )
 
         # Insert revert event
@@ -451,7 +469,7 @@ def _revert_change(
             """,
             (
                 "revert",
-                change_id,
+                registry_change_id,
                 change.name,
                 project,
                 note,
