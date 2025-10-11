@@ -26,6 +26,22 @@ cd /Users/poecurt/projects/sqlitch
 source .venv/bin/activate
 ```
 
+### 🎯 Critical Principle: Sqitch Behavioral Verification
+**Every implementation task MUST verify behavior against Sqitch's implementation in `sqitch/`.**
+
+Before implementing or fixing any feature:
+1. **Consult the source**: Review the corresponding Perl code in `sqitch/lib/App/Sqitch/`
+2. **Document Sqitch's behavior**: Note how Sqitch handles the feature, including:
+   - Syntax support (e.g., `@HEAD^`, `@ROOT`, symbolic references)
+   - Command-line options and flags
+   - Error messages and error handling
+   - Edge cases and boundary conditions
+3. **Implement to match**: Write SQLitch code that produces the same behavior
+4. **Verify against Sqitch**: Test with UAT scripts or manual comparison to actual Sqitch
+5. **Document deviations**: If SQLitch intentionally differs, document why in code comments
+
+This is not optional—it's a constitutional requirement for all current and future work.
+
 **While working on a task:**
 ```bash
 # Run specific test for the task
@@ -108,7 +124,7 @@ pytest --cov=sqlitch --cov-report=term
 ## Phase 3.6 · Validation & Release Prep
 
 ### UAT Script Execution (T060 broken down into T060a-T060f)
-- [ ] **T060a [P1]** Verify `uat/side-by-side.py` is ready to run (check for sqitch binary, test step definitions, helper imports)
+- [X] **T060a [P1]** Verify `uat/side-by-side.py` is ready to run (check for sqitch binary, test step definitions, helper imports)
 - [ ] **T060b [P1]** Execute `uat/side-by-side.py --out specs/005-lockdown/artifacts/uat/side-by-side.log` and fix any failures incrementally
 - [ ] **T060c [P1]** Implement full forward compatibility logic in `uat/scripts/forward-compat.py` (sqlitch first, then sqitch continues)
 - [ ] **T060d [P1]** Execute `uat/scripts/forward-compat.py --out specs/005-lockdown/artifacts/uat/forward-compat.log` and fix any failures
@@ -165,6 +181,7 @@ pytest
 
 ## Notes
 - **CRITICAL**: Always run `source .venv/bin/activate` at the start of each session before any task
+- **CRITICAL**: Always verify behavior against Sqitch implementation in `sqitch/` directory before implementing features (e.g., syntax like `@HEAD^` must work if Sqitch supports it)
 - Always follow Test-First workflow: ensure new tests fail before fixing code
 - Run `pytest` (full suite) after completing each task to catch regressions
 - Only mark task `[X]` after full suite passes with coverage ≥90%

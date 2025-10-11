@@ -33,8 +33,20 @@ The lockdown feature prepares SQLitch for a stable 1.0 release by driving covera
 - **Behavioral Parity**: All compatibility flows strictly follow `sqitchtutorial-sqlite.pod`; deviations must be documented with rationale.
 - **Simplicity-First**: Reuse and extract helpers from `uat/side-by-side.py` rather than rewrite logic; defer multi-engine support.
 - **Documented Interfaces**: Plan mandates docstring coverage, README/CONTRIBUTING updates, and release checklist documentation.
+- **Sqitch Implementation as Source of Truth**: All behavior must be verified against Sqitch's implementation in the `sqitch/` directory. This includes syntax support (e.g., `@HEAD^`), error handling, and edge cases.
 
 Result: ✅ Initial constitution gate passes; no complexity exemptions required.
+
+### 🎯 Critical Principle: Sqitch Behavioral Parity
+**All SQLitch implementation work MUST verify behavior against the Perl Sqitch codebase in `sqitch/`.**
+
+This constitutional requirement means:
+- Before implementing features: Consult `sqitch/lib/App/Sqitch/` for canonical behavior
+- During implementation: Match Sqitch's handling of syntax, options, edge cases, and error paths
+- During testing: Verify against actual Sqitch behavior, not documentation alone
+- When behavioral differences are found: Update SQLitch to match (document any intentional deviations)
+
+This principle applies to lockdown work and all future development.
 
 ## Project Structure
 ```

@@ -39,6 +39,25 @@
 - Security audit MUST pass
 - Documentation MUST be complete and accurate
 
+### 🎯 Critical Principle: Sqitch Behavioral Parity
+**All SQLitch behavior MUST align with Sqitch behavior as implemented in the vendored `sqitch/` directory.**
+
+This means:
+- When implementing or fixing features, **consult the Perl Sqitch codebase in `sqitch/`** as the source of truth
+- Syntax and features that work in Sqitch (e.g., `@HEAD^`, `@ROOT`, symbolic references) MUST work identically in SQLitch
+- Edge cases, error messages, and command-line option handling should mirror Sqitch's behavior
+- When behavioral differences are discovered, SQLitch must be updated to match Sqitch (unless there's a documented security or correctness issue in Sqitch)
+- All test scenarios should verify behavior against Sqitch's implementation, not assumptions
+
+**Implementation Workflow**:
+1. Before implementing any command or feature: Review corresponding Sqitch code in `sqitch/lib/App/Sqitch/` 
+2. Document Sqitch's behavior (including edge cases, error paths, special syntax)
+3. Implement SQLitch to match that behavior
+4. Verify with UAT scripts and/or manual testing against actual Sqitch
+5. Document any intentional deviations with clear rationale
+
+This principle applies to ALL future work, not just lockdown tasks.
+
 ---
 
 ## Objectives
