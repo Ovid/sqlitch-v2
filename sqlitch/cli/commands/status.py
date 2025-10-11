@@ -94,9 +94,6 @@ def status_command(
     else:
         target_value = cli_context.target
 
-    if not target_value:
-        raise CommandError("A target must be provided via --target or configuration.")
-
     plan_path = _resolve_plan_path(project_root, cli_context.plan_file, environment)
     default_engine = resolve_default_engine(
         project_root=project_root,
@@ -105,6 +102,21 @@ def status_command(
         engine_override=cli_context.engine,
         plan_path=plan_path,
     )
+
+    # If no target from CLI/env, check if the default engine has a target configured
+    if not target_value and default_engine:
+        config_profile = config_resolver.resolve_config(
+            root_dir=project_root,
+            config_root=cli_context.config_root,
+            env=environment,
+        )
+        engine_section = f'engine "{default_engine}"'
+        engine_target = config_profile.settings.get(engine_section, {}).get("target")
+        if engine_target:
+            target_value = engine_target
+
+    if not target_value:
+        raise CommandError("A target must be provided via --target or configuration.")
     plan = _load_plan(plan_path, default_engine)
 
     resolved_project = plan.project_name
