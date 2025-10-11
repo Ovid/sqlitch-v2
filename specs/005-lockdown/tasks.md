@@ -148,18 +148,33 @@ pytest --cov=sqlitch --cov-report=term
     4. Fix UAT script to ensure sqitch behavior matches tutorial expectations FIRST
     5. Only after sqitch behavior is verified correct, test sqlitch parity
   - **ACCEPTANCE**: ✅ UAT script runs successfully with sqitch producing tutorial-expected output at every step
-- [ ] **T060c [P1]** Implement full forward compatibility logic in `uat/scripts/forward-compat.py` (sqlitch first, then sqitch continues)
-- [ ] **T060d [P1]** Execute `uat/scripts/forward-compat.py --out specs/005-lockdown/artifacts/uat/forward-compat.log` and fix any failures
-  - **STATUS**: ❌ FAILS at Step 20 (sqitch verify) - "unable to open database file"
-  - **ISSUE**: Sqitch cannot find the database when running `verify` without explicit target argument
-  - **ROOT CAUSE**: Registry configuration may have absolute path issues, or sqitch needs explicit database URI
-  - **NEXT**: Debug why sqitch verify fails when configuration appears correct
-- [ ] **T060e [P1]** Implement full backward compatibility logic in `uat/scripts/backward-compat.py` (sqitch first, then sqlitch continues)
-- [ ] **T060f [P1]** Execute `uat/scripts/backward-compat.py --out specs/005-lockdown/artifacts/uat/backward-compat.log` and fix any failures
-  - **STATUS**: ❌ NOT TESTED - blocked by T060d failure
-- [ ] **T060g [P1]** Review all three UAT logs for behavioral differences, document cosmetic diffs in `IMPLEMENTATION_REPORT_LOCKDOWN.md`
-  - **STATUS**: ❌ BLOCKED - cannot review logs until T060d and T060f complete successfully
-- [ ] **T060h [P1]** Prepare release PR comment with UAT evidence using quickstart template
+- [X] **T060c [P1]** Implement full forward compatibility logic in `uat/scripts/forward-compat.py` (sqlitch first, then sqitch continues)
+  - **STATUS**: ✅ COMPLETE - Script fully implemented and tested (2025-10-11)
+  - **IMPLEMENTATION**: Alternating execution pattern (sqlitch→sqitch→sqlitch...) through all 46 tutorial steps
+  - **VALIDATION**: All 46 steps pass, log saved to `specs/005-lockdown/artifacts/uat/forward-compat-final.log`
+- [X] **T060d [P1]** Execute `uat/scripts/forward-compat.py --out specs/005-lockdown/artifacts/uat/forward-compat.log` and fix any failures
+  - **STATUS**: ✅ COMPLETE - All 46 steps pass with exit code 0 (2025-10-11)
+  - **BLOCKER RESOLVED**: Fixed registry path issue - SQLitch now omits registry from target config to match Sqitch behavior
+  - **FIX DETAILS**: Modified `target_add` and `target_alter` to only write registry when explicitly provided via `--registry` option
+  - **ROOT CAUSE**: SQLitch was writing absolute registry paths, Sqitch couldn't resolve targets by name
+  - **VALIDATION**: Forward compatibility fully validated - Sqitch can seamlessly continue workflows started by SQLitch
+- [X] **T060e [P1]** Implement full backward compatibility logic in `uat/scripts/backward-compat.py` (sqitch first, then sqlitch continues)
+  - **STATUS**: ✅ COMPLETE - Script fully implemented and tested (2025-10-11)
+  - **IMPLEMENTATION**: Alternating execution pattern (sqitch→sqlitch→sqitch...) through all 46 tutorial steps
+  - **VALIDATION**: All 46 steps pass, log saved to `specs/005-lockdown/artifacts/uat/backward-compat-final.log`
+- [X] **T060f [P1]** Execute `uat/scripts/backward-compat.py --out specs/005-lockdown/artifacts/uat/backward-compat.log` and fix any failures
+  - **STATUS**: ✅ COMPLETE - All 46 steps pass with exit code 0 (2025-10-11)
+  - **VALIDATION**: Backward compatibility fully validated - SQLitch can seamlessly continue workflows started by Sqitch
+- [X] **T060g [P1]** Review all three UAT logs for behavioral differences, document cosmetic diffs in `IMPLEMENTATION_REPORT_LOCKDOWN.md`
+  - **STATUS**: ✅ COMPLETE - All logs reviewed and cosmetic differences documented (2025-10-11)
+  - **FINDINGS**: Only cosmetic differences found (date format, output verbosity, tag display)
+  - **DATA INTEGRITY**: All database contents byte-identical across tools
+  - **DOCUMENTATION**: Added detailed comparison section to IMPLEMENTATION_REPORT_LOCKDOWN.md
+- [X] **T060h [P1]** Prepare release PR comment with UAT evidence using quickstart template
+  - **STATUS**: ✅ COMPLETE - Release PR comment template finalized with all UAT evidence (2025-10-11)
+  - **LOCATION**: `specs/005-lockdown/IMPLEMENTATION_REPORT_LOCKDOWN.md` - Release PR Comment Template section
+  - **INCLUDES**: All three log file links, cosmetic differences summary, critical fix description
+  - **READY**: Template ready for copy-paste into release PR
   - **STATUS**: ❌ BLOCKED - cannot prepare evidence until T060g completes
 
 ### Quality Gates & Release Preparation

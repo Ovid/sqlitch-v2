@@ -8,16 +8,57 @@
 
 ## 🆕 Latest Session Progress (2025-10-11)
 
-### T060g: UAT Log Review ✅ COMPLETE
-- Reviewed sanitized outputs from `side-by-side.log`, `forward-compat.log`, and `backward-compat.log`.
-- Confirmed all three harnesses exit with status code 0 and report "ALL TESTS PASSED" or equivalent success banners.
-- Verified database snapshots within each step remained byte-identical between Sqitch and SQLitch (no divergence markers were recorded in the logs).
+### T060g: UAT Log Review ✅ COMPLETE (2025-10-11 Updated)
+- Reviewed sanitized outputs from `side-by-side.log`, `forward-compat-final.log`, and `backward-compat-final.log`.
+- Confirmed all three harnesses exit with status code 0 and report "ALL TESTS PASSED" success banners.
+- **CRITICAL RESOLUTION**: Fixed T060d blocker - SQLitch was writing absolute registry paths to target configurations, preventing Sqitch from resolving targets by name.
+  - **Fix**: Modified `target_add` and `target_alter` to only write registry when explicitly provided via `--registry` option
+  - **Result**: Both forward and backward compatibility tests now pass all 46 steps
+  - **Validation**: Full Sqitch/SQLitch database interoperability achieved
+- Verified database snapshots within each step remained byte-identical between Sqitch and SQLitch (no divergence markers).
 - Catalogued cosmetic-only output differences:
-  - SQLitch prints explicit confirmations for `config`, `target add`, and `deploy` operations where Sqitch is silent.
-  - SQLitch deploy/status messaging includes absolute registry paths and ISO 8601 timestamps with fractional seconds instead of Sqitch's timezone-offset formatting.
-  - Verify/status summaries omit Sqitch's dot-padding but enumerate the same change order, including tag-qualified rework entries.
-  - Revert messaging elides explicit tag suffixes (e.g., "hashtags from flipr_test" vs. "hashtags @v1.0.0-dev2 from flipr_test"), while plan state and database contents remain in parity.
-- Sanitization masked change IDs as `[REDACTED_CHANGE_ID]`, but SHA-1 computation parity was reconfirmed through internal diff markers — no mismatches detected.
+  - **Date Format**: Sqitch uses `+0200` timezone, SQLitch uses fractional seconds `20:09:33.730`
+  - **Output Verbosity**: SQLitch provides explicit confirmations (e.g., "Added target flipr_test"), Sqitch is silent on success
+  - **Tag Display**: Sqitch shows `@v1.0.0-dev1 @v1.0.0-dev1` (duplicate), SQLitch shows `@v1.0.0-dev1` (once)
+- **All cosmetic differences are acceptable** - they don't affect functionality or data integrity.
+- Sanitization masked change IDs as `[REDACTED_CHANGE_ID]` and timestamps as `22:04:SS`, but SHA-1 computation parity confirmed through manual verification.
+
+### T060d/T060f: Compatibility Test Execution ✅ COMPLETE
+**Forward Compatibility** (`uat/scripts/forward-compat.py`):
+- **Status**: ✅ PASS - All 46 steps
+- **Log**: `specs/005-lockdown/artifacts/uat/forward-compat-final.log`
+- **Pattern**: SQLitch→Sqitch alternating execution
+- **Validation**: Sqitch can seamlessly continue workflows started by SQLitch
+
+**Backward Compatibility** (`uat/scripts/backward-compat.py`):
+- **Status**: ✅ PASS - All 46 steps
+- **Log**: `specs/005-lockdown/artifacts/uat/backward-compat-final.log`
+- **Pattern**: Sqitch→SQLitch alternating execution
+- **Validation**: SQLitch can seamlessly continue workflows started by Sqitch
+
+### Critical Fix: Registry Path Issue (T060d Blocker)
+**Problem**: SQLitch wrote absolute registry paths causing Sqitch to fail when reading targets.
+
+**Root Cause Analysis**:
+```ini
+# SQLitch was creating:
+[target "flipr_test"]
+uri = db:sqlite:flipr_test.db
+registry = db:sqlite:/absolute/path/to/sqitch.db  # ← PROBLEM
+
+# Sqitch expects:
+[target "flipr_test"]
+uri = db:sqlite:flipr_test.db
+# No registry line - inferred automatically
+```
+
+**Solution**: Only write registry when explicitly provided via `--registry` option.
+
+**Files Modified**:
+- `sqlitch/cli/commands/target.py` - Removed automatic registry writing in `target_add` and `target_alter`
+- `tests/cli/commands/test_target_functional.py` - Updated tests to verify registry NOT written by default
+
+**Impact**: Unblocked T060d, T060e, T060f, enabling full forward/backward compatibility validation.
 
 ### T060h: Release PR Comment Preparation ✅ COMPLETE
 - Produced a ready-to-post comment template summarizing the three UAT runs with direct links to sanitized logs (see [Release Comment Template](#release-pr-comment-template)).
@@ -225,13 +266,49 @@ See `UAT_EXECUTION_PLAN.md` for detailed execution protocols and halt-state proc
 
 ## Release PR Comment Template
 
-```
-UAT Compatibility Run (SQLite tutorial)
-- Side-by-side: ✅ (log: specs/005-lockdown/artifacts/uat/side-by-side.log)
-- Forward compat: ✅ (log: specs/005-lockdown/artifacts/uat/forward-compat.log)
-- Backward compat: ✅ (log: specs/005-lockdown/artifacts/uat/backward-compat.log)
-Cosmetic diffs: SQLitch prints explicit config/deploy confirmations, absolute registry paths, and ISO 8601 timestamps without timezone offsets. No functional differences detected.
-Notes: <add any reviewer-facing observations>
+```markdown
+## UAT Compatibility Results (SQLite Tutorial - All 46 Steps)
+
+**Test Environment**: SQLite v3.x, Sqitch v1.5.3, SQLitch v1.0.0  
+**Execution Date**: 2025-10-11
+
+### ✅ Side-by-Side Test
+- **Status**: PASS - All 46 steps completed
+- **Log**: `specs/005-lockdown/artifacts/uat/side-by-side.log`
+- **Validation**: Sqitch and SQLitch produce identical database state for parallel execution
+
+### ✅ Forward Compatibility Test  
+- **Status**: PASS - All 46 steps completed
+- **Log**: `specs/005-lockdown/artifacts/uat/forward-compat-final.log`
+- **Pattern**: SQLitch→Sqitch alternating execution
+- **Validation**: Sqitch can seamlessly continue workflows started by SQLitch
+
+### ✅ Backward Compatibility Test
+- **Status**: PASS - All 46 steps completed
+- **Log**: `specs/005-lockdown/artifacts/uat/backward-compat-final.log`
+- **Pattern**: Sqitch→SQLitch alternating execution
+- **Validation**: SQLitch can seamlessly continue workflows started by Sqitch
+
+### Cosmetic Differences (Non-Functional)
+
+The following output differences are cosmetic only and do not affect functionality:
+
+1. **Date Format**: Sqitch uses `+0200` timezone format, SQLitch uses fractional seconds
+2. **Output Verbosity**: SQLitch provides explicit confirmations (e.g., "Added target flipr_test"), Sqitch is silent
+3. **Tag Display**: Minor formatting differences in tag annotations
+
+**Database Integrity**: All user tables (`users`, `flips`, `userflips`, `hashtags`) are byte-identical across tools.
+
+### Critical Fix Applied
+
+This release resolves a critical blocker that prevented Sqitch/SQLitch interoperability:
+- **Issue**: SQLitch wrote absolute registry paths to target configurations
+- **Impact**: Sqitch could not resolve targets by name (`sqitch verify` failed with "unable to open database file")
+- **Fix**: Modified `target_add`/`target_alter` to omit registry unless explicitly provided via `--registry`
+- **Result**: Full forward/backward compatibility achieved
+
+### Reviewer Notes
+_Add any additional observations or concerns here_
 ```
 
 ---
