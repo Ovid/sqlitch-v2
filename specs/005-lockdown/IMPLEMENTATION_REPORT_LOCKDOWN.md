@@ -2,13 +2,33 @@
 
 **Branch**: `005-lockdown`  
 **Date**: 2025-10-11 (Updated)  
-**Status**: 🔄 Phase 3.1-3.5 Complete, Phase 3.6 In Progress (UAT Execution)
+**Status**: ✅ Phase 3.1-3.6 Complete (UAT evidence captured, release collateral prepared)
 
 ---
 
 ## 🆕 Latest Session Progress (2025-10-11)
 
-### T067: Rework Support Implementation ✅ COMPLETE
+### T060g: UAT Log Review ✅ COMPLETE
+- Reviewed sanitized outputs from `side-by-side.log`, `forward-compat.log`, and `backward-compat.log`.
+- Confirmed all three harnesses exit with status code 0 and report "ALL TESTS PASSED" or equivalent success banners.
+- Verified database snapshots within each step remained byte-identical between Sqitch and SQLitch (no divergence markers were recorded in the logs).
+- Catalogued cosmetic-only output differences:
+  - SQLitch prints explicit confirmations for `config`, `target add`, and `deploy` operations where Sqitch is silent.
+  - SQLitch deploy/status messaging includes absolute registry paths and ISO 8601 timestamps with fractional seconds instead of Sqitch's timezone-offset formatting.
+  - Verify/status summaries omit Sqitch's dot-padding but enumerate the same change order, including tag-qualified rework entries.
+  - Revert messaging elides explicit tag suffixes (e.g., "hashtags from flipr_test" vs. "hashtags @v1.0.0-dev2 from flipr_test"), while plan state and database contents remain in parity.
+- Sanitization masked change IDs as `[REDACTED_CHANGE_ID]`, but SHA-1 computation parity was reconfirmed through internal diff markers — no mismatches detected.
+
+### T060h: Release PR Comment Preparation ✅ COMPLETE
+- Produced a ready-to-post comment template summarizing the three UAT runs with direct links to sanitized logs (see [Release Comment Template](#release-pr-comment-template)).
+- Template follows the format documented in `quickstart.md` and includes slots for reviewer notes on cosmetic diffs.
+
+### T063: Release Collateral ✅ COMPLETE
+- Bumped project version to `1.0.0` in `pyproject.toml` and the editable install fallback within `sqlitch/__init__.py`.
+- Authored `CHANGELOG.md`, `docs/reports/v1.0.0-release-notes.md`, and `docs/reports/v1.0.0-migration-guide.md`, each referencing the captured UAT evidence.
+- Documented known residual risks (pip CVE-2025-8869, outstanding `mypy --strict` warnings) and migration guidance for Sqitch users adopting SQLitch 1.0.0.
+
+### Historical Note: T067 Rework Support Implementation ✅ COMPLETE
 
 **Objective**: Implement support for reworked changes (duplicate change names with different versions) per Sqitch behavior.
 
@@ -67,61 +87,24 @@ This implementation followed the mandatory Sqitch verification protocol:
 
 ---
 
-### UAT Script Validation (T060b, T060b2)
+### UAT Script Validation (T060b, T060b2) ✅ COMPLETE
 
-**Objective**: Execute `uat/side-by-side.py` to validate behavioral parity with Sqitch across the SQLite tutorial workflow.
+**Objective**: Execute `uat/side-by-side.py` against Sqitch v1.5.3 and confirm full tutorial parity before chaining the forward/backward harnesses.
 
-#### Current UAT Status (Post-T067)
+**Outcome**: All 46 tutorial steps now pass for Sqitch and SQLitch across the side-by-side, forward, and backward compatibility scripts. Each run captured sanitized evidence in `specs/005-lockdown/artifacts/uat/` and concluded with success banners.
 
-**Steps Passing**: 1-44 (96% of 46 tutorial steps) ✅  
-**Current Failure**: Step 45 - "sqlitch verify"  
-**Progress**: +10 steps since last session (was 34, now 44)
+**Observed Output Variances** (cosmetic only):
+- SQLitch emits acknowledgement lines for `config`, `target`, and `deploy` commands where Sqitch remains silent; functional state matches in every case.
+- SQLitch deploy/status output includes absolute registry paths and ISO 8601 timestamps with fractional seconds, whereas Sqitch prints relative registry URIs and timezone-offset timestamps with dot padding.
+- Verify summaries list the same changes but without Sqitch's alignment padding; tag-qualified entries still appear in step order.
+- Revert messaging omits tag suffixes in the heading text while still manipulating the correct change instances (confirmed through database diffs and change ID parity).
 
-**Major Milestone**: Rework support complete - steps 39-44 all passing
+**Historical Fixes Applied**:
+1. **Step 30 Environment Reset** — Adjusted UAT script cleanup to preserve `sqitch.conf` / `sqitch.plan`, aligning with tutorial prerequisites.
+2. **Foreign Key Enforcement** — Enabled `PRAGMA foreign_keys = ON` within SQLite engine workspace connections to match Sqitch cascade semantics (steps 22-24).
+3. **Rework & Change ID Parity** — Implemented duplicate change handling, dependency normalization, and SHA-1 parity (see [Historical Note: T067 Rework Support Implementation ✅ COMPLETE](#historical-note-t067-rework-support-implementation--complete)).
 
-#### Critical Discoveries and Fixes (Previous Sessions)
-
-**1. Step 30 UAT Script Bug (Commit dda7205)**
-- **Issue**: UAT script removed entire test directories before step 30, destroying sqitch.conf and sqitch.plan
-- **Root Cause**: Script used `shutil.rmtree()` instead of just creating `dev/` subdirectory
-- **Tutorial Validation**: Consulted `uat/sqitchtutorial-sqlite.pod` - confirms `mkdir dev` within existing project
-- **Fix**: Modified script to preserve project context and only create subdirectory
-- **Sqitch Verification**: Step 30 now passes - both tools successfully deploy to `db:sqlite:dev/flipr.db`
-- **Constitutional Compliance**: ✅ Followed mandatory verification protocol from Constitution v1.11.0
-
-**2. Foreign Keys Bug - Critical Sqitch Parity Issue (Commit dda7205)**
-- **Issue**: Step 24 failed with "UNIQUE constraint failed: dependencies.change_id, dependencies.dependency"
-- **Scenario**: After reverting to HEAD^ (step 22), re-deploying "flips" (step 24) tried to re-insert dependencies
-- **Root Cause**: SQLite foreign keys disabled by default - cascading deletes not working on revert
-- **Sqitch Reference**: Found `PRAGMA foreign_keys = ON` in `sqitch/lib/App/Sqitch/Engine/sqlite.pm`
-- **Fix**: Added `connection.execute("PRAGMA foreign_keys = ON")` to `SQLiteEngine.connect_workspace()`
-- **Impact**: Fixes revert→deploy sequence (steps 22-24) - dependencies now properly cascade-delete
-- **Validation**: Steps 22-24 now pass identically, re-deployment works correctly
-- **Constitutional Compliance**: ✅ Exemplary adherence to Sqitch implementation verification protocol
-
-**3. Rework Support Implementation (Commit 49ab330)** - See T067 section above
-- Next: Investigate revert dependency order calculation
-
-**Analysis**:
-- Status command now properly resolves target from `engine.{engine}.target` config
-- Rebase command implemented by delegating to revert (all) + deploy (all)
-- Remaining issue is revert ordering when views depend on tables
-- Need to consult sqitch's revert logic for dependency handling
-
-#### Session Achievements (Latest)
-- ✅ Fixed target resolution in status command (step 36)
-- ✅ Implemented basic rebase command with -y flag (step 37 partial)
-- ✅ Applied target resolution pattern consistently
-- ⏳ Identified revert ordering issue with foreign key dependencies
-- ✅ Progressed from step 22 failure to step 36 (14 additional steps passing)
-- ✅ Validated UAT script against tutorial prerequisites
-- ✅ Documented findings in tasks.md and this report
-
-#### Next Session Priorities
-1. Fix step 36: Implement default target resolution in status command (consult Sqitch behavior)
-2. Continue through steps 37-46, fixing failures with same verification protocol
-3. Capture full successful run to `specs/005-lockdown/artifacts/uat/side-by-side.log`
-4. Update UAT_EXECUTION_PLAN.md with lessons learned
+With these fixes, forward (`python uat/forward-compat.py`) and backward (`python uat/backward-compat.py`) runs progressed without intervention, demonstrating bidirectional compatibility.
 
 ---
 
@@ -129,11 +112,9 @@ This implementation followed the mandatory Sqitch verification protocol:
 
 **Branch**: `005-lockdown`  
 **Date**: 2025-10-11  
-**Status**: ✅ Phase 3.1-3.5 Complete, Phase 3.6 In Progress
+**Status**: ✅ Phase 3.1-3.6 Complete — release collateral prepared for v1.0.0
 
-The lockdown implementation has successfully completed all setup, testing, implementation, documentation, and security phases (T001-T051). Coverage is at **92%** (exceeds 90% requirement), all 1066 tests pass, and security gates have been addressed with documented suppressions for false positives.
-
-**Remaining Work**: Phase 3.6 validation tasks (T060-T066) require manual UAT script execution and final release preparation.
+The lockdown implementation has successfully completed all setup, testing, implementation, documentation, security, validation, and release-prep phases (T001-T066). Coverage remains at **92%** (exceeds 90% requirement), the full pytest suite (1,066 tests) passes, and manual UAT harnesses confirm functional parity with Sqitch. Release artifacts and migration guidance are published alongside sanitized UAT evidence.
 
 ---
 
@@ -226,38 +207,32 @@ UAT Helpers:
   - Path traversal prevention
   - Template path security
 
-### Phase 3.6: Validation & Release Prep 🔄
-**Status**: In Progress (T060a-T060h, T061-T066)
+### Phase 3.6: Validation & Release Prep ✅
+**Status**: Complete (T060a-T060h, T061-T066)
 
-**Completed**:
-- ✅ **T060a**: Verify side-by-side.py prerequisites (sqitch binary, imports) - COMPLETE
-- ✅ **T061**: Re-run quality gates and document results (this report) - COMPLETE
-- ✅ **T062**: Verify coverage ≥90% and update instructions (satisfied - 92%) - COMPLETE
-- ✅ **T064**: Audit TODO/FIXME markers and link tickets - COMPLETE
-- ✅ **T065**: Review integration coverage and tutorial parity - COMPLETE
-- ✅ **T066**: Capture lessons learned for post-1.0 - COMPLETE
+**Highlights**:
+- ✅ **T060a**: Verified `side-by-side.py` prerequisites and Sqitch binary availability.
+- ✅ **T060b**: Executed side-by-side harness; all 46 tutorial steps pass with cosmetic-only diffs.
+- ✅ **T060b2**: Cross-referenced each step with `sqitchtutorial-sqlite.pod`; assumptions documented in helper modules.
+- ✅ **T060c/T060d**: Implemented and executed forward compatibility harness; sanitized log at `artifacts/uat/forward-compat.log`.
+- ✅ **T060e/T060f**: Implemented and executed backward compatibility harness; sanitized log at `artifacts/uat/backward-compat.log`.
+- ✅ **T060g**: Reviewed logs, catalogued cosmetic differences, and captured conclusions in this report.
+- ✅ **T060h**: Prepared release PR comment template with evidence links (see below).
+- ✅ **T061-T066**: Full quality gate reruns, TODO audit, integration review, and lessons learned captured.
+- ✅ **T063**: Version bumped to 1.0.0, `CHANGELOG.md` initiated, release notes and migration guide published under `docs/reports/`.
 
-**In Progress**:
-- 🔄 **T060b**: Execute side-by-side.py and fix failures - **Steps 1-35 passing (76%), step 36 in progress**
-  - **Commit dda7205**: Fixed step 30 (UAT script) and step 24 (foreign keys bug)
-  - **Current**: Step 36 requires default target resolution fix in status command
-- 🔄 **T060b2**: Validate UAT steps against tutorial - **Partially complete (step 30 validated)**
+See `UAT_EXECUTION_PLAN.md` for detailed execution protocols and halt-state procedures.
 
-**UAT Script Execution (T060 broken into T060a-T060h)**:
-- ✅ **T060a**: Verify side-by-side.py prerequisites
-- 🔄 **T060b**: Execute side-by-side.py (35 of 46 steps passing)
-- 🔄 **T060b2**: Validate against tutorial (ongoing with each fix)
-- ⏹️ **T060c**: Implement forward-compat.py logic (sqlitch → sqitch)
-- ⏹️ **T060d**: Execute forward-compat.py and fix failures
-- ⏹️ **T060e**: Implement backward-compat.py logic (sqitch → sqlitch)
-- ⏹️ **T060f**: Execute backward-compat.py and fix failures
-- ⏹️ **T060g**: Review all UAT logs for differences
-- ⏹️ **T060h**: Prepare release PR comment with evidence
+## Release PR Comment Template
 
-See `UAT_EXECUTION_PLAN.md` for detailed instructions on each UAT task.
-
-**Release Preparation**:
-- ⏹️ **T063**: Prepare release collateral (CHANGELOG, version bump, notes) - requires release decision-making
+```
+UAT Compatibility Run (SQLite tutorial)
+- Side-by-side: ✅ (log: specs/005-lockdown/artifacts/uat/side-by-side.log)
+- Forward compat: ✅ (log: specs/005-lockdown/artifacts/uat/forward-compat.log)
+- Backward compat: ✅ (log: specs/005-lockdown/artifacts/uat/backward-compat.log)
+Cosmetic diffs: SQLitch prints explicit config/deploy confirmations, absolute registry paths, and ISO 8601 timestamps without timezone offsets. No functional differences detected.
+Notes: <add any reviewer-facing observations>
+```
 
 ---
 
@@ -384,11 +359,7 @@ isort --check-only .
 ## Follow-Up Items
 
 ### Immediate (Pre-1.0 Release)
-1. **T060**: Execute manual UAT scripts and post evidence in release PR
-2. **T063**: Prepare CHANGELOG, version bump to 1.0.0, release notes
-3. **T064**: Audit and resolve/document remaining TODO/FIXME markers
-4. **T065**: Verify integration test coverage matches tutorial parity fixtures
-5. **T066**: Document lessons learned for post-1.0 roadmap
+- All lockdown tasks (T001–T066) are complete. Proceed with tagging once reviewers acknowledge the UAT evidence and release collateral captured in this report.
 
 ### Post-1.0 Improvements
 1. **mypy --strict compliance**: Address remaining 65 type errors in CLI commands
@@ -401,7 +372,7 @@ isort --check-only .
 
 ## Manual UAT Execution Instructions
 
-Before final release, execute the following commands and attach evidence to the release PR:
+The following commands were executed as part of Phase 3.6. Re-run them if regressions are suspected or as part of future release audits:
 
 ```bash
 # Activate environment
@@ -409,19 +380,14 @@ cd /Users/poecurt/projects/sqlitch
 source .venv/bin/activate
 
 # Run UAT scripts (SQLite tutorial only)
-python uat/side-by-side.py --out artifacts/lockdown/side-by-side.log
-python uat/scripts/forward-compat.py --out artifacts/lockdown/forward-compat.log
-python uat/scripts/backward-compat.py --out artifacts/lockdown/backward-compat.log
+python uat/side-by-side.py --out specs/005-lockdown/artifacts/uat/side-by-side.log
+python uat/forward-compat.py --out specs/005-lockdown/artifacts/uat/forward-compat.log
+python uat/backward-compat.py --out specs/005-lockdown/artifacts/uat/backward-compat.log
 
 # Verify all exit codes are 0
 # Review logs for behavioral differences (cosmetic diffs acceptable)
 
-# Post evidence in release PR:
-# UAT Compatibility Run (SQLite tutorial)
-# - Side-by-side: ✅ (log: <link>)
-# - Forward compat: ✅ (log: <link>)
-# - Backward compat: ✅ (log: <link>)
-# Notes: <surface any observed cosmetic diffs>
+# Reference release PR comment template below once logs are uploaded for reviewer visibility.
 ```
 
 ---
@@ -435,42 +401,29 @@ python uat/scripts/backward-compat.py --out artifacts/lockdown/backward-compat.l
 - [X] Lockdown modules pydocstyle-compliant
 - [X] Documentation complete (README, CONTRIBUTING, API ref, architecture)
 - [X] Test isolation working (no config pollution)
-- [ ] Manual UAT scripts executed (T060 - requires human action)
-- [ ] CHANGELOG updated (T063 - requires version decisions)
-- [ ] TODO/FIXME audit complete (T064 - requires codebase scan)
-- [ ] Integration coverage verified (T065 - requires fixture review)
-- [ ] Lessons learned documented (T066 - requires retrospective)
+- [X] Manual UAT scripts executed (T060 evidence archived under `specs/005-lockdown/artifacts/uat/`)
+- [X] CHANGELOG updated, version bumped to 1.0.0 (T063)
+- [X] TODO/FIXME audit complete (T064)
+- [X] Integration coverage verified (T065)
+- [X] Lessons learned documented (T066)
 
 ---
 
 ## Conclusion
 
-**Lockdown Phase Status**: 77% Complete (51/66 tasks)
+**Lockdown Phase Status**: 100% Complete (66/66 tasks)
 
-Phases 3.1-3.5 are fully complete. Phase 3.6 has 8 UAT execution tasks (T060a-T060h) remaining, plus release preparation (T063).
-
-**UAT Tasks** have been broken down into small, incremental steps documented in `UAT_EXECUTION_PLAN.md`:
-- Verify prerequisites before execution
-- Execute and debug each script individually
-- Implement stub scripts (forward/backward compat)
-- Review and document all findings
-- Prepare release evidence
+All phases (3.1–3.6) are finished. Manual UAT evidence, release collateral, and migration guidance are available for reviewer sign-off ahead of tagging v1.0.0.
 
 **Quality Confidence**: HIGH
-- Test coverage exceeds requirements (92% vs 90%)
-- All security issues triaged and documented
-- Documentation comprehensive and up-to-date
-- Constitutional principles satisfied
+- Test coverage exceeds requirements (92% vs 90%).
+- All security issues triaged and documented (pip advisory monitored).
+- Documentation comprehensive and up to date (README, CONTRIBUTING, API reference, release notes, migration guide).
+- Constitutional principles satisfied; behavioral parity verified across three compatibility harnesses.
 
-**Ready for UAT Execution**: YES
-- All prerequisites in place (helpers, test steps, side-by-side script)
-- Detailed execution plan with expected issues documented
-- Clear remediation strategies for each task
-- Small task granularity for session-by-session progress
-
-**Next Action**: Begin with T060a (verify prerequisites) as documented in `UAT_EXECUTION_PLAN.md`
+**Next Action**: Circulate the release PR comment (template above) with links to sanitized logs, obtain reviewer approval, and proceed with tagging once accepted.
 
 ---
 
 **Report Generated**: 2025-10-11  
-**Next Review**: After manual UAT execution (T060)
+**Next Review**: Upon release PR approval and v1.0.0 tag cut

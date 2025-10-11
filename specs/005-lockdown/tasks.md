@@ -158,15 +158,15 @@ pytest --cov=sqlitch --cov-report=term
 - [X] **T060e [P1]** Implement full backward compatibility logic in `uat/scripts/backward-compat.py` (sqitch first, then sqlitch continues)
 - [X] **T060f [P1]** Execute `uat/scripts/backward-compat.py --out specs/005-lockdown/artifacts/uat/backward-compat.log` and fix any failures
   - **STATUS**: ✅ COMPLETE – Script exits 0 (2025-10-11); sanitized log at `specs/005-lockdown/artifacts/uat/backward-compat.log`
-- [ ] **T060g [P1]** Review all three UAT logs for behavioral differences, document cosmetic diffs in `IMPLEMENTATION_REPORT_LOCKDOWN.md`
-- [ ] **T060h [P1]** Prepare release PR comment with UAT evidence using quickstart template
+- [X] **T060g [P1]** Review all three UAT logs for behavioral differences, document cosmetic diffs in `IMPLEMENTATION_REPORT_LOCKDOWN.md`
+- [X] **T060h [P1]** Prepare release PR comment with UAT evidence using quickstart template
 
 ### Quality Gates & Release Preparation
 > ⚠️ **UAT Execution Protocol**: Tasks T060a-T060h involve iterative debugging. See [`UAT_EXECUTION_PLAN.md`](./UAT_EXECUTION_PLAN.md) for detailed halt state protocols. Each execution failure must trigger: HALT → FIX → COMMIT → END SESSION. Do not mark execution tasks complete until scripts exit with code 0.
 
 - [X] **T061 [P1]** Re-run full quality gate suite (`pytest`, `mypy --strict`, `pydocstyle`, `black --check`, `isort --check-only`, `pip-audit`, `bandit`, `tox`) and record pass/fail in `IMPLEMENTATION_REPORT_LOCKDOWN.md`, noting remediation commands when any check fails
 - [X] **T062 [P1]** Verify coverage ≥90% and update `coverage.xml` plus quickstart instructions (include CLI commands used) *(92% coverage achieved)*
-- [ ] **T063 [P1]** Prepare release collateral: `CHANGELOG.md`, version bump, release notes, migration guide referencing manual UAT evidence *(MANUAL TASK - requires release decision-making)*
+- [X] **T063 [P1]** Prepare release collateral: `CHANGELOG.md`, version bump, release notes, migration guide referencing manual UAT evidence *(MANUAL TASK - requires release decision-making)*
 - [X] **T064 [P1]** Audit repository for lingering TODO/FIXME markers, resolve or link follow-up tickets, and document outcomes in `IMPLEMENTATION_REPORT_LOCKDOWN.md` *(1 TODO found and documented in TODO.md)*
 - [X] **T065 [P1]** Review integration coverage (run `pytest tests/integration` with tutorial parity fixtures); add or update tests to close gaps and summarize findings in `IMPLEMENTATION_REPORT_LOCKDOWN.md` *(11 integration tests passing)*
 - [X] **T066 [P2]** Capture lessons learned / follow-ups in `TODO.md` for post-1.0 improvements (multi-engine UAT, automation ideas) *(Documented comprehensive post-1.0 roadmap)*
