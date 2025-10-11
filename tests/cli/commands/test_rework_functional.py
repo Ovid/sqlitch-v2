@@ -92,7 +92,7 @@ class TestReworkCommand:
             )
             monkeypatch.setattr(
                 "sqlitch.cli.commands.rework.resolve_planner_identity",
-                lambda env, config: "Marge N. O’Vera <marge@example.com>",
+                lambda env, config: "Marge N. O'Vera <marge@example.com>",
             )
 
             result = runner.invoke(
