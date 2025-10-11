@@ -106,6 +106,8 @@ Post-design constitution check: ✅ unchanged (still compliant).
 - Tasks remain grouped by phase (Assessment, Coverage, Documentation, Stability, Security, UAT Validation) with P1 priority for constitutional gates and manual UAT deliverables.
 
 ## Critical Discovery (2025-10-11)
+
+### UAT Script Validation Issue (Resolved)
 **UAT Script Validation Issue Identified**: During execution of T060b, discovered that `uat/side-by-side.py` step 30 fails because the script removes test directories without preserving essential project files (`sqitch.conf`, `sqitch.plan`). This revealed a fundamental flaw in the UAT validation approach:
 
 **Problem**: The UAT script was testing "sqlitch vs sqitch" without first verifying that sqitch behavior itself matches the tutorial expectations from `sqitchtutorial-sqlite.pod`.
@@ -127,6 +129,42 @@ Deploying changes to db:sqlite:dev/flipr.db
 4. Only after sqitch behavior is verified correct, proceed to test sqlitch parity
 
 This discovery reinforces the constitutional principle: **Sqitch implementation is the source of truth**, and the tutorial documents expected behavior. UAT scripts must validate against both.
+
+### Missing Rework Support (BLOCKING - 2025-10-11)
+
+**Critical Missing Feature Identified**: During UAT execution at step 39 (`sqitch rework userflips`), discovered that SQLitch's plan parser does not support **reworked changes** - a core Sqitch feature that allows the same change name to appear multiple times in the plan with different versions.
+
+**CONSTITUTIONAL VIOLATION**: This is a fundamental behavioral parity gap. Sqitch explicitly allows and expects reworked changes via the `sqitch rework` command.
+
+**Sqitch's Rework Behavior** (verified in `sqitch/lib/App/Sqitch/Plan.pm`):
+- Allows duplicate change names in plan files
+- Uses tag dependency syntax to mark rework versions: `change_name [change_name@tag_name]`
+- Example from tutorial step 39: `userflips [userflips@v1.0.0-dev2]` creates a new version of userflips
+- Maintains rework chains via `add_rework_tags` method
+- Uses `@HEAD` suffix internally to track latest version
+
+**SQLitch's Current Behavior**:
+- Plan parser explicitly rejects duplicate change names in `Plan.__post_init__`
+- Raises `ValueError: Plan contains duplicate change name: userflips`
+- Cannot parse plans created by `sqitch rework` command
+
+**Impact**:
+- UAT execution blocked at step 39 (cannot parse plan after `sqitch rework userflips`)
+- Steps 39-46 cannot be tested without this feature
+- Forward/backward compatibility testing blocked
+- Cannot claim Sqitch parity without rework support
+
+**Required Implementation** (Task T067):
+1. Remove duplicate name validation from `Plan.__post_init__`
+2. Add rework relationship tracking to `Change` model
+3. Update plan parser to handle rework syntax
+4. Implement `@HEAD` version tracking for changes
+5. Update symbolic resolution to use latest version by default
+6. Add comprehensive rework tests
+
+**Blocking Tasks**: T060b (side-by-side UAT), T060c-T060f (forward/backward compat)
+
+**Priority**: P1 - CRITICAL - Must be implemented before lockdown can proceed
 
 ## Complexity Tracking
 _None required; plan remains within constitutional constraints._

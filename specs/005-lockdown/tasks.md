@@ -126,7 +126,7 @@ pytest --cov=sqlitch --cov-report=term
 ### UAT Script Execution (T060 broken down into T060a-T060i)
 - [X] **T060a [P1]** Verify `uat/side-by-side.py` is ready to run (check for sqitch binary, test step definitions, helper imports)
 - [ ] **T060b [P1]** Execute `uat/side-by-side.py --out specs/005-lockdown/artifacts/uat/side-by-side.log` and fix any failures incrementally
-  - **STATUS**: IN PROGRESS - Steps 1-37 passing, Step 42 failing
+  - **STATUS**: BLOCKED - Critical missing feature: Reworked changes support
   - **FIXES APPLIED**:
     - Step 30: Fixed UAT script to preserve project files when creating dev/ subdirectory  
     - Step 24: Enabled PRAGMA foreign_keys = ON in SQLiteEngine to fix cascading deletes
@@ -134,8 +134,9 @@ pytest --cov=sqlitch --cov-report=term
     - Step 37: Implemented basic rebase command (revert+deploy), added -y flag, fixed target resolution
     - Step 22: Implemented @HEAD^, @ROOT, and relative symbolic reference support in plan resolution
     - Step 37: Fixed FK constraint error by deleting tags+dependencies before changes during revert (commit 9a07eaf)
-  - **CURRENT FAILURE**: Step 42 - Revert to @HEAD^ reverting wrong change (userflips vs hashtags)
-  - **NEXT**: Investigate HEAD resolution for revert target - Sqitch reverts userflips, sqlitch reverts hashtags
+  - **CURRENT FAILURE**: Step 39-42 - Plan parser rejects reworked changes (duplicate change names)
+  - **ROOT CAUSE**: Plan parser's `__post_init__` explicitly raises ValueError for duplicate change names. Sqitch allows reworked changes via syntax like `userflips [userflips@v1.0.0-dev2]` which creates a second entry with the same name but different content/dependencies. This is a CONSTITUTIONAL VIOLATION - SQLitch doesn't match Sqitch's rework behavior.
+  - **NEXT**: New task T067 added to implement rework support before continuing T060b
 - [ ] **T060b2 [P1]** **NEW TASK**: Validate that `uat/side-by-side.py` test steps faithfully reproduce the tutorial workflow from `uat/sqitchtutorial-sqlite.pod`
   - **RATIONALE**: Step 30 failure revealed UAT script doesn't match tutorial expectations
   - **STATUS**: PARTIALLY COMPLETE - Step 30 fix validated against tutorial
@@ -163,6 +164,22 @@ pytest --cov=sqlitch --cov-report=term
 - [X] **T064 [P1]** Audit repository for lingering TODO/FIXME markers, resolve or link follow-up tickets, and document outcomes in `IMPLEMENTATION_REPORT_LOCKDOWN.md` *(1 TODO found and documented in TODO.md)*
 - [X] **T065 [P1]** Review integration coverage (run `pytest tests/integration` with tutorial parity fixtures); add or update tests to close gaps and summarize findings in `IMPLEMENTATION_REPORT_LOCKDOWN.md` *(11 integration tests passing)*
 - [X] **T066 [P2]** Capture lessons learned / follow-ups in `TODO.md` for post-1.0 improvements (multi-engine UAT, automation ideas) *(Documented comprehensive post-1.0 roadmap)*
+- [ ] **T067 [P1]** **CRITICAL**: Implement rework support in plan parser and model to allow duplicate change names per Sqitch behavior
+  - **RATIONALE**: UAT step 39-42 blocked - Plan parser rejects `userflips [userflips@v1.0.0-dev2]` rework syntax
+  - **CONSTITUTIONAL REQUIREMENT**: Sqitch allows reworked changes (same name, different version) via dependency syntax. Example from tutorial: After tagging @v1.0.0-dev2, `sqitch rework userflips` creates a new entry `userflips [userflips@v1.0.0-dev2]` in the plan. The plan can contain multiple changes with the same name, differentiated by their position and tag dependencies.
+  - **SQITCH BEHAVIOR** (from `sqitch/lib/App/Sqitch/Plan.pm`):
+    - Allows duplicate change names in the plan file
+    - Tracks rework relationships via tag dependencies (e.g., `[userflips@v1.0.0-dev2]`)
+    - Builds rework chains using `add_rework_tags` method
+    - Uses `@HEAD` suffix internally to track the most recent version (e.g., `userflips@HEAD`)
+  - **REQUIRED CHANGES**:
+    1. Remove duplicate change name validation from `Plan.__post_init__` in `sqlitch/plan/model.py`
+    2. Update `Change` model to support rework relationships (track parent change version via tag dependencies)
+    3. Modify plan parser to handle rework syntax and build change list preserving all versions
+    4. Update symbolic reference resolution to use most recent version when name alone is specified
+    5. Add tests for rework scenarios in `tests/plan/test_parser_rework.py` and `tests/plan/test_model_rework.py`
+  - **VALIDATION**: After implementation, UAT steps 39-42 should pass (rework userflips, deploy, verify, revert to @HEAD^)
+  - **ACCEPTANCE**: Plan parser accepts duplicate change names, resolves references correctly, UAT script progresses past step 39
 
 ---
 
