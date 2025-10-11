@@ -508,7 +508,7 @@ def _calculate_pending(
     # This handles cases where the same change name appears multiple times
     deployed_count = len(deployed_changes)
     plan_count = len(plan_changes)
-    
+
     # Find the first position where they differ
     matching_count = 0
     for i in range(min(deployed_count, plan_count)):
@@ -516,11 +516,11 @@ def _calculate_pending(
             matching_count = i + 1
         else:
             break
-    
+
     # If all deployed changes match the plan prefix, return the remaining plan changes
     if matching_count == deployed_count:
         return tuple(plan_changes[deployed_count:])
-    
+
     # If they diverge, the database is ahead or inconsistent
     # Return all remaining plan changes after the last match
     return tuple(plan_changes[matching_count:])

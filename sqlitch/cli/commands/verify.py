@@ -306,11 +306,11 @@ def verify_command(
         with closing(connection.cursor()) as cursor:
             for change_name, change_id in deployed_changes:
                 processed_changes += 1
-                
+
                 # Track occurrence count for this change name
                 occurrence = change_occurrence_index.get(change_name, 0)
                 change_occurrence_index[change_name] = occurrence + 1
-                
+
                 # Find the matching Change object in the plan for this occurrence
                 matching_change = None
                 current_occurrence = 0
@@ -320,7 +320,7 @@ def verify_command(
                             matching_change = change_obj
                             break
                         current_occurrence += 1
-                
+
                 # Determine verify script filename
                 if matching_change and matching_change.is_rework():
                     rework_tag = matching_change.get_rework_tag()
@@ -330,7 +330,7 @@ def verify_command(
                         verify_filename = f"{change_name}.sql"
                 else:
                     verify_filename = f"{change_name}.sql"
-                
+
                 verify_script_path = project_root / "verify" / verify_filename
 
                 if not verify_script_path.exists():

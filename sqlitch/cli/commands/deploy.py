@@ -281,17 +281,17 @@ def _execute_deploy(request: _DeployRequest) -> None:
             registry_schema=registry_schema,
             project=request.plan.project_name,
         )
-        
+
         # Build a cache of change IDs as we process the plan sequentially
         # This allows us to resolve parent IDs (previous change chronologically)
         change_id_cache: dict[int, str] = {}
-        
+
         # Compute change_id for each change in the plan and filter out deployed ones
         pending: list[tuple[Change, str]] = []
         for idx, change in enumerate(request.plan.changes):
             # Resolve parent ID (the previous change chronologically)
             parent_id = _resolve_parent_id_for_change(request.plan, idx, change_id_cache)
-            
+
             # Compute the change ID with the resolved parent
             change_id = _compute_change_id_for_change(
                 request.plan.project_name,
@@ -299,10 +299,10 @@ def _execute_deploy(request: _DeployRequest) -> None:
                 request.plan.uri,
                 parent_id,
             )
-            
+
             # Cache the ID by index for parent resolution
             change_id_cache[idx] = change_id
-            
+
             if change_id not in deployed_ids:
                 pending.append((change, change_id))
 
@@ -465,7 +465,7 @@ def _load_plan(plan_path: Path, default_engine: str | None) -> Plan:
 
 def _assert_plan_dependencies_present(*, plan: Plan, plan_path: Path) -> None:
     """Verify all dependencies exist in the plan.
-    
+
     Dependencies can include tag references (e.g., "userflips@v1.0.0-dev2" for reworked changes).
     We normalize these to bare change names when checking plan presence.
     """
@@ -862,23 +862,23 @@ def _resolve_parent_id_for_change(
     change_id_cache: dict[int, str],
 ) -> str | None:
     """Resolve the parent change ID based on chronological order in the plan.
-    
+
     Following Sqitch's behavior, the parent is simply the ID of the previous change
     in the plan (chronologically). This creates a chain that links all changes together,
     regardless of their dependency relationships.
-    
+
     Args:
         plan: The Plan object (not used, kept for API consistency)
         change_index: The index of the current change in the plan (0-based)
         change_id_cache: Dict mapping change indices to their calculated IDs
-        
+
     Returns:
         The parent change ID if this is not the first change, None otherwise
     """
     # The first change has no parent
     if change_index == 0:
         return None
-    
+
     # The parent is the previous change (by index)
     return change_id_cache.get(change_index - 1)
 
@@ -890,19 +890,19 @@ def _compute_change_id_for_change(
     parent_id: str | None = None,
 ) -> str:
     """Compute the change_id for a Change object using Sqitch's algorithm.
-    
+
     Args:
         project: Project name
         change: Change object from the plan
         uri: Optional project URI (required for Sqitch compatibility)
         parent_id: Optional parent change ID (ID of last required change, required for Sqitch compatibility)
-        
+
     Returns:
         40-character SHA1 hex digest string
     """
     from sqlitch.utils.identity import generate_change_id
     from sqlitch.utils.time import parse_iso_datetime
-    
+
     # Extract planner name and email
     # Change.planner format is "Name <email>"
     planner_match = change.planner.split("<", 1)
@@ -912,11 +912,11 @@ def _compute_change_id_for_change(
     else:
         planner_name = change.planner
         planner_email = ""
-    
+
     # Get dependencies (requires) - keep the full dependency strings including @tag suffixes
     # This must match what's used during deployment
     requires = tuple(change.dependencies)
-    
+
     # Change.planned_at is already a datetime object
     return generate_change_id(
         project=project,
@@ -938,13 +938,13 @@ def _load_deployed_state(
     project: str,
 ) -> tuple[set[str], dict[str, dict[str, str]]]:
     """Return deployed change IDs and a mapping of names to registry metadata.
-    
-    Returns:
-        A tuple of (deployed_change_ids, name_to_metadata) where:
-        - deployed_change_ids: Set of change_id strings for all deployed changes
-```
-        - name_to_metadata: Dict mapping change names to their latest deployment metadata
-                           (useful for script_hash validation and tag lookups)
+
+        Returns:
+            A tuple of (deployed_change_ids, name_to_metadata) where:
+            - deployed_change_ids: Set of change_id strings for all deployed changes
+    ```
+            - name_to_metadata: Dict mapping change names to their latest deployment metadata
+                               (useful for script_hash validation and tag lookups)
     """
 
     cursor = connection.execute(
@@ -972,7 +972,7 @@ def _load_deployed_state(
 
     deployed_ids: set[str] = set()
     name_to_metadata: dict[str, dict[str, str]] = {}
-    
+
     for change_name, change_id, script_hash in rows:
         change_id_str = str(change_id)
         deployed_ids.add(change_id_str)
@@ -983,7 +983,7 @@ def _load_deployed_state(
             "script_hash": str(script_hash) if script_hash is not None else "",
             "tags": tag_lookup.get(change_id_str, set()),
         }
-    
+
     return deployed_ids, name_to_metadata
 
 
@@ -1125,7 +1125,7 @@ def _resolve_script_path(plan_root: Path, change: Change, kind: str) -> Path:
     path = Path(script_ref)
     if not path.is_absolute():
         path = plan_root / path
-    
+
     return path
 
 
@@ -1209,11 +1209,11 @@ def _parse_identity(identity: str) -> tuple[str, str | None]:
 
 def _validate_dependencies(change: Change, deployed_lookup: Mapping[str, str]) -> None:
     """Ensure all required dependencies have been deployed.
-    
+
     Dependencies can include tag references (e.g., "userflips@v1.0.0-dev2" for reworked changes).
     We normalize these to bare change names when checking deployment status.
     """
-    
+
     def _normalize_dependency(dep: str) -> str:
         """Strip tag suffix from dependency name if present."""
         if "@" in dep:
@@ -1221,8 +1221,8 @@ def _validate_dependencies(change: Change, deployed_lookup: Mapping[str, str]) -
         return dep
 
     missing = [
-        dependency 
-        for dependency in change.dependencies 
+        dependency
+        for dependency in change.dependencies
         if _normalize_dependency(dependency) not in deployed_lookup
     ]
     if not missing:
@@ -1632,7 +1632,7 @@ def _synchronise_registry_tags(
     committer_email: str,
 ) -> None:
     """Ensure registry tag entries mirror plan metadata for deployed changes.
-    
+
     Note: The 'deployed' dict maps change names to their LATEST deployment metadata.
     For reworked changes with duplicate names, we need to match by change_id to avoid
     trying to insert the same tags multiple times.
@@ -1648,23 +1648,23 @@ def _synchronise_registry_tags(
     for idx, change in enumerate(plan.changes):
         # Resolve parent ID (the previous change chronologically)
         parent_id = _resolve_parent_id_for_change(plan, idx, change_id_cache)
-        
+
         # Compute this change's ID to match against deployed changes
         change_id = _compute_change_id_for_change(project, change, plan.uri, parent_id)
-        
+
         # Cache the ID by index for parent resolution
         change_id_cache[idx] = change_id
-        
+
         # Skip if we've already processed this specific change_id
         if change_id in processed_change_ids:
             continue
         processed_change_ids.add(change_id)
-        
+
         # Find deployed metadata by name (works for single changes, gets latest for reworks)
         deployed_meta = deployed.get(change.name)
         if not deployed_meta:
             continue
-        
+
         # Only process if this is actually the deployed version
         # (deployed_meta might be for a different version of a reworked change)
         if deployed_meta["change_id"] != change_id:

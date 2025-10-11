@@ -388,12 +388,14 @@ def test_config_without_active_engine(tmp_path: Path) -> None:
     assert result.username == "core_user"
 
 
-def test_resolve_user_scope_with_sqitch_user_config_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_resolve_user_scope_with_sqitch_user_config_env(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test _resolve_user_scope_root with SQITCH_USER_CONFIG environment variable."""
     custom_user_dir = tmp_path / "custom_user"
     custom_user_dir.mkdir()
     _write_config(custom_user_dir / "sqitch.conf", "[core]\nengine=pg\n")
-    
+
     project_dir = tmp_path / "workspace"
     project_dir.mkdir()
     _write_config(project_dir / "sqitch.conf", "[core]\nengine=sqlite\n")
@@ -407,12 +409,14 @@ def test_resolve_user_scope_with_sqitch_user_config_env(tmp_path: Path, monkeypa
     assert custom_user_dir / "sqitch.conf" in profile.files
 
 
-def test_determine_system_root_with_sqitch_system_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_determine_system_root_with_sqitch_system_config(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test system root determination with SQITCH_SYSTEM_CONFIG."""
     custom_system = tmp_path / "custom_system"
     custom_system.mkdir()
     _write_config(custom_system / "sqitch.conf", "[core]\nengine=pg\n")
-    
+
     project_dir = tmp_path / "workspace"
     project_dir.mkdir()
     _write_config(project_dir / "sqitch.conf", "[core]\nengine=sqlite\n")
@@ -429,12 +433,14 @@ def test_determine_system_root_with_sqitch_system_config(tmp_path: Path, monkeyp
     assert custom_system / "sqitch.conf" in profile.files
 
 
-def test_determine_system_root_uses_fallback_when_default_missing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_determine_system_root_uses_fallback_when_default_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test that fallback system path is used when default doesn't exist."""
     fallback_system = tmp_path / "etc_sqitch"
     fallback_system.mkdir()
     _write_config(fallback_system / "sqitch.conf", "[core]\nengine=pg\n")
-    
+
     project_dir = tmp_path / "workspace"
     project_dir.mkdir()
     _write_config(project_dir / "sqitch.conf", "[core]\nengine=sqlite\n")
@@ -454,7 +460,7 @@ def test_resolve_config_with_sqitch_config_env(tmp_path: Path) -> None:
     custom_local = tmp_path / "custom_local"
     custom_local.mkdir()
     _write_config(custom_local / "sqitch.conf", "[core]\nengine=pg\n")
-    
+
     project_dir = tmp_path / "workspace"
     project_dir.mkdir()
     _write_config(project_dir / "sqitch.conf", "[core]\nengine=sqlite\n")

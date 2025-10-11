@@ -30,7 +30,9 @@ def test_resolve_config_rejects_duplicate_local_files(tmp_path: Path) -> None:
     assert "local" in str(excinfo.value)
 
 
-def test_resolve_config_missing_scopes_defaults(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_resolve_config_missing_scopes_defaults(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     project_dir = tmp_path / "workspace"
     project_dir.mkdir()
     _write_config(project_dir / "sqitch.conf", "[core]\nengine=sqlite\n")

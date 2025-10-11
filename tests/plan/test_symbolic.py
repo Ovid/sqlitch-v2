@@ -77,7 +77,9 @@ class TestParseSymbolicReference:
     def test_tag_qualified_change(self):
         """Tag-qualified changes parse correctly."""
         result = parse_symbolic_reference("users_table@beta1")
-        assert result == SymbolicReference(base="users_table@beta1", offset_type=None, offset_count=0)
+        assert result == SymbolicReference(
+            base="users_table@beta1", offset_type=None, offset_count=0
+        )
 
     def test_tag_with_caret(self):
         """@beta^2 means two changes before the @beta tag."""

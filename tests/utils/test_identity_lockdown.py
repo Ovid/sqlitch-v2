@@ -43,6 +43,7 @@ def test_resolve_email_prefers_git_author_over_config(config_profile: MagicMock)
 
 def test_resolve_username_uses_win32_api_when_available(monkeypatch: pytest.MonkeyPatch) -> None:
     """On Windows, win32api should be used when standard sources are unavailable."""
+
     def raise_os_error() -> None:
         raise OSError("login unavailable")
 

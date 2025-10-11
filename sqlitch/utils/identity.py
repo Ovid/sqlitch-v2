@@ -105,21 +105,23 @@ def generate_change_id(
     info_parts = [
         f"project {project}",
     ]
-    
+
     # Add URI if present (Sqitch includes this when available)
     if uri:
         info_parts.append(f"uri {uri}")
-    
+
     info_parts.append(f"change {change}")
-    
+
     # Add parent if present (for changes with dependencies or rework)
     if parent_id:
         info_parts.append(f"parent {parent_id}")
-    
-    info_parts.extend([
-        f"planner {planner_name} <{planner_email}>",
-        f"date {timestamp_str}",
-    ])
+
+    info_parts.extend(
+        [
+            f"planner {planner_name} <{planner_email}>",
+            f"date {timestamp_str}",
+        ]
+    )
 
     # Add requires/conflicts if present
     if requires:

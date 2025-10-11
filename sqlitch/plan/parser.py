@@ -262,11 +262,11 @@ def _apply_rework_metadata(
     base_dir: Path,
 ) -> tuple[PlanEntry, ...]:
     """Attach tag metadata and reworked script paths to change entries.
-    
+
     Tags are matched to specific change instances by their index in the plan,
     not by name. This correctly handles reworked changes where the same name
     appears multiple times with different tags.
-    
+
     For reworked changes (where dependencies reference the same change with a tag),
     script paths are resolved to use the @tag suffix.
     """
@@ -277,11 +277,11 @@ def _apply_rework_metadata(
     # The NEW instance (the reworked one) should have the @tag suffix in its scripts
     rework_tags: dict[tuple[str, int], str] = {}
     name_counts: dict[str, int] = {}
-    
+
     for index, entry in enumerate(entries):
         if not isinstance(entry, Change):
             continue
-        
+
         # Check if THIS change is a rework by examining its dependencies
         # A reworked change has a dependency like "users@v1.0.0" where the name matches its own name
         for dep in entry.dependencies:
@@ -292,14 +292,14 @@ def _apply_rework_metadata(
                     # Mark THIS instance as reworked (should use @tag scripts)
                     current_instance = name_counts.get(entry.name, 0)
                     rework_tags[(entry.name, current_instance)] = dep_tag
-        
+
         # Count this instance AFTER checking dependencies
         name_counts[entry.name] = name_counts.get(entry.name, 0) + 1
 
     # Second pass: apply tags and script paths
     name_counts_second_pass: dict[str, int] = {}
     adjusted: list[PlanEntry] = []
-    
+
     for index, entry in enumerate(entries):
         if not isinstance(entry, Change):
             adjusted.append(entry)
@@ -311,10 +311,10 @@ def _apply_rework_metadata(
 
         # Get tags for THIS specific change instance by its index
         tags = tuple(change_tags_by_index.get(index, ()))
-        
+
         # Check if this specific instance was reworked
         rework_tag = rework_tags.get((entry.name, instance_index))
-        
+
         script_paths = dict(entry.script_paths)
         # If this change was reworked (has a later instance that references it with @tag),
         # use the @tag suffixed scripts
@@ -336,7 +336,9 @@ def _apply_rework_metadata(
                 change_id=entry.change_id,
                 dependencies=entry.dependencies,
                 tags=tags or entry.tags,
-                rework_of=f"{entry.name}@{rework_tag}" if rework_tag and instance_index > 0 else None,
+                rework_of=(
+                    f"{entry.name}@{rework_tag}" if rework_tag and instance_index > 0 else None
+                ),
             )
         )
 
@@ -351,7 +353,7 @@ def _resolve_reworked_script_paths(
     base_dir: Path,
 ) -> dict[str, Path | None]:
     """Compute script paths for reworked changes preferring ``@tag`` suffixes.
-    
+
     Note: script_paths values are already constructed relative to base_dir,
     so we use them as-is to find the @tag suffixed versions.
     """

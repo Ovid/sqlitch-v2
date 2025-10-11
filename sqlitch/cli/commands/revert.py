@@ -175,14 +175,14 @@ def _build_request(
     # Resolve symbolic references (e.g., @HEAD^, @ROOT, HEAD^2)
     resolved_to_change = to_change
     resolved_to_tag = to_tag
-    
+
     if to_tag or to_change:
         # Get list of change names from plan for symbolic resolution
         change_names = [c.name for c in plan.changes]
-        
+
         # Reconstruct the original reference
         original_ref = f"@{to_tag}" if to_tag else to_change
-        
+
         try:
             # Try to resolve as symbolic reference
             resolved_name = resolve_symbolic_reference(original_ref, change_names)
@@ -274,7 +274,7 @@ def _execute_revert(request: _RevertRequest) -> None:
         # Build a cache of change IDs as we process the plan sequentially
         # This allows us to resolve parent IDs (previous change chronologically)
         change_id_cache: dict[int, str] = {}
-        
+
         # Pre-compute all change IDs with correct parent resolution
         change_ids_by_index: dict[int, str] = {}
         for i, change in enumerate(request.plan.changes):
@@ -291,7 +291,7 @@ def _execute_revert(request: _RevertRequest) -> None:
         # Filter to only revert deployed changes in reverse order
         # If --to-change or --to-tag specified, `changes` contains the target point
         # We revert everything AFTER the target (in deployment order)
-        # 
+        #
         # Important: For reworked changes, we match by change_id, not name.
         changes_to_keep_indices = set()
         if request.to_change or request.to_tag:
@@ -304,7 +304,7 @@ def _execute_revert(request: _RevertRequest) -> None:
             change = request.plan.changes[i]
             # Get the pre-computed change_id for this plan entry
             change_id = change_ids_by_index[i]
-            
+
             # Check if this specific instance is deployed
             if change_id in deployed:
                 # If we have a target and this change (by position) should be kept, stop
@@ -369,7 +369,7 @@ def _load_deployed_changes(
     connection: sqlite3.Connection, registry_schema: str, project: str
 ) -> dict[str, dict[str, str]]:
     """Load deployed changes from registry for the given project.
-    
+
     Returns a dict mapping change_id to metadata. For reworked changes
     (same name, different instances), each instance has a unique change_id.
     """
@@ -415,11 +415,11 @@ def _revert_change(
     script_ref = change.script_paths.get("revert")
     if script_ref is None:
         raise CommandError(f"Change '{change.name}' is missing a revert script path.")
-    
+
     script_path = Path(script_ref)
     if not script_path.is_absolute():
         script_path = plan_root / script_path
-    
+
     if not script_path.exists():
         raise CommandError(f"Revert script {script_path} is missing for change '{change.name}'.")
 

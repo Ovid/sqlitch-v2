@@ -65,17 +65,17 @@ class Change:
 
     def is_rework(self) -> bool:
         """Check if this change is a reworked version.
-        
+
         A change is considered a rework if:
         1. It has an explicit rework_of field set, OR
         2. Its dependencies contain a self-reference with a tag (e.g., "userflips@v1.0.0-dev2")
-        
+
         Returns:
             True if this is a reworked change
         """
         if self.rework_of:
             return True
-        
+
         # Check dependencies for self-reference pattern
         for dep in self.dependencies:
             if "@" in dep:
@@ -86,16 +86,16 @@ class Change:
 
     def get_rework_tag(self) -> str | None:
         """Extract the tag reference from rework dependency.
-        
+
         For a reworked change like "userflips [userflips@v1.0.0-dev2]",
         returns "v1.0.0-dev2".
-        
+
         Returns:
             The tag name, or None if not a rework
         """
         if self.rework_of and "@" in self.rework_of:
             return self.rework_of.split("@", 1)[1]
-        
+
         for dep in self.dependencies:
             if "@" in dep:
                 base_name, tag = dep.split("@", 1)
@@ -238,16 +238,16 @@ class Plan:
 
     def get_change(self, name: str) -> Change:
         """Get a change by name.
-        
+
         For reworked changes (same name appearing multiple times), returns the
         most recent version (last occurrence in the plan).
-        
+
         Args:
             name: The change name to look up
-            
+
         Returns:
             The Change object (latest version if reworked)
-            
+
         Raises:
             KeyError: If no change with that name exists
         """
@@ -255,7 +255,7 @@ class Plan:
         for entry in self.entries:
             if isinstance(entry, Change) and entry.name == name:
                 result = entry
-        
+
         if result is None:
             raise KeyError(name)
         return result
@@ -265,13 +265,13 @@ class Plan:
 
     def get_latest_version(self, name: str) -> Change | None:
         """Get the most recent version of a change by name.
-        
+
         For reworked changes, returns the last occurrence in the plan.
         For non-reworked changes, returns the single occurrence.
-        
+
         Args:
             name: The change name to look up
-            
+
         Returns:
             The latest Change with that name, or None if not found
         """
@@ -283,13 +283,13 @@ class Plan:
 
     def get_all_versions(self, name: str) -> tuple[Change, ...]:
         """Get all versions of a change by name, in plan order.
-        
+
         For reworked changes, returns multiple Change objects.
         For non-reworked changes, returns a single-element tuple.
-        
+
         Args:
             name: The change name to look up
-            
+
         Returns:
             Tuple of all Changes with that name, in order of appearance
         """
@@ -299,10 +299,10 @@ class Plan:
 
     def is_reworked(self, name: str) -> bool:
         """Check if a change has been reworked (appears multiple times).
-        
+
         Args:
             name: The change name to check
-            
+
         Returns:
             True if the change appears more than once in the plan
         """

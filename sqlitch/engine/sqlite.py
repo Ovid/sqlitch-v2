@@ -312,7 +312,7 @@ def validate_sqlite_script(script_sql: str) -> None:
 
 def _validate_sqlite_pragma(statement: str) -> None:
     body = statement.strip().split("--", 1)[0].rstrip(";").strip()
-    pragma_payload = body[len("PRAGMA"):].strip()
+    pragma_payload = body[len("PRAGMA") :].strip()
     if not pragma_payload:
         return
 

@@ -52,7 +52,7 @@ def _resolve_new_path(
 
 def _resolve_rework_suffix(plan: Plan, change_name: str) -> str:
     """Return the suffix (``@tag``) used for reworked script filenames.
-    
+
     Sqitch uses the most recent tag in the plan (the one closest to the
     rework point), not necessarily a tag associated with the change being
     reworked.
@@ -90,30 +90,27 @@ def _append_rework_change(
     rework: Change,
 ) -> tuple[PlanEntry, ...]:
     """Append a reworked change to the plan entries (Sqitch behavior).
-    
+
     Unlike _replace_change, this adds a new entry at the end of the plan
     while keeping the original entry intact. This matches Sqitch's rework
     behavior where the same change name can appear multiple times.
-    
+
     Args:
         entries: Current plan entries
         name: Name of the change being reworked
         rework: New Change object representing the reworked version
-        
+
     Returns:
         Updated tuple of entries with rework appended
-        
+
     Raises:
         CommandError: If the change doesn't exist in the plan
     """
     # Verify the change exists
-    has_change = any(
-        isinstance(entry, Change) and entry.name == name
-        for entry in entries
-    )
+    has_change = any(isinstance(entry, Change) and entry.name == name for entry in entries)
     if not has_change:
         raise CommandError(f'Unknown change "{name}"')
-    
+
     # Append the reworked change at the end
     return tuple(list(entries) + [rework])
 
@@ -240,7 +237,7 @@ def rework_command(
     # If --requires is specified, use those instead
     rework_dependency = f"{change_name}{suffix}"
     rework_dependencies = tuple(requires) if requires else (rework_dependency,)
-    
+
     replacement = Change.create(
         name=original_change.name,
         script_paths=script_map,

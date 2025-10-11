@@ -2,7 +2,7 @@
 
 Implements the extended SHA1 syntax documented in sqitchchanges.pod:
 - @HEAD / HEAD - last change in the plan
-- @ROOT / ROOT - first change in the plan  
+- @ROOT / ROOT - first change in the plan
 - <change>^ - prior change (e.g., @HEAD^ means one before HEAD)
 - <change>^<n> - n changes prior (e.g., @HEAD^3 means 3 before HEAD)
 - <change>~ - next change (e.g., @ROOT~ means one after ROOT)
@@ -36,7 +36,7 @@ class SymbolicReference:
 
 def parse_symbolic_reference(ref: str) -> SymbolicReference:
     """Parse a change/tag reference into its components.
-    
+
     Examples:
         @HEAD -> SymbolicReference(base="@HEAD", offset_type=None, offset_count=0)
         @HEAD^ -> SymbolicReference(base="@HEAD", offset_type="^", offset_count=1)
@@ -46,27 +46,27 @@ def parse_symbolic_reference(ref: str) -> SymbolicReference:
         @ROOT~4 -> SymbolicReference(base="@ROOT", offset_type="~", offset_count=4)
     """
     ref = ref.strip()
-    
+
     # Match patterns like @HEAD^^, @HEAD^3, users@tag^2, etc.
     # Pattern: <base>(<offset_char><count>?)* where offset_char is ^ or ~
-    match = re.match(r'^(.+?)(\^+|~+|\^(\d+)|~(\d+))$', ref)
-    
+    match = re.match(r"^(.+?)(\^+|~+|\^(\d+)|~(\d+))$", ref)
+
     if not match:
         # No offset - just a plain reference
         return SymbolicReference(base=ref, offset_type=None, offset_count=0)
-    
+
     base = match.group(1)
     offset_part = match.group(2)
-    
+
     # Determine offset type and count
-    if offset_part.startswith('^'):
-        offset_type = '^'
+    if offset_part.startswith("^"):
+        offset_type = "^"
         if match.group(3):  # ^<n> format
             offset_count = int(match.group(3))
         else:  # ^^^ format
             offset_count = len(offset_part)
-    elif offset_part.startswith('~'):
-        offset_type = '~'
+    elif offset_part.startswith("~"):
+        offset_type = "~"
         if match.group(4):  # ~<n> format
             offset_count = int(match.group(4))
         else:  # ~~~ format
@@ -74,28 +74,28 @@ def parse_symbolic_reference(ref: str) -> SymbolicReference:
     else:
         # Shouldn't reach here given the regex, but be defensive
         return SymbolicReference(base=ref, offset_type=None, offset_count=0)
-    
+
     return SymbolicReference(base=base, offset_type=offset_type, offset_count=offset_count)
 
 
 def resolve_symbolic_reference(ref: str, change_names: list[str]) -> str:
     """Resolve a symbolic reference to an actual change name.
-    
+
     Args:
         ref: The symbolic reference to resolve (e.g., "@HEAD^", "@ROOT", "users_table")
         change_names: Ordered list of change names in the plan
-        
+
     Returns:
         The resolved change name
-        
+
     Raises:
         ValueError: If the reference cannot be resolved
     """
     if not change_names:
         raise ValueError("Cannot resolve symbolic reference in empty plan")
-    
+
     parsed = parse_symbolic_reference(ref)
-    
+
     # Resolve base to an index
     base = parsed.base
     if base in ("HEAD", "@HEAD"):
@@ -112,18 +112,18 @@ def resolve_symbolic_reference(ref: str, change_names: list[str]) -> str:
             base_index = change_names.index(base)
         except ValueError as exc:
             raise ValueError(f"Change '{base}' not found in plan") from exc
-    
+
     # Apply offset
-    if parsed.offset_type == '^':
+    if parsed.offset_type == "^":
         # Go backwards (prior changes)
         target_index = base_index - parsed.offset_count
-    elif parsed.offset_type == '~':
+    elif parsed.offset_type == "~":
         # Go forwards (after changes)
         target_index = base_index + parsed.offset_count
     else:
         # No offset
         target_index = base_index
-    
+
     # Validate bounds
     if target_index < 0:
         raise ValueError(
@@ -135,5 +135,5 @@ def resolve_symbolic_reference(ref: str, change_names: list[str]) -> str:
             f"Symbolic reference '{ref}' resolves to position {target_index} "
             f"(after last change at position {len(change_names) - 1})"
         )
-    
+
     return change_names[target_index]

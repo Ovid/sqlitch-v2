@@ -834,14 +834,14 @@ COMMIT;
 
         # Compute the correct change IDs using the same algorithm as deploy
         from sqlitch.cli.commands.deploy import _compute_change_id_for_change
-        
+
         users_change_id = _compute_change_id_for_change(
             "flipr",
             users_change,
             INIT_URI,
             None,  # First change has no parent
         )
-        
+
         flips_change_id = _compute_change_id_for_change(
             "flipr",
             flips_change,

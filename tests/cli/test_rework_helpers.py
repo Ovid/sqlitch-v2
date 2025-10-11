@@ -85,9 +85,7 @@ def test_append_rework_change_adds_at_end(tmp_path: Path) -> None:
     entries = (original, other)
     rework = _make_change("widgets")
 
-    updated = rework_module._append_rework_change(
-        entries=entries, name="widgets", rework=rework
-    )
+    updated = rework_module._append_rework_change(entries=entries, name="widgets", rework=rework)
 
     # Should have original, other, and rework (3 entries total)
     assert len(updated) == 3

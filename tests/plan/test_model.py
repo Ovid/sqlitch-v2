@@ -134,7 +134,7 @@ def test_plan_allows_duplicate_change_names_for_rework():
         checksum="abc123",
         default_engine="pg",
     )
-    
+
     # Verify both versions are preserved
     assert len(plan.changes) == 2
     assert plan.get_latest_version("widgets:add") == rework

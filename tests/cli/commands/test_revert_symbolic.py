@@ -16,7 +16,9 @@ def test_revert_to_head_caret(tmp_path: Path, monkeypatch):
     runner = CliRunner()
 
     # Initialize project
-    result = runner.invoke(main, ["init", "test", "--uri", "https://test.example.com", "--engine", "sqlite"])
+    result = runner.invoke(
+        main, ["init", "test", "--uri", "https://test.example.com", "--engine", "sqlite"]
+    )
     assert result.exit_code == 0
 
     # Configure user
@@ -46,7 +48,9 @@ def test_revert_to_head_caret(tmp_path: Path, monkeypatch):
 
     # Verify all three tables exist
     conn = sqlite3.connect(db_path)
-    cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'change%' ORDER BY name")
+    cursor = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'change%' ORDER BY name"
+    )
     tables = [row[0] for row in cursor.fetchall()]
     conn.close()
     assert tables == ["change1", "change2", "change3"]
@@ -57,7 +61,9 @@ def test_revert_to_head_caret(tmp_path: Path, monkeypatch):
 
     # Verify only change1 and change2 remain
     conn = sqlite3.connect(db_path)
-    cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'change%' ORDER BY name")
+    cursor = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'change%' ORDER BY name"
+    )
     tables = [row[0] for row in cursor.fetchall()]
     conn.close()
     assert tables == ["change1", "change2"], f"Expected [change1, change2], got {tables}"
@@ -69,7 +75,9 @@ def test_revert_to_root_symbolic_reference(tmp_path: Path, monkeypatch):
     runner = CliRunner()
 
     # Initialize project
-    result = runner.invoke(main, ["init", "test", "--uri", "https://test.example.com", "--engine", "sqlite"])
+    result = runner.invoke(
+        main, ["init", "test", "--uri", "https://test.example.com", "--engine", "sqlite"]
+    )
     assert result.exit_code == 0
 
     # Configure user
@@ -86,7 +94,7 @@ def test_revert_to_root_symbolic_reference(tmp_path: Path, monkeypatch):
     (tmp_path / "deploy" / "first.sql").write_text("CREATE TABLE first (id INTEGER);")
     (tmp_path / "revert" / "first.sql").write_text("DROP TABLE first;")
     (tmp_path / "verify" / "first.sql").write_text("SELECT * FROM first WHERE 1=0;")
-    
+
     (tmp_path / "deploy" / "second.sql").write_text("CREATE TABLE second (id INTEGER);")
     (tmp_path / "revert" / "second.sql").write_text("DROP TABLE second;")
     (tmp_path / "verify" / "second.sql").write_text("SELECT * FROM second WHERE 1=0;")
@@ -102,7 +110,9 @@ def test_revert_to_root_symbolic_reference(tmp_path: Path, monkeypatch):
 
     # Verify only 'first' remains
     conn = sqlite3.connect(db_path)
-    cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('first', 'second')")
+    cursor = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('first', 'second')"
+    )
     tables = [row[0] for row in cursor.fetchall()]
     conn.close()
     assert tables == ["first"]
@@ -114,7 +124,9 @@ def test_revert_to_change_with_caret(tmp_path: Path, monkeypatch):
     runner = CliRunner()
 
     # Initialize project
-    result = runner.invoke(main, ["init", "test", "--uri", "https://test.example.com", "--engine", "sqlite"])
+    result = runner.invoke(
+        main, ["init", "test", "--uri", "https://test.example.com", "--engine", "sqlite"]
+    )
     assert result.exit_code == 0
 
     # Configure user
@@ -140,7 +152,9 @@ def test_revert_to_change_with_caret(tmp_path: Path, monkeypatch):
 
     # Verify change1, change2, change3 remain
     conn = sqlite3.connect(db_path)
-    cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'change%' ORDER BY name")
+    cursor = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'change%' ORDER BY name"
+    )
     tables = [row[0] for row in cursor.fetchall()]
     conn.close()
     assert tables == ["change1", "change2", "change3"]

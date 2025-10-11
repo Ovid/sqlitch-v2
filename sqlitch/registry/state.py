@@ -278,9 +278,7 @@ def deserialize_registry_rows(rows: Iterable[Mapping[str, object]]) -> Sequence[
     entries = []
     for row in rows:
         entry = RegistryEntry(
-            project=_coerce_required_text(
-                _require_registry_value(row, "project"), field="project"
-            ),
+            project=_coerce_required_text(_require_registry_value(row, "project"), field="project"),
             change_id=_coerce_required_text(
                 _require_registry_value(row, "change_id"), field="change_id"
             ),

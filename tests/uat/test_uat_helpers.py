@@ -91,6 +91,8 @@ def test_tutorial_step_manifest_matches_side_by_side_expectations() -> None:
         "--uri",
     )
 
-    config_step = next(step for step in TUTORIAL_STEPS if step.description == "Configure User Email")
+    config_step = next(
+        step for step in TUTORIAL_STEPS if step.description == "Configure User Email"
+    )
     assert config_step.command == "sqlitch"
     assert "user.email" in config_step.args
