@@ -176,7 +176,7 @@ def _execute_rebase(request: _RebaseRequest) -> None:
     # Rebase = revert all + deploy all
     # Import the command implementations
     from .deploy import _DeployRequest, _execute_deploy
-    from .revert import _RevertRequest, _execute_revert
+    from .revert import _execute_revert, _RevertRequest
 
     # Build revert request (revert all changes)
     revert_request = _RevertRequest(

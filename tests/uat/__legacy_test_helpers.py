@@ -73,7 +73,7 @@ def test_compare_user_databases_detects_differences(tmp_path: Path) -> None:
 def test_tutorial_step_manifest_matches_side_by_side_expectations() -> None:
     """Tutorial steps must expose consistent metadata for every CLI invocation."""
 
-    from uat.test_steps import Step, TUTORIAL_STEPS
+    from uat.test_steps import TUTORIAL_STEPS, Step
 
     assert TUTORIAL_STEPS, "tutorial step manifest must not be empty"
 

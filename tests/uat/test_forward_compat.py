@@ -11,7 +11,6 @@ import os
 import subprocess
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = REPO_ROOT / "uat" / "scripts" / "forward-compat.py"
 
