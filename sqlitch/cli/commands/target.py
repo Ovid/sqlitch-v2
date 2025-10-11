@@ -7,7 +7,11 @@ from pathlib import Path
 
 import click
 
-from sqlitch.engine.sqlite import SQLITE_SCHEME_PREFIX, resolve_sqlite_filesystem_path
+from sqlitch.engine.sqlite import (
+    SQLITE_SCHEME_PREFIX,
+    derive_sqlite_registry_uri,
+    resolve_sqlite_filesystem_path,
+)
 from sqlitch.utils.fs import ArtifactConflictError, resolve_config_file
 
 from ..options import global_output_options, global_sqitch_options
@@ -258,49 +262,41 @@ def _normalise_target_entry(
         return uri, registry_override
 
     payload = uri[len(SQLITE_SCHEME_PREFIX) :]
+    resolved_path: Path | None = None
+
     if payload in {"", ":memory:"}:
         normalised_uri = f"{SQLITE_SCHEME_PREFIX}:memory:"
-        if registry_override:
-            return normalised_uri, registry_override
-        return normalised_uri, None
-
-    filesystem_path = resolve_sqlite_filesystem_path(uri)
-    if str(filesystem_path) == ":memory:":
-        normalised_uri = f"{SQLITE_SCHEME_PREFIX}:memory:"
-        if registry_override:
-            return normalised_uri, registry_override
-        return normalised_uri, None
-
-    original_path = filesystem_path
-    if not filesystem_path.is_absolute():
-        resolved_path = (project_root / filesystem_path).resolve()
     else:
-        resolved_path = filesystem_path.resolve()
+        filesystem_path = resolve_sqlite_filesystem_path(uri)
+        if str(filesystem_path) == ":memory:":
+            normalised_uri = f"{SQLITE_SCHEME_PREFIX}:memory:"
+        else:
+            if not filesystem_path.is_absolute():
+                resolved_path = (project_root / filesystem_path).resolve()
+            else:
+                resolved_path = filesystem_path.resolve()
 
-    is_file_uri = payload.startswith("file:")
-    is_simple_relative = (
-        not is_file_uri and not original_path.is_absolute() and len(original_path.parts) == 1
+            is_file_uri = payload.startswith("file:")
+            is_simple_relative = (
+                not is_file_uri
+                and not filesystem_path.is_absolute()
+                and len(filesystem_path.parts) == 1
+            )
+
+            if is_file_uri:
+                normalised_uri = f"{SQLITE_SCHEME_PREFIX}file:{resolved_path.as_posix()}"
+            elif is_simple_relative:
+                normalised_uri = uri
+            else:
+                normalised_uri = f"{SQLITE_SCHEME_PREFIX}{resolved_path.as_posix()}"
+
+    registry_uri = derive_sqlite_registry_uri(
+        workspace_uri=normalised_uri,
+        project_root=project_root,
+        registry_override=registry_override,
     )
 
-    if is_file_uri:
-        normalised_uri = f"{SQLITE_SCHEME_PREFIX}file:{resolved_path.as_posix()}"
-    elif is_simple_relative:
-        normalised_uri = uri
-    else:
-        normalised_uri = f"{SQLITE_SCHEME_PREFIX}{resolved_path.as_posix()}"
-
-    canonical_workspace_uri = (
-        f"{SQLITE_SCHEME_PREFIX}file:{resolved_path.as_posix()}"
-        if is_file_uri
-        else f"{SQLITE_SCHEME_PREFIX}{resolved_path.as_posix()}"
-    )
-
-    if registry_override:
-        return normalised_uri, registry_override
-
-    # Allow Sqitch to derive the registry location for compatibility. SQLitch
-    # will resolve the canonical attachment path during execution.
-    return normalised_uri, None
+    return normalised_uri, registry_uri
 
 
 def _resolve_config_path(
