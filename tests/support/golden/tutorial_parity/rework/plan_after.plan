@@ -3,5 +3,6 @@
 %uri=https://github.com/sqitchers/sqitch-sqlite-intro/
 %default_engine=sqlite
 
-users 2013-12-31T18:26:59Z Marge N. O’Vera <marge@example.com> # Add twitter column to userflips view.
-@v1.0.0-dev1 2013-12-31T18:26:59Z Marge N. O’Vera <marge@example.com> # Tag v1.0.0-dev1.
+users 2013-12-31T18:26:59Z Marge N. O'Vera <marge@example.com> # Creates table to track our users.
+@v1.0.0-dev1 2013-12-31T18:26:59Z Marge N. O'Vera <marge@example.com> # Tag v1.0.0-dev1.
+users [users@v1.0.0-dev1] 2013-12-31T18:26:59Z Marge N. O'Vera <marge@example.com> # Add twitter column to userflips view.

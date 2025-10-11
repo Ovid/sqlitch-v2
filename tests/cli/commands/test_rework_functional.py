@@ -372,11 +372,12 @@ class TestReworkCommand:
             )
             assert result.exit_code == 0
 
-            # Verify dependencies preserved
+            # Verify dependencies: rework creates self-reference (Sqitch behavior)
             plan_path = project_dir / "sqitch.plan"
             plan = parse_plan(plan_path, default_engine="sqlite")
             reworked_change = plan.get_change("posts")
-            assert reworked_change.dependencies == ("users",)
+            # Reworked change has single dependency: self-reference to previous version
+            assert reworked_change.dependencies == ("posts@v1.0.0",)
 
     def test_allows_overriding_dependencies(self, tmp_path: Path) -> None:
         """Test rework can override dependencies with --requires."""

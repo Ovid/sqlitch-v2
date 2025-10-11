@@ -236,8 +236,10 @@ def rework_command(
 
     # Create rework change with dependency on previous version via tag
     # Format: change_name [change_name@tag]
+    # The rework inherits a single dependency: reference to the previous version
+    # If --requires is specified, use those instead
     rework_dependency = f"{change_name}{suffix}"
-    rework_dependencies = tuple([rework_dependency] + list(requires)) if requires else (rework_dependency,)
+    rework_dependencies = tuple(requires) if requires else (rework_dependency,)
     
     replacement = Change.create(
         name=original_change.name,

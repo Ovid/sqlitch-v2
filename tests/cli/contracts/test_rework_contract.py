@@ -167,7 +167,8 @@ def test_rework_creates_rework_scripts_and_updates_plan(
         assert relative_revert == revert_name
         assert relative_verify == verify_name
         assert updated_change.notes == "Adds widgets"
-        assert updated_change.dependencies == ("core:init",)
+        # Reworked changes have a single dependency: self-reference to previous version
+        assert updated_change.dependencies == ("widgets:add@v1.0.0",)
         assert updated_change.planner == "Grace Hopper <grace@example.com>"
         assert updated_change.planned_at == timestamp
 

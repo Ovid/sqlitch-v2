@@ -237,12 +237,28 @@ class Plan:
         return tuple(entry for entry in self.entries if isinstance(entry, Tag))
 
     def get_change(self, name: str) -> Change:
-        try:
-            return next(
-                entry for entry in self.entries if isinstance(entry, Change) and entry.name == name
-            )
-        except StopIteration as exc:  # pragma: no cover - defensive API
-            raise KeyError(name) from exc
+        """Get a change by name.
+        
+        For reworked changes (same name appearing multiple times), returns the
+        most recent version (last occurrence in the plan).
+        
+        Args:
+            name: The change name to look up
+            
+        Returns:
+            The Change object (latest version if reworked)
+            
+        Raises:
+            KeyError: If no change with that name exists
+        """
+        result = None
+        for entry in self.entries:
+            if isinstance(entry, Change) and entry.name == name:
+                result = entry
+        
+        if result is None:
+            raise KeyError(name)
+        return result
 
     def has_change(self, name: str) -> bool:
         return any(isinstance(entry, Change) and entry.name == name for entry in self.entries)

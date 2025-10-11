@@ -78,21 +78,28 @@ def test_copy_script_creates_target(tmp_path: Path) -> None:
     assert target.read_text(encoding="utf-8") == "data"
 
 
-def test_replace_change_updates_matching_entry(tmp_path: Path) -> None:
+def test_append_rework_change_adds_at_end(tmp_path: Path) -> None:
+    """Test that rework appends change instead of replacing (Sqitch behavior)."""
     original = _make_change("widgets")
-    entries = (original,)
-    replacement = _make_change("widgets")
+    other = _make_change("gadgets")
+    entries = (original, other)
+    rework = _make_change("widgets")
 
-    updated = rework_module._replace_change(
-        entries=entries, name="widgets", replacement=replacement
+    updated = rework_module._append_rework_change(
+        entries=entries, name="widgets", rework=rework
     )
 
-    assert updated == (replacement,)
+    # Should have original, other, and rework (3 entries total)
+    assert len(updated) == 3
+    assert updated[0] == original
+    assert updated[1] == other
+    assert updated[2] == rework
 
 
-def test_replace_change_missing_raises(tmp_path: Path) -> None:
+def test_append_rework_change_missing_raises(tmp_path: Path) -> None:
+    """Test that reworking non-existent change raises error."""
     entries = (_make_change("widgets"),)
-    replacement = _make_change("reports")
+    rework = _make_change("reports")
 
     with pytest.raises(CommandError, match='Unknown change "reports"'):
-        rework_module._replace_change(entries=entries, name="reports", replacement=replacement)
+        rework_module._append_rework_change(entries=entries, name="reports", rework=rework)
