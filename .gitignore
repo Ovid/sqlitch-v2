@@ -49,3 +49,4 @@ REPORT-TASKS.md
 uat/sqitch_results/
 uat/sqlitch_results/
 uat/backward_compat_results/
+uat/forward_compat_results/
