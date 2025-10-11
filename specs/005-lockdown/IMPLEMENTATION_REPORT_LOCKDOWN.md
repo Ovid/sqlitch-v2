@@ -1,8 +1,12 @@
 # Implementation Report: Quality Lockdown and Stabilization
 
 **Branch**: `005-lockdown`  
-**Date**: 2025-10-11  
-**Status**: ✅ Phase 3.1-3.5 Complete, Phase 3.6 In Progress
+**Date**: 2025-### Phase 3.6: Partial** - 4 of 13 Complete (T061, T062, T064, T065, T066)
+- Quality gates re-run and documented
+- Coverage verified at 92%
+- TODO audit completed
+- Integration coverage reviewed
+- **Remaining**: UAT script execution (T060a-T060h broken down for incremental completion), release preparation (T063)tatus**: ✅ Phase 3.1-3.5 Complete, Phase 3.6 In Progress
 
 ---
 
@@ -104,16 +108,29 @@ UAT Helpers:
   - Template path security
 
 ### Phase 3.6: Validation & Release Prep 🔄
-**Status**: In Progress (T060-T066)
+**Status**: In Progress (T060a-T060h, T061-T066)
 
-Manual tasks require human execution:
-- ⏹️ **T060**: Execute UAT scripts and attach logs to release PR (manual step)
-- ⏹️ **T061**: Re-run quality gates and document results (this report)
-- ⏹️ **T062**: Verify coverage ≥90% and update instructions (satisfied - 92%)
-- ⏹️ **T063**: Prepare release collateral (CHANGELOG, version bump, notes)
-- ⏹️ **T064**: Audit TODO/FIXME markers and link tickets
-- ⏹️ **T065**: Review integration coverage and tutorial parity
-- ⏹️ **T066**: Capture lessons learned for post-1.0
+**Completed**:
+- ✅ **T061**: Re-run quality gates and document results (this report)
+- ✅ **T062**: Verify coverage ≥90% and update instructions (satisfied - 92%)
+- ✅ **T064**: Audit TODO/FIXME markers and link tickets
+- ✅ **T065**: Review integration coverage and tutorial parity
+- ✅ **T066**: Capture lessons learned for post-1.0
+
+**UAT Script Execution (T060 broken into T060a-T060h)**:
+- ⏹️ **T060a**: Verify side-by-side.py prerequisites (sqitch binary, imports)
+- ⏹️ **T060b**: Execute side-by-side.py and fix failures
+- ⏹️ **T060c**: Implement forward-compat.py logic (sqlitch → sqitch)
+- ⏹️ **T060d**: Execute forward-compat.py and fix failures
+- ⏹️ **T060e**: Implement backward-compat.py logic (sqitch → sqlitch)
+- ⏹️ **T060f**: Execute backward-compat.py and fix failures
+- ⏹️ **T060g**: Review all UAT logs for differences
+- ⏹️ **T060h**: Prepare release PR comment with evidence
+
+See `UAT_EXECUTION_PLAN.md` for detailed instructions on each UAT task.
+
+**Release Preparation**:
+- ⏹️ **T063**: Prepare release collateral (CHANGELOG, version bump, notes) - requires release decision-making
 
 ---
 
@@ -301,14 +318,16 @@ python uat/scripts/backward-compat.py --out artifacts/lockdown/backward-compat.l
 
 ## Conclusion
 
-**Lockdown Phase Status**: 85% Complete (51/60 tasks)
+**Lockdown Phase Status**: 77% Complete (51/66 tasks)
 
-All automated work is complete. The remaining tasks (T060-T066) require manual execution, human review, and release decision-making:
-- UAT script execution and evidence capture
-- CHANGELOG preparation and version bumping
-- Final codebase audit for TODOs
-- Integration test review
-- Retrospective documentation
+Phases 3.1-3.5 are fully complete. Phase 3.6 has 8 UAT execution tasks (T060a-T060h) remaining, plus release preparation (T063).
+
+**UAT Tasks** have been broken down into small, incremental steps documented in `UAT_EXECUTION_PLAN.md`:
+- Verify prerequisites before execution
+- Execute and debug each script individually
+- Implement stub scripts (forward/backward compat)
+- Review and document all findings
+- Prepare release evidence
 
 **Quality Confidence**: HIGH
 - Test coverage exceeds requirements (92% vs 90%)
@@ -316,11 +335,13 @@ All automated work is complete. The remaining tasks (T060-T066) require manual e
 - Documentation comprehensive and up-to-date
 - Constitutional principles satisfied
 
-**Ready for Manual Validation**: YES
-- Execute UAT scripts before final release tag
-- Review and approve implementation report
-- Complete release collateral (CHANGELOG, version bump)
-- Tag v1.0.0 when manual gates pass
+**Ready for UAT Execution**: YES
+- All prerequisites in place (helpers, test steps, side-by-side script)
+- Detailed execution plan with expected issues documented
+- Clear remediation strategies for each task
+- Small task granularity for session-by-session progress
+
+**Next Action**: Begin with T060a (verify prerequisites) as documented in `UAT_EXECUTION_PLAN.md`
 
 ---
 

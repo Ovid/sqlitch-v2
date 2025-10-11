@@ -90,42 +90,44 @@
 
 ## Success Criteria
 
+**Note**: See [`tasks.md`](./tasks.md) for the canonical task tracking and completion status. The criteria below define the quality bar; tasks.md tracks progress toward meeting them.
+
 ### Quality Gates
-- [ ] Test coverage ≥90% in all modules
-- [ ] All public functions have docstrings
-- [ ] mypy --strict passes with zero errors
-- [ ] Black and isort formatting enforced
-- [ ] No pylint warnings above configurable threshold
-- [ ] All TODO comments addressed or ticketed
+- Test coverage ≥90% in all modules
+- All public functions have docstrings
+- mypy --strict passes with zero errors
+- Black and isort formatting enforced
+- No pylint warnings above configurable threshold
+- All TODO comments addressed or ticketed
 
 ### Functional Gates
-- [ ] All CLI commands have contract tests
-- [ ] All configuration options tested
-- [ ] All error paths have explicit tests
-- [ ] Integration tests cover end-to-end workflows
-- [ ] Regression tests prevent known bugs
+- All CLI commands have contract tests
+- All configuration options tested
+- All error paths have explicit tests
+- Integration tests cover end-to-end workflows
+- Regression tests prevent known bugs
 
 ### Security Gates
-- [ ] No SQL injection vulnerabilities
-- [ ] No path traversal vulnerabilities
-- [ ] No command injection vulnerabilities
-- [ ] Dependencies have no critical CVEs
-- [ ] Configuration validation prevents malicious inputs
+- No SQL injection vulnerabilities
+- No path traversal vulnerabilities
+- No command injection vulnerabilities
+- Dependencies have no critical CVEs
+- Configuration validation prevents malicious inputs
 
 ### Documentation Gates
-- [ ] README complete with quickstart
-- [ ] CONTRIBUTING.md updated
-- [ ] All CLI commands documented
-- [ ] API reference generated
-- [ ] Common troubleshooting scenarios documented
-- [ ] Implementation report (`specs/005-lockdown/IMPLEMENTATION_REPORT_LOCKDOWN.md`) summarizes final quality gate results, links to logs, and notes any deferred follow-ups
+- README complete with quickstart
+- CONTRIBUTING.md updated
+- All CLI commands documented
+- API reference generated
+- Common troubleshooting scenarios documented
+- Implementation report (`specs/005-lockdown/IMPLEMENTATION_REPORT_LOCKDOWN.md`) summarizes final quality gate results, links to logs, and notes any deferred follow-ups
 
 ### UAT Gates
-- [ ] Side-by-side test (`uat/side-by-side.py`) passes all tutorial steps
-- [ ] Forward compatibility test passes (sqlitch → sqitch handoff)
-- [ ] Backward compatibility test passes (sqitch → sqlitch handoff)
-- [ ] UAT scripts detect no behavioral differences
-- [ ] Minor output formatting differences documented and acceptable
+- Side-by-side test (`uat/side-by-side.py`) passes all tutorial steps
+- Forward compatibility test passes (sqlitch → sqitch handoff)
+- Backward compatibility test passes (sqitch → sqlitch handoff)
+- UAT scripts detect no behavioral differences
+- Minor output formatting differences documented and acceptable
 
 ---
 
@@ -171,8 +173,8 @@ Tests functional equivalence by running both tools in parallel:
 ./uat/side-by-side.py --ignore 5 10      # Ignore steps 5 and 10
 ```
 
-#### 2. Forward Compatibility Test (`uat/forward-compat.py`)
-**Status**: 🔲 To Implement
+#### 2. Forward Compatibility Test (`uat/scripts/forward-compat.py`)
+**Status**: ✅ Stub Implemented (full execution logic pending T060c-T060d)
 
 Tests sqlitch → sqitch handoff:
 - Run step N with sqlitch
@@ -196,8 +198,8 @@ Tests sqlitch → sqitch handoff:
 - Document manual execution steps within the release checklist and developer guide.
 - Record outcomes in the release pull request with links to relevant logs.
 
-#### 3. Backward Compatibility Test (`uat/backward-compat.py`)
-**Status**: 🔲 To Implement
+#### 3. Backward Compatibility Test (`uat/scripts/backward-compat.py`)
+**Status**: ✅ Stub Implemented (full execution logic pending T060e-T060f)
 
 Tests sqitch → sqlitch handoff:
 - Run step N with sqitch
@@ -232,13 +234,14 @@ All three scripts should share:
 **Directory Structure**:
 ```
 uat/
-  __init__.py              # Shared utilities
-  side-by-side.py          # ✅ Implemented
-  forward-compat.py        # 🔲 To implement
-  backward-compat.py       # 🔲 To implement
-  test_steps.py            # 🔲 Shared step definitions
-  comparison.py            # 🔲 Shared comparison utilities
-  sanitization.py          # 🔲 Shared sanitization functions
+  __init__.py                      # ✅ Shared package init
+  side-by-side.py                  # ✅ Fully implemented
+  sanitization.py                  # ✅ Implemented (extracted)
+  comparison.py                    # ✅ Implemented (extracted)
+  test_steps.py                    # ✅ Implemented (46 tutorial steps)
+  scripts/
+    forward-compat.py              # ✅ Stub (full logic pending)
+    backward-compat.py             # ✅ Stub (full logic pending)
 ```
 
 ---
@@ -261,7 +264,7 @@ uat/
 **Mitigation**: Run UAT tests early in lockdown phase. Registry format is already aligned with sqitch. Most compatibility issues should surface in side-by-side testing first.
 
 **Risk**: Tutorial steps may change between sqitch versions  
-**Mitigation**: Pin to specific sqitch version for UAT testing. Document which sqitch version UAT validates against. Update UAT when new sqitch versions are released.
+**Mitigation**: UAT testing validates against **Sqitch v1.5.3** (vendored in `sqitch/` directory). Update UAT scripts when upgrading to new Sqitch versions.
 
 ---
 

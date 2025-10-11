@@ -106,7 +106,18 @@ pytest --cov=sqlitch --cov-report=term
 - [X] **T051 [P1]** Audit SQL statements for parameterization & path traversal; add regression tests where gaps exist (`sqlitch/config`, `sqlitch/engine`)
 
 ## Phase 3.6 · Validation & Release Prep
-- [ ] **T060 [P1]** Execute all three UAT scripts sequentially, attach sanitized logs under `specs/005-lockdown/artifacts/uat/`, and post release PR comment (per quickstart template) *(MANUAL TASK - requires human execution)*
+
+### UAT Script Execution (T060 broken down into T060a-T060f)
+- [ ] **T060a [P1]** Verify `uat/side-by-side.py` is ready to run (check for sqitch binary, test step definitions, helper imports)
+- [ ] **T060b [P1]** Execute `uat/side-by-side.py --out specs/005-lockdown/artifacts/uat/side-by-side.log` and fix any failures incrementally
+- [ ] **T060c [P1]** Implement full forward compatibility logic in `uat/scripts/forward-compat.py` (sqlitch first, then sqitch continues)
+- [ ] **T060d [P1]** Execute `uat/scripts/forward-compat.py --out specs/005-lockdown/artifacts/uat/forward-compat.log` and fix any failures
+- [ ] **T060e [P1]** Implement full backward compatibility logic in `uat/scripts/backward-compat.py` (sqitch first, then sqlitch continues)
+- [ ] **T060f [P1]** Execute `uat/scripts/backward-compat.py --out specs/005-lockdown/artifacts/uat/backward-compat.log` and fix any failures
+- [ ] **T060g [P1]** Review all three UAT logs for behavioral differences, document cosmetic diffs in `IMPLEMENTATION_REPORT_LOCKDOWN.md`
+- [ ] **T060h [P1]** Prepare release PR comment with UAT evidence using quickstart template
+
+### Quality Gates & Release Preparation
 - [X] **T061 [P1]** Re-run full quality gate suite (`pytest`, `mypy --strict`, `pydocstyle`, `black --check`, `isort --check-only`, `pip-audit`, `bandit`, `tox`) and record pass/fail in `IMPLEMENTATION_REPORT_LOCKDOWN.md`, noting remediation commands when any check fails
 - [X] **T062 [P1]** Verify coverage ≥90% and update `coverage.xml` plus quickstart instructions (include CLI commands used) *(92% coverage achieved)*
 - [ ] **T063 [P1]** Prepare release collateral: `CHANGELOG.md`, version bump, release notes, migration guide referencing manual UAT evidence *(MANUAL TASK - requires release decision-making)*
@@ -122,7 +133,14 @@ pytest --cov=sqlitch --cov-report=term
 - T115 must precede T116 & T117 (shared helper extraction before new scripts)
 - Documentation tasks (T040–T044) depend on implementation completion (T110–T119)
 - Security audits (T050–T051) depend on core implementation stabilizing
-- Validation tasks (T060–T065) run last and require all earlier phases complete
+- Validation tasks (T060a–T066) run last and require all earlier phases complete
+- **T060a → T060b** (verify before execute side-by-side)
+- **T060b → T060c** (side-by-side working before implementing forward-compat)
+- **T060c → T060d** (implement before execute forward-compat)
+- **T060d → T060e** (forward-compat working before implementing backward-compat)
+- **T060e → T060f** (implement before execute backward-compat)
+- **T060f → T060g** (all executions complete before review)
+- **T060g → T060h** (review complete before preparing PR comment)
 
 ## Parallel Execution Example
 ```bash

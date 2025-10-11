@@ -1,5 +1,10 @@
 # Quickstart: Quality Lockdown Validation
 
+## Prerequisites
+- **Sqitch v1.5.3** installed and available in PATH (for UAT testing)
+  - The vendored `sqitch/` directory contains v1.5.3 for reference
+  - Install via: `brew install sqitch` (macOS) or equivalent
+
 ## 1. Environment Setup
 ```bash
 python3 -m venv .venv

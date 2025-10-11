@@ -29,11 +29,16 @@ source .venv/bin/activate
 ### 🎯 Next Priority Tasks
 See `specs/005-lockdown/tasks.md` for complete list. Critical next steps:
 
-1. **T115**: Refactor `uat/side-by-side.py` to use shared helpers
-2. **T116-T117**: Implement full forward/backward compatibility scripts
-3. **T110, T112, T113**: Module-specific coverage improvements
-4. **T040-T044**: Documentation updates
-5. **T060-T066**: Final validation and release prep
+**Phase 3.6 UAT Execution** (T060a-T060h):
+- See `UAT_EXECUTION_PLAN.md` for detailed breakdown
+- Start with T060a: Verify side-by-side.py prerequisites
+- Each task is small and can be completed in one session
+- Dependencies are clearly documented
+
+**Release Preparation** (T063):
+- CHANGELOG.md updates
+- Version bump to 1.0.0
+- Release notes and migration guide
 
 ## Common Operations
 

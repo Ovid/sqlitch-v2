@@ -4,6 +4,7 @@
 
 ### UAT Compatibility Scope
 - **Decision**: Limit all compatibility scripts (side-by-side, forward, backward) to the SQLite tutorial workflow documented in `sqitch/lib/sqitchtutorial-sqlite.pod`.
+- **Sqitch Version**: UAT validates against **Sqitch v1.5.3** (vendored in `sqitch/` directory at repository root).
 - **Rationale**: Guarantees deterministic parity coverage with the canonical Sqitch tutorial and aligns with the clarified `Scope` requirement.
 - **Alternatives Considered**:
   - Run across every supported engine (Postgres/MySQL) — deferred to post-lockdown due to setup cost and unclear parity fixtures.
