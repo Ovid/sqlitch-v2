@@ -34,20 +34,33 @@
 
 #### Current UAT Status
 
-**Steps Passing**: 1-35 (76% of 46 tutorial steps)  
-**Current Failure**: Step 36 - "sqlitch status --show-tags"  
-**Error**: "A target must be provided via --target or configuration"  
-**Root Cause**: Sqitch infers target from configuration when no --target flag provided; SQLitch requires explicit flag
+**Steps Passing**: 1-36 (78% of 46 tutorial steps) ✅  
+**Current Failure**: Step 37 - "sqlitch rebase -y"  
+**Error**: Foreign key constraint failure during revert phase  
+
+**Fixed Issues (Commit e87e6e8, 9847a7b)**:
+- ✅ Step 36: Status command target resolution (from engine config)
+- ✅ Step 37: Rebase command `-y` flag implementation
+- ✅ Step 37: Rebase target resolution (from engine config)
+- ✅ Step 37: Basic rebase implementation (revert+deploy)
+
+**Current Issue**: Step 37 - Revert ordering with foreign key dependencies
+- Symptom: `userflips` view revert fails with "FOREIGN KEY constraint failed"
+- Root Cause: Revert may not properly handle view-to-table dependencies
+- Related: Similar issue seen in step 30
+- Next: Investigate revert dependency order calculation
 
 **Analysis**:
-- This is a target resolution discrepancy in `sqlitch/cli/commands/status.py`
-- Not a UAT script issue - script correctly follows tutorial syntax
-- Fix required to match Sqitch's default target behavior
-- Consult `sqitch/lib/App/Sqitch/Command/status.pm` for expected behavior
+- Status command now properly resolves target from `engine.{engine}.target` config
+- Rebase command implemented by delegating to revert (all) + deploy (all)
+- Remaining issue is revert ordering when views depend on tables
+- Need to consult sqitch's revert logic for dependency handling
 
-#### Session Achievements
-- ✅ Fixed 2 critical bugs blocking UAT execution
-- ✅ Demonstrated constitutional compliance with Sqitch verification protocol
+#### Session Achievements (Latest)
+- ✅ Fixed target resolution in status command (step 36)
+- ✅ Implemented basic rebase command with -y flag (step 37 partial)
+- ✅ Applied target resolution pattern consistently
+- ⏳ Identified revert ordering issue with foreign key dependencies
 - ✅ Progressed from step 22 failure to step 36 (14 additional steps passing)
 - ✅ Validated UAT script against tutorial prerequisites
 - ✅ Documented findings in tasks.md and this report
