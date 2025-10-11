@@ -52,8 +52,8 @@ def parse_plan(path: Path | str, *, default_engine: str | None = None) -> Plan:
 
     headers: dict[str, str] = {}
     entries: list[PlanEntry] = []
-    change_tags: dict[str, list[str]] = {}
-    last_change: Change | None = None
+    change_tags_by_index: dict[int, list[str]] = {}  # Map change index to tag names
+    last_change_index: int | None = None
 
     for line_no, raw_line in enumerate(content.splitlines(), start=1):
         line = raw_line.strip()
@@ -74,13 +74,17 @@ def parse_plan(path: Path | str, *, default_engine: str | None = None) -> Plan:
         elif entry_type == "tag":
             entry = _parse_tag(rest, line_no)
         else:
+            # Get last_change for compact entry parsing
+            last_change = entries[last_change_index] if last_change_index is not None else None
             entry = _parse_compact_entry(raw_line, plan_path.parent, line_no, last_change)
 
         entries.append(entry)
         if isinstance(entry, Change):
-            last_change = entry
+            last_change_index = len(entries) - 1
         elif isinstance(entry, Tag):
-            change_tags.setdefault(entry.change_ref, []).append(entry.name)
+            # Tag references the last change by index, not by name
+            if last_change_index is not None:
+                change_tags_by_index.setdefault(last_change_index, []).append(entry.name)
 
     project = headers.get("project")
     header_engine = headers.get("default_engine")
@@ -93,7 +97,7 @@ def parse_plan(path: Path | str, *, default_engine: str | None = None) -> Plan:
 
     adjusted_entries = _apply_rework_metadata(
         entries=tuple(entries),
-        change_tags=change_tags,
+        change_tags_by_index=change_tags_by_index,
         base_dir=plan_path.parent,
     )
 
@@ -238,24 +242,72 @@ def _parse_compact_change(line: str, note: str | None, line_no: int, base_dir: P
 def _apply_rework_metadata(
     *,
     entries: Sequence[PlanEntry],
-    change_tags: dict[str, list[str]],
+    change_tags_by_index: dict[int, list[str]],
     base_dir: Path,
 ) -> tuple[PlanEntry, ...]:
-    """Attach tag metadata and reworked script paths to change entries."""
+    """Attach tag metadata and reworked script paths to change entries.
+    
+    Tags are matched to specific change instances by their index in the plan,
+    not by name. This correctly handles reworked changes where the same name
+    appears multiple times with different tags.
+    
+    For reworked changes (where dependencies reference the same change with a tag),
+    script paths are resolved to use the @tag suffix.
+    """
 
+    # First pass: identify which changes are being reworked and at which tag
+    # Maps (change_name, instance_index) -> rework_tag
+    # instance_index is the 0-based count of this name before this position
+    rework_tags: dict[tuple[str, int], str] = {}
+    name_counts: dict[str, int] = {}
+    
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, Change):
+            continue
+        
+        # Check if this is a reworked change by examining dependencies
+        # A reworked change has a dependency like "userflips@v1.0.0-dev2"
+        for dep in entry.dependencies:
+            if "@" in dep:
+                dep_name, dep_tag = dep.split("@", 1)
+                # This dependency references a previous instance of dep_name at dep_tag
+                # We need to find which instance of dep_name this refers to
+                # It's the instance that existed when the tag was created
+                # For simplicity, we assume it's the LAST instance before this one
+                dep_instance = name_counts.get(dep_name, 1) - 1  # -1 because we want the previous instance
+                if dep_instance >= 0:
+                    rework_tags[(dep_name, dep_instance)] = dep_tag
+        
+        # Count this instance
+        name_counts[entry.name] = name_counts.get(entry.name, 0) + 1
+
+    # Second pass: apply tags and script paths
+    name_counts_second_pass: dict[str, int] = {}
     adjusted: list[PlanEntry] = []
-    for entry in entries:
+    
+    for index, entry in enumerate(entries):
         if not isinstance(entry, Change):
             adjusted.append(entry)
             continue
 
-        tags = tuple(change_tags.get(entry.name, ()))
+        # Get the instance index for this change
+        instance_index = name_counts_second_pass.get(entry.name, 0)
+        name_counts_second_pass[entry.name] = instance_index + 1
+
+        # Get tags for THIS specific change instance by its index
+        tags = tuple(change_tags_by_index.get(index, ()))
+        
+        # Check if this specific instance was reworked
+        rework_tag = rework_tags.get((entry.name, instance_index))
+        
         script_paths = dict(entry.script_paths)
-        if tags:
+        # If this change was reworked (has a later instance that references it with @tag),
+        # use the @tag suffixed scripts
+        if rework_tag:
             script_paths = _resolve_reworked_script_paths(
                 change_name=entry.name,
                 script_paths=script_paths,
-                tags=tags,
+                tags=(rework_tag,),  # Use the rework tag, not the change's own tags
                 base_dir=base_dir,
             )
 
@@ -269,6 +321,7 @@ def _apply_rework_metadata(
                 change_id=entry.change_id,
                 dependencies=entry.dependencies,
                 tags=tags or entry.tags,
+                rework_of=f"{entry.name}@{rework_tag}" if rework_tag and instance_index > 0 else None,
             )
         )
 
@@ -282,7 +335,11 @@ def _resolve_reworked_script_paths(
     tags: Sequence[str],
     base_dir: Path,
 ) -> dict[str, Path | None]:
-    """Compute script paths for reworked changes preferring ``@tag`` suffixes."""
+    """Compute script paths for reworked changes preferring ``@tag`` suffixes.
+    
+    Note: script_paths values are already constructed relative to base_dir,
+    so we use them as-is to find the @tag suffixed versions.
+    """
 
     if not tags:
         return script_paths
@@ -296,7 +353,9 @@ def _resolve_reworked_script_paths(
             resolved[kind] = None
             continue
 
-        original_path = original if original.is_absolute() else base_dir / original
+        # Original is already the correct path (constructed as base_dir / kind / name.sql)
+        # We just need to check for @tag suffixed versions in the same directory
+        original_path = Path(original)
         parent = original_path.parent
         extension = original_path.suffix
 

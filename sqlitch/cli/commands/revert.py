@@ -268,15 +268,21 @@ def _execute_revert(request: _RevertRequest) -> None:
         # Filter to only revert deployed changes in reverse order
         # If --to-change or --to-tag specified, `changes` contains the target point
         # We revert everything AFTER the target (in deployment order)
-        changes_to_keep_set = (
-            {c.name for c in changes} if (request.to_change or request.to_tag) else set()
-        )
+        # 
+        # Important: For reworked changes, we need to track specific instances by their
+        # position in the plan, not just by name, since the same name can appear multiple times.
+        changes_to_keep_indices = set()
+        if request.to_change or request.to_tag:
+            # Build a set of indices of changes to keep
+            for i, change in enumerate(changes):
+                changes_to_keep_indices.add(i)
 
         changes_to_revert = []
-        for change in reversed(request.plan.changes):
+        for i in range(len(request.plan.changes) - 1, -1, -1):
+            change = request.plan.changes[i]
             if change.name in deployed:
-                # If we have a target and this change should be kept, stop
-                if changes_to_keep_set and change.name in changes_to_keep_set:
+                # If we have a target and this change (by position) should be kept, stop
+                if changes_to_keep_indices and i in changes_to_keep_indices:
                     break
                 changes_to_revert.append(change)
 
@@ -367,8 +373,15 @@ def _revert_change(
     emitter: Callable[[str], None],
 ) -> None:
     """Execute a revert script and update registry state for a change."""
-    # Load revert script
-    script_path = plan_root / "revert" / f"{change.name}.sql"
+    # Load revert script using the script_paths from the parser
+    script_ref = change.script_paths.get("revert")
+    if script_ref is None:
+        raise CommandError(f"Change '{change.name}' is missing a revert script path.")
+    
+    script_path = Path(script_ref)
+    if not script_path.is_absolute():
+        script_path = plan_root / script_path
+    
     if not script_path.exists():
         raise CommandError(f"Revert script {script_path} is missing for change '{change.name}'.")
 
@@ -397,9 +410,16 @@ def _revert_change(
             (change_id,),
         )
 
-        # Delete dependencies (FK constraints require this order)
+        # Delete dependencies FROM this change (where this is the source)
         cursor.execute(
             f"DELETE FROM {registry_schema}.dependencies WHERE change_id = ?",
+            (change_id,),
+        )
+
+        # Delete dependencies TO this change (where this is the target)
+        # This is necessary because dependency_id FK doesn't have ON DELETE CASCADE
+        cursor.execute(
+            f"DELETE FROM {registry_schema}.dependencies WHERE dependency_id = ?",
             (change_id,),
         )
 

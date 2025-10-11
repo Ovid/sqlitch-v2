@@ -263,7 +263,9 @@ def verify_command(
         workspace_display = display_target
 
     try:
-        connection = sqlite3.connect(workspace_path)
+        # Use isolation_level=None to enable autocommit mode.
+        # This allows verify scripts to manage their own transactions (BEGIN/ROLLBACK).
+        connection = sqlite3.connect(workspace_path, isolation_level=None)
     except sqlite3.Error as exc:
         raise CommandError(f"Failed to connect to workspace database: {exc}") from exc
 
@@ -277,13 +279,14 @@ def verify_command(
             raise CommandError(f"Failed to attach registry: {exc}") from exc
 
         try:
+            # Query registry with change_id to match against plan for rework detection
             with closing(
                 connection.execute(
-                    "SELECT change FROM sqitch.changes WHERE project = ? ORDER BY committed_at",
+                    "SELECT change, change_id FROM sqitch.changes WHERE project = ? ORDER BY committed_at",
                     (plan.project_name,),
                 )
             ) as query_cursor:
-                deployed_changes = [row[0] for row in query_cursor.fetchall()]
+                deployed_changes = list(query_cursor.fetchall())
         except sqlite3.Error as exc:
             raise CommandError(f"Failed to query registry: {exc}") from exc
 
@@ -293,12 +296,42 @@ def verify_command(
             click.echo("No changes to verify.")
             return
 
-        pending_changes = [name for name in plan_change_names if name not in deployed_changes]
+        deployed_names = [name for name, _ in deployed_changes]
+        pending_changes = [name for name in plan_change_names if name not in deployed_names]
+
+        # Build a map of change occurrences to handle reworked changes
+        # Track which occurrence of each change name we're processing
+        change_occurrence_index: dict[str, int] = {}
 
         with closing(connection.cursor()) as cursor:
-            for change_name in deployed_changes:
+            for change_name, change_id in deployed_changes:
                 processed_changes += 1
-                verify_script_path = project_root / "verify" / f"{change_name}.sql"
+                
+                # Track occurrence count for this change name
+                occurrence = change_occurrence_index.get(change_name, 0)
+                change_occurrence_index[change_name] = occurrence + 1
+                
+                # Find the matching Change object in the plan for this occurrence
+                matching_change = None
+                current_occurrence = 0
+                for change_obj in plan.changes:
+                    if change_obj.name == change_name:
+                        if current_occurrence == occurrence:
+                            matching_change = change_obj
+                            break
+                        current_occurrence += 1
+                
+                # Determine verify script filename
+                if matching_change and matching_change.is_rework():
+                    rework_tag = matching_change.get_rework_tag()
+                    if rework_tag:
+                        verify_filename = f"{change_name}@{rework_tag}.sql"
+                    else:
+                        verify_filename = f"{change_name}.sql"
+                else:
+                    verify_filename = f"{change_name}.sql"
+                
+                verify_script_path = project_root / "verify" / verify_filename
 
                 if not verify_script_path.exists():
                     click.echo(f"  # {change_name} .. SKIP (no verify script)")

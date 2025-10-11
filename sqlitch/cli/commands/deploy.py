@@ -276,19 +276,25 @@ def _execute_deploy(request: _DeployRequest) -> None:
             registry_uri=engine_target.registry_uri,
         )
 
-        deployed = _load_deployed_state(
+        deployed_ids, deployed_metadata = _load_deployed_state(
             connection=connection,
             registry_schema=registry_schema,
             project=request.plan.project_name,
         )
-        pending = [change for change in changes if change.name not in deployed]
+        
+                # Compute change_id for each change in the plan and filter out deployed ones
+        pending = []
+        for change in request.plan.changes:
+            change_id = _compute_change_id_for_change(request.plan.project_name, change)
+            if change_id not in deployed_ids:
+                pending.append(change)
 
         _synchronise_registry_tags(
             connection=connection,
             registry_schema=registry_schema,
             project=request.plan.project_name,
             plan=request.plan,
-            deployed=deployed,
+            deployed=deployed_metadata,
             env=request.env,
             committer_name=committer_name,
             committer_email=committer_email,
@@ -324,7 +330,7 @@ def _execute_deploy(request: _DeployRequest) -> None:
                     env=request.env,
                     committer_name=committer_name,
                     committer_email=committer_email,
-                    deployed=deployed,
+                    deployed=deployed_metadata,
                     registry_schema=registry_schema,
                 )
             except Exception as exc:
@@ -832,12 +838,59 @@ def _ensure_project_entry(
         )
 
 
+def _compute_change_id_for_change(project: str, change: Change) -> str:
+    """Compute the change_id for a Change object using Sqitch's algorithm.
+    
+    Args:
+        project: Project name
+        change: Change object from the plan
+        
+    Returns:
+        40-character SHA1 hex digest string
+    """
+    from sqlitch.utils.identity import generate_change_id
+    from sqlitch.utils.time import parse_iso_datetime
+    
+    # Extract planner name and email
+    # Change.planner format is "Name <email>"
+    planner_match = change.planner.split("<", 1)
+    if len(planner_match) == 2:
+        planner_name = planner_match[0].strip()
+        planner_email = planner_match[1].rstrip(">").strip()
+    else:
+        planner_name = change.planner
+        planner_email = ""
+    
+    # Get dependencies (requires), excluding any @tag suffix
+    requires = tuple(dep.split("@")[0] if "@" in dep else dep for dep in change.dependencies)
+    
+    # Change.planned_at is already a datetime object
+    return generate_change_id(
+        project=project,
+        change=change.name,
+        timestamp=change.planned_at,
+        planner_name=planner_name,
+        planner_email=planner_email,
+        note=change.notes or "",
+        requires=requires,
+        conflicts=tuple(change.conflicts),
+    )
+
+
 def _load_deployed_state(
     connection: sqlite3.Connection,
     registry_schema: str,
     project: str,
-) -> dict[str, dict[str, str]]:
-    """Return a mapping of deployed change names to registry metadata."""
+) -> tuple[set[str], dict[str, dict[str, str]]]:
+    """Return deployed change IDs and a mapping of names to registry metadata.
+    
+    Returns:
+        A tuple of (deployed_change_ids, name_to_metadata) where:
+        - deployed_change_ids: Set of change_id strings for all deployed changes
+```
+        - name_to_metadata: Dict mapping change names to their latest deployment metadata
+                           (useful for script_hash validation and tag lookups)
+    """
 
     cursor = connection.execute(
         f'SELECT "change", change_id, script_hash FROM {registry_schema}.changes WHERE project = ? '
@@ -862,14 +915,21 @@ def _load_deployed_state(
     for change_id, tag in tag_rows:
         tag_lookup.setdefault(str(change_id), set()).add(str(tag))
 
-    deployed: dict[str, dict[str, str]] = {}
+    deployed_ids: set[str] = set()
+    name_to_metadata: dict[str, dict[str, str]] = {}
+    
     for change_name, change_id, script_hash in rows:
-        deployed[str(change_name)] = {
-            "change_id": str(change_id),
+        change_id_str = str(change_id)
+        deployed_ids.add(change_id_str)
+        # Keep updating the dict so the last (most recent) version wins
+        # This is used for script_hash checking and tag lookups
+        name_to_metadata[str(change_name)] = {
+            "change_id": change_id_str,
             "script_hash": str(script_hash) if script_hash is not None else "",
-            "tags": tag_lookup.get(str(change_id), set()),
+            "tags": tag_lookup.get(change_id_str, set()),
         }
-    return deployed
+    
+    return deployed_ids, name_to_metadata
 
 
 def _apply_change(
@@ -1020,6 +1080,7 @@ def _resolve_script_path(plan_root: Path, change: Change, kind: str) -> Path:
     path = Path(script_ref)
     if not path.is_absolute():
         path = plan_root / path
+    
     return path
 
 
@@ -1525,11 +1586,33 @@ def _synchronise_registry_tags(
     committer_name: str,
     committer_email: str,
 ) -> None:
-    """Ensure registry tag entries mirror plan metadata for deployed changes."""
+    """Ensure registry tag entries mirror plan metadata for deployed changes.
+    
+    Note: The 'deployed' dict maps change names to their LATEST deployment metadata.
+    For reworked changes with duplicate names, we need to match by change_id to avoid
+    trying to insert the same tags multiple times.
+    """
+
+    # Build a set of already-processed change_ids to avoid duplicate tag insertions
+    processed_change_ids: set[str] = set()
 
     for change in plan.changes:
+        # Compute this change's ID to match against deployed changes
+        change_id = _compute_change_id_for_change(project, change)
+        
+        # Skip if we've already processed this specific change_id
+        if change_id in processed_change_ids:
+            continue
+        processed_change_ids.add(change_id)
+        
+        # Find deployed metadata by name (works for single changes, gets latest for reworks)
         deployed_meta = deployed.get(change.name)
         if not deployed_meta:
+            continue
+        
+        # Only process if this is actually the deployed version
+        # (deployed_meta might be for a different version of a reworked change)
+        if deployed_meta["change_id"] != change_id:
             continue
 
         recorded_tags = set(deployed_meta.get("tags") or ())

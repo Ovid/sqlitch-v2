@@ -1,0 +1,4 @@
+usage: side-by-side.py [-h] [--continue] [--out OUTFILE]
+                       [--ignore IGNORE_STEPS [IGNORE_STEPS ...]]
+                       [--stop STOP_STEP]
+side-by-side.py: error: unrecognized arguments: --start 42
