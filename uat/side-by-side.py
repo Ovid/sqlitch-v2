@@ -29,6 +29,13 @@ import sys
 from pathlib import Path
 from typing import List, Set, Tuple, Optional
 
+# Allow running as script or module
+if __name__ == "__main__":
+    # Add project root to path when running as script
+    project_root = Path(__file__).parent.parent
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
+
 from uat import comparison, sanitization
 from uat.test_steps import TUTORIAL_STEPS
 
