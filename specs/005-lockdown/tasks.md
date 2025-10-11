@@ -126,14 +126,16 @@ pytest --cov=sqlitch --cov-report=term
 ### UAT Script Execution (T060 broken down into T060a-T060i)
 - [X] **T060a [P1]** Verify `uat/side-by-side.py` is ready to run (check for sqitch binary, test step definitions, helper imports)
 - [ ] **T060b [P1]** Execute `uat/side-by-side.py --out specs/005-lockdown/artifacts/uat/side-by-side.log` and fix any failures incrementally
-  - **STATUS**: IN PROGRESS - Step 22 failure fixed (commit 95ba4a2)
-  - **HALT STATE**: Discovered that UAT script itself has incorrect behavior at step 30
-  - **ROOT CAUSE**: `uat/side-by-side.py` removes test directories before step 30, losing sqitch.conf and sqitch.plan files
-  - **FIX REQUIRED**: Ensure UAT script preserves or recreates essential project files per tutorial expectations
-  - **NEXT**: Fix step 30 setup to match tutorial workflow (ensure sqitch.conf and sqitch.plan exist in working directory)
+  - **STATUS**: IN PROGRESS - Steps 1-35 passing (commit dda7205)
+  - **FIXES APPLIED**:
+    - Step 30: Fixed UAT script to preserve project files when creating dev/ subdirectory
+    - Step 24: Enabled PRAGMA foreign_keys = ON in SQLiteEngine to fix cascading deletes
+  - **CURRENT FAILURE**: Step 36 - sqlitch status requires explicit --target, sqitch infers from config
+  - **NEXT**: Fix target resolution to match sqitch behavior (infer from config when no --target provided)
 - [ ] **T060b2 [P1]** **NEW TASK**: Validate that `uat/side-by-side.py` test steps faithfully reproduce the tutorial workflow from `uat/sqitchtutorial-sqlite.pod`
   - **RATIONALE**: Step 30 failure revealed UAT script doesn't match tutorial expectations
-  - **REQUIREMENT**: Before running any UAT script, verify each test step against the corresponding tutorial section
+  - **STATUS**: PARTIALLY COMPLETE - Step 30 fix validated against tutorial
+  - **REQUIREMENT**: Continue validating remaining steps against tutorial
   - **PROCESS**: 
     1. For each step in TUTORIAL_STEPS, identify the corresponding section in sqitchtutorial-sqlite.pod
     2. Verify that the UAT script's setup (file creation, directory structure) matches tutorial prerequisites
