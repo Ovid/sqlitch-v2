@@ -50,6 +50,8 @@ class SQLiteEngine(Engine):
     def connect_workspace(self) -> sqlite3.Connection:
         connection = super().connect_workspace()
         self._attach_registry(connection)
+        # Enable foreign keys for proper cascading deletes (sqitch parity)
+        connection.execute("PRAGMA foreign_keys = ON")
         return connection
 
     def registry_filesystem_path(self) -> Path:

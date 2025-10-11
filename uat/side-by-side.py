@@ -524,12 +524,9 @@ ROLLBACK;
         "Tag Release v1.0.0-dev1", "sqlitch", "tag", "v1.0.0-dev1", "-n", "Tag v1.0.0-dev1."
     )
 
-    # Create dev directories
-    if SQITCH_DIR.exists():
-        shutil.rmtree(SQITCH_DIR)
+    # Create dev subdirectories within existing project directories
+    # NOTE: Tutorial expects project files (sqitch.conf, sqitch.plan, deploy/, etc.) to remain
     (SQITCH_DIR / "dev").mkdir(parents=True, exist_ok=True)
-    if SQLITCH_DIR.exists():
-        shutil.rmtree(SQLITCH_DIR)
     (SQLITCH_DIR / "dev").mkdir(parents=True, exist_ok=True)
 
     run_and_compare("Deploy Tag to New DB", "sqlitch", "deploy", "db:sqlite:dev/flipr.db")
