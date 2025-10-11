@@ -64,19 +64,35 @@ def parse_plan(path: Path | str, *, default_engine: str | None = None) -> Plan:
             headers[key] = value
             continue
 
-        tokens = shlex.split(line, comments=False, posix=True)
+        # Try parsing as compact entry first (most common case)
+        # Compact format doesn't use shell quoting, so avoid shlex
         entry: PlanEntry
-        if not tokens:
-            continue
-        entry_type, *rest = tokens
-        if entry_type == "change":
-            entry = _parse_change(rest, plan_path.parent, line_no)
-        elif entry_type == "tag":
-            entry = _parse_tag(rest, line_no)
-        else:
-            # Get last_change for compact entry parsing
-            last_change = entries[last_change_index] if last_change_index is not None else None
+        last_change = entries[last_change_index] if last_change_index is not None else None
+        try:
             entry = _parse_compact_entry(raw_line, plan_path.parent, line_no, last_change)
+        except (ValueError, PlanParseError):
+            # Fall back to verbose format parsing with shlex
+            try:
+                tokens = shlex.split(line, comments=False, posix=True)
+            except ValueError as exc:
+                # shlex parsing failed (e.g., unclosed quotes)
+                # Try one more time with the compact parser in case it's just a parsing issue
+                try:
+                    entry = _parse_compact_entry(raw_line, plan_path.parent, line_no, last_change)
+                except Exception:
+                    # Re-raise the original shlex error
+                    raise PlanParseError(str(exc)) from exc
+            else:
+                if not tokens:
+                    continue
+                entry_type, *rest = tokens
+                if entry_type == "change":
+                    entry = _parse_change(rest, plan_path.parent, line_no)
+                elif entry_type == "tag":
+                    entry = _parse_tag(rest, line_no)
+                else:
+                    # Assume it's a compact entry
+                    entry = _parse_compact_entry(raw_line, plan_path.parent, line_no, last_change)
 
         entries.append(entry)
         if isinstance(entry, Change):

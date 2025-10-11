@@ -828,6 +828,32 @@ COMMIT;
                 ),
             )
 
+            registry_connection.commit()
+        finally:
+            registry_connection.close()
+
+        # Compute the correct change IDs using the same algorithm as deploy
+        from sqlitch.cli.commands.deploy import _compute_change_id_for_change
+        
+        users_change_id = _compute_change_id_for_change(
+            "flipr",
+            users_change,
+            INIT_URI,
+            None,  # First change has no parent
+        )
+        
+        flips_change_id = _compute_change_id_for_change(
+            "flipr",
+            flips_change,
+            INIT_URI,
+            users_change_id,  # flips depends on users, so parent is users
+        )
+
+        # Now populate the registry with the computed change IDs
+        registry_connection = sqlite3.connect(registry_path)
+        try:
+            cursor = registry_connection.cursor()
+
             cursor.executemany(
                 """
                 INSERT INTO changes (
@@ -846,29 +872,29 @@ COMMIT;
                 """,
                 [
                     (
-                        "fcc0a9ca23da3c3a83c78e9454cdbc23f1837a45",
-                        "fcc0a9ca23da3c3a83c78e9454cdbc23f1837a45",
+                        users_change_id,
+                        users_change_id,
                         "users",
                         "flipr",
                         "Creates table to track our users.",
                         "2013-12-31 10:26:59 -0800",
-                        "Marge N. O’Vera",
+                        "Marge N. O'Vera",
                         "marge@example.com",
                         "2013-12-31 10:26:59 -0800",
-                        "Marge N. O’Vera",
+                        "Marge N. O'Vera",
                         "marge@example.com",
                     ),
                     (
-                        "994b030e14aa7223ee81550d24c9bf5f522630da",
-                        "994b030e14aa7223ee81550d24c9bf5f522630da",
+                        flips_change_id,
+                        flips_change_id,
                         "flips",
                         "flipr",
                         "Adds table for storing flips.",
                         "2013-12-31 11:05:44 -0800",
-                        "Marge N. O’Vera",
+                        "Marge N. O'Vera",
                         "marge@example.com",
                         "2013-12-31 11:05:44 -0800",
-                        "Marge N. O’Vera",
+                        "Marge N. O'Vera",
                         "marge@example.com",
                     ),
                 ],
@@ -881,10 +907,10 @@ COMMIT;
                 VALUES (?, ?, ?, ?)
                 """,
                 (
-                    "994b030e14aa7223ee81550d24c9bf5f522630da",  # flips change_id
+                    flips_change_id,  # flips change_id
                     "require",
                     "users",
-                    "fcc0a9ca23da3c3a83c78e9454cdbc23f1837a45",  # users change_id
+                    users_change_id,  # users change_id
                 ),
             )
 
