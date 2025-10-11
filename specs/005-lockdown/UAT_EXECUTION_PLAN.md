@@ -59,8 +59,10 @@ python -c "from uat import sanitization, comparison, test_steps; print('✅ Impo
 
 ### T060b: Execute side-by-side.py [P1]
 **Estimated Time**: 15-30 minutes per iteration (may require multiple sessions)  
-**Status**: 🔷 Blocked by T060a  
-**Depends On**: T060a complete
+**Status**: 🔷 Blocked by T060a and T060b2  
+**Depends On**: T060a complete, T060b2 complete
+
+**⚠️ CRITICAL PREREQUISITE**: This task CANNOT proceed until T060b2 is complete. T060b2 validates that the UAT script correctly reproduces the tutorial workflow and that sqitch produces tutorial-expected output at every step. Only after sqitch behavior is verified against the tutorial can we proceed to test sqlitch parity.
 
 **⚠️ HALT STATE PROTOCOL**: This task involves iterative debugging. Each failure MUST be fixed, reviewed, and committed before proceeding. DO NOT mark this task complete until the script exits with code 0 and all steps pass.
 
@@ -158,6 +160,150 @@ rm -rf uat/sqitch_results uat/sqlitch_results
 - Fix multiple unrelated failures in one commit
 - Continue debugging when context window is getting full
 - Skip failures to "come back later"
+
+---
+
+### T060b2: Validate UAT Script Against Tutorial [P1] 🆕
+**Estimated Time**: 60-90 minutes  
+**Status**: 🔷 Ready to start (MUST complete before T060b)  
+**Depends On**: T060a complete  
+**Blocks**: T060b, T060c, T060d, T060e, T060f
+
+**⚠️ CRITICAL BLOCKING TASK**: This task MUST be completed before any UAT comparison testing. It validates that the UAT script correctly reproduces the tutorial workflow and that sqitch produces tutorial-expected output at every step.
+
+**Background**: During T060b execution, step 30 failed with "Plan file sqitch.plan does not exist" when running `sqitch deploy db:sqlite:dev/flipr.db`. According to `uat/sqitchtutorial-sqlite.pod`, this command should produce:
+```
+Adding registry tables to db:sqlite:dev/sqitch.db
+Deploying changes to db:sqlite:dev/flipr.db
+  + users ................... ok
+  + flips ................... ok
+```
+
+This revealed that the UAT script's test setup doesn't match the tutorial workflow. The script was removing test directories without preserving essential project files, causing sqitch itself to fail in ways that contradict the tutorial.
+
+**Objective**: Ensure that `uat/side-by-side.py` faithfully reproduces the tutorial workflow such that sqitch produces tutorial-expected output at every step BEFORE testing sqlitch parity.
+
+**Acceptance Criteria**:
+- [ ] Each step in TUTORIAL_STEPS has been cross-referenced with `uat/sqitchtutorial-sqlite.pod`
+- [ ] UAT script's setup (file creation, directory structure, environment) matches tutorial prerequisites for each step
+- [ ] Sqitch produces tutorial-expected output at every step (not just "exits with code 0")
+- [ ] Any deviations from tutorial are documented with rationale
+- [ ] Document created: `specs/005-lockdown/UAT_TUTORIAL_VALIDATION.md` mapping each step to tutorial section
+- [ ] UAT script updated to preserve project context across test phases (if needed)
+
+**Validation Process**:
+
+**Step 1: Create Step-by-Tutorial Mapping**
+```bash
+cd /Users/poecurt/projects/sqlitch
+source .venv/bin/activate
+
+# Create validation document
+touch specs/005-lockdown/UAT_TUTORIAL_VALIDATION.md
+```
+
+Edit `UAT_TUTORIAL_VALIDATION.md` with this template for each step:
+```markdown
+## Step N: [Description]
+
+**Tutorial Section**: Lines X-Y in sqitchtutorial-sqlite.pod
+**Tutorial Context**: [What files/state should exist before this step]
+**Tutorial Command**: [Exact command from tutorial]
+**Tutorial Expected Output**: [Key output lines from tutorial]
+
+**UAT Script Implementation**:
+- Command in TUTORIAL_STEPS: [command + args]
+- Pre-step setup in side-by-side.py: [lines X-Y]
+- Matches tutorial: ✅ / ❌
+
+**Issues Found**: [List any discrepancies]
+**Resolution**: [How it was fixed or why deviation is acceptable]
+```
+
+**Step 2: Validate Critical Steps** (focus on steps that modify project state)
+Priority steps to validate (in order):
+1. Step 1: Init project (creates sqitch.conf, sqitch.plan)
+2. Step 5: Add users (modifies sqitch.plan, creates script files)
+3. Step 6: First deploy (creates registry DB)
+4. Step 13-14: Target/engine setup (modifies sqitch.conf)
+5. Step 18: Add flips (requires users context)
+6. Step 29: Tag (modifies sqitch.plan)
+7. **Step 30: Deploy to dev/flipr.db** ⚠️ KNOWN ISSUE
+8. Step 32: Bundle (requires full project context)
+
+**Step 3: Run Sqitch-Only Test** (verify sqitch matches tutorial)
+```bash
+# Create a clean test directory for sqitch-only validation
+mkdir -p uat/tutorial_validation
+cd uat/tutorial_validation
+
+# Manually execute tutorial steps using sqitch
+# Record output at each step
+# Compare with tutorial expected output
+```
+
+For each critical step:
+```bash
+# Execute step
+sqitch [command] [args]
+
+# Capture actual output
+# Compare with tutorial section
+# Document in UAT_TUTORIAL_VALIDATION.md
+```
+
+**Step 4: Fix UAT Script**
+Based on validation findings, update `uat/side-by-side.py` to:
+- Preserve sqitch.conf and sqitch.plan across test phases
+- Ensure directory structure matches tutorial expectations
+- Add any missing file copies or environment setup
+
+**Common Fixes Needed**:
+```python
+# Example: Preserve project files when recreating directories
+def preserve_and_recreate_dir(base_dir: Path):
+    """Remove directory but preserve project files."""
+    project_files = ["sqitch.conf", "sqitch.plan"]
+    saved_files = {}
+    
+    for fname in project_files:
+        fpath = base_dir / fname
+        if fpath.exists():
+            saved_files[fname] = fpath.read_text()
+    
+    # Recreate directory structure
+    if base_dir.exists():
+        shutil.rmtree(base_dir)
+    base_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Restore project files
+    for fname, content in saved_files.items():
+        (base_dir / fname).write_text(content)
+```
+
+**Step 5: Verify Fix**
+```bash
+# Run UAT script with sqitch only (temporarily modify to skip sqlitch)
+# Verify sqitch produces tutorial-expected output at ALL steps
+# Document results in UAT_TUTORIAL_VALIDATION.md
+```
+
+**Expected Issues**:
+- Step 30 (Deploy to dev/flipr.db): Missing sqitch.conf and sqitch.plan
+- Step 32 (Bundle): Directory structure doesn't match tutorial assumptions
+- Steps after revert: Plan file may be missing deployed changes
+
+**Success Criteria**:
+When this task is complete:
+1. `UAT_TUTORIAL_VALIDATION.md` exists with all critical steps documented
+2. Sqitch produces tutorial-expected output at every step (run sqitch-only test)
+3. UAT script preserves project context appropriately
+4. Any deviations are documented and justified
+
+**DO NOT PROCEED TO T060b UNTIL**:
+- [ ] UAT_TUTORIAL_VALIDATION.md is complete
+- [ ] Sqitch-only test run passes with tutorial-expected output
+- [ ] UAT script fixes are committed
 
 ---
 

@@ -102,7 +102,31 @@ Post-design constitution check: ✅ unchanged (still compliant).
   - Coverage and docstring gaps → failing tests then fixes per module.
   - Security gates → scripted checks plus remediation tasks.
   - UAT scripts → shared helper extraction, forward/backward script implementation, manual checklist updates, evidence-review tasks.
+  - **UAT Validation Protocol**: Before testing sqlitch parity, verify sqitch behavior matches tutorial expectations from `uat/sqitchtutorial-sqlite.pod`.
 - Tasks remain grouped by phase (Assessment, Coverage, Documentation, Stability, Security, UAT Validation) with P1 priority for constitutional gates and manual UAT deliverables.
+
+## Critical Discovery (2025-10-11)
+**UAT Script Validation Issue Identified**: During execution of T060b, discovered that `uat/side-by-side.py` step 30 fails because the script removes test directories without preserving essential project files (`sqitch.conf`, `sqitch.plan`). This revealed a fundamental flaw in the UAT validation approach:
+
+**Problem**: The UAT script was testing "sqlitch vs sqitch" without first verifying that sqitch behavior itself matches the tutorial expectations from `sqitchtutorial-sqlite.pod`.
+
+**Impact**: When step 30 (`sqitch deploy db:sqlite:dev/flipr.db`) produced "Plan file sqitch.plan does not exist", we discovered the UAT script's test setup doesn't match the tutorial workflow. According to the tutorial, this command should produce:
+```
+Adding registry tables to db:sqlite:dev/sqitch.db
+Deploying changes to db:sqlite:dev/flipr.db
+  + users ................... ok
+  + flips ................... ok
+```
+
+**Root Cause**: UAT script removes working directories between test phases without recreating the project context that the tutorial assumes.
+
+**Resolution**: Added new task T060b2 to establish a validation protocol:
+1. Before running any UAT comparison, verify each test step against corresponding tutorial section
+2. Ensure UAT script setup (files, directories, context) matches tutorial prerequisites  
+3. Validate that sqitch produces tutorial-expected output at every step FIRST
+4. Only after sqitch behavior is verified correct, proceed to test sqlitch parity
+
+This discovery reinforces the constitutional principle: **Sqitch implementation is the source of truth**, and the tutorial documents expected behavior. UAT scripts must validate against both.
 
 ## Complexity Tracking
 _None required; plan remains within constitutional constraints._

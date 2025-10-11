@@ -123,13 +123,24 @@ pytest --cov=sqlitch --cov-report=term
 
 ## Phase 3.6 · Validation & Release Prep
 
-### UAT Script Execution (T060 broken down into T060a-T060f)
+### UAT Script Execution (T060 broken down into T060a-T060i)
 - [X] **T060a [P1]** Verify `uat/side-by-side.py` is ready to run (check for sqitch binary, test step definitions, helper imports)
 - [ ] **T060b [P1]** Execute `uat/side-by-side.py --out specs/005-lockdown/artifacts/uat/side-by-side.log` and fix any failures incrementally
   - **STATUS**: IN PROGRESS - Step 22 failure fixed (commit 95ba4a2)
-  - **HALT STATE**: Discovered missing symbolic reference support (@HEAD^, @ROOT, etc.)
-  - **FIX APPLIED**: Implemented `sqlitch/plan/symbolic.py` with full Sqitch parity for symbolic references
-  - **NEXT**: Resume UAT execution from step 23
+  - **HALT STATE**: Discovered that UAT script itself has incorrect behavior at step 30
+  - **ROOT CAUSE**: `uat/side-by-side.py` removes test directories before step 30, losing sqitch.conf and sqitch.plan files
+  - **FIX REQUIRED**: Ensure UAT script preserves or recreates essential project files per tutorial expectations
+  - **NEXT**: Fix step 30 setup to match tutorial workflow (ensure sqitch.conf and sqitch.plan exist in working directory)
+- [ ] **T060b2 [P1]** **NEW TASK**: Validate that `uat/side-by-side.py` test steps faithfully reproduce the tutorial workflow from `uat/sqitchtutorial-sqlite.pod`
+  - **RATIONALE**: Step 30 failure revealed UAT script doesn't match tutorial expectations
+  - **REQUIREMENT**: Before running any UAT script, verify each test step against the corresponding tutorial section
+  - **PROCESS**: 
+    1. For each step in TUTORIAL_STEPS, identify the corresponding section in sqitchtutorial-sqlite.pod
+    2. Verify that the UAT script's setup (file creation, directory structure) matches tutorial prerequisites
+    3. Document any deviations or assumptions the UAT script makes
+    4. Fix UAT script to ensure sqitch behavior matches tutorial expectations FIRST
+    5. Only after sqitch behavior is verified correct, test sqlitch parity
+  - **ACCEPTANCE**: UAT script runs successfully with sqitch producing tutorial-expected output at every step
 - [ ] **T060c [P1]** Implement full forward compatibility logic in `uat/scripts/forward-compat.py` (sqlitch first, then sqitch continues)
 - [ ] **T060d [P1]** Execute `uat/scripts/forward-compat.py --out specs/005-lockdown/artifacts/uat/forward-compat.log` and fix any failures
 - [ ] **T060e [P1]** Implement full backward compatibility logic in `uat/scripts/backward-compat.py` (sqitch first, then sqlitch continues)
