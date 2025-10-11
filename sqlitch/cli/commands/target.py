@@ -81,9 +81,12 @@ def target_add(
     config.set(section, "uri", normalised_uri)
     if engine:
         config.set(section, "engine", engine)
-    registry_value = registry if registry is not None else inferred_registry
-    if registry_value:
-        config.set(section, "registry", registry_value)
+    # Only write registry if explicitly provided via --registry option.
+    # For SQLite, Sqitch infers the registry location (adjacent to the database)
+    # unless explicitly overridden. Writing an inferred absolute path causes
+    # compatibility issues with Sqitch's target resolution.
+    if registry is not None:
+        config.set(section, "registry", registry)
     elif config.has_option(section, "registry"):
         config.remove_option(section, "registry")
 
@@ -135,9 +138,9 @@ def target_alter(
     config.set(section, "uri", normalised_uri)
     if engine:
         config.set(section, "engine", engine)
-    registry_value = registry if registry is not None else inferred_registry
-    if registry_value:
-        config.set(section, "registry", registry_value)
+    # Only write registry if explicitly provided via --registry option (see target_add)
+    if registry is not None:
+        config.set(section, "registry", registry)
     elif config.has_option(section, "registry"):
         config.remove_option(section, "registry")
 
