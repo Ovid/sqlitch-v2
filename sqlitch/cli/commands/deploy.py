@@ -440,11 +440,18 @@ def _load_plan(plan_path: Path, default_engine: str | None) -> Plan:
 
 
 def _assert_plan_dependencies_present(*, plan: Plan, plan_path: Path) -> None:
+    """Verify all dependencies exist in the plan.
+    
+    Dependencies can include tag references (e.g., "userflips@v1.0.0-dev2" for reworked changes).
+    We normalize these to bare change names when checking plan presence.
+    """
     known_changes = {change.name for change in plan.changes}
     missing: list[str] = []
     for change in plan.changes:
         for dependency in change.dependencies:
-            if dependency not in known_changes and dependency not in missing:
+            # Strip tag suffix if present (e.g., "userflips@v1.0.0-dev2" -> "userflips")
+            dependency_name = dependency.split("@", 1)[0] if "@" in dependency else dependency
+            if dependency_name not in known_changes and dependency not in missing:
                 missing.append(dependency)
 
     if not missing:
@@ -1095,10 +1102,22 @@ def _parse_identity(identity: str) -> tuple[str, str | None]:
 
 
 def _validate_dependencies(change: Change, deployed_lookup: Mapping[str, str]) -> None:
-    """Ensure all required dependencies have been deployed."""
+    """Ensure all required dependencies have been deployed.
+    
+    Dependencies can include tag references (e.g., "userflips@v1.0.0-dev2" for reworked changes).
+    We normalize these to bare change names when checking deployment status.
+    """
+    
+    def _normalize_dependency(dep: str) -> str:
+        """Strip tag suffix from dependency name if present."""
+        if "@" in dep:
+            return dep.split("@", 1)[0]
+        return dep
 
     missing = [
-        dependency for dependency in change.dependencies if dependency not in deployed_lookup
+        dependency 
+        for dependency in change.dependencies 
+        if _normalize_dependency(dependency) not in deployed_lookup
     ]
     if not missing:
         return
@@ -1302,7 +1321,10 @@ def _record_deployment_entries(
     )
 
     for dependency in dependencies:
-        dependency_id = dependency_lookup.get(dependency)
+        # Normalize dependency name by stripping tag suffix if present (e.g., "userflips@v1.0.0-dev2" -> "userflips")
+        # This handles reworked changes where dependencies reference previous versions
+        dependency_name = dependency.split("@", 1)[0] if "@" in dependency else dependency
+        dependency_id = dependency_lookup.get(dependency_name)
         if dependency_id is None:
             raise CommandError(
                 f"Dependency '{dependency}' is not recorded in the registry for change '{change.name}'."
