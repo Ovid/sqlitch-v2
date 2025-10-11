@@ -69,6 +69,7 @@
 
 ### 5. UAT Compatibility Testing
 - **Scope**: All compatibility scripts validate the SQLite tutorial workflow only; other engines remain out of scope for lockdown.
+- **Halt State Protocol**: UAT execution tasks follow an incremental debugging workflow. Each script failure triggers: HALT → identify root cause → implement minimal fix → run tests → commit → END SESSION. This prevents context overflow and ensures each fix is reviewed independently. See [`UAT_EXECUTION_PLAN.md`](./UAT_EXECUTION_PLAN.md) for detailed protocols.
 - **Side-by-Side Testing**: `uat/side-by-side.py` validates functional equivalence between sqitch and sqlitch
   - Follows `sqitch/lib/sqitchtutorial-sqlite.pod` tutorial steps
   - Compares command output (semantically equivalent, minor formatting differences acceptable)

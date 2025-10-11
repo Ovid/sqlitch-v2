@@ -118,6 +118,8 @@ pytest --cov=sqlitch --cov-report=term
 - [ ] **T060h [P1]** Prepare release PR comment with UAT evidence using quickstart template
 
 ### Quality Gates & Release Preparation
+> ⚠️ **UAT Execution Protocol**: Tasks T060a-T060h involve iterative debugging. See [`UAT_EXECUTION_PLAN.md`](./UAT_EXECUTION_PLAN.md) for detailed halt state protocols. Each execution failure must trigger: HALT → FIX → COMMIT → END SESSION. Do not mark execution tasks complete until scripts exit with code 0.
+
 - [X] **T061 [P1]** Re-run full quality gate suite (`pytest`, `mypy --strict`, `pydocstyle`, `black --check`, `isort --check-only`, `pip-audit`, `bandit`, `tox`) and record pass/fail in `IMPLEMENTATION_REPORT_LOCKDOWN.md`, noting remediation commands when any check fails
 - [X] **T062 [P1]** Verify coverage ≥90% and update `coverage.xml` plus quickstart instructions (include CLI commands used) *(92% coverage achieved)*
 - [ ] **T063 [P1]** Prepare release collateral: `CHANGELOG.md`, version bump, release notes, migration guide referencing manual UAT evidence *(MANUAL TASK - requires release decision-making)*

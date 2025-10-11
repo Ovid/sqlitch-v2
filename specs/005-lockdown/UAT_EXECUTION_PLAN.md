@@ -58,19 +58,24 @@ python -c "from uat import sanitization, comparison, test_steps; print('✅ Impo
 ---
 
 ### T060b: Execute side-by-side.py [P1]
-**Estimated Time**: 15-30 minutes  
+**Estimated Time**: 15-30 minutes per iteration (may require multiple sessions)  
 **Status**: 🔷 Blocked by T060a  
 **Depends On**: T060a complete
 
-**Description**: Run the full side-by-side comparison and fix any failures.
+**⚠️ HALT STATE PROTOCOL**: This task involves iterative debugging. Each failure MUST be fixed, reviewed, and committed before proceeding. DO NOT mark this task complete until the script exits with code 0 and all steps pass.
+
+**Description**: Run the full side-by-side comparison and fix failures incrementally. Each failure requires a HALT → FIX → COMMIT cycle.
 
 **Acceptance Criteria**:
 - [ ] Script completes with exit code 0
 - [ ] Log file created at `specs/005-lockdown/artifacts/uat/side-by-side.log`
 - [ ] No behavioral differences detected (cosmetic differences acceptable)
 - [ ] All tutorial steps execute successfully for both sqitch and sqlitch
+- [ ] All fixes committed with descriptive messages
 
-**Commands**:
+**Incremental Execution Workflow** (MANDATORY):
+
+**Step 1: Initial Run**
 ```bash
 cd /Users/poecurt/projects/sqlitch
 source .venv/bin/activate
@@ -83,30 +88,76 @@ python uat/side-by-side.py --out specs/005-lockdown/artifacts/uat/side-by-side.l
 
 # Check exit code
 echo "Exit code: $?"
-
-# Review log for issues
-less specs/005-lockdown/artifacts/uat/side-by-side.log
 ```
+
+**Step 2: If Exit Code ≠ 0** → **HALT AND FIX**
+```bash
+# Review log for the FIRST failure
+less specs/005-lockdown/artifacts/uat/side-by-side.log
+
+# Identify which step failed and why
+# Common issues:
+# - Output format mismatch (fix sqlitch formatting)
+# - Sanitization pattern missing (update uat/sanitization.py)
+# - Behavioral difference (investigate and fix core logic)
+```
+
+**Step 3: Fix ONE Failure at a Time**
+1. Identify root cause of the failure
+2. Implement the minimal fix (update sqlitch code, sanitization, or comparison logic)
+3. Run focused tests: `pytest tests/path/to/affected_test.py -v`
+4. Re-run side-by-side to verify fix: `python uat/side-by-side.py --stop N` (where N is step that failed + 2)
+5. **COMMIT the fix**: `git add . && git commit -m "Fix UAT step N: [description]"`
+6. **END SESSION** if fix was complex or context is getting full
+
+**Step 4: Resume Next Session**
+```bash
+cd /Users/poecurt/projects/sqlitch
+source .venv/bin/activate
+# Continue from Step 1 (re-run full script)
+```
+
+**Step 5: Repeat Until Exit Code 0**
+- Do NOT skip failures
+- Do NOT mark task complete until script fully passes
+- Each session should fix 1-3 issues maximum
 
 **Expected Issues**:
 - Steps may fail due to environment differences
 - Output format mismatches between sqitch/sqlitch
 - Database state pollution from previous runs
+- Sanitization patterns not catching all timestamp/SHA1 formats
 
 **Remediation Strategy**:
-- Clean working directories before run
-- Fix sqlitch output formatting if needed
-- Update sanitization helpers for new patterns
-- Document acceptable cosmetic differences
+- **First Failure**: Fix and commit before looking at second failure
+- Clean working directories between runs: `rm -rf uat/sqitch_results uat/sqlitch_results *.db`
+- Fix sqlitch output formatting if needed (prioritize behavioral equivalence)
+- Update sanitization helpers for new patterns (uat/sanitization.py)
+- Document acceptable cosmetic differences in IMPLEMENTATION_REPORT_LOCKDOWN.md
 
-**Incremental Approach**:
-If full run fails, use `--stop N` to debug step-by-step:
+**Debug Commands**:
 ```bash
-# Debug first 5 steps
+# Run only first 5 steps to isolate early failures
 python uat/side-by-side.py --stop 5 --out temp.log
 
-# Continue from where it failed, fix issues, repeat
+# Run with continue flag to see all failures (but still fix one at a time)
+python uat/side-by-side.py --continue --out temp.log
+
+# Clean databases before retry
+rm -f flipr*.db sqitch.db sqlitch.db
+rm -rf uat/sqitch_results uat/sqlitch_results
 ```
+
+**Session Management**:
+- **Short Session**: Fix 1 failure, commit, end
+- **Medium Session**: Fix 2-3 failures, commit each, end
+- **Long Session**: Only if failures are trivial (e.g., all sanitization pattern updates)
+
+**DO NOT**:
+- Mark task complete with exit code ≠ 0
+- Fix multiple unrelated failures in one commit
+- Continue debugging when context window is getting full
+- Skip failures to "come back later"
 
 ---
 
@@ -158,42 +209,78 @@ python uat/side-by-side.py --stop 5 --out temp.log
 ---
 
 ### T060d: Execute forward-compat.py [P1]
-**Estimated Time**: 15-30 minutes  
+**Estimated Time**: 15-30 minutes per iteration (may require multiple sessions)  
 **Status**: 🔷 Blocked by T060c  
 **Depends On**: T060c complete
 
-**Description**: Run the forward compatibility script and fix any failures.
+**⚠️ HALT STATE PROTOCOL**: This task involves iterative debugging. Each failure MUST be fixed, reviewed, and committed before proceeding. DO NOT mark this task complete until the script exits with code 0.
+
+**Description**: Run the forward compatibility script (sqlitch → sqitch) and fix failures incrementally using the same HALT → FIX → COMMIT cycle as T060b.
 
 **Acceptance Criteria**:
 - [ ] Script completes with exit code 0
 - [ ] Log file created at `specs/005-lockdown/artifacts/uat/forward-compat.log`
 - [ ] Sqitch successfully continues after each sqlitch step
 - [ ] No behavioral incompatibilities detected
+- [ ] All fixes committed with descriptive messages
 
-**Commands**:
+**Incremental Execution Workflow** (MANDATORY):
+
+**Step 1: Initial Run**
 ```bash
 cd /Users/poecurt/projects/sqlitch
 source .venv/bin/activate
+
+# Clean environment
+rm -f flipr*.db sqitch.db sqlitch.db
+rm -rf uat/sqitch_results uat/sqlitch_results
 
 # Run forward compatibility test
 python uat/scripts/forward-compat.py --out specs/005-lockdown/artifacts/uat/forward-compat.log
 
 # Check exit code
 echo "Exit code: $?"
-
-# Review log
-less specs/005-lockdown/artifacts/uat/forward-compat.log
 ```
+
+**Step 2: If Exit Code ≠ 0** → **HALT AND FIX**
+```bash
+# Review log for the FIRST incompatibility
+less specs/005-lockdown/artifacts/uat/forward-compat.log
+
+# Common issues:
+# - Sqitch cannot read sqlitch registry (fix registry format)
+# - Sqitch rejects sqlitch plan state (investigate plan compatibility)
+# - Database schema mismatch (verify deployment equivalence)
+```
+
+**Step 3: Fix ONE Issue, COMMIT, END SESSION**
+1. Identify root cause
+2. Implement minimal fix
+3. Run tests: `pytest tests/engine/test_sqlite*.py -v`
+4. Re-run forward-compat to verify
+5. **COMMIT**: `git add . && git commit -m "Fix forward-compat: [description]"`
+6. **END SESSION**
+
+**Step 4: Resume and Repeat**
+- Start new session with clean context
+- Continue from Step 1
+- Fix next failure
 
 **Expected Issues**:
 - Registry format differences between sqitch and sqlitch
 - Command output format incompatibilities
 - Database state divergence
+- Plan file parsing differences
 
 **Remediation**:
-- Fix sqlitch to match sqitch expectations where needed
-- Document acceptable differences
+- Fix sqlitch registry format to match sqitch expectations
+- Document acceptable differences in IMPLEMENTATION_REPORT_LOCKDOWN.md
 - Update compatibility logic if assumptions were wrong
+
+**Session Management**:
+- **One failure per session** recommended
+- Commit after each fix
+- Re-run full script each session to catch regressions
 
 ---
 
@@ -224,35 +311,78 @@ Same as T060c, but reversed:
 ---
 
 ### T060f: Execute backward-compat.py [P1]
-**Estimated Time**: 15-30 minutes  
+**Estimated Time**: 15-30 minutes per iteration (may require multiple sessions)  
 **Status**: 🔷 Blocked by T060e  
 **Depends On**: T060e complete
 
-**Description**: Run the backward compatibility script and fix any failures.
+**⚠️ HALT STATE PROTOCOL**: This task involves iterative debugging. Each failure MUST be fixed, reviewed, and committed before proceeding. DO NOT mark this task complete until the script exits with code 0.
+
+**Description**: Run the backward compatibility script (sqitch → sqlitch) and fix failures incrementally using the same HALT → FIX → COMMIT cycle as T060b and T060d.
 
 **Acceptance Criteria**:
 - [ ] Script completes with exit code 0
 - [ ] Log file created at `specs/005-lockdown/artifacts/uat/backward-compat.log`
 - [ ] Sqlitch successfully continues after each sqitch step
 - [ ] No behavioral incompatibilities detected
+- [ ] All fixes committed with descriptive messages
 
-**Commands**:
+**Incremental Execution Workflow** (MANDATORY):
+
+**Step 1: Initial Run**
 ```bash
 cd /Users/poecurt/projects/sqlitch
 source .venv/bin/activate
+
+# Clean environment
+rm -f flipr*.db sqitch.db sqlitch.db
+rm -rf uat/sqitch_results uat/sqlitch_results
 
 # Run backward compatibility test
 python uat/scripts/backward-compat.py --out specs/005-lockdown/artifacts/uat/backward-compat.log
 
 # Check exit code
 echo "Exit code: $?"
-
-# Review log
-less specs/005-lockdown/artifacts/uat/backward-compat.log
 ```
 
+**Step 2: If Exit Code ≠ 0** → **HALT AND FIX**
+```bash
+# Review log for the FIRST incompatibility
+less specs/005-lockdown/artifacts/uat/backward-compat.log
+
+# Common issues:
+# - SQLitch cannot read sqitch registry (fix registry reading logic)
+# - SQLitch rejects sqitch plan state (investigate plan parsing)
+# - Database schema mismatch (verify deployment equivalence)
+```
+
+**Step 3: Fix ONE Issue, COMMIT, END SESSION**
+1. Identify root cause
+2. Implement minimal fix
+3. Run tests: `pytest tests/engine/ tests/plan/ -v`
+4. Re-run backward-compat to verify
+5. **COMMIT**: `git add . && git commit -m "Fix backward-compat: [description]"`
+6. **END SESSION**
+
+**Step 4: Resume and Repeat**
+- Start new session with clean context
+- Continue from Step 1
+- Fix next failure
+
 **Expected Issues**:
-Similar to T060d but reversed
+- SQLitch reading sqitch registry format
+- Plan file interpretation differences
+- Command output differences
+- State management incompatibilities
+
+**Remediation**:
+- Fix sqlitch to correctly read sqitch artifacts
+- Document acceptable differences in IMPLEMENTATION_REPORT_LOCKDOWN.md
+- Update compatibility logic if assumptions were wrong
+
+**Session Management**:
+- **One failure per session** recommended
+- Commit after each fix
+- Re-run full script each session to catch regressions
 
 ---
 
