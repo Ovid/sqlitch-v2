@@ -126,6 +126,10 @@ pytest --cov=sqlitch --cov-report=term
 ### UAT Script Execution (T060 broken down into T060a-T060f)
 - [X] **T060a [P1]** Verify `uat/side-by-side.py` is ready to run (check for sqitch binary, test step definitions, helper imports)
 - [ ] **T060b [P1]** Execute `uat/side-by-side.py --out specs/005-lockdown/artifacts/uat/side-by-side.log` and fix any failures incrementally
+  - **STATUS**: IN PROGRESS - Step 22 failure fixed (commit 95ba4a2)
+  - **HALT STATE**: Discovered missing symbolic reference support (@HEAD^, @ROOT, etc.)
+  - **FIX APPLIED**: Implemented `sqlitch/plan/symbolic.py` with full Sqitch parity for symbolic references
+  - **NEXT**: Resume UAT execution from step 23
 - [ ] **T060c [P1]** Implement full forward compatibility logic in `uat/scripts/forward-compat.py` (sqlitch first, then sqitch continues)
 - [ ] **T060d [P1]** Execute `uat/scripts/forward-compat.py --out specs/005-lockdown/artifacts/uat/forward-compat.log` and fix any failures
 - [ ] **T060e [P1]** Implement full backward compatibility logic in `uat/scripts/backward-compat.py` (sqitch first, then sqlitch continues)
