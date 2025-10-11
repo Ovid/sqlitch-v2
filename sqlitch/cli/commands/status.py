@@ -169,12 +169,8 @@ def status_command(
         )
         click.echo(text, nl=False)
 
-    exit_code = 0
-    if status in {"behind", "ahead", "not_deployed"}:
-        exit_code = 1
-
-    if exit_code:
-        ctx.exit(exit_code)
+    if status == "not_deployed":
+        ctx.exit(1)
 
 
 @register_command("status")

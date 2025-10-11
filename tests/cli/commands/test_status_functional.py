@@ -256,10 +256,13 @@ class TestStatusWithPendingChanges:
         finally:
             os.chdir(original_cwd)
 
-        # Verify: Exit code should be 1 (pending changes)
+        # Verify: Exit code should be 0 (Sqitch parity: pending changes still exit 0)
         assert (
-            status_result.exit_code == 1
-        ), f"Status should exit 1 when pending changes exist\nOutput: {status_result.output}"
+            status_result.exit_code == 0
+        ), (
+            "Status should exit 0 when pending changes exist, matching Sqitch behavior\n"
+            f"Output: {status_result.output}"
+        )
 
         # Verify: Output mentions pending change
         output_lower = status_result.output.lower()
@@ -414,7 +417,9 @@ class TestStatusFailureMetadata:
         finally:
             os.chdir(original_cwd)
 
-        assert status_result.exit_code == 1, "Status should indicate pending changes after failure"
+        assert (
+            status_result.exit_code == 1
+        ), "Status should exit 1 when no changes were deployed"
 
         output_lower = status_result.output.lower()
         assert "last failure" in output_lower
