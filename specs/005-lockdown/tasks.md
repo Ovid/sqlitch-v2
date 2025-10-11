@@ -165,6 +165,20 @@ pytest --cov=sqlitch --cov-report=term
 - [X] **T065 [P1]** Review integration coverage (run `pytest tests/integration` with tutorial parity fixtures); add or update tests to close gaps and summarize findings in `IMPLEMENTATION_REPORT_LOCKDOWN.md` *(11 integration tests passing)*
 - [X] **T066 [P2]** Capture lessons learned / follow-ups in `TODO.md` for post-1.0 improvements (multi-engine UAT, automation ideas) *(Documented comprehensive post-1.0 roadmap)*
 - [ ] **T067 [P1]** **CRITICAL**: Implement rework support in plan parser and model to allow duplicate change names per Sqitch behavior
+  - **STATUS**: IN PROGRESS - Phase 1 ✅ | Phase 2 ✅ | Phase 3 🔄
+  - **PROGRESS**:
+    - ✅ Phase 1: Model & Parser foundation complete (commit 5f2d7fe)
+      - Removed duplicate name validation
+      - Added rework tracking fields and helper methods
+      - All plan model tests passing (17/17)
+    - ✅ Phase 2: Rework command fixed (commit 745f8e0)
+      - Command now appends new entry instead of replacing
+      - Plan structure matches Sqitch format
+      - Step 39 passing
+    - 🔄 Phase 3: Deploy/Revert logic (IN PROGRESS)
+      - **CURRENT BLOCKER**: Deploy command can't resolve dependencies with @tag suffix
+      - Error: "Unable to find change 'userflips@v1.0.0-dev2' in plan"
+      - Need to update dependency resolution in deploy command
   - **RATIONALE**: UAT step 39-42 blocked - Plan parser rejects `userflips [userflips@v1.0.0-dev2]` rework syntax
   - **CONSTITUTIONAL REQUIREMENT**: Sqitch allows reworked changes (same name, different version) via dependency syntax. Example from tutorial: After tagging @v1.0.0-dev2, `sqitch rework userflips` creates a new entry `userflips [userflips@v1.0.0-dev2]` in the plan. The plan can contain multiple changes with the same name, differentiated by their position and tag dependencies.
   - **SQITCH BEHAVIOR** (from `sqitch/lib/App/Sqitch/Plan.pm`):
