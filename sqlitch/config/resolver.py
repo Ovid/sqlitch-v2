@@ -51,7 +51,6 @@ class CredentialResolution:
 
     def as_dict(self) -> dict[str, str]:
         """Return a dictionary containing defined credential values."""
-
         data: dict[str, str] = {}
         if self.username is not None:
             data["username"] = self.username
@@ -64,7 +63,6 @@ def determine_config_root(
     *, env: Mapping[str, str] | None = None, home: Path | None = None
 ) -> Path:
     """Return the directory containing user-level configuration files."""
-
     env_map = _normalize_env(env)
     override = _coerce_path(env_map.get(_ENV_SQLITCH_CONFIG_ROOT))
     if override is not None:
@@ -95,7 +93,6 @@ def resolve_config(
     config_filenames: Sequence[str] | None = None,
 ) -> ConfigProfile:
     """Resolve configuration scope directories and load a profile."""
-
     env_map = _normalize_env(env)
     project_root = Path(root_dir)
 
@@ -149,7 +146,6 @@ def resolve_registry_uri(
     registry_override: str | None = None,
 ) -> str:
     """Return the canonical registry URI for the given engine target."""
-
     canonical_engine = canonicalize_engine_name(engine)
     project_path = Path(project_root)
 
@@ -184,7 +180,6 @@ def resolve_credentials(
     Returns:
         A :class:`CredentialResolution` recording resolved credential values and sources.
     """
-
     env_map = _normalize_env(env)
     sources: dict[str, str] = {}
 

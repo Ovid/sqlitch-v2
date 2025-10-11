@@ -64,7 +64,7 @@ def generate_change_id(
     requires: tuple[str, ...] = (),
     conflicts: tuple[str, ...] = (),
 ) -> str:
-    """Generate a unique change ID using Git-style SHA1 hash.
+    r"""Generate a unique change ID using Git-style SHA1 hash.
 
     Follows Sqitch's format: SHA1 of Git object containing change metadata.
     Sqitch uses Git's object format: 'change <length>\0<content>'

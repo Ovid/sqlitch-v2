@@ -170,6 +170,7 @@ class RegistryEntry:
     note: str = ""
 
     def __post_init__(self) -> None:
+        """Validate required fields and normalize datetime values."""
         if not self.project:
             raise ValueError("RegistryEntry.project is required")
         if not self.change_id:
@@ -196,19 +197,23 @@ class RegistryState:
     """In-memory view of registry entries keyed by ``change_id``."""
 
     def __init__(self, entries: Iterable[RegistryEntry] | None = None) -> None:
+        """Initialize registry state with optional entries."""
         self._records: dict[str, RegistryEntry] = {}
         self._ordered: list[tuple[tuple[datetime, str, str], str]] = []
         for entry in entries or ():
             self.record_deploy(entry)
 
     def __iter__(self) -> Iterator[RegistryEntry]:
+        """Iterate over registry entries in deployment order."""
         for _, change_id in self._ordered:
             yield self._records[change_id]
 
     def __len__(self) -> int:
+        """Return the number of entries in the registry."""
         return len(self._ordered)
 
     def records(self) -> Sequence[RegistryEntry]:
+        """Return all entries as a tuple."""
         return tuple(self)
 
     def record_deploy(self, entry: RegistryEntry) -> None:
@@ -217,7 +222,6 @@ class RegistryState:
         Raises:
             ValueError: If an entry with the same ``change_id`` already exists.
         """
-
         change_id = entry.change_id
         if change_id in self._records:
             raise ValueError(f"RegistryState already contains change_id {change_id}")
@@ -229,13 +233,13 @@ class RegistryState:
 
     def remove_change(self, change_id: str) -> None:
         """Remove a change from the state (e.g., after a revert)."""
-
         if change_id not in self._records:
             raise KeyError(f"RegistryState missing change_id '{change_id}'")
         del self._records[change_id]
         self._ordered = [item for item in self._ordered if item[1] != change_id]
 
     def get_record(self, change_id: str) -> RegistryEntry:
+        """Retrieve the registry entry for the given change_id."""
         return self._records[change_id]
 
 
@@ -245,7 +249,6 @@ def sort_registry_entries_by_deployment(
     reverse: bool = False,
 ) -> tuple[RegistryEntry, ...]:
     """Return entries ordered by commit time, change name, and change ID."""
-
     ordered = sorted(entries, key=_ordering_key, reverse=reverse)
     return tuple(ordered)
 
@@ -272,7 +275,6 @@ def _coerce_required_text(value: object, *, field: str) -> str:
 
 def deserialize_registry_rows(rows: Iterable[Mapping[str, object]]) -> Sequence[RegistryEntry]:
     """Convert registry query rows into :class:`RegistryEntry` instances."""
-
     entries = []
     for row in rows:
         entry = RegistryEntry(
@@ -308,7 +310,6 @@ def deserialize_registry_rows(rows: Iterable[Mapping[str, object]]) -> Sequence[
 
 def serialize_registry_entries(entries: Iterable[RegistryEntry]) -> list[dict[str, object]]:
     """Render entries as dictionaries matching the Sqitch ``changes`` schema."""
-
     serialized: list[dict[str, object]] = []
     for entry in entries:
         serialized.append(

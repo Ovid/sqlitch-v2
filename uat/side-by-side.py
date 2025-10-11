@@ -21,15 +21,16 @@ Options:
 
 import argparse
 import difflib
-import hashlib
 import os
 import re
 import shutil
-import sqlite3
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Set, Tuple
+from typing import List, Set, Tuple, Optional
+
+from uat import comparison, sanitization
+from uat.test_steps import TUTORIAL_STEPS
 
 # ---------------- Configuration ----------------
 UAT_LOG = "uat.log"
@@ -45,6 +46,7 @@ CONTINUE_ON_FAIL = False
 IGNORE_STEPS: Set[int] = set()
 HAD_FAILURE = False
 STOP_AFTER_STEP = None
+OUTPUT_TEE: Optional["Tee"] = None
 
 # Colors
 GREEN = "\033[0;32m"
@@ -54,11 +56,7 @@ YELLOW = "\033[1;33m"
 CYAN = "\033[0;36m"
 NC = "\033[0m"
 
-# Regexes for sanitizing output
-HEX_ID_RE = re.compile(r"\b[0-9a-f]{7,40}\b")
-TS_SECONDS_RE = re.compile(
-    r"(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}):\d{2}(\.\d+)?([Zz]|[+\-]\d{2}(?::?\d{2})?)?"
-)
+# Regex for ANSI color stripping (used by Tee class)
 ANSI_RE = re.compile(r"\x1B\[[0-9;]*[A-Za-z]")
 
 
@@ -121,14 +119,7 @@ def run_and_stream(cmd: List[str], cwd: Path) -> Tuple[str, int]:
 
 def sanitize_text(s: str) -> str:
     """Sanitize text by masking change IDs and timestamp seconds."""
-    s = HEX_ID_RE.sub("[REDACTED_CHANGE_ID]", s)
-    out_lines: List[str] = []
-    for line in s.splitlines(keepends=False):
-        if line.lstrip().startswith("# Deployed:"):
-            out_lines.append(line)
-        else:
-            out_lines.append(TS_SECONDS_RE.sub(r"\1:SS\3", line))
-    return "\n".join(out_lines)
+    return sanitization.sanitize_output(s)
 
 
 def unified_diff(a: str, b: str, fromfile: str, tofile: str) -> str:
@@ -217,50 +208,7 @@ def compare_user_dbs(sqitch_db: Path, sqlitch_db: Path) -> Tuple[bool, str]:
     if "sqitch" in sqitch_db.name or "sqitch" in sqlitch_db.name:
         return True, ""
 
-    if not sqitch_db.exists() or not sqlitch_db.exists():
-        return True, ""
-
-    conn1 = sqlite3.connect(str(sqitch_db))
-    conn2 = sqlite3.connect(str(sqlitch_db))
-    c1 = conn1.cursor()
-    c2 = conn2.cursor()
-
-    # Identify user tables
-    def get_user_tables(cur):
-        cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
-        return [
-            name
-            for (name,) in cur.fetchall()
-            if not name.startswith("sqlite_") and not name.startswith("sqitch_")
-        ]
-
-    tables1 = set(get_user_tables(c1))
-    tables2 = set(get_user_tables(c2))
-
-    if tables1 != tables2:
-        conn1.close()
-        conn2.close()
-        return (
-            False,
-            f"User table sets differ:\n  sqitch: {sorted(tables1)}\n  sqlitch: {sorted(tables2)}",
-        )
-
-    diffs = []
-    for table in sorted(tables1):
-        c1.execute(f"SELECT * FROM {table}")
-        c2.execute(f"SELECT * FROM {table}")
-        rows1 = c1.fetchall()
-        rows2 = c2.fetchall()
-
-        if rows1 != rows2:
-            diffs.append(f"Data differs in table '{table}'")
-
-    conn1.close()
-    conn2.close()
-
-    if diffs:
-        return False, "\n".join(diffs)
-    return True, ""
+    return comparison.compare_user_databases(sqitch_db, sqlitch_db)
 
 
 # ---------------- Main Test Runner ----------------
@@ -726,15 +674,16 @@ ROLLBACK;
             cleanup_dirs()
             print(f"\n{CYAN}Test directories cleaned up.{NC}")
 
-        if tee:
-            tee.close()
+        global OUTPUT_TEE
+        if OUTPUT_TEE:
+            OUTPUT_TEE.close()
 
         sys.exit(0)
 
 
 # ---------------- Main ----------------
 def main():
-    global CONTINUE_ON_FAIL, HAD_FAILURE, IGNORE_STEPS, STOP_AFTER_STEP
+    global CONTINUE_ON_FAIL, HAD_FAILURE, IGNORE_STEPS, STOP_AFTER_STEP, OUTPUT_TEE
 
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -766,11 +715,10 @@ def main():
     if args.ignore_steps:
         IGNORE_STEPS = set(args.ignore_steps)
 
-    tee = None
     if args.outfile:
-        tee = Tee(args.outfile)
-        sys.stdout = tee
-        sys.stderr = tee
+        OUTPUT_TEE = Tee(args.outfile)
+        sys.stdout = OUTPUT_TEE
+        sys.stderr = OUTPUT_TEE
 
     color_print(GREEN, "=" * 60)
     color_print(GREEN, "Sqitch vs. Sqlitch Functional Equivalence Test (User-Focused)")

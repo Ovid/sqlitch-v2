@@ -114,6 +114,25 @@ python -m pytest
 
 Tests enforce ≥90% coverage and fail when skip guards are violated.
 
+### Troubleshooting
+
+**Issue: Configuration tests modify my real Sqitch config**
+- Ensure you're running tests in an isolated environment (see "Running the Test Suite" above)
+- Back up your `~/.sqitch/` and `~/.config/sqlitch/` directories before running tests locally
+
+**Issue: SQLite database locked errors**
+- Close any SQLite database browsers or other tools accessing your database
+- Ensure no other SQLitch/Sqitch processes are running: `ps aux | grep -E "sqitch|sqlitch"`
+
+**Issue: Import errors or missing dependencies**
+- Reinstall in development mode: `pip install -e .[dev]`
+- Verify Python version: `python --version` (must be 3.11+)
+
+**Issue: Template files not found**
+- Ensure you've initialized a project with `sqlitch init`
+- Check that your working directory contains a `sqitch.plan` or `sqlitch.plan` file
+- Verify template directories exist: `~/.sqlitch/templates/`, `~/.sqitch/templates/`, or `/etc/sqlitch/templates/`
+
 ### Code Quality Gates
 
 This project mirrors Sqitch’s zero-warning philosophy. Lint and type gates live
@@ -135,6 +154,44 @@ python -m tox
 - `specs/` – design documents, contracts, and milestone tracker.
 - `sqitch/` – vendored upstream Sqitch code used for parity validation.
 - `scripts/` – developer tooling, CI helpers, and Docker harness.
+- `uat/` – User acceptance testing scripts for validating Sqitch compatibility
+
+## Release Checklist (for Maintainers)
+
+Before tagging a new release:
+
+1. **Run all quality gates:**
+   ```bash
+   source .venv/bin/activate
+   pytest --cov=sqlitch --cov-report=term  # Coverage must be ≥90%
+   mypy --strict sqlitch/                  # No type errors
+   pydocstyle sqlitch/                     # All docstrings compliant
+   pip-audit                               # No unresolved security issues
+   bandit -r sqlitch/                      # Security scan passes
+   python -m tox                           # Full gate suite
+   ```
+
+2. **Execute manual UAT compatibility scripts** (SQLite tutorial only):
+   ```bash
+   python uat/side-by-side.py --out artifacts/side-by-side.log
+   python uat/forward-compat.py --out artifacts/forward-compat.log
+   python uat/backward-compat.py --out artifacts/backward-compat.log
+   ```
+   - All three scripts must exit with code 0
+   - Review logs for behavioral differences (cosmetic diffs acceptable)
+   - Post evidence summary in release PR comment
+
+3. **Update version and CHANGELOG:**
+   - Bump version in `pyproject.toml`
+   - Document changes in `CHANGELOG.md`
+   - Update migration notes if registry schema changed
+
+4. **Final verification:**
+   - Run full test suite one more time: `pytest`
+   - Verify clean git status: `git status`
+   - Tag release: `git tag v1.x.x`
+
+See `specs/005-lockdown/quickstart.md` for detailed UAT execution instructions.
 
 ## Contributing
 

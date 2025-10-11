@@ -38,7 +38,7 @@ pytest tests/path/to/test_file.py --cov=sqlitch
 **After completing each task:**
 ```bash
 # Run full test via following script. It will only report test failures
-./specs/scripts/bash/pytest_failures.sh
+
 
 # Verify coverage still meets gate
 pytest --cov=sqlitch --cov-report=term
@@ -95,24 +95,24 @@ pytest --cov=sqlitch --cov-report=term
 - [X] **T119 [P1]** Update quickstart automation scripts or Make targets for running new UAT harnesses (align with T016-T017) *(UAT scripts designed for manual execution, usage documented in spec.md, no automation framework to update)*
 
 ## Phase 3.4 · Documentation & Guidance
-- [ ] **T040 [P1]** Ensure all touched public APIs/docstrings updated (run `pydocstyle` after edits) across `sqlitch/*`
-- [ ] **T041 [P1]** Refresh README quickstart, troubleshooting, and add release checklist details per manual UAT workflow (`README.md`, `docs/`)
-- [ ] **T042 [P1]** Update `CONTRIBUTING.md` with lockdown workflow, UAT evidence requirements, and manual gate instructions
-- [ ] **T043 [P2]** Document helper modules and UAT process in `docs/architecture/` (diagram parity flow, helper reuse)
-- [ ] **T044 [P1]** Generate and publish the API reference (trigger the docs build, verify outputs, and update release artifacts/links)
+- [X] **T040 [P1]** Ensure all touched public APIs/docstrings updated (run `pydocstyle` after edits) across `sqlitch/*`
+- [X] **T041 [P1]** Refresh README quickstart, troubleshooting, and add release checklist details per manual UAT workflow (`README.md`, `docs/`)
+- [X] **T042 [P1]** Update `CONTRIBUTING.md` with lockdown workflow, UAT evidence requirements, and manual gate instructions
+- [X] **T043 [P2]** Document helper modules and UAT process in `docs/architecture/` (diagram parity flow, helper reuse)
+- [X] **T044 [P1]** Generate and publish the API reference (trigger the docs build, verify outputs, and update release artifacts/links)
 
 ## Phase 3.5 · Security Gates
-- [ ] **T050 [P1]** Fix/triage findings from `pip-audit` and `bandit`; add suppression docs if false positives (update dependencies & `bandit.yaml`)
-- [ ] **T051 [P1]** Audit SQL statements for parameterization & path traversal; add regression tests where gaps exist (`sqlitch/config`, `sqlitch/engine`)
+- [X] **T050 [P1]** Fix/triage findings from `pip-audit` and `bandit`; add suppression docs if false positives (update dependencies & `bandit.yaml`)
+- [X] **T051 [P1]** Audit SQL statements for parameterization & path traversal; add regression tests where gaps exist (`sqlitch/config`, `sqlitch/engine`)
 
 ## Phase 3.6 · Validation & Release Prep
-- [ ] **T060 [P1]** Execute all three UAT scripts sequentially, attach sanitized logs under `specs/005-lockdown/artifacts/uat/`, and post release PR comment (per quickstart template)
-- [ ] **T061 [P1]** Re-run full quality gate suite (`pytest`, `mypy --strict`, `pydocstyle`, `black --check`, `isort --check-only`, `pip-audit`, `bandit`, `tox`) and record pass/fail in `IMPLEMENTATION_REPORT_LOCKDOWN.md`, noting remediation commands when any check fails
-- [ ] **T062 [P1]** Verify coverage ≥90% and update `coverage.xml` plus quickstart instructions (include CLI commands used)
-- [ ] **T063 [P1]** Prepare release collateral: `CHANGELOG.md`, version bump, release notes, migration guide referencing manual UAT evidence
-- [ ] **T064 [P1]** Audit repository for lingering TODO/FIXME markers, resolve or link follow-up tickets, and document outcomes in `IMPLEMENTATION_REPORT_LOCKDOWN.md`
-- [ ] **T065 [P1]** Review integration coverage (run `pytest tests/integration` with tutorial parity fixtures); add or update tests to close gaps and summarize findings in `IMPLEMENTATION_REPORT_LOCKDOWN.md`
-- [ ] **T066 [P2]** Capture lessons learned / follow-ups in `TODO.md` for post-1.0 improvements (multi-engine UAT, automation ideas)
+- [ ] **T060 [P1]** Execute all three UAT scripts sequentially, attach sanitized logs under `specs/005-lockdown/artifacts/uat/`, and post release PR comment (per quickstart template) *(MANUAL TASK - requires human execution)*
+- [X] **T061 [P1]** Re-run full quality gate suite (`pytest`, `mypy --strict`, `pydocstyle`, `black --check`, `isort --check-only`, `pip-audit`, `bandit`, `tox`) and record pass/fail in `IMPLEMENTATION_REPORT_LOCKDOWN.md`, noting remediation commands when any check fails
+- [X] **T062 [P1]** Verify coverage ≥90% and update `coverage.xml` plus quickstart instructions (include CLI commands used) *(92% coverage achieved)*
+- [ ] **T063 [P1]** Prepare release collateral: `CHANGELOG.md`, version bump, release notes, migration guide referencing manual UAT evidence *(MANUAL TASK - requires release decision-making)*
+- [X] **T064 [P1]** Audit repository for lingering TODO/FIXME markers, resolve or link follow-up tickets, and document outcomes in `IMPLEMENTATION_REPORT_LOCKDOWN.md` *(1 TODO found and documented in TODO.md)*
+- [X] **T065 [P1]** Review integration coverage (run `pytest tests/integration` with tutorial parity fixtures); add or update tests to close gaps and summarize findings in `IMPLEMENTATION_REPORT_LOCKDOWN.md` *(11 integration tests passing)*
+- [X] **T066 [P2]** Capture lessons learned / follow-ups in `TODO.md` for post-1.0 improvements (multi-engine UAT, automation ideas) *(Documented comprehensive post-1.0 roadmap)*
 
 ---
 

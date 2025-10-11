@@ -62,7 +62,6 @@ def load_config(
     Defaults to ``("sqitch.conf", "sqlitch.conf")`` while retaining support for
     legacy SQLitch-specific filenames.
     """
-
     search_names: Sequence[str] = config_filenames or _CONFIG_FILENAMES
     root_path = Path(root_dir)
     resolved_scopes = {scope: Path(path) for scope, path in scope_dirs.items()}
