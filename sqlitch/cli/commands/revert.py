@@ -23,6 +23,7 @@ from sqlitch.engine.sqlite import (
 )
 from sqlitch.plan.model import Change, Plan
 from sqlitch.plan.parser import PlanParseError, parse_plan
+from sqlitch.plan.symbolic import resolve_symbolic_reference
 from sqlitch.utils.time import isoformat_utc
 
 from ..options import global_output_options, global_sqitch_options
@@ -99,11 +100,14 @@ def revert_command(
         raise CommandError("Cannot specify both --to and --to-change/--to-tag options.")
 
     # If --to is provided, determine if it's a tag or change
+    # First, check if it contains symbolic references like @HEAD^, @ROOT, etc.
     if to:
-        # Tags in Sqitch start with '@'
+        # Try to handle symbolic references early (before assuming it's a tag)
+        # Tags in Sqitch start with '@', but so do symbolic references like @HEAD, @ROOT
         if to.startswith("@"):
-            # Strip the @ prefix when storing the tag name
-            to_tag = to[1:]
+            # Could be @HEAD^, @ROOT, @tag_name
+            # We'll resolve this after loading the plan
+            to_tag = to[1:]  # Strip @ for potential tag lookup
             to_change = None
         else:
             to_change = to
@@ -168,14 +172,36 @@ def _build_request(
     plan_path = _resolve_plan_path(project_root=project_root, override=plan_override, env=env)
     plan = _load_plan(plan_path, default_engine)
 
+    # Resolve symbolic references (e.g., @HEAD^, @ROOT, HEAD^2)
+    resolved_to_change = to_change
+    resolved_to_tag = to_tag
+    
+    if to_tag or to_change:
+        # Get list of change names from plan for symbolic resolution
+        change_names = [c.name for c in plan.changes]
+        
+        # Reconstruct the original reference
+        original_ref = f"@{to_tag}" if to_tag else to_change
+        
+        try:
+            # Try to resolve as symbolic reference
+            resolved_name = resolve_symbolic_reference(original_ref, change_names)
+            # If successful, it's a change reference (not a tag)
+            resolved_to_change = resolved_name
+            resolved_to_tag = None
+        except ValueError:
+            # Not a symbolic reference - could be a plain tag or change name
+            # Keep the original classification
+            pass
+
     return _RevertRequest(
         project_root=project_root,
         env=env,
         plan_path=plan_path,
         plan=plan,
         target=target,
-        to_change=to_change,
-        to_tag=to_tag,
+        to_change=resolved_to_change,
+        to_tag=resolved_to_tag,
         log_only=log_only,
         skip_prompt=skip_prompt,
         quiet=quiet,

@@ -207,9 +207,9 @@ Output diff:
     └───────────────────────────┘
 # On database db:sqlite:flipr_test.db
 # Project:  flipr
-# Change:   310c095c0ce56fd218e08ec4de7dcf487bff2e8a
+# Change:   6e32bfc8c29a1c5cafc8eebc500fde1a1e4cb380
 # Name:     users
-# Deployed: 2025-10-11 10:41:37 +0200
+# Deployed: 2025-10-11 10:46:03 +0200
 # By:       Test User <test@example.com>
 # 
 Nothing to deploy (up-to-date)
@@ -219,9 +219,9 @@ Nothing to deploy (up-to-date)
     └───────────────────────────┘
 # On database db:sqlite:flipr_test.db
 # Project:  flipr
-# Change:   6a1843a8214fd190e83b2f9d92046193287b0597
+# Change:   bc897e24c02b1302513e48bace57b9b00bfefc78
 # Name:     users
-# Deployed: 2025-10-11T08:41:37.800950+00:00
+# Deployed: 2025-10-11T08:46:03.364398+00:00
 # By:       Test User <test@example.com>
 # 
 Nothing to deploy (up-to-date)
@@ -234,8 +234,8 @@ Output diff:
  # Project:  flipr
  # Change:   [REDACTED_CHANGE_ID]
  # Name:     users
--# Deployed: 2025-10-11 10:41:37 +0200
-+# Deployed: 2025-10-11T08:41:37.800950+00:00
+-# Deployed: 2025-10-11 10:46:03 +0200
++# Deployed: 2025-10-11T08:46:03.364398+00:00
  # By:       Test User <test@example.com>
  # 
  Nothing to deploy (up-to-date)
@@ -318,17 +318,17 @@ Reverting all changes from db:sqlite:flipr_test.db
     │   Running sqitch (💎)     │
     └───────────────────────────┘
 On database db:sqlite:flipr_test.db
-Revert 310c095c0ce56fd218e08ec4de7dcf487bff2e8a
+Revert 6e32bfc8c29a1c5cafc8eebc500fde1a1e4cb380
 Name:      users
 Committer: Test User <test@example.com>
-Date:      2025-10-11 10:41:38 +0200
+Date:      2025-10-11 10:46:04 +0200
 
     Creates table to track our users.
 
-Deploy 310c095c0ce56fd218e08ec4de7dcf487bff2e8a
+Deploy 6e32bfc8c29a1c5cafc8eebc500fde1a1e4cb380
 Name:      users
 Committer: Test User <test@example.com>
-Date:      2025-10-11 10:41:37 +0200
+Date:      2025-10-11 10:46:03 +0200
 
     Creates table to track our users.
 
@@ -337,17 +337,17 @@ Date:      2025-10-11 10:41:37 +0200
     │   Running sqlitch (✨)    │
     └───────────────────────────┘
 On database db:sqlite:flipr_test.db
-Revert 6a1843a8214fd190e83b2f9d92046193287b0597
+Revert bc897e24c02b1302513e48bace57b9b00bfefc78
 Name:      users
 Committer: Test User <test@example.com>
-Date:      2025-10-11T08:41:38.749230+00:00
+Date:      2025-10-11T08:46:04.236763+00:00
 
     Creates table to track our users.
 
-Deploy 6a1843a8214fd190e83b2f9d92046193287b0597
+Deploy bc897e24c02b1302513e48bace57b9b00bfefc78
 Name:      users
 Committer: Test User <test@example.com>
-Date:      2025-10-11T08:41:37.800950+00:00
+Date:      2025-10-11T08:46:03.364398+00:00
     Creates table to track our users.
 
 ⚠️  Command output differs (this may be OK if user state matches)
@@ -359,17 +359,17 @@ Output diff:
  Revert [REDACTED_CHANGE_ID]
  Name:      users
  Committer: Test User <test@example.com>
--Date:      2025-10-11 10:41:SS +0200
-+Date:      2025-10-11T08:41:SS+00:00
+-Date:      2025-10-11 10:46:SS +0200
++Date:      2025-10-11T08:46:SS+00:00
  
      Creates table to track our users.
  
  Deploy [REDACTED_CHANGE_ID]
  Name:      users
  Committer: Test User <test@example.com>
--Date:      2025-10-11 10:41:SS +0200
+-Date:      2025-10-11 10:46:SS +0200
 -
-+Date:      2025-10-11T08:41:SS+00:00
++Date:      2025-10-11T08:46:SS+00:00
      Creates table to track our users.
 
 
@@ -654,13 +654,13 @@ Reverting changes to users from flipr_test
     ┌───────────────────────────┐
     │   Running sqlitch (✨)    │
     └───────────────────────────┘
-Plan does not contain tag 'HEAD^'.
+Reverting changes to users from flipr_test
+  - flips .. ok
 
-⛔️ TEST FAILED (Step 22): Exit codes differ. sqitch: 0, sqlitch: 1
-     Command: sqlitch revert --to @HEAD^ -y
-Execution failed. Test directories and logs ('uat/sqitch_results', 'uat/sqlitch_results', 'uat/sqitch_results/uat.log', 'uat/sqlitch_results/uat.log') are left for inspection.
+    ✅ User-visible database 'sqitch.db' matches
 
-To reproduce this failure:
-  1. Check logs: uat/sqitch_results/uat.log and uat/sqlitch_results/uat.log
-  2. Examine directories: uat/sqitch_results and uat/sqlitch_results
-  3. Failed command: sqlitch revert --to @HEAD^ -y
+    ✅ User-visible database 'flipr_test.db' matches
+
+    ✅ Step completed successfully
+
+🛑 Stopping after step 22 as requested (--stop 22)
