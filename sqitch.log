@@ -207,9 +207,9 @@ Output diff:
     └───────────────────────────┘
 # On database db:sqlite:flipr_test.db
 # Project:  flipr
-# Change:   c9da1fe7b6e8e8f1195765bcd23f7b5526f1b50a
+# Change:   a0fe52054a0eea0eb2f550b430195c872b57a746
 # Name:     users
-# Deployed: 2025-10-11 12:10:11 +0200
+# Deployed: 2025-10-11 12:00:42 +0200
 # By:       Test User <test@example.com>
 # 
 Nothing to deploy (up-to-date)
@@ -219,9 +219,9 @@ Nothing to deploy (up-to-date)
     └───────────────────────────┘
 # On database db:sqlite:flipr_test.db
 # Project:  flipr
-# Change:   3e28d7ff0c776442d0ddb2057278636232bb0567
+# Change:   bd29107711961208b5569584ab843e0690345cce
 # Name:     users
-# Deployed: 2025-10-11T10:10:11.419853+00:00
+# Deployed: 2025-10-11T10:00:42.448746+00:00
 # By:       Test User <test@example.com>
 # 
 Nothing to deploy (up-to-date)
@@ -234,8 +234,8 @@ Output diff:
  # Project:  flipr
  # Change:   [REDACTED_CHANGE_ID]
  # Name:     users
--# Deployed: 2025-10-11 12:10:11 +0200
-+# Deployed: 2025-10-11T10:10:11.419853+00:00
+-# Deployed: 2025-10-11 12:00:42 +0200
++# Deployed: 2025-10-11T10:00:42.448746+00:00
  # By:       Test User <test@example.com>
  # 
  Nothing to deploy (up-to-date)
@@ -318,17 +318,17 @@ Reverting all changes from db:sqlite:flipr_test.db
     │   Running sqitch (💎)     │
     └───────────────────────────┘
 On database db:sqlite:flipr_test.db
-Revert c9da1fe7b6e8e8f1195765bcd23f7b5526f1b50a
+Revert a0fe52054a0eea0eb2f550b430195c872b57a746
 Name:      users
 Committer: Test User <test@example.com>
-Date:      2025-10-11 12:10:12 +0200
+Date:      2025-10-11 12:00:43 +0200
 
     Creates table to track our users.
 
-Deploy c9da1fe7b6e8e8f1195765bcd23f7b5526f1b50a
+Deploy a0fe52054a0eea0eb2f550b430195c872b57a746
 Name:      users
 Committer: Test User <test@example.com>
-Date:      2025-10-11 12:10:11 +0200
+Date:      2025-10-11 12:00:42 +0200
 
     Creates table to track our users.
 
@@ -337,17 +337,17 @@ Date:      2025-10-11 12:10:11 +0200
     │   Running sqlitch (✨)    │
     └───────────────────────────┘
 On database db:sqlite:flipr_test.db
-Revert 3e28d7ff0c776442d0ddb2057278636232bb0567
+Revert bd29107711961208b5569584ab843e0690345cce
 Name:      users
 Committer: Test User <test@example.com>
-Date:      2025-10-11T10:10:12.278244+00:00
+Date:      2025-10-11T10:00:43.254057+00:00
 
     Creates table to track our users.
 
-Deploy 3e28d7ff0c776442d0ddb2057278636232bb0567
+Deploy bd29107711961208b5569584ab843e0690345cce
 Name:      users
 Committer: Test User <test@example.com>
-Date:      2025-10-11T10:10:11.419853+00:00
+Date:      2025-10-11T10:00:42.448746+00:00
     Creates table to track our users.
 
 ⚠️  Command output differs (this may be OK if user state matches)
@@ -359,17 +359,17 @@ Output diff:
  Revert [REDACTED_CHANGE_ID]
  Name:      users
  Committer: Test User <test@example.com>
--Date:      2025-10-11 12:10:SS +0200
-+Date:      2025-10-11T10:10:SS+00:00
+-Date:      2025-10-11 12:00:SS +0200
++Date:      2025-10-11T10:00:SS+00:00
  
      Creates table to track our users.
  
  Deploy [REDACTED_CHANGE_ID]
  Name:      users
  Committer: Test User <test@example.com>
--Date:      2025-10-11 12:10:SS +0200
+-Date:      2025-10-11 12:00:SS +0200
 -
-+Date:      2025-10-11T10:10:SS+00:00
++Date:      2025-10-11T10:00:SS+00:00
      Creates table to track our users.
 
 
@@ -953,10 +953,10 @@ Output diff:
     └───────────────────────────┘
 # On database db:sqlite:dev/flipr.db
 # Project:  flipr
-# Change:   de7b3e37ddfe36025d1818145fcdfa7f7c410832
+# Change:   77a7d2bb619ab01f5bbc722e8f8708c7ac4e9a41
 # Name:     userflips
 # Tag:      @v1.0.0-dev1
-# Deployed: 2025-10-11 12:10:16 +0200
+# Deployed: 2025-10-11 12:00:47 +0200
 # By:       Test User <test@example.com>
 # 
 Nothing to deploy (up-to-date)
@@ -966,10 +966,10 @@ Nothing to deploy (up-to-date)
     └───────────────────────────┘
 # On database db:sqlite:dev/flipr.db
 # Project:  flipr
-# Change:   f16533d7e88b50ae8fe1b4655f1d8cca4b27b0ed
+# Change:   2fed3506f560d8a04761838c3d91013c8d8a9bf2
 # Name:     userflips
 # Tag:      @v1.0.0-dev1
-# Deployed: 2025-10-11T10:10:17.060794+00:00
+# Deployed: 2025-10-11T10:00:47.691116+00:00
 # By:       Test User <test@example.com>
 # 
 Nothing to deploy (up-to-date)
@@ -982,8 +982,8 @@ Output diff:
  # Change:   [REDACTED_CHANGE_ID]
  # Name:     userflips
  # Tag:      @v1.0.0-dev1
--# Deployed: 2025-10-11 12:10:16 +0200
-+# Deployed: 2025-10-11T10:10:17.060794+00:00
+-# Deployed: 2025-10-11 12:00:47 +0200
++# Deployed: 2025-10-11T10:00:47.691116+00:00
  # By:       Test User <test@example.com>
  # 
  Nothing to deploy (up-to-date)
@@ -1153,13 +1153,13 @@ Output diff:
     └───────────────────────────┘
 # On database flipr_test
 # Project:  flipr
-# Change:   e3d471cdd305f1d3e4d5e4ea54234966638b0fa1
+# Change:   53fe2d8f649f94f28088156e01412ecca4dce647
 # Name:     hashtags
-# Deployed: 2025-10-11 12:10:18 +0200
+# Deployed: 2025-10-11 12:00:48 +0200
 # By:       Test User <test@example.com>
 # 
 # Tag:
-#   @v1.0.0-dev1 - 2025-10-11 12:10:18 +0200 - Test User <test@example.com>
+#   @v1.0.0-dev1 - 2025-10-11 12:00:48 +0200 - Test User <test@example.com>
 # 
 Nothing to deploy (up-to-date)
 
@@ -1168,9 +1168,9 @@ Nothing to deploy (up-to-date)
     └───────────────────────────┘
 # On database flipr_test
 # Project:  flipr
-# Change:   da3187f781d5d42a11f9f950f5b769a63301f335
+# Change:   97b14653b9c711d850186aca7b821a3693121f0c
 # Name:     hashtags
-# Deployed: 2025-10-11T10:10:18.534742+00:00
+# Deployed: 2025-10-11T10:00:49.066391+00:00
 # By:       Test User <test@example.com>
 # 
 Nothing to deploy (up-to-date)
@@ -1183,12 +1183,12 @@ Output diff:
  # Project:  flipr
  # Change:   [REDACTED_CHANGE_ID]
  # Name:     hashtags
--# Deployed: 2025-10-11 12:10:18 +0200
-+# Deployed: 2025-10-11T10:10:18.534742+00:00
+-# Deployed: 2025-10-11 12:00:48 +0200
++# Deployed: 2025-10-11T10:00:49.066391+00:00
  # By:       Test User <test@example.com>
  # 
 -# Tag:
--#   @v1.0.0-dev1 - 2025-10-11 12:10:SS +0200 - Test User <test@example.com>
+-#   @v1.0.0-dev1 - 2025-10-11 12:00:SS +0200 - Test User <test@example.com>
 -# 
  Nothing to deploy (up-to-date)
 
@@ -1222,287 +1222,14 @@ Deploying changes to flipr_test
     └───────────────────────────┘
 Reverting all changes from flipr_test
   - hashtags .. ok
-  - userflips .. ok
-  - flips .. ok
-  - users .. ok
-Deploying plan 'flipr' to target 'db:sqlite:flipr_test.db'.
-  + users
-  + flips
-  + userflips
-  + hashtags
-Deployment complete. Applied 4 change(s).
-⚠️  Command output differs (this may be OK if user state matches)
+  - userflips .. not ok
+Rebase revert phase failed: Revert failed for change 'userflips': FOREIGN KEY constraint failed
 
-Output diff:
---- sqitch(out)
-+++ sqlitch(out)
-@@ -1,10 +1,11 @@
- Reverting all changes from flipr_test
--  - hashtags ................ ok
--  - userflips @v1.0.0-dev1 .. ok
--  - flips ................... ok
--  - users ................... ok
--Deploying changes to flipr_test
--  + users ................... ok
--  + flips ................... ok
--  + userflips @v1.0.0-dev1 .. ok
--  + hashtags ................ ok+  - hashtags .. ok
-+  - userflips .. ok
-+  - flips .. ok
-+  - users .. ok
-+Deploying plan 'flipr' to target 'db:sqlite:flipr_test.db'.
-+  + users
-+  + flips
-+  + userflips
-+  + hashtags
-+Deployment complete. Applied 4 change(s).
-
-    ✅ User-visible database 'sqitch.db' matches
-
-    ✅ User-visible database 'flipr_test.db' matches
-
-    ✅ Step completed successfully
-
-============================================================
-▶️  STEP 38: Tag Release v1.0.0-dev2
-    COMMAND: sqlitch tag v1.0.0-dev2 -n Tag v1.0.0-dev2.
-============================================================
-
-    ┌───────────────────────────┐
-    │   Running sqitch (💎)     │
-    └───────────────────────────┘
-Tagged "hashtags" with @v1.0.0-dev2 in sqitch.plan
-
-    ┌───────────────────────────┐
-    │   Running sqlitch (✨)    │
-    └───────────────────────────┘
-Tagged hashtags with @v1.0.0-dev2
-⚠️  Command output differs (this may be OK if user state matches)
-
-Output diff:
---- sqitch(out)
-+++ sqlitch(out)
-@@ -1 +1 @@
--Tagged "hashtags" with @v1.0.0-dev2 in sqitch.plan+Tagged hashtags with @v1.0.0-dev2
-
-    ✅ User-visible database 'sqitch.db' matches
-
-    ✅ User-visible database 'flipr_test.db' matches
-
-    ✅ Step completed successfully
-
-============================================================
-▶️  STEP 39: Rework 'userflips' View
-    COMMAND: sqlitch rework userflips -n Adds userflips.twitter.
-============================================================
-
-    ┌───────────────────────────┐
-    │   Running sqitch (💎)     │
-    └───────────────────────────┘
-Added "userflips [userflips@v1.0.0-dev2]" to sqitch.plan.
-Modify these files as appropriate:
-  * deploy/userflips.sql
-  * revert/userflips.sql
-  * verify/userflips.sql
-
-    ┌───────────────────────────┐
-    │   Running sqlitch (✨)    │
-    └───────────────────────────┘
-Created rework deploy script deploy/userflips@v1.0.0-dev1.sql
-Created rework revert script revert/userflips@v1.0.0-dev1.sql
-Created rework verify script verify/userflips@v1.0.0-dev1.sql
-Reworked userflips
-
-⚠️  Command output differs (this may be OK if user state matches)
-
-Output diff:
---- sqitch(out)
-+++ sqlitch(out)
-@@ -1,5 +1,4 @@
--Added "userflips [userflips@v1.0.0-dev2]" to sqitch.plan.
--Modify these files as appropriate:
--  * deploy/userflips.sql
--  * revert/userflips.sql
--  * verify/userflips.sql+Created rework deploy script deploy/userflips@v1.0.0-dev1.sql
-+Created rework revert script revert/userflips@v1.0.0-dev1.sql
-+Created rework verify script verify/userflips@v1.0.0-dev1.sql
-+Reworked userflips
-
-
-    ✅ User-visible database 'sqitch.db' matches
-
-    ✅ User-visible database 'flipr_test.db' matches
-
-    ✅ Step completed successfully
-
-============================================================
-▶️  STEP 40: Deploy Reworked View
-    COMMAND: sqlitch deploy
-============================================================
-
-    ┌───────────────────────────┐
-    │   Running sqitch (💎)     │
-    └───────────────────────────┘
-Deploying changes to flipr_test
-  + userflips .. ok
-
-    ┌───────────────────────────┐
-    │   Running sqlitch (✨)    │
-    └───────────────────────────┘
-Deploying plan 'flipr' to target 'db:sqlite:flipr_test.db'.
-Nothing to deploy (up-to-date).
-⚠️  Command output differs (this may be OK if user state matches)
-
-Output diff:
---- sqitch(out)
-+++ sqlitch(out)
-@@ -1,2 +1,2 @@
--Deploying changes to flipr_test
--  + userflips .. ok+Deploying plan 'flipr' to target 'db:sqlite:flipr_test.db'.
-+Nothing to deploy (up-to-date).
-
-    ✅ User-visible database 'sqitch.db' matches
-
-    ✅ User-visible database 'flipr_test.db' matches
-
-    ✅ Step completed successfully
-
-============================================================
-▶️  STEP 41: Verify Reworked Schema
-    COMMAND: sqlite3 flipr_test.db .schema userflips
-============================================================
-
-    ┌───────────────────────────┐
-    │   Running sqitch (💎)     │
-    └───────────────────────────┘
-Error: in prepare, near "userflips": syntax error
-  userflips
-  ^--- error here
-CREATE TABLE sqlite_sequence(name,seq);
-CREATE TABLE users (
-    nickname TEXT PRIMARY KEY,
-    password TEXT NOT NULL,
-    fullname TEXT NOT NULL,
-    twitter TEXT NOT NULL,
-    timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-CREATE TABLE flips (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nickname TEXT NOT NULL REFERENCES users(nickname),
-    body TEXT NOT NULL DEFAULT '' CHECK ( length(body) <= 180 ),
-    timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-CREATE TABLE hashtags (
-    flip_id INTEGER NOT NULL REFERENCES flips(id),
-    hashtag TEXT NOT NULL CHECK ( length(hashtag) > 0 ),
-    PRIMARY KEY (flip_id, hashtag)
-);
-CREATE VIEW userflips AS
-SELECT f.id, u.nickname, u.fullname, u.twitter, f.body, f.timestamp
-FROM users u
-JOIN flips f ON u.nickname = f.nickname
-/* userflips(id,nickname,fullname,twitter,body,timestamp) */;
-
-    ┌───────────────────────────┐
-    │   Running sqlitch (✨)    │
-    └───────────────────────────┘
-Error: in prepare, near "userflips": syntax error
-  userflips
-  ^--- error here
-CREATE TABLE sqlite_sequence(name,seq);
-CREATE TABLE users (
-    nickname TEXT PRIMARY KEY,
-    password TEXT NOT NULL,
-    fullname TEXT NOT NULL,
-    twitter TEXT NOT NULL,
-    timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-CREATE TABLE flips (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nickname TEXT NOT NULL REFERENCES users(nickname),
-    body TEXT NOT NULL DEFAULT '' CHECK ( length(body) <= 180 ),
-    timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-CREATE VIEW userflips AS
-SELECT f.id, u.nickname, u.fullname, f.body, f.timestamp
-FROM users u
-JOIN flips f ON u.nickname = f.nickname
-/* userflips(id,nickname,fullname,body,timestamp) */;
-CREATE TABLE hashtags (
-    flip_id INTEGER NOT NULL REFERENCES flips(id),
-    hashtag TEXT NOT NULL CHECK ( length(hashtag) > 0 ),
-    PRIMARY KEY (flip_id, hashtag)
-);
-⚠️  Command output differs (this may be OK if user state matches)
-
-Output diff:
---- sqitch(out)
-+++ sqlitch(out)
-@@ -15,13 +15,13 @@
-     body TEXT NOT NULL DEFAULT '' CHECK ( length(body) <= 180 ),
-     timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
- );
-+CREATE VIEW userflips AS
-+SELECT f.id, u.nickname, u.fullname, f.body, f.timestamp
-+FROM users u
-+JOIN flips f ON u.nickname = f.nickname
-+/* userflips(id,nickname,fullname,body,timestamp) */;
- CREATE TABLE hashtags (
-     flip_id INTEGER NOT NULL REFERENCES flips(id),
-     hashtag TEXT NOT NULL CHECK ( length(hashtag) > 0 ),
-     PRIMARY KEY (flip_id, hashtag)
--);
--CREATE VIEW userflips AS
--SELECT f.id, u.nickname, u.fullname, u.twitter, f.body, f.timestamp
--FROM users u
--JOIN flips f ON u.nickname = f.nickname
--/* userflips(id,nickname,fullname,twitter,body,timestamp) */;+);
-
-    ✅ User-visible database 'sqitch.db' matches
-
-    ✅ User-visible database 'flipr_test.db' matches
-
-    ✅ Step completed successfully
-
-============================================================
-▶️  STEP 42: Revert Reworked Change
-    COMMAND: sqlitch revert --to @HEAD^ -y
-============================================================
-
-    ┌───────────────────────────┐
-    │   Running sqitch (💎)     │
-    └───────────────────────────┘
-Reverting changes to hashtags @v1.0.0-dev2 from flipr_test
-  - userflips .. ok
-
-    ┌───────────────────────────┐
-    │   Running sqlitch (✨)    │
-    └───────────────────────────┘
-Reverting changes to userflips from flipr_test
-  - hashtags .. ok
-⚠️  Command output differs (this may be OK if user state matches)
-
-Output diff:
---- sqitch(out)
-+++ sqlitch(out)
-@@ -1,2 +1,2 @@
--Reverting changes to hashtags @v1.0.0-dev2 from flipr_test
--  - userflips .. ok+Reverting changes to userflips from flipr_test
-+  - hashtags .. ok
-
-    ✅ User-visible database 'sqitch.db' matches
-
-⛔️ TEST FAILED (Step 42): User-visible database state differs for 'flipr_test.db'
-     Command: sqlitch revert --to @HEAD^ -y
-
-┌──────────────[ DIFF ]──────────────┐
-User table sets differ:
-  left: ['flips', 'hashtags', 'users']
-  right: ['flips', 'users']
-└────────────────────────────────────┘
+⛔️ TEST FAILED (Step 37): Exit codes differ. sqitch: 0, sqlitch: 1
+     Command: sqlitch rebase -y
 Execution failed. Test directories and logs ('uat/sqitch_results', 'uat/sqlitch_results', 'uat/sqitch_results/uat.log', 'uat/sqlitch_results/uat.log') are left for inspection.
 
 To reproduce this failure:
   1. Check logs: uat/sqitch_results/uat.log and uat/sqlitch_results/uat.log
   2. Examine directories: uat/sqitch_results and uat/sqlitch_results
-  3. Failed command: sqlitch revert --to @HEAD^ -y
+  3. Failed command: sqlitch rebase -y

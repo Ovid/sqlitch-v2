@@ -391,6 +391,18 @@ def _revert_change(
     note = change.notes or ""
 
     def _record(cursor: sqlite3.Cursor) -> None:
+        # Delete tags first (if this change has any tags pointing to it)
+        cursor.execute(
+            f"DELETE FROM {registry_schema}.tags WHERE change_id = ?",
+            (change_id,),
+        )
+
+        # Delete dependencies (FK constraints require this order)
+        cursor.execute(
+            f"DELETE FROM {registry_schema}.dependencies WHERE change_id = ?",
+            (change_id,),
+        )
+
         # Delete from changes table
         cursor.execute(
             f"DELETE FROM {registry_schema}.changes WHERE change_id = ?",
