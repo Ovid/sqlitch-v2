@@ -11,6 +11,7 @@ import click
 
 from sqlitch.plan.model import Change, Plan
 from sqlitch.plan.parser import PlanParseError, parse_plan
+from sqlitch.utils.logging import StructuredLogger
 
 from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
@@ -29,6 +30,7 @@ __all__ = ["rebase_command"]
 @dataclass(frozen=True, slots=True)
 class _RebaseRequest:
     project_root: Path
+    config_root: Path
     env: Mapping[str, str]
     plan_path: Path
     plan: Plan
@@ -38,6 +40,7 @@ class _RebaseRequest:
     mode: str
     log_only: bool
     quiet: bool
+    logger: StructuredLogger
 
 
 @click.command("rebase")
@@ -57,6 +60,11 @@ class _RebaseRequest:
     is_flag=True,
     help="Show the rebase actions without executing any scripts.",
 )
+@click.option(
+    "-y",
+    is_flag=True,
+    help="Disable the prompt that normally asks whether to execute the revert.",
+)
 @global_sqitch_options
 @global_output_options
 @click.pass_context
@@ -69,6 +77,7 @@ def rebase_command(
     from_ref: str | None,
     mode: str,
     log_only: bool,
+    y: bool,
     json_mode: bool,
     verbose: int,
     quiet: bool,
@@ -92,10 +101,18 @@ def rebase_command(
         plan_path=plan_path_for_engine,
     )
 
-    target = _resolve_target(target_option, cli_context.target)
+    target = _resolve_target(
+        target_option=target_option,
+        configured_target=cli_context.target,
+        project_root=project_root,
+        config_root=cli_context.config_root,
+        env=env,
+        default_engine=default_engine,
+    )
 
     request = _build_request(
         project_root=project_root,
+        config_root=cli_context.config_root,
         env=env,
         plan_override=plan_override,
         target=target,
@@ -105,6 +122,7 @@ def rebase_command(
         log_only=log_only,
         quiet=quiet_mode_enabled(ctx),
         default_engine=default_engine,
+        logger=cli_context.logger,
     )
 
     _execute_rebase(request)
@@ -113,6 +131,7 @@ def rebase_command(
 def _build_request(
     *,
     project_root: Path,
+    config_root: Path,
     env: Mapping[str, str],
     plan_override: Path | None,
     target: str,
@@ -122,12 +141,14 @@ def _build_request(
     log_only: bool,
     quiet: bool,
     default_engine: str,
+    logger: StructuredLogger,
 ) -> _RebaseRequest:
     plan_path = _resolve_plan_path(project_root=project_root, override=plan_override, env=env)
     plan = _load_plan(plan_path, default_engine)
 
     return _RebaseRequest(
         project_root=project_root,
+        config_root=config_root,
         env=env,
         plan_path=plan_path,
         plan=plan,
@@ -137,6 +158,7 @@ def _build_request(
         mode=mode,
         log_only=log_only,
         quiet=quiet,
+        logger=logger,
     )
 
 
@@ -151,13 +173,84 @@ def _execute_rebase(request: _RebaseRequest) -> None:
         _render_log_only_rebase(request, reverts, redeploys)
         return
 
-    raise CommandError("Rebase execution is not yet implemented; rerun with --log-only for now.")
+    # Rebase = revert all + deploy all
+    # Import the command implementations
+    from .deploy import _DeployRequest, _execute_deploy
+    from .revert import _RevertRequest, _execute_revert
+
+    # Build revert request (revert all changes)
+    revert_request = _RevertRequest(
+        project_root=request.project_root,
+        env=request.env,
+        plan_path=request.plan_path,
+        plan=request.plan,
+        target=request.target,
+        to_change=None,  # Revert all
+        to_tag=None,
+        log_only=False,
+        skip_prompt=True,  # Rebase always auto-confirms like -y flag
+        quiet=request.quiet,
+        config_root=request.config_root,
+    )
+
+    # Build deploy request (deploy all changes)
+    deploy_request = _DeployRequest(
+        project_root=request.project_root,
+        config_root=request.config_root,
+        env=request.env,
+        plan_path=request.plan_path,
+        plan=request.plan,
+        target=request.target,
+        to_change=None,  # Deploy all
+        to_tag=None,
+        log_only=False,
+        quiet=request.quiet,
+        logger=request.logger,
+        registry_override=None,
+    )
+
+    # Execute revert phase
+    try:
+        _execute_revert(revert_request)
+    except Exception as exc:
+        raise CommandError(f"Rebase revert phase failed: {exc}") from exc
+
+    # Execute deploy phase
+    try:
+        _execute_deploy(deploy_request)
+    except Exception as exc:
+        raise CommandError(f"Rebase deploy phase failed: {exc}") from exc
 
 
-def _resolve_target(target_option: str | None, configured_target: str | None) -> str:
+def _resolve_target(
+    *,
+    target_option: str | None,
+    configured_target: str | None,
+    project_root: Path,
+    config_root: Path,
+    env: Mapping[str, str],
+    default_engine: str | None,
+) -> str:
+    """Resolve the target URI from command-line options or configuration."""
     target = target_option or configured_target
+
+    # If no target from CLI/env, check if the default engine has a target configured
+    if not target and default_engine:
+        from sqlitch.config import resolver as config_resolver
+
+        config_profile = config_resolver.resolve_config(
+            root_dir=project_root,
+            config_root=config_root,
+            env=env,
+        )
+        engine_section = f'engine "{default_engine}"'
+        engine_target = config_profile.settings.get(engine_section, {}).get("target")
+        if engine_target:
+            target = engine_target
+
     if not target:
         raise CommandError("A deployment target must be provided via --target or configuration.")
+
     return target
 
 
