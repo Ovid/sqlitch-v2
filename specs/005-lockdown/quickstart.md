@@ -27,8 +27,8 @@ bandit -r sqlitch/
 ```bash
 # Prepare clean working dirs (scripts perform cleanup automatically)
 python uat/side-by-side.py --out artifacts/side-by-side.log
-python uat/forward-compat.py --out artifacts/forward-compat.log
-python uat/backward-compat.py --out artifacts/backward-compat.log
+python uat/scripts/forward-compat.py --out artifacts/forward-compat.log
+python uat/scripts/backward-compat.py --out artifacts/backward-compat.log
 ```
 - Ensure each script exits with code 0.
 - Review sanitized logs for behavioral differences; cosmetic diffs (case, whitespace) acceptable.

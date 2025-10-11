@@ -148,18 +148,19 @@ pytest --cov=sqlitch --cov-report=term
     4. Fix UAT script to ensure sqitch behavior matches tutorial expectations FIRST
     5. Only after sqitch behavior is verified correct, test sqlitch parity
   - **ACCEPTANCE**: ✅ UAT script runs successfully with sqitch producing tutorial-expected output at every step
-- [X] **T060c [P1]** Implement full forward compatibility logic in `uat/scripts/forward-compat.py` (sqlitch first, then sqitch continues)
-- [X] **T060d [P1]** Execute `uat/scripts/forward-compat.py --out specs/005-lockdown/artifacts/uat/forward-compat.log` and fix any failures
-  - **STATUS**: ✅ COMPLETE – Script exits 0 (2025-10-11); sanitized log published at `specs/005-lockdown/artifacts/uat/forward-compat.log`
-  - **FIXES APPLIED**:
-    - Normalized SQLite target registry config to stay Sqitch-compatible (avoid `db:sqlite:` prefixes)
-    - Added pre-step setup in harness to create the `dev/` directory before Sqitch deploys tutorial Step 30
-  - **RESULT**: Sqitch now continues every SQLitch-authored change through tutorial completion, confirming forward compatibility
-- [X] **T060e [P1]** Implement full backward compatibility logic in `uat/scripts/backward-compat.py` (sqitch first, then sqlitch continues)
-- [X] **T060f [P1]** Execute `uat/scripts/backward-compat.py --out specs/005-lockdown/artifacts/uat/backward-compat.log` and fix any failures
-  - **STATUS**: ✅ COMPLETE – Script exits 0 (2025-10-11); sanitized log at `specs/005-lockdown/artifacts/uat/backward-compat.log`
-- [X] **T060g [P1]** Review all three UAT logs for behavioral differences, document cosmetic diffs in `IMPLEMENTATION_REPORT_LOCKDOWN.md`
-- [X] **T060h [P1]** Prepare release PR comment with UAT evidence using quickstart template
+- [ ] **T060c [P1]** Implement full forward compatibility logic in `uat/scripts/forward-compat.py` (sqlitch first, then sqitch continues)
+- [ ] **T060d [P1]** Execute `uat/scripts/forward-compat.py --out specs/005-lockdown/artifacts/uat/forward-compat.log` and fix any failures
+  - **STATUS**: ❌ FAILS at Step 20 (sqitch verify) - "unable to open database file"
+  - **ISSUE**: Sqitch cannot find the database when running `verify` without explicit target argument
+  - **ROOT CAUSE**: Registry configuration may have absolute path issues, or sqitch needs explicit database URI
+  - **NEXT**: Debug why sqitch verify fails when configuration appears correct
+- [ ] **T060e [P1]** Implement full backward compatibility logic in `uat/scripts/backward-compat.py` (sqitch first, then sqlitch continues)
+- [ ] **T060f [P1]** Execute `uat/scripts/backward-compat.py --out specs/005-lockdown/artifacts/uat/backward-compat.log` and fix any failures
+  - **STATUS**: ❌ NOT TESTED - blocked by T060d failure
+- [ ] **T060g [P1]** Review all three UAT logs for behavioral differences, document cosmetic diffs in `IMPLEMENTATION_REPORT_LOCKDOWN.md`
+  - **STATUS**: ❌ BLOCKED - cannot review logs until T060d and T060f complete successfully
+- [ ] **T060h [P1]** Prepare release PR comment with UAT evidence using quickstart template
+  - **STATUS**: ❌ BLOCKED - cannot prepare evidence until T060g completes
 
 ### Quality Gates & Release Preparation
 > ⚠️ **UAT Execution Protocol**: Tasks T060a-T060h involve iterative debugging. See [`UAT_EXECUTION_PLAN.md`](./UAT_EXECUTION_PLAN.md) for detailed halt state protocols. Each execution failure must trigger: HALT → FIX → COMMIT → END SESSION. Do not mark execution tasks complete until scripts exit with code 0.

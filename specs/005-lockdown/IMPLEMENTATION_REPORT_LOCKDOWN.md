@@ -104,7 +104,7 @@ This implementation followed the mandatory Sqitch verification protocol:
 2. **Foreign Key Enforcement** — Enabled `PRAGMA foreign_keys = ON` within SQLite engine workspace connections to match Sqitch cascade semantics (steps 22-24).
 3. **Rework & Change ID Parity** — Implemented duplicate change handling, dependency normalization, and SHA-1 parity (see [Historical Note: T067 Rework Support Implementation ✅ COMPLETE](#historical-note-t067-rework-support-implementation--complete)).
 
-With these fixes, forward (`python uat/forward-compat.py`) and backward (`python uat/backward-compat.py`) runs progressed without intervention, demonstrating bidirectional compatibility.
+With these fixes, forward (`python uat/scripts/forward-compat.py`) and backward (`python uat/scripts/backward-compat.py`) runs progressed without intervention, demonstrating bidirectional compatibility.
 
 ---
 
@@ -381,8 +381,8 @@ source .venv/bin/activate
 
 # Run UAT scripts (SQLite tutorial only)
 python uat/side-by-side.py --out specs/005-lockdown/artifacts/uat/side-by-side.log
-python uat/forward-compat.py --out specs/005-lockdown/artifacts/uat/forward-compat.log
-python uat/backward-compat.py --out specs/005-lockdown/artifacts/uat/backward-compat.log
+python uat/scripts/forward-compat.py --out specs/005-lockdown/artifacts/uat/forward-compat.log
+python uat/scripts/backward-compat.py --out specs/005-lockdown/artifacts/uat/backward-compat.log
 
 # Verify all exit codes are 0
 # Review logs for behavioral differences (cosmetic diffs acceptable)

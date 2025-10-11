@@ -60,9 +60,9 @@ COMMAND: sqitch status db:sqlite:flipr_test.db
 ============================================================
 # On database db:sqlite:flipr_test.db
 # Project:  flipr
-# Change:   2ee1f8232096ca3ba2481f2157847a2a102e64d2
+# Change:   e7fa5e64ef2e5a2074ebc14cd6a0e3b43114dcd0
 # Name:     users
-# Deployed: 2025-10-11 15:08:16 +0200
+# Deployed: 2025-10-11 21:58:01 +0200
 # By:       Test User <test@example.com>
 # 
 Nothing to deploy (up-to-date)
@@ -91,17 +91,17 @@ STEP: Step 12: Check Sqitch Log
 COMMAND: sqitch log db:sqlite:flipr_test.db
 ============================================================
 On database db:sqlite:flipr_test.db
-Revert 2ee1f8232096ca3ba2481f2157847a2a102e64d2
+Revert e7fa5e64ef2e5a2074ebc14cd6a0e3b43114dcd0
 Name:      users
 Committer: Test User <test@example.com>
-Date:      2025-10-11 15:08:16 +0200
+Date:      2025-10-11 21:58:01 +0200
 
     Creates table to track our users.
 
-Deploy 2ee1f8232096ca3ba2481f2157847a2a102e64d2
+Deploy e7fa5e64ef2e5a2074ebc14cd6a0e3b43114dcd0
 Name:      users
 Committer: Test User <test@example.com>
-Date:      2025-10-11 15:08:16 +0200
+Date:      2025-10-11 21:58:01 +0200
 
     Creates table to track our users.
 
