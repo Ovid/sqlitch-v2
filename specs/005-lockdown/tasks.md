@@ -202,31 +202,24 @@ pytest --cov=sqlitch --cov-report=term
     7. ✅ Added second DELETE for dependency_id FK references
   - **VALIDATION**: ✅ All 46 UAT steps pass - full rework workflow validated
   - **ACCEPTANCE**: ✅ Plan parser accepts duplicate change names, deploy/revert/status handle rework correctly
-- [ ] **T068 [P1]** **CRITICAL - BLOCKING**: Fix change ID calculation to match Sqitch's algorithm exactly
+- [X] **T068 [P1]** **CRITICAL - RESOLVED**: Fix change ID calculation to match Sqitch's algorithm exactly
   - **DISCOVERED**: 2025-10-11 during T060d execution
   - **CONSTITUTIONAL VIOLATION**: SQLitch fails Sqitch behavioral parity - cannot interoperate with Sqitch databases
-  - **STATUS**: 🟡 PARTIAL FIX - URI field added, simple changes now work
-  - **PROGRESS**:
-    - ✅ Identified root cause: Missing URI field in change ID calculation
-    - ✅ Updated `generate_change_id()` to accept and use URI parameter
-    - ✅ Updated all call sites in deploy.py and revert.py to pass plan.uri
-    - ✅ **VERIFIED**: Changes without dependencies now produce matching IDs
-      - Example: users change now generates correct ID `2ee1f8232096ca3ba2481f2157847a2a102e64d2`
-    - ❌ **REMAINING ISSUE**: Changes WITH dependencies still mismatch
-      - Example: flips change generates `23cc1e0a...` but Sqitch expects `0ecbca89...`
-      - Root cause unknown - dependency formatting appears correct
+  - **STATUS**: ✅ RESOLVED - Change ID generation now matches Sqitch exactly (2025-10-11)
+  - **RESOLUTION**:
+    - ✅ **ROOT CAUSE IDENTIFIED**: Missing URI field AND incorrect @tag suffix handling in dependencies
+    - ✅ **URI FIX**: Added `uri` parameter to `generate_change_id()` and updated all call sites
+    - ✅ **DEPENDENCY FIX**: Deploy command now preserves @tag suffixes in dependencies when computing change_id
+    - ✅ **VERIFIED**: All change IDs now match Sqitch byte-for-byte
+      - Simple changes: users → `2ee1f8232096ca3ba2481f2157847a2a102e64d2` ✓
+      - Changes with dependencies: flips → `0ecbca89...` ✓ (correct ID after @tag fix)
   - **FILES MODIFIED**:
     - `sqlitch/utils/identity.py` - Added `uri` parameter to `generate_change_id()`
-    - `sqlitch/cli/commands/deploy.py` - Updated `_compute_change_id_for_change()` and call sites
+    - `sqlitch/cli/commands/deploy.py` - Updated `_compute_change_id_for_change()` to preserve @tag suffixes
     - `sqlitch/cli/commands/revert.py` - Updated `_revert_change()` signature and call sites
-  - **TESTING**: All existing unit tests pass with changes
-  - **NEXT STEPS**:
-    1. Debug why dependency formatting differs from Sqitch
-    2. Verify exact byte-for-byte content that Sqitch hashes for changes with dependencies
-    3. Update dependency formatting logic to match
-    4. Re-run forward/backward compatibility tests
-  - **PRIORITY**: P1 - BLOCKING - Must be fully resolved before release
-  - **ESTIMATED REMAINING EFFORT**: 2-4 hours
+  - **TESTING**: All existing unit tests pass, UAT steps 1-46 pass with correct change IDs
+  - **VALIDATION**: Forward/backward compatibility now possible - SQLitch can interoperate with Sqitch databases
+  - **IMPACT**: Unblocks T060d, T060e, T060f, T060g, T060h, T063 (all compatibility/release tasks)
 
 ---
 
