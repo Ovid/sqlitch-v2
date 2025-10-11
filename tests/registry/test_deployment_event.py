@@ -163,6 +163,30 @@ class TestDeploymentEventFromRegistryRow:
         event = DeploymentEvent.from_registry_row(row)
         assert event.tags == "v1.0,beta,release"
 
+    def test_parses_naive_registry_timestamps_as_utc(self):
+        """Should treat naive registry timestamps as UTC."""
+        row = (
+            "deploy",
+            "abc123",
+            "users",
+            "flipr",
+            "",
+            "",
+            "",
+            "",
+            "2025-01-15 10:30:00.500",
+            "Ada",
+            "ada@example.com",
+            "2025-01-14 18:00:00",
+            "Ada",
+            "ada@example.com",
+        )
+
+        event = DeploymentEvent.from_registry_row(row)
+
+        assert event.committed_at == _aware(datetime(2025, 1, 15, 10, 30, 0, 500000))
+        assert event.planned_at == _aware(datetime(2025, 1, 14, 18, 0))
+
     def test_timezone_aware_datetime_handling(self):
         """Should ensure datetime fields are timezone-aware."""
         row = (

@@ -39,7 +39,7 @@ from sqlitch.utils.identity import (
     resolve_username,
 )
 from sqlitch.utils.logging import StructuredLogger
-from sqlitch.utils.time import isoformat_utc
+from sqlitch.utils.time import format_registry_timestamp
 
 from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
@@ -1028,8 +1028,8 @@ def _apply_change(
     if change.change_id is not None:
         change_id = str(change.change_id)
 
-    committed_at = isoformat_utc(datetime.now(timezone.utc), drop_microseconds=False)
-    planned_at = isoformat_utc(change.planned_at, drop_microseconds=False)
+    committed_at = format_registry_timestamp(datetime.now(timezone.utc))
+    planned_at = format_registry_timestamp(change.planned_at)
     note = change.notes or ""
 
     def _record(cursor: sqlite3.Cursor) -> None:
@@ -1681,8 +1681,8 @@ def _synchronise_registry_tags(
             env,
             committer_email,
         )
-        committed_at = isoformat_utc(datetime.now(timezone.utc), drop_microseconds=False)
-        planned_at = isoformat_utc(change.planned_at, drop_microseconds=False)
+        committed_at = format_registry_timestamp(datetime.now(timezone.utc))
+        planned_at = format_registry_timestamp(change.planned_at)
         note = change.notes or ""
 
         cursor = connection.cursor()

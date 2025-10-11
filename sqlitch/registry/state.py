@@ -60,10 +60,18 @@ class DeployedChange:
             change=row[2],
             project=row[3],
             note=row[4],
-            committed_at=parse_iso_datetime(row[5], label="committed_at"),
+            committed_at=parse_iso_datetime(
+                row[5],
+                label="committed_at",
+                assume_utc_if_naive=True,
+            ),
             committer_name=row[6],
             committer_email=row[7],
-            planned_at=parse_iso_datetime(row[8], label="planned_at"),
+            planned_at=parse_iso_datetime(
+                row[8],
+                label="planned_at",
+                assume_utc_if_naive=True,
+            ),
             planner_name=row[9],
             planner_email=row[10],
         )
@@ -115,10 +123,18 @@ class DeploymentEvent:
             requires=row[5],
             conflicts=row[6],
             tags=row[7],
-            committed_at=parse_iso_datetime(row[8], label="committed_at"),
+            committed_at=parse_iso_datetime(
+                row[8],
+                label="committed_at",
+                assume_utc_if_naive=True,
+            ),
             committer_name=row[9],
             committer_email=row[10],
-            planned_at=parse_iso_datetime(row[11], label="planned_at"),
+            planned_at=parse_iso_datetime(
+                row[11],
+                label="planned_at",
+                assume_utc_if_naive=True,
+            ),
             planner_name=row[12],
             planner_email=row[13],
         )

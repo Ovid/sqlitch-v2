@@ -24,7 +24,7 @@ from sqlitch.engine.sqlite import (
 from sqlitch.plan.model import Change, Plan
 from sqlitch.plan.parser import PlanParseError, parse_plan
 from sqlitch.plan.symbolic import resolve_symbolic_reference
-from sqlitch.utils.time import isoformat_utc
+from sqlitch.utils.time import format_registry_timestamp
 
 from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
@@ -438,8 +438,8 @@ def _revert_change(
     # Parse planner identity
     planner_name, planner_email = _resolve_planner_identity(change.planner, env, committer_email)
 
-    committed_at = isoformat_utc(datetime.now(timezone.utc), drop_microseconds=False)
-    planned_at = isoformat_utc(change.planned_at, drop_microseconds=False)
+    committed_at = format_registry_timestamp(datetime.now(timezone.utc))
+    planned_at = format_registry_timestamp(change.planned_at)
     note = change.notes or ""
 
     def _record(cursor: sqlite3.Cursor) -> None:
