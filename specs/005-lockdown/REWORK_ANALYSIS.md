@@ -35,9 +35,27 @@ The plan now contains two entries named "userflips":
 
 ## Current SQLitch Behavior
 
-### Parser Rejection
+### Incorrect Rework Implementation
 
-When SQLitch tries to parse a plan with reworked changes:
+SQLitch's `rework` command exists but has **incorrect behavior**:
+
+**What SQLitch does (WRONG):**
+```
+# Before: userflips [users flips] 2025... # Creates the userflips view.
+# After:  userflips [users flips] 2025... # Adds userflips.twitter.
+```
+It modifies the existing plan entry in place (changes the note).
+
+**What Sqitch does (CORRECT):**
+```
+# Original stays: userflips [users flips] 2025... # Creates the userflips view.
+# New entry added: userflips [userflips@v1.0.0-dev2] 2025... # Adds userflips.twitter.
+```
+It adds a NEW entry with a dependency on the previous version via tag.
+
+### Parser Rejection (Secondary Issue)
+
+Once the rework command is fixed, the plan parser will reject the correct format:
 
 ```python
 # sqlitch/plan/model.py, line 165
@@ -54,16 +72,22 @@ Result: `ValueError: Plan contains duplicate change name: userflips`
 ### Impact
 
 **Blocked UAT Steps:**
-- Step 39: `sqitch rework userflips` - creates reworked plan that sqlitch cannot parse
-- Step 40: `deploy` reworked change
-- Step 41: `verify` reworked schema
-- Step 42: `revert --to @HEAD^` - should revert the reworked change only
-- Steps 43-46: final verification and status checks
+- ✅ Step 39: `sqitch rework userflips` - executes but produces wrong plan format
+- ⚠️ Step 40: `deploy` reworked change - SQLitch says "nothing to deploy" (incorrect)
+- ❌ Step 41: `verify` reworked schema - databases happen to match but for wrong reasons
+- ❌ Step 42: `revert --to @HEAD^` - will revert wrong change (no duplicate entry exists)
+- ❌ Steps 43-46: final verification and status checks
 
 **Blocked Tasks:**
-- T060b: side-by-side UAT execution (currently at step 38/46)
+- T060b: side-by-side UAT execution (currently at step 40 with behavioral differences)
 - T060c-T060f: forward/backward compatibility validation
 - T060g-T060h: UAT review and PR evidence
+
+**Actual Failure Sequence:**
+1. Step 39: `rework` command executes but modifies plan incorrectly
+2. Step 40: `deploy` sees no changes (because there's no new entry in plan)
+3. Step 42: `revert --to @HEAD^` reverts wrong change (plan structure is wrong)
+4. Even if we fix `rework` command, parser will then reject duplicate entries
 
 ## Sqitch Implementation Analysis
 
@@ -268,23 +292,62 @@ Update to handle rework semantics:
 ## Implementation Strategy
 
 ### Phase 1: Model & Parser (Foundation)
+**Goal:** Allow duplicate change names in plans
+
 1. Add rework fields to Change model
-2. Update Plan model to allow duplicate names
-3. Implement dependency parsing for rework syntax
-4. Add tests for parsing rework syntax
+2. **Remove duplicate name validation from Plan.__post_init__**
+3. Implement dependency parsing for rework syntax `[change@tag]`
+4. Implement `get_latest_version()` and `get_all_versions()` on Plan
+5. Add tests for parsing rework syntax
 
-### Phase 2: Resolution (Navigation)
-1. Update symbolic reference resolution
-2. Implement get_latest_version / get_all_versions
-3. Add tests for resolving references with reworks
+**Files:**
+- `sqlitch/plan/model.py`
+- `sqlitch/plan/parser.py`
+- `tests/plan/test_parser_rework.py`
+- `tests/plan/test_model_rework.py`
 
-### Phase 3: Commands (Behavior)
-1. Update deploy command for rework deployment
-2. Update revert command for rework reversion
-3. Update status/log/plan commands to display rework info
-4. Add integration tests
+### Phase 2: Rework Command (Fix Incorrect Behavior)
+**Goal:** Make `rework` command add new entry instead of modifying existing
 
-### Phase 4: Validation (UAT)
+1. Fix `sqlitch/cli/commands/rework.py` to append new entry to plan
+2. Use tag dependency syntax: `change_name [change_name@last_tag]`
+3. Create new script files with `@tag` suffix (already working)
+4. Update tests for correct plan modification
+
+**Files:**
+- `sqlitch/cli/commands/rework.py`
+- `tests/cli/commands/test_rework.py`
+
+### Phase 3: Deploy/Revert Logic (Handle Reworked Changes)
+**Goal:** Deploy and revert commands recognize reworked changes
+
+1. Update deploy command to detect reworked changes
+2. When deploying rework: revert old version, then deploy new version
+3. Update revert command to navigate through all change versions
+4. Update symbolic reference resolution for reworked changes
+5. Add integration tests
+
+**Files:**
+- `sqlitch/cli/commands/deploy.py`
+- `sqlitch/cli/commands/revert.py`
+- `sqlitch/plan/symbolic.py`
+- `tests/integration/test_rework_flow.py`
+
+### Phase 4: Status/Display Commands (Show Rework Info)
+**Goal:** Other commands display rework information correctly
+
+1. Update status/log/plan commands to show rework relationships
+2. Display tag annotations (e.g., `userflips @v1.0.0-dev2`)
+3. Add tests for display formatting
+
+**Files:**
+- `sqlitch/cli/commands/status.py`
+- `sqlitch/cli/commands/log.py`
+- `sqlitch/cli/commands/plan.py`
+
+### Phase 5: Validation (UAT)
+**Goal:** Verify behavior matches Sqitch
+
 1. Re-run side-by-side UAT from step 39
 2. Verify steps 39-46 pass
 3. Document any cosmetic differences

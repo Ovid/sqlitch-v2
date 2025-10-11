@@ -121,18 +121,25 @@ def test_plan_exposes_changes_and_tags():
     assert plan.tags == (tag,)
 
 
-def test_plan_rejects_duplicate_change_names():
+def test_plan_allows_duplicate_change_names_for_rework():
+    """Test that Plans allow duplicate change names (reworked changes)."""
     change = _make_change(name="widgets:add", dependencies=[])
-    duplicate = _make_change(name="widgets:add", dependencies=[])
+    rework = _make_change(name="widgets:add", dependencies=["widgets:add@v1.0"])
 
-    with pytest.raises(ValueError, match="duplicate change name"):
-        model.Plan(
-            project_name="widgets",
-            file_path=Path("plan"),
-            entries=[change, duplicate],
-            checksum="abc123",
-            default_engine="pg",
-        )
+    # Should not raise - reworked changes are allowed
+    plan = model.Plan(
+        project_name="widgets",
+        file_path=Path("plan"),
+        entries=[change, rework],
+        checksum="abc123",
+        default_engine="pg",
+    )
+    
+    # Verify both versions are preserved
+    assert len(plan.changes) == 2
+    assert plan.get_latest_version("widgets:add") == rework
+    assert plan.get_all_versions("widgets:add") == (change, rework)
+    assert plan.is_reworked("widgets:add") is True
 
 
 def test_plan_rejects_dependency_defined_after_change():
