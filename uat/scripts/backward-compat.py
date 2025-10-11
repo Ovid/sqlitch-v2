@@ -282,8 +282,8 @@ ROLLBACK;
     
     # Reworked userflips (after step 39)
     elif step_num == 39:
-        (WORK_DIR / "deploy/userflips.sql").write_text(
-            """-- Deploy flipr:userflips to sqlite
+        # Updated deploy script for the reworked change (mirrors Sqitch tutorial)
+        deploy_content = """-- Deploy flipr:userflips to sqlite
 -- requires: users
 -- requires: flips
 
@@ -297,12 +297,14 @@ FROM users u
 JOIN flips f ON u.nickname = f.nickname;
 
 COMMIT;
-""",
+"""
+        (WORK_DIR / "deploy/userflips.sql").write_text(deploy_content, encoding="utf-8")
+        (WORK_DIR / "deploy/userflips@v1.0.0-dev2.sql").write_text(
+            deploy_content,
             encoding="utf-8",
         )
-        
-        (WORK_DIR / "revert/userflips.sql").write_text(
-            """-- Revert flipr:userflips from sqlite
+
+        revert_content = """-- Revert flipr:userflips from sqlite
 
 BEGIN;
 
@@ -314,12 +316,14 @@ FROM users u
 JOIN flips f ON u.nickname = f.nickname;
 
 COMMIT;
-""",
+"""
+        (WORK_DIR / "revert/userflips.sql").write_text(revert_content, encoding="utf-8")
+        (WORK_DIR / "revert/userflips@v1.0.0-dev2.sql").write_text(
+            revert_content,
             encoding="utf-8",
         )
-        
-        (WORK_DIR / "verify/userflips.sql").write_text(
-            """-- Verify flipr:userflips on sqlite
+
+        verify_content = """-- Verify flipr:userflips on sqlite
 
 BEGIN;
 
@@ -328,7 +332,10 @@ FROM userflips
 WHERE 0;
 
 ROLLBACK;
-""",
+"""
+        (WORK_DIR / "verify/userflips.sql").write_text(verify_content, encoding="utf-8")
+        (WORK_DIR / "verify/userflips@v1.0.0-dev2.sql").write_text(
+            verify_content,
             encoding="utf-8",
         )
     

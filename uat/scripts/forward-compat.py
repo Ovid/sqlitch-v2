@@ -283,8 +283,7 @@ ROLLBACK;
     
     # Reworked userflips (after step 39)
     elif step_num == 39:
-        (WORK_DIR / "deploy/userflips.sql").write_text(
-            """-- Deploy flipr:userflips to sqlite
+        deploy_content = """-- Deploy flipr:userflips to sqlite
 -- requires: users
 -- requires: flips
 
@@ -298,12 +297,14 @@ FROM users u
 JOIN flips f ON u.nickname = f.nickname;
 
 COMMIT;
-""",
+"""
+        (WORK_DIR / "deploy/userflips.sql").write_text(deploy_content, encoding="utf-8")
+        (WORK_DIR / "deploy/userflips@v1.0.0-dev2.sql").write_text(
+            deploy_content,
             encoding="utf-8",
         )
-        
-        (WORK_DIR / "revert/userflips.sql").write_text(
-            """-- Revert flipr:userflips from sqlite
+
+        revert_content = """-- Revert flipr:userflips from sqlite
 
 BEGIN;
 
@@ -315,12 +316,14 @@ FROM users u
 JOIN flips f ON u.nickname = f.nickname;
 
 COMMIT;
-""",
+"""
+        (WORK_DIR / "revert/userflips.sql").write_text(revert_content, encoding="utf-8")
+        (WORK_DIR / "revert/userflips@v1.0.0-dev2.sql").write_text(
+            revert_content,
             encoding="utf-8",
         )
-        
-        (WORK_DIR / "verify/userflips.sql").write_text(
-            """-- Verify flipr:userflips on sqlite
+
+        verify_content = """-- Verify flipr:userflips on sqlite
 
 BEGIN;
 
@@ -329,12 +332,20 @@ FROM userflips
 WHERE 0;
 
 ROLLBACK;
-""",
+"""
+        (WORK_DIR / "verify/userflips.sql").write_text(verify_content, encoding="utf-8")
+        (WORK_DIR / "verify/userflips@v1.0.0-dev2.sql").write_text(
+            verify_content,
             encoding="utf-8",
         )
     
-    # Create dev directory for step 30
-    elif step_num == 30:
+
+
+def prepare_step(step_num: int) -> None:
+    """Perform step-specific setup required before execution."""
+
+    if step_num == 30:
+        # Sqitch expects the deployment directory to exist before connecting.
         (WORK_DIR / "dev").mkdir(parents=True, exist_ok=True)
 
 
@@ -353,6 +364,8 @@ def execute_step(step: Step, use_sqitch: bool) -> tuple[bool, str]:
     else:
         return False, f"Unknown command: {step.command}"
     
+    prepare_step(step.number)
+
     # Execute command FIRST (for 'add' commands that create file structure)
     output, returncode = run_command(cmd, WORK_DIR, tool)
     log_append(f"Step {step.number}: {step.description}", cmd, output)

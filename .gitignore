@@ -48,3 +48,4 @@ REPORT-TASKS.md
 /verify/
 uat/sqitch_results/
 uat/sqlitch_results/
+uat/backward_compat_results/

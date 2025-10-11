@@ -150,19 +150,14 @@ pytest --cov=sqlitch --cov-report=term
   - **ACCEPTANCE**: ✅ UAT script runs successfully with sqitch producing tutorial-expected output at every step
 - [X] **T060c [P1]** Implement full forward compatibility logic in `uat/scripts/forward-compat.py` (sqlitch first, then sqitch continues)
 - [X] **T060d [P1]** Execute `uat/scripts/forward-compat.py --out specs/005-lockdown/artifacts/uat/forward-compat.log` and fix any failures
-  - **STATUS**: ⛔️ BLOCKED - Critical incompatibility discovered
-  - **ISSUE**: Sqitch and SQLitch calculate DIFFERENT change IDs from identical plan entries
-  - **EVIDENCE**: 
-    - Plan: `users 2025-10-11T13:08:16Z Test User <test@example.com> # Creates table to track our users.`
-    - Sqitch ID: `2ee1f8232096ca3ba2481f2157847a2a102e64d2`
-    - SQLitch ID: `ad8b16b7f335103ee01739bfa557b9ff702b2c63`
-  - **IMPACT**: Sqitch cannot verify/continue deployments made by SQLitch (and vice versa)
-  - **ROOT CAUSE**: `sqlitch/utils/identity.py::generate_change_id()` algorithm differs from Sqitch's
-  - **BLOCKER FOR**: T060d, T060e, T060f, T060g, T060h, T063 (all compatibility/release tasks)
-  - **NEXT STEPS**: See T068 below
+  - **STATUS**: ✅ COMPLETE – Script exits 0 (2025-10-11); sanitized log published at `specs/005-lockdown/artifacts/uat/forward-compat.log`
+  - **FIXES APPLIED**:
+    - Normalized SQLite target registry config to stay Sqitch-compatible (avoid `db:sqlite:` prefixes)
+    - Added pre-step setup in harness to create the `dev/` directory before Sqitch deploys tutorial Step 30
+  - **RESULT**: Sqitch now continues every SQLitch-authored change through tutorial completion, confirming forward compatibility
 - [X] **T060e [P1]** Implement full backward compatibility logic in `uat/scripts/backward-compat.py` (sqitch first, then sqlitch continues)
-- [ ] **T060f [P1]** Execute `uat/scripts/backward-compat.py --out specs/005-lockdown/artifacts/uat/backward-compat.log` and fix any failures
-  - **STATUS**: ⛔️ BLOCKED by T060d findings
+- [X] **T060f [P1]** Execute `uat/scripts/backward-compat.py --out specs/005-lockdown/artifacts/uat/backward-compat.log` and fix any failures
+  - **STATUS**: ✅ COMPLETE – Script exits 0 (2025-10-11); sanitized log at `specs/005-lockdown/artifacts/uat/backward-compat.log`
 - [ ] **T060g [P1]** Review all three UAT logs for behavioral differences, document cosmetic diffs in `IMPLEMENTATION_REPORT_LOCKDOWN.md`
 - [ ] **T060h [P1]** Prepare release PR comment with UAT evidence using quickstart template
 

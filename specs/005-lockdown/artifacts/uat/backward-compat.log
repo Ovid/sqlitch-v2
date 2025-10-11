@@ -61,9 +61,9 @@ COMMAND: sqlitch status db:sqlite:flipr_test.db
 ============================================================
 # On database db:sqlite:flipr_test.db
 # Project:  flipr
-# Change:   87fa93f13cf5983c0edc949abca414eea0e60071
+# Change:   [REDACTED_CHANGE_ID]
 # Name:     users
-# Deployed: 2025-10-11 18:33:00.938792
+# Deployed: 2025-10-11 19:01:08.279065
 # By:       Test User <test@example.com>
 # 
 Nothing to deploy (up-to-date)
@@ -92,17 +92,17 @@ STEP: Step 12: Check Sqitch Log
 COMMAND: sqlitch log db:sqlite:flipr_test.db
 ============================================================
 On database db:sqlite:flipr_test.db
-Revert 87fa93f13cf5983c0edc949abca414eea0e60071
+Revert [REDACTED_CHANGE_ID]
 Name:      users
 Committer: Test User <test@example.com>
-Date:      2025-10-11 18:33:01.407719
+Date:      2025-10-11 19:01:SS
 
     Creates table to track our users.
 
-Deploy 87fa93f13cf5983c0edc949abca414eea0e60071
+Deploy [REDACTED_CHANGE_ID]
 Name:      users
 Committer: Test User <test@example.com>
-Date:      2025-10-11 18:33:00.938792
+Date:      2025-10-11 19:01:SS
     Creates table to track our users.
 
 
@@ -248,10 +248,10 @@ COMMAND: sqitch status db:sqlite:dev/flipr.db
 ============================================================
 # On database db:sqlite:dev/flipr.db
 # Project:  flipr
-# Change:   977bff5369e664d4bb8ced52bc153cfd046344a6
+# Change:   [REDACTED_CHANGE_ID]
 # Name:     userflips
 # Tag:      v1.0.0-dev1
-# Deployed: 2025-10-11 20:33:03 +0200
+# Deployed: 2025-10-11 21:01:11 +0200
 # By:       Test User <test@example.com>
 # 
 Nothing to deploy (up-to-date)
@@ -294,9 +294,9 @@ COMMAND: sqlitch status --show-tags
 ============================================================
 # On database flipr_test
 # Project:  flipr
-# Change:   b6385b922c563998214486b730eb2a9c2ba32257
+# Change:   [REDACTED_CHANGE_ID]
 # Name:     hashtags
-# Deployed: 2025-10-11 18:33:04.659
+# Deployed: 2025-10-11 19:01:11.990
 # By:       Test User <test@example.com>
 # 
 Nothing to deploy (up-to-date)
@@ -337,4 +337,65 @@ STEP: Step 40: Deploy Reworked View
 COMMAND: sqlitch deploy
 ============================================================
 Deploying plan 'flipr' to target 'db:sqlite:flipr_test.db'.
-Deploy failed for change 'userflips': view userflips already exists
+  + userflips
+Deployment complete. Applied 1 change(s).
+
+============================================================
+STEP: Step 41: Verify Reworked Schema
+COMMAND: sqlite3 flipr_test.db .schema userflips
+============================================================
+CREATE VIEW userflips AS
+SELECT f.id, u.nickname, u.fullname, u.twitter, f.body, f.timestamp
+FROM users u
+JOIN flips f ON u.nickname = f.nickname
+/* userflips(id,nickname,fullname,twitter,body,timestamp) */;
+
+============================================================
+STEP: Step 42: Revert Reworked Change
+COMMAND: sqlitch revert --to @HEAD^ -y
+============================================================
+Reverting changes to hashtags from flipr_test
+  - userflips .. ok
+
+============================================================
+STEP: Step 43: Verify Revert of Rework
+COMMAND: sqlite3 flipr_test.db .schema userflips
+============================================================
+CREATE VIEW userflips AS
+SELECT f.id, u.nickname, u.fullname, f.body, f.timestamp
+FROM users u
+JOIN flips f ON u.nickname = f.nickname
+/* userflips(id,nickname,fullname,body,timestamp) */;
+
+============================================================
+STEP: Step 44: Final Deployment
+COMMAND: sqlitch deploy
+============================================================
+Deploying plan 'flipr' to target 'db:sqlite:flipr_test.db'.
+  + userflips
+Deployment complete. Applied 1 change(s).
+
+============================================================
+STEP: Step 45: Final Verification
+COMMAND: sqitch verify
+============================================================
+Verifying flipr_test
+  * users ................................ ok
+  * flips ................................ ok
+  * userflips @v1.0.0-dev1 @v1.0.0-dev1 .. ok
+  * hashtags @v1.0.0-dev2 ................ ok
+  * userflips ............................ ok
+Verify successful
+
+============================================================
+STEP: Step 46: Final Status Check
+COMMAND: sqlitch status
+============================================================
+# On database flipr_test
+# Project:  flipr
+# Change:   [REDACTED_CHANGE_ID]
+# Name:     userflips
+# Deployed: 2025-10-11 19:01:13.055004
+# By:       Test User <test@example.com>
+# 
+Nothing to deploy (up-to-date)

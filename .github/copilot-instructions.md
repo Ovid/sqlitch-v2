@@ -1,53 +1,38 @@
-# SQLitch Agent Onboarding (Updated 2025-10-09)
+# SQLitch Agent Onboarding (Updated 2025-10-11)
 
-## Orientation
-- Python 3.11 project targeting parity with Perl Sqitch; Click powers the CLI under `sqlitch/cli/` and domain models live in `sqlitch/plan/`, `sqlitch/config/`, and `sqlitch/engine/`.
-- Treat the vendored `sqitch/` directory as read-only fixtures for parity comparisons.
-- Specs in `specs/004-sqlitch-tutorial-parity/` track current milestone expectations and golden outputs.
+## Mission & Scope
+- Python 3.11 rewrite chasing parity with Perl Sqitch; CLI is Click-based under `sqlitch/cli/`, domain layers live in `sqlitch/plan/`, `sqlitch/config/`, and `sqlitch/engine/`.
+- Treat the vendored `sqitch/` tree as immutable fixtures and compare against the parity specs in `specs/004-sqlitch-tutorial-parity/`.
+- Current milestone: full SQLite tutorial support while other engines incubate; consult `TODO.md` and specs for in-flight gaps.
 
-## Architecture Highlights
-- Plans: `sqlitch/plan/parser.py` requires plan headers (project + default engine) and normalizes timestamps with `sqlitch.utils.time`. Models in `plan/model.py` are immutable via `MappingProxyType` and factory constructors (`Change.create`).
-- Engines: `sqlitch/engine/base.py` exposes `ENGINE_REGISTRY`; adapters (e.g., `engine/sqlite.py`) register themselves at import with `register_engine(..., replace=True)`. Tests must restore registry state with `try/finally`.
-- CLI Bootstrap: `cli/main.py` builds a `CLIContext` (env + config resolution) and pulls command modules through `cli/commands/__init__.py`. Commands register once via `@register_command` and must call `_clear_registry()` in tests before re-registration.
-- Config: Loader/resolver merge system → user → local scopes (`config/loader.py`, `config/resolver.py`) and reject duplicate files per scope. Use `sqlitch.utils.time.ensure_timezone`/`parse_iso_datetime` for datetime handling.
+## Architecture Touchpoints
+- CLI bootstrap (`cli/main.py`) builds a `CLIContext`, toggles global JSON mode, and wires commands discovered via `cli/commands/__init__.py`; tests must call `_clear_registry()` before re-registering commands.
+- Each command module registers exactly once with `@register_command`; structure handlers to consume `click.get_current_context().obj` as the `CLIContext` rather than reading globals.
+- Structured logging flows through `sqlitch.utils.logging`; `CommandError` automatically suppresses output in JSON mode, so prefer raising it for user-facing failures.
+- Plan parsing (`plan/parser.py`) requires `%project` + `%default_engine`; compact entries auto-slug script names, while rework detection rewrites script paths to `deploy/users@v1.sql` style when tags are present.
+- Plan models (`plan/model.py`) and registry DTOs are frozen; use factory helpers like `Change.create` and `with_updated_…` functions instead of mutating attributes.
+- Config loader/resolve path (`config/loader.py`, `config/resolver.py`) merges system → user → local and rejects duplicate files per scope; rely on `resolver.determine_config_root` before touching disk.
+- Engine adapters register through `register_engine(..., replace=True)` at import time; snapshot and restore `ENGINE_REGISTRY` in tests to avoid contaminating later cases.
 
-## Conventions to Honor
-- Every new module starts with `from __future__ import annotations`, defines `__all__`, and groups imports (stdlib, third-party, local).
-- Public dataclasses remain frozen; mutate via helper factories rather than `__post_init__` hacks.
-- Template discovery (plan/add workflows) must reuse `_discover_template_directories` in `cli/commands/add.py` to search project, config, and `/etc/{sqlitch,sqitch}` roots.
-- Tests comparing outputs rely on byte-for-byte fixtures under `tests/support/golden/`; never strip whitespace.
-- Tutorial parity harness reads overrides from `tests/support/tutorial_parity/` (see `env_overrides.json`) when simulating CLI runs.
+## Patterns & Conventions
+- Every module begins with `from __future__ import annotations`, defines `__all__`, and groups imports stdlib → third-party → local.
+- Time handling always goes through `sqlitch.utils.time` helpers (`ensure_timezone`, `parse_iso_datetime`, `isoformat_utc`); never construct naive `datetime` objects.
+- Template discovery for `sqlitch add` must reuse `_discover_template_directories` (`cli/commands/add.py`) to search project, config, `~/.sqitch`, and `/etc/{sqlitch,sqitch}` roots.
+- CLI tests should build contexts with `tests` fixtures in `cli/_context.py` and `CliRunner` utilities—avoid manually crafting env dicts.
+- Golden comparisons (`tests/support/golden/`) are byte-for-byte: preserve trailing whitespace and newline conventions when regenerating fixtures.
 
-## Workflow Basics
-- Bootstrap env:
-	```bash
-	python3 -m venv .venv
-	source .venv/bin/activate
-	pip install -e .[dev]
-	```
-- Fast verification (coverage ≥90% is enforced):
-	```bash
-	source .venv/bin/activate
-	python -m pytest
-	```
-- Full lint/type/security gate mirrors CI:
-	```bash
-	source .venv/bin/activate
-	python -m tox
-	```
-- Before modifying spec-driven tests, run the skip guard:
-	```bash
-	source .venv/bin/activate
-	python scripts/check-skips.py T123
-	```
+## Developer Workflow
+- Setup: `python3 -m venv .venv && source .venv/bin/activate && pip install -e .[dev]`.
+- Quick guard: `python -m pytest` (coverage ≥90% enforced); isolate runs from your real `~/.sqitch` dir per `README.md` warning.
+- Full gate: `python -m tox` mirrors CI lint, type, and security checks.
+- Spec edits: run `python scripts/check-skips.py T123` (replace ID) before lifting a skip tied to a tracked task.
 
-## Testing & Diagnostics
-- Pytest runs with `pytest-randomly`; stabilize tests via deterministic fixtures, not ordering assumptions.
-- Use `click.testing.CliRunner` helpers in `cli/_context.py` to build CLI contexts; avoid manual env juggling.
-- Registry/engine tests should snapshot registry state and restore it with `register_engine(..., replace=True)` inside `try/finally`.
-- Integration parity suites live under `tests/cli/commands/`, `tests/regression/`, and tutorial scenarios in `tests/support/tutorial_parity/`.
+## Testing Playbook
+- Integration parity suites live in `tests/cli/commands/`, `tests/regression/`, and tutorial harness data under `tests/support/tutorial_parity/` (env overrides in `env_overrides.json`).
+- Use `tests/support/README.md` for fixture contracts and `tests/support/golden/README.md` when regenerating outputs.
+- For engine work, consult `docs/architecture/registry-lifecycle.md` and ensure registries are restored in `try/finally` blocks.
 
-## Reference Points
-- Registry lifecycle details: `docs/architecture/registry-lifecycle.md`.
-- Tutorial quickstart and contracts: `specs/004-sqlitch-tutorial-parity/`.
-- Golden fixture regeneration guidance: `tests/support/golden/README.md`.
+## Quick Reference
+- Logging contract: `docs/architecture/registry-lifecycle.md` and `sqlitch/utils/logging.py` outline event names expected by downstream tooling.
+- Tutorial walkthrough: `specs/004-sqlitch-tutorial-parity/quickstart.md` documents the expected CLI transcript.
+- Don’t modify `sqitch/` or tutorial fixtures directly; add mirrors under `tests/support` if new comparisons are required.

@@ -602,9 +602,7 @@ ROLLBACK;
     )
 
     # Rework SQL update
-    write_files(
-        "deploy/userflips.sql",
-        """-- Deploy flipr:userflips to sqlite
+    deploy_content = """-- Deploy flipr:userflips to sqlite
 -- requires: users
 -- requires: flips
 
@@ -618,12 +616,11 @@ FROM users u
 JOIN flips f ON u.nickname = f.nickname;
 
 COMMIT;
-""",
-    )
+"""
+    write_files("deploy/userflips.sql", deploy_content)
+    write_files("deploy/userflips@v1.0.0-dev2.sql", deploy_content)
 
-    write_files(
-        "revert/userflips.sql",
-        """-- Revert flipr:userflips from sqlite
+    revert_content = """-- Revert flipr:userflips from sqlite
 
 BEGIN;
 
@@ -635,12 +632,11 @@ FROM users u
 JOIN flips f ON u.nickname = f.nickname;
 
 COMMIT;
-""",
-    )
+"""
+    write_files("revert/userflips.sql", revert_content)
+    write_files("revert/userflips@v1.0.0-dev2.sql", revert_content)
 
-    write_files(
-        "verify/userflips.sql",
-        """-- Verify flipr:userflips on sqlite
+    verify_content = """-- Verify flipr:userflips on sqlite
 
 BEGIN;
 
@@ -649,13 +645,14 @@ FROM userflips
 WHERE 0;
 
 ROLLBACK;
-""",
-    )
+"""
+    write_files("verify/userflips.sql", verify_content)
+    write_files("verify/userflips@v1.0.0-dev2.sql", verify_content)
 
     run_and_compare("Deploy Reworked View", "sqlitch", "deploy")
-    run_and_compare("Verify Reworked Schema", "sqlite3", "flipr_test.db", ".schema", "userflips")
+    run_and_compare("Verify Reworked Schema", "sqlite3", "flipr_test.db", ".schema userflips")
     run_and_compare("Revert Reworked Change", "sqlitch", "revert", "--to", "@HEAD^", "-y")
-    run_and_compare("Verify Revert of Rework", "sqlite3", "flipr_test.db", ".schema", "userflips")
+    run_and_compare("Verify Revert of Rework", "sqlite3", "flipr_test.db", ".schema userflips")
 
     run_and_compare("Final Deployment", "sqlitch", "deploy")
     run_and_compare("Final Verification", "sqlitch", "verify")
