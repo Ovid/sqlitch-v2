@@ -124,6 +124,16 @@ def test_status_requires_explicit_target(runner: CliRunner) -> None:
     """Invoking status without a target should raise a user-facing error."""
 
     with isolated_test_context(runner) as (runner, temp_dir):
+        # Create a minimal plan so we can test target requirement
+        Path("sqitch.plan").write_text(
+            "%project=test\n%uri=https://example.com/test\n\n",
+            encoding="utf-8"
+        )
+        Path("sqitch.conf").write_text(
+            "[core]\n    engine = sqlite\n",
+            encoding="utf-8"
+        )
+        
         result = runner.invoke(main, ["status"])
 
         assert result.exit_code != 0

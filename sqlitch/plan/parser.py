@@ -257,7 +257,8 @@ def _apply_rework_metadata(
 
     # First pass: identify which changes are being reworked and at which tag
     # Maps (change_name, instance_index) -> rework_tag
-    # instance_index is the 0-based count of this name before this position
+    # A reworked change has a dependency on its previous version like "users@v1.0.0"
+    # The NEW instance (the reworked one) should have the @tag suffix in its scripts
     rework_tags: dict[tuple[str, int], str] = {}
     name_counts: dict[str, int] = {}
     
@@ -265,20 +266,18 @@ def _apply_rework_metadata(
         if not isinstance(entry, Change):
             continue
         
-        # Check if this is a reworked change by examining dependencies
-        # A reworked change has a dependency like "userflips@v1.0.0-dev2"
+        # Check if THIS change is a rework by examining its dependencies
+        # A reworked change has a dependency like "users@v1.0.0" where the name matches its own name
         for dep in entry.dependencies:
             if "@" in dep:
                 dep_name, dep_tag = dep.split("@", 1)
-                # This dependency references a previous instance of dep_name at dep_tag
-                # We need to find which instance of dep_name this refers to
-                # It's the instance that existed when the tag was created
-                # For simplicity, we assume it's the LAST instance before this one
-                dep_instance = name_counts.get(dep_name, 1) - 1  # -1 because we want the previous instance
-                if dep_instance >= 0:
-                    rework_tags[(dep_name, dep_instance)] = dep_tag
+                # If this change depends on a tagged version of itself, it's a rework
+                if dep_name == entry.name:
+                    # Mark THIS instance as reworked (should use @tag scripts)
+                    current_instance = name_counts.get(entry.name, 0)
+                    rework_tags[(entry.name, current_instance)] = dep_tag
         
-        # Count this instance
+        # Count this instance AFTER checking dependencies
         name_counts[entry.name] = name_counts.get(entry.name, 0) + 1
 
     # Second pass: apply tags and script paths

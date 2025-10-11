@@ -546,30 +546,71 @@ class TestVerifyAdditionalScenarios:
 
         registry_conn = sqlite3.connect(registry_path)
         try:
+            # Create a minimal registry with current schema (requires change_id column)
+            registry_conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS projects (
+                    project TEXT PRIMARY KEY,
+                    uri TEXT,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    creator_name TEXT NOT NULL,
+                    creator_email TEXT NOT NULL
+                )
+                """
+            )
             registry_conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS changes (
-                    project TEXT NOT NULL,
+                    change_id TEXT PRIMARY KEY,
+                    script_hash TEXT NULL,
                     change TEXT NOT NULL,
-                    committed_at TEXT,
-                    committer_name TEXT,
-                    committer_email TEXT
+                    project TEXT NOT NULL REFERENCES projects(project) ON UPDATE CASCADE,
+                    note TEXT NOT NULL DEFAULT '',
+                    committed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    committer_name TEXT NOT NULL,
+                    committer_email TEXT NOT NULL,
+                    planned_at DATETIME NOT NULL,
+                    planner_name TEXT NOT NULL,
+                    planner_email TEXT NOT NULL,
+                    UNIQUE(project, script_hash)
                 )
                 """
             )
             registry_conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS events (
-                    project TEXT,
-                    event TEXT
+                    event TEXT NOT NULL CHECK (event IN ('deploy', 'revert', 'fail', 'merge', 'deploy_fail')),
+                    change_id TEXT NOT NULL,
+                    change TEXT NOT NULL,
+                    project TEXT NOT NULL REFERENCES projects(project) ON UPDATE CASCADE,
+                    note TEXT NOT NULL DEFAULT '',
+                    requires TEXT NOT NULL DEFAULT '',
+                    conflicts TEXT NOT NULL DEFAULT '',
+                    tags TEXT NOT NULL DEFAULT '',
+                    committed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    committer_name TEXT NOT NULL,
+                    committer_email TEXT NOT NULL,
+                    planned_at DATETIME NOT NULL,
+                    planner_name TEXT NOT NULL,
+                    planner_email TEXT NOT NULL
                 )
                 """
             )
             registry_conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS tags (
-                    project TEXT,
-                    tag TEXT
+                    tag_id TEXT PRIMARY KEY,
+                    tag TEXT NOT NULL,
+                    project TEXT NOT NULL REFERENCES projects(project) ON UPDATE CASCADE,
+                    change_id TEXT NOT NULL REFERENCES changes(change_id) ON UPDATE CASCADE,
+                    note TEXT NOT NULL DEFAULT '',
+                    committed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    committer_name TEXT NOT NULL,
+                    committer_email TEXT NOT NULL,
+                    planned_at DATETIME NOT NULL,
+                    planner_name TEXT NOT NULL,
+                    planner_email TEXT NOT NULL,
+                    UNIQUE(project, tag)
                 )
                 """
             )
@@ -793,7 +834,7 @@ class TestVerifyErrorHandling:
     ) -> None:
         project_dir, target_db = setup_project(tmp_path, changes=("users",))
 
-        def failing_connect(_: str) -> sqlite3.Connection:
+        def failing_connect(_: str, **kwargs) -> sqlite3.Connection:
             raise sqlite3.OperationalError("boom")
 
         monkeypatch.setattr("sqlitch.cli.commands.verify.sqlite3.connect", failing_connect)
@@ -818,7 +859,7 @@ class TestVerifyErrorHandling:
 
         monkeypatch.setattr(
             "sqlitch.cli.commands.verify.sqlite3.connect",
-            lambda _: AttachFailingConnection(),
+            lambda _path, **kwargs: AttachFailingConnection(),
         )
 
         with pushd(project_dir):
@@ -850,7 +891,7 @@ class TestVerifyErrorHandling:
 
         monkeypatch.setattr(
             "sqlitch.cli.commands.verify.sqlite3.connect",
-            lambda path: QueryFailingConnection(),
+            lambda path, **kwargs: QueryFailingConnection(),
         )
 
         with pushd(project_dir):

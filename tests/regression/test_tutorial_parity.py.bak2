@@ -736,10 +736,9 @@ COMMIT;
         finally:
             connection.close()
 
-        # Use relative path for both registry creation and revert command
-        workspace_uri_relative = "db:sqlite:flipr_test.db"
+        workspace_uri = f"db:sqlite:{workspace_db.resolve().as_posix()}"
         registry_uri = derive_sqlite_registry_uri(
-            workspace_uri=workspace_uri_relative,
+            workspace_uri=workspace_uri,
             project_root=Path.cwd(),
         )
         registry_path = resolve_sqlite_filesystem_path(registry_uri)
@@ -763,28 +762,6 @@ COMMIT;
                     script_hash     TEXT,
                     "change"        TEXT NOT NULL,
                     project         TEXT NOT NULL,
-                    note            TEXT NOT NULL,
-                    committed_at    TEXT NOT NULL,
-                    committer_name  TEXT NOT NULL,
-                    committer_email TEXT NOT NULL,
-                    planned_at      TEXT NOT NULL,
-                    planner_name    TEXT NOT NULL,
-                    planner_email   TEXT NOT NULL
-                );
-
-                CREATE TABLE dependencies (
-                    change_id       TEXT NOT NULL REFERENCES changes(change_id) ON UPDATE CASCADE ON DELETE CASCADE,
-                    type            TEXT NOT NULL,
-                    dependency      TEXT NOT NULL,
-                    dependency_id   TEXT NULL REFERENCES changes(change_id) ON UPDATE CASCADE,
-                    PRIMARY KEY (change_id, dependency)
-                );
-
-                CREATE TABLE tags (
-                    tag_id          TEXT PRIMARY KEY,
-                    tag             TEXT NOT NULL,
-                    project         TEXT NOT NULL,
-                    change_id       TEXT NOT NULL,
                     note            TEXT NOT NULL,
                     committed_at    TEXT NOT NULL,
                     committer_name  TEXT NOT NULL,
@@ -859,8 +836,8 @@ COMMIT;
                         "marge@example.com",
                     ),
                     (
-                        "994b030e14aa7223ee81550d24c9bf5f522630da",
-                        "994b030e14aa7223ee81550d24c9bf5f522630da",
+                        "b5ee95a49f8226b33a535fba8c2b834f97044730",
+                        "b5ee95a49f8226b33a535fba8c2b834f97044730",
                         "flips",
                         "flipr",
                         "Adds table for storing flips.",
@@ -874,25 +851,11 @@ COMMIT;
                 ],
             )
 
-            # Insert dependency record for flips -> users
-            cursor.execute(
-                """
-                INSERT INTO dependencies (change_id, type, dependency, dependency_id)
-                VALUES (?, ?, ?, ?)
-                """,
-                (
-                    "994b030e14aa7223ee81550d24c9bf5f522630da",  # flips change_id
-                    "require",
-                    "users",
-                    "fcc0a9ca23da3c3a83c78e9454cdbc23f1837a45",  # users change_id
-                ),
-            )
-
             registry_connection.commit()
         finally:
             registry_connection.close()
 
-        result = runner.invoke(main, ["revert", workspace_uri_relative, "-y"])
+        result = runner.invoke(main, ["revert", "db:sqlite:flipr_test.db", "-y"])
 
         assert result.exit_code == 0, result.output
 

@@ -1,0 +1,6 @@
+%syntax-version=1.0.0
+%project=flipr
+%uri=https://github.com/sqitchers/sqitch-sqlite-intro/
+
+users 2025-10-11T13:08:16Z Test User <test@example.com> # Creates table to track our users.
+flips [users] 2025-10-11T13:08:17Z Test User <test@example.com> # Adds table for storing flips.

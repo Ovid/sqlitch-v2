@@ -482,14 +482,15 @@ def _determine_status(plan_changes: Sequence[str], deployed_changes: Sequence[st
     if not deployed_changes:
         return "not_deployed" if plan_changes else "in_sync"
 
+    # Check for extra deployed changes first (ahead takes precedence)
+    extra = [name for name in deployed_changes if name not in plan_changes]
+    if extra:
+        return "ahead"
+
     pending = _calculate_pending(plan_changes, deployed_changes)
 
     if pending:
         return "behind"
-
-    extra = [name for name in deployed_changes if name not in plan_changes]
-    if extra:
-        return "ahead"
 
     return "in_sync"
 

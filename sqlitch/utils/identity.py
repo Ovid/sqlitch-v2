@@ -63,6 +63,8 @@ def generate_change_id(
     note: str = "",
     requires: tuple[str, ...] = (),
     conflicts: tuple[str, ...] = (),
+    uri: str | None = None,
+    parent_id: str | None = None,
 ) -> str:
     r"""Generate a unique change ID using Git-style SHA1 hash.
 
@@ -78,6 +80,8 @@ def generate_change_id(
         note: Optional note/description
         requires: Tuple of required change names
         conflicts: Tuple of conflicting change names
+        uri: Optional project URI (REQUIRED for Sqitch compatibility)
+        parent_id: Optional parent change ID (set for changes with dependencies or rework)
 
     Returns:
         40-character SHA1 hex digest string
@@ -86,7 +90,8 @@ def generate_change_id(
         >>> from datetime import datetime, timezone
         >>> generate_change_id(
         ...     "flipr", "users", datetime(2025, 1, 1, tzinfo=timezone.utc),
-        ...     "Test User", "test@example.com", "Add users table"
+        ...     "Test User", "test@example.com", "Add users table",
+        ...     uri="https://example.com/project/"
         ... )
         'a1b2c3...'  # 40-character hex string
     """
@@ -96,12 +101,25 @@ def generate_change_id(
     timestamp_str = isoformat_utc(timestamp, drop_microseconds=True, use_z_suffix=True)
 
     # Build info string in Sqitch's format
+    # CRITICAL: Field order must match Sqitch exactly for compatibility
     info_parts = [
         f"project {project}",
-        f"change {change}",
+    ]
+    
+    # Add URI if present (Sqitch includes this when available)
+    if uri:
+        info_parts.append(f"uri {uri}")
+    
+    info_parts.append(f"change {change}")
+    
+    # Add parent if present (for changes with dependencies or rework)
+    if parent_id:
+        info_parts.append(f"parent {parent_id}")
+    
+    info_parts.extend([
         f"planner {planner_name} <{planner_email}>",
         f"date {timestamp_str}",
-    ]
+    ])
 
     # Add requires/conflicts if present
     if requires:

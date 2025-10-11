@@ -282,12 +282,29 @@ def _execute_deploy(request: _DeployRequest) -> None:
             project=request.plan.project_name,
         )
         
-                # Compute change_id for each change in the plan and filter out deployed ones
-        pending = []
-        for change in request.plan.changes:
-            change_id = _compute_change_id_for_change(request.plan.project_name, change)
+        # Build a cache of change IDs as we process the plan sequentially
+        # This allows us to resolve parent IDs (previous change chronologically)
+        change_id_cache: dict[int, str] = {}
+        
+        # Compute change_id for each change in the plan and filter out deployed ones
+        pending: list[tuple[Change, str]] = []
+        for idx, change in enumerate(request.plan.changes):
+            # Resolve parent ID (the previous change chronologically)
+            parent_id = _resolve_parent_id_for_change(request.plan, idx, change_id_cache)
+            
+            # Compute the change ID with the resolved parent
+            change_id = _compute_change_id_for_change(
+                request.plan.project_name,
+                change,
+                request.plan.uri,
+                parent_id,
+            )
+            
+            # Cache the ID by index for parent resolution
+            change_id_cache[idx] = change_id
+            
             if change_id not in deployed_ids:
-                pending.append(change)
+                pending.append((change, change_id))
 
         _synchronise_registry_tags(
             connection=connection,
@@ -313,7 +330,7 @@ def _execute_deploy(request: _DeployRequest) -> None:
             return
 
         applied = 0
-        for change in pending:
+        for change, change_id in pending:
             change_payload = {
                 "change": change.name,
                 "plan": request.plan.project_name,
@@ -327,6 +344,7 @@ def _execute_deploy(request: _DeployRequest) -> None:
                     project=request.plan.project_name,
                     plan_root=request.plan_path.parent,
                     change=change,
+                    change_id=change_id,
                     env=request.env,
                     committer_name=committer_name,
                     committer_email=committer_email,
@@ -838,12 +856,46 @@ def _ensure_project_entry(
         )
 
 
-def _compute_change_id_for_change(project: str, change: Change) -> str:
+def _resolve_parent_id_for_change(
+    plan: Plan,
+    change_index: int,
+    change_id_cache: dict[int, str],
+) -> str | None:
+    """Resolve the parent change ID based on chronological order in the plan.
+    
+    Following Sqitch's behavior, the parent is simply the ID of the previous change
+    in the plan (chronologically). This creates a chain that links all changes together,
+    regardless of their dependency relationships.
+    
+    Args:
+        plan: The Plan object (not used, kept for API consistency)
+        change_index: The index of the current change in the plan (0-based)
+        change_id_cache: Dict mapping change indices to their calculated IDs
+        
+    Returns:
+        The parent change ID if this is not the first change, None otherwise
+    """
+    # The first change has no parent
+    if change_index == 0:
+        return None
+    
+    # The parent is the previous change (by index)
+    return change_id_cache.get(change_index - 1)
+
+
+def _compute_change_id_for_change(
+    project: str,
+    change: Change,
+    uri: str | None = None,
+    parent_id: str | None = None,
+) -> str:
     """Compute the change_id for a Change object using Sqitch's algorithm.
     
     Args:
         project: Project name
         change: Change object from the plan
+        uri: Optional project URI (required for Sqitch compatibility)
+        parent_id: Optional parent change ID (ID of last required change, required for Sqitch compatibility)
         
     Returns:
         40-character SHA1 hex digest string
@@ -875,6 +927,8 @@ def _compute_change_id_for_change(project: str, change: Change) -> str:
         note=change.notes or "",
         requires=requires,
         conflicts=tuple(change.conflicts),
+        uri=uri,
+        parent_id=parent_id,
     )
 
 
@@ -939,6 +993,7 @@ def _apply_change(
     project: str,
     plan_root: Path,
     change: Change,
+    change_id: str,
     env: Mapping[str, str],
     committer_name: str,
     committer_email: str,
@@ -968,21 +1023,10 @@ def _apply_change(
         committer_email,
     )
 
-    # Compute change_id using Sqitch's Git-style algorithm if not already set
+    # Use the pre-computed change_id passed in (already includes parent_id)
+    # Fall back to computing if change has an explicit change_id set
     if change.change_id is not None:
         change_id = str(change.change_id)
-    else:
-        note = change.notes or ""
-        change_id = generate_change_id(
-            project=project,
-            change=change.name,
-            timestamp=change.planned_at,
-            planner_name=planner_name,
-            planner_email=planner_email,
-            note=note,
-            requires=change.dependencies,
-            conflicts=(),  # SQLitch doesn't support conflicts yet
-        )
 
     committed_at = isoformat_utc(datetime.now(timezone.utc), drop_microseconds=False)
     planned_at = isoformat_utc(change.planned_at, drop_microseconds=False)
@@ -1594,12 +1638,22 @@ def _synchronise_registry_tags(
     trying to insert the same tags multiple times.
     """
 
+    # Build a cache of change IDs as we process the plan sequentially
+    # This allows us to resolve parent IDs (previous change chronologically)
+    change_id_cache: dict[int, str] = {}
+
     # Build a set of already-processed change_ids to avoid duplicate tag insertions
     processed_change_ids: set[str] = set()
 
-    for change in plan.changes:
+    for idx, change in enumerate(plan.changes):
+        # Resolve parent ID (the previous change chronologically)
+        parent_id = _resolve_parent_id_for_change(plan, idx, change_id_cache)
+        
         # Compute this change's ID to match against deployed changes
-        change_id = _compute_change_id_for_change(project, change)
+        change_id = _compute_change_id_for_change(project, change, plan.uri, parent_id)
+        
+        # Cache the ID by index for parent resolution
+        change_id_cache[idx] = change_id
         
         # Skip if we've already processed this specific change_id
         if change_id in processed_change_ids:

@@ -266,7 +266,27 @@ def _execute_revert(request: _RevertRequest) -> None:
         deployed = _load_deployed_changes(connection, registry_schema, request.plan.project_name)
 
         # Import here to avoid circular dependency
-        from sqlitch.cli.commands.deploy import _compute_change_id_for_change
+        from sqlitch.cli.commands.deploy import (
+            _compute_change_id_for_change,
+            _resolve_parent_id_for_change,
+        )
+
+        # Build a cache of change IDs as we process the plan sequentially
+        # This allows us to resolve parent IDs (previous change chronologically)
+        change_id_cache: dict[int, str] = {}
+        
+        # Pre-compute all change IDs with correct parent resolution
+        change_ids_by_index: dict[int, str] = {}
+        for i, change in enumerate(request.plan.changes):
+            parent_id = _resolve_parent_id_for_change(request.plan, i, change_id_cache)
+            change_id = _compute_change_id_for_change(
+                request.plan.project_name,
+                change,
+                request.plan.uri,
+                parent_id,
+            )
+            change_id_cache[i] = change_id
+            change_ids_by_index[i] = change_id
 
         # Filter to only revert deployed changes in reverse order
         # If --to-change or --to-tag specified, `changes` contains the target point
@@ -282,15 +302,16 @@ def _execute_revert(request: _RevertRequest) -> None:
         changes_to_revert = []
         for i in range(len(request.plan.changes) - 1, -1, -1):
             change = request.plan.changes[i]
-            # Compute the change_id for this plan entry
-            change_id = _compute_change_id_for_change(request.plan.project_name, change)
+            # Get the pre-computed change_id for this plan entry
+            change_id = change_ids_by_index[i]
             
             # Check if this specific instance is deployed
             if change_id in deployed:
                 # If we have a target and this change (by position) should be kept, stop
                 if changes_to_keep_indices and i in changes_to_keep_indices:
                     break
-                changes_to_revert.append(change)
+                # Store both the change and its computed ID for the revert step
+                changes_to_revert.append((change, change_id))
 
         target_change = changes[-1] if (request.to_change or request.to_tag) and changes else None
 
@@ -315,19 +336,21 @@ def _execute_revert(request: _RevertRequest) -> None:
         emitter(intro_message)
 
         # Revert each change
-        for change in changes_to_revert:
+        for change, change_id in changes_to_revert:
             try:
                 _revert_change(
                     connection=connection,
                     project=request.plan.project_name,
                     plan_root=request.plan_path.parent,
                     change=change,
+                    change_id=change_id,
                     env=request.env,
                     committer_name=committer_name,
                     committer_email=committer_email,
                     deployed=deployed,
                     registry_schema=registry_schema,
                     emitter=emitter,
+                    uri=request.plan.uri,
                 )
             except CommandError:
                 emitter(f"  - {change.name} .. not ok")
@@ -378,12 +401,14 @@ def _revert_change(
     project: str,
     plan_root: Path,
     change: Change,
+    change_id: str,
     env: Mapping[str, str],
     committer_name: str,
     committer_email: str,
     deployed: dict[str, dict[str, str]],
     registry_schema: str,
     emitter: Callable[[str], None],
+    uri: str | None = None,
 ) -> None:
     """Execute a revert script and update registry state for a change."""
     # Load revert script using the script_paths from the parser
@@ -401,10 +426,6 @@ def _revert_change(
     script_body = script_path.read_text(encoding="utf-8")
     validate_sqlite_script(script_body)
     manages_transactions = script_manages_transactions(script_body)
-
-    # Compute change_id for this plan entry to look up deployment metadata
-    from sqlitch.cli.commands.deploy import _compute_change_id_for_change
-    change_id = _compute_change_id_for_change(project, change)
 
     # Get change metadata from deployed state (keyed by change_id for rework support)
     change_metadata = deployed.get(change_id)
