@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import sqlite3
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -53,6 +54,9 @@ from ._context import (
 from ._plan_utils import resolve_default_engine, resolve_plan_path
 
 __all__ = ["deploy_command"]
+
+# Module-level logger for low-level warnings (e.g., cleanup failures)
+_module_logger = logging.getLogger(__name__)
 
 
 class DeployedMetadata(TypedDict):
@@ -403,8 +407,13 @@ def _execute_deploy(request: _DeployRequest) -> None:
     finally:
         try:
             connection.close()
-        except Exception:  # pragma: no cover - best effort cleanup
-            pass
+        except Exception as exc:  # pragma: no cover - best effort cleanup
+            # Log connection cleanup failure but don't mask the original exception
+            _module_logger.warning(
+                "Failed to close database connection during cleanup: %s",
+                exc,
+                extra={"exception_type": type(exc).__name__},
+            )
 
 
 def _resolve_target(

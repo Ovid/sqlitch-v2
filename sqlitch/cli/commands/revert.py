@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import sqlite3
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -35,6 +36,8 @@ from ._context import (
 from ._plan_utils import resolve_default_engine, resolve_plan_path
 
 __all__ = ["revert_command"]
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -601,8 +604,15 @@ def _resolve_committer_identity(
         user_section = config.settings.get("user", {})
         config_name = user_section.get("name")
         config_email = user_section.get("email")
-    except Exception:
-        pass
+    except Exception as exc:
+        # Config loading failure is non-fatal; fall back to environment variables
+        logger.debug(
+            "Failed to load config for user identity: %s",
+            exc,
+            extra={"exception_type": type(exc).__name__},
+        )
+        config_name = None
+        config_email = None
 
     name = (
         env.get("SQLITCH_USER_NAME")

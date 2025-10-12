@@ -220,6 +220,16 @@ by making behavior discoverable without reverse-engineering the implementation.
   gate. Before any implementation task begins, the responsible engineer MUST
   delete the related skip marker(s), confirm the test fails, and treat the
   unskipped failure as part of the Red→Green→Refactor loop.
+- Exception Handling: No exception should ever be silently ignored. All `except` blocks
+  MUST either:
+
+  1. Re-raise the exception after cleanup/logging, OR
+  2. Log the exception at an appropriate level (error/warning/debug based on severity), OR
+  3. Handle the exception with explicit recovery logic
+  
+  Bare `except Exception: pass` statements are prohibited as they hide bugs and security
+  issues. Use specific exception types when possible, and always provide context about
+  why an exception is being caught and what recovery action (if any) is being taken.
 
 ## Development Workflow & Quality Gates
 

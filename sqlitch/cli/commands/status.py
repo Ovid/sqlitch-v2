@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import sqlite3
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -23,6 +24,8 @@ from ._context import require_cli_context
 from ._plan_utils import resolve_default_engine, resolve_plan_path
 
 __all__ = ["status_command"]
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -359,12 +362,20 @@ def _load_registry_state(
         if cursor is not None:
             try:
                 cursor.close()
-            except Exception:  # pragma: no cover - best effort cleanup
-                pass
+            except Exception as exc:  # pragma: no cover - best effort cleanup
+                logger.warning(
+                    "Failed to close cursor during cleanup: %s",
+                    exc,
+                    extra={"exception_type": type(exc).__name__},
+                )
         try:
             connection.close()
-        except Exception:  # pragma: no cover - best effort cleanup
-            pass
+        except Exception as exc:  # pragma: no cover - best effort cleanup
+            logger.warning(
+                "Failed to close database connection during cleanup: %s",
+                exc,
+                extra={"exception_type": type(exc).__name__},
+            )
 
     if not rows:
         return (), failure_row
@@ -454,8 +465,12 @@ def _load_last_failure_event(
         if failure_cursor is not None:
             try:
                 failure_cursor.close()
-            except Exception:  # pragma: no cover - best effort cleanup
-                pass
+            except Exception as exc:  # pragma: no cover - best effort cleanup
+                logger.warning(
+                    "Failed to close failure cursor during cleanup: %s",
+                    exc,
+                    extra={"exception_type": type(exc).__name__},
+                )
 
 
 def _registry_schema_missing(error: Exception) -> bool:

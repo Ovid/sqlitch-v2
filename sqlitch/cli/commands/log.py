@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -17,6 +18,8 @@ from ._context import require_cli_context
 from .status import _resolve_registry_target
 
 __all__ = ["log_command"]
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -202,12 +205,20 @@ def _load_log_events(
         if cursor is not None:
             try:
                 cursor.close()
-            except Exception:  # pragma: no cover - best effort cleanup
-                pass
+            except Exception as exc:  # pragma: no cover - best effort cleanup
+                logger.warning(
+                    "Failed to close cursor during cleanup: %s",
+                    exc,
+                    extra={"exception_type": type(exc).__name__},
+                )
         try:
             connection.close()
-        except Exception:  # pragma: no cover - best effort cleanup
-            pass
+        except Exception as exc:  # pragma: no cover - best effort cleanup
+            logger.warning(
+                "Failed to close database connection during cleanup: %s",
+                exc,
+                extra={"exception_type": type(exc).__name__},
+            )
 
     if not rows:
         return ()

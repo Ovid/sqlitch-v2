@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import os
 import socket
 import sys
@@ -41,6 +42,8 @@ __all__ = [
     "get_system_fullname",
     "get_hostname",
 ]
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -238,8 +241,13 @@ def resolve_username(env: Mapping[str, str]) -> str:
         try:
             # pylint: disable=possibly-used-before-assignment  # Guarded by sys.platform check
             return win32api.GetUserName()
-        except Exception:  # pragma: no cover - Windows-specific
-            pass
+        except Exception as exc:  # pragma: no cover - Windows-specific
+            # Win32 API call failed; fall back to default
+            logger.debug(
+                "Failed to get Windows username: %s",
+                exc,
+                extra={"exception_type": type(exc).__name__},
+            )
 
     # Last resort fallback
     return "sqitch"
@@ -389,8 +397,13 @@ def get_system_fullname(username: str) -> str | None:
             full_name = user_info.get("full_name", "").strip()
             if full_name:
                 return full_name
-        except Exception:  # pragma: no cover - Windows-specific
-            pass
+        except Exception as exc:  # pragma: no cover - Windows-specific
+            # Win32 API call failed; fall back to other methods
+            logger.debug(
+                "Failed to get Windows full name via NetUserGetInfo: %s",
+                exc,
+                extra={"exception_type": type(exc).__name__},
+            )
     elif pwd is not None:
         try:
             pw_record = pwd.getpwnam(username)
