@@ -22,7 +22,7 @@ if sys.platform != "win32":
     except ImportError:  # pragma: no cover
         pwd = None  # type: ignore[assignment]  # pylint: disable=invalid-name
 else:
-    pwd = None  # type: ignore[assignment]  # pylint: disable=invalid-name
+    pwd = None  # pylint: disable=invalid-name
     try:
         import win32api
         import win32net
