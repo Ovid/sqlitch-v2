@@ -2,13 +2,16 @@
 
 **Date**: 2025-10-12  
 **Branch**: `005-lockdown`  
-**Status**: ✅ **ALL TASKS COMPLETE** (137/137)
+**Status**: ✅ **ALL TASKS COMPLETE** (137/137)  
+**Target**: Alpha release (NOT v1.0.0 - this is still alpha software)
 
 ---
 
 ## Executive Summary
 
-The Quality Lockdown and Stabilization feature has been **successfully completed**. All 137 tasks across 7 phases have been executed and verified. The project is now ready for v1.0.0 release.
+The Quality Lockdown and Stabilization feature has been **successfully completed**. All 137 tasks across 7 phases have been executed and verified. The project is now ready for an **alpha release**.
+
+**Important**: This is **NOT a v1.0.0 release**. SQLitch remains alpha software that requires additional validation and real-world usage before declaring production readiness.
 
 ### Key Achievements
 
@@ -319,9 +322,23 @@ The following enhancements are documented for post-1.0 work:
 
 ## Conclusion
 
-The Quality Lockdown and Stabilization effort has successfully prepared SQLitch for a stable 1.0.0 release. All 137 tasks have been completed, all quality gates have been met, and full Sqitch parity has been achieved through rigorous UAT validation.
+The Quality Lockdown and Stabilization effort has successfully prepared SQLitch for a stable **alpha release**. All 137 tasks have been completed, all quality gates have been met, and full Sqitch parity has been achieved through rigorous UAT validation.
 
-**Status**: ✅ **READY FOR v1.0.0 RELEASE**
+**Important**: This is **NOT v1.0.0**. SQLitch remains alpha software requiring additional real-world validation, feedback, and stabilization before production readiness.
+
+**Status**: ✅ **READY FOR ALPHA RELEASE**
+
+### What's Next for v1.0.0
+
+Before declaring production readiness (v1.0.0), SQLitch will need:
+- Extended real-world usage and feedback from alpha users
+- Additional edge case discovery and resolution
+- Multi-engine validation (PostgreSQL, MySQL)
+- Performance optimization under production loads
+- Additional security hardening based on field usage
+- Community feedback and bug reports
+
+The alpha release establishes a solid foundation with high code quality, comprehensive testing, and verified Sqitch parity on SQLite.
 
 ---
 

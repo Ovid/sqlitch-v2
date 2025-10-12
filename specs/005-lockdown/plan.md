@@ -1,7 +1,8 @@
 # Implementation Plan: Quality Lockdown and Stabilization
 
-**Branch**: `005-lockdown` | **Date**: 2025-10-10 | **Spec**: [`spec.md`](./spec.md)
-**Input**: Feature specification from `/specs/005-lockdown/spec.md`
+**Branch**: `005-lockdown` | **Date**: 2025-10-12 (Updated) | **Spec**: [`spec.md`](./spec.md)
+**Input**: Feature specification from `/specs/005-lockdown/spec.md`  
+**Target**: Alpha release (NOT v1.0.0 - this is still alpha software)
 
 ## Execution Flow (/plan command scope)
 1. ✅ Loaded feature specification from `/specs/005-lockdown/spec.md` and processed clarifications.
@@ -15,7 +16,9 @@
 9. ⏹️ Ready for `/tasks` execution once this plan is approved.
 
 ## Summary
-The lockdown feature prepares SQLitch for a stable 1.0 release by driving coverage, documentation, and security to the constitutional bar while proving Sqitch parity through new UAT compatibility scripts. Work emphasizes tightening existing modules (`config/resolver`, `registry/state`, `utils/identity`), codifying documentation and manual gates, and introducing forward/backward compatibility scripts that reuse the SQLite tutorial workflow. All compatibility validation remains manual via the release checklist, with evidence captured in release PR comments.
+The lockdown feature prepares SQLitch for a stable **alpha release** by driving coverage, documentation, and security to the constitutional bar while proving Sqitch parity through new UAT compatibility scripts. Work emphasizes tightening existing modules (`config/resolver`, `registry/state`, `utils/identity`), codifying documentation and manual gates, and introducing forward/backward compatibility scripts that reuse the SQLite tutorial workflow. All compatibility validation remains manual via the release checklist, with evidence captured in release PR comments.
+
+**Important**: This is NOT a v1.0.0 release. SQLitch remains alpha software requiring additional validation and real-world usage before production readiness.
 
 ## Technical Context
 **Language/Version**: Python 3.11  
@@ -24,8 +27,8 @@ The lockdown feature prepares SQLitch for a stable 1.0 release by driving covera
 **Testing**: pytest (unit/integration/golden), click.testing `CliRunner`, manual UAT harnesses under `uat/`  
 **Target Platform**: macOS & Linux command-line environments  
 **Project Type**: Single CLI + library repository  
-**Constraints**: Maintain ≥90% coverage, pass mypy --strict, document manual UAT runs, no new feature work during lockdown  
-**Scale/Scope**: Sqitch tutorial workflow, existing config/plan/engine modules, release preparations for v1.0.0
+**Constraints**: Maintain ≥90% coverage, pass mypy --strict, document manual UAT runs, no new feature work during lockdown, pylint analysis required  
+**Scale/Scope**: Sqitch tutorial workflow, existing config/plan/engine modules, release preparations for alpha release (NOT v1.0.0)
 
 ## Constitution Check
 - **Test-First Development**: Future task list will ensure failing tests precede fixes (coverage, docstrings, UAT harness regression tests).
@@ -103,6 +106,45 @@ Post-design constitution check: ✅ unchanged (still compliant).
   - **Linting**: `flake8` reports 73 violations (line length, unused imports, duplicate helpers) led by `sqlitch/registry/migrations.py`; plan includes trimming lines, removing unused imports, and consolidating helper definitions.
   - **Security**: `bandit` flags SHA1 usage in `sqlitch/utils/identity.py`; mitigation is to mark `usedforsecurity=False` while keeping Sqitch-compatible change IDs.
 - Action: escalate these items into Phase 3 tasks (see new T120–T123) and document black/mypy regression tests to ensure future runs fail fast.
+
+## Phase 1.2: Pylint Analysis Workflow (2025-10-12)
+**Objective**: Use pylint as an additional code quality tool to systematically identify and address code issues.
+
+**Workflow**:
+1. **Generate Baseline Report**:
+   ```bash
+   pylint sqlitch --output-format=json > specs/005-lockdown/artifacts/baseline/pylint_report.json
+   ```
+   
+2. **Parse JSON Report**: Each issue in `pylint_report.json` contains:
+   - `type`: convention, refactor, warning, error, fatal
+   - `symbol`: specific pylint check (e.g., `line-too-long`, `unused-import`)
+   - `message`: description of the issue
+   - `path`: file location
+   - `line`: line number
+   - `column`: column number
+
+3. **Create Individual Tasks**: For each issue in the report:
+   - Evaluate: Should it be fixed, suppressed with justification, or deferred?
+   - Create a separate task in `tasks.md` with format:
+     ```
+     - [ ] **T<ID> [P2]** Fix <symbol> in <file>:<line> - <message>
+     ```
+   - Categorize by type (high priority for errors/warnings, lower for conventions)
+
+4. **Document Baseline**: Record in `research.md`:
+   - Total issue count by type
+   - Current pylint score (out of 10.0)
+   - Target score and improvement goals
+   - Rationale for any issues marked "suppress" or "defer"
+
+5. **Implementation Protocol**:
+   - Fix issues in batches by category (e.g., all `unused-import` issues together)
+   - Rerun pylint after each batch to verify fixes
+   - Update pylint_report.json as baseline improves
+   - Add inline `# pylint: disable=<symbol>` only with clear justification comment
+
+**Note**: Pylint tasks are separate from the core 137 lockdown tasks and should be tracked independently to avoid scope creep. This is a quality improvement initiative parallel to the main release preparation.
 
 ## Phase 2: Task Planning Approach (preview)
 - `/tasks` will transform design artifacts into actionable steps:

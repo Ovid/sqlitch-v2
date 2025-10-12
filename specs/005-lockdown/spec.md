@@ -3,7 +3,8 @@
 **Feature Branch**: `005-lockdown`  
 **Created**: 2025-10-10  
 **Status**: Draft  
-**Prerequisites**: Feature 004 (Tutorial Parity) complete
+**Prerequisites**: Feature 004 (Tutorial Parity) complete  
+**Target**: Alpha release (NOT v1.0.0 - this is still alpha software)
 
 ## Execution Flow (main)
 ```
@@ -68,6 +69,11 @@ This principle applies to ALL future work, not just lockdown tasks.
 - **Documentation**: Complete docstrings for all public APIs
 - **Code Style**: Enforce consistent formatting (Black, isort) and ensure linting (flake8) runs clean via an automated check.
 - **Formatting Gates**: Add regression tests/automation that assert `black --check` and `isort --check-only` remain compliant.
+- **Pylint Analysis**: Use pylint as an additional code quality tool to identify potential issues:
+  - Generate pylint report: `pylint sqlitch --output-format=json > pylint_report.json`
+  - Each issue in the JSON report should be evaluated and added as a separate task
+  - Issues should be categorized (fix, suppress with justification, or defer with ticket)
+  - Target: Reduce pylint score to an acceptable threshold (document baseline and improvement goals)
 
 ### 2. Stability
 - **Bug Fixes**: Address all known bugs and edge cases
@@ -120,7 +126,10 @@ This principle applies to ALL future work, not just lockdown tasks.
 - mypy --strict passes with zero errors
 - Black and isort formatting enforced with automated regression tests
 - flake8 linting passes with zero violations (no ignored errors)
-- No pylint warnings above configurable threshold
+- Pylint report generated and all issues triaged:
+  - Each issue evaluated: fix, suppress with justification, or defer with ticket
+  - Baseline score documented in `specs/005-lockdown/artifacts/baseline/pylint_report.json`
+  - Improvement goals documented with rationale for any deferred issues
 - All TODO comments addressed or ticketed
 
 ### Functional Gates
@@ -291,6 +300,8 @@ uat/
 
 ---
 
-**Last Updated**: 2025-10-10  
-**Priority**: HIGH - Prepare for stable 1.0 release  
+**Last Updated**: 2025-10-12  
+**Priority**: HIGH - Prepare for alpha release (NOT v1.0.0)  
 **Estimated Effort**: 2-4 weeks
+
+**Note**: This lockdown prepares SQLitch for a stable **alpha release**, not v1.0.0. The software is still in alpha stage and requires additional validation and real-world usage before declaring production readiness.
