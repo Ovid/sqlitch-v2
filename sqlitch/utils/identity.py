@@ -26,11 +26,9 @@ else:
     try:
         import win32api  # type: ignore[import-not-found]
         import win32net  # type: ignore[import-not-found]
-        import win32netcon  # type: ignore[import-not-found]
     except ImportError:  # pragma: no cover
         win32api = None  # type: ignore[assignment]
         win32net = None  # type: ignore[assignment]
-        win32netcon = None  # type: ignore[assignment]
 
 __all__ = [
     "UserIdentity",
