@@ -1599,6 +1599,96 @@ class TestDeployFailureHandling:
         conn.close()
 
 
+class TestDeployErrorMessages:
+    """Tests for deploy error message formatting and Sqitch parity.
+
+    Regression tests from tests/regression/test_error_messages.py.
+    """
+
+    def test_unknown_change_error_matches_sqitch(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Deploying to a non-existent change should mirror Sqitch messaging."""
+        from tests.support.sqlite_fixtures import ChangeScript, create_sqlite_project
+
+        project = create_sqlite_project(
+            tmp_path,
+            changes=[
+                ChangeScript(
+                    name="users",
+                    deploy_sql="SELECT 1;",
+                    revert_sql="SELECT 1;",
+                )
+            ],
+        )
+
+        target = f"db:sqlite:{project.registry_path}"
+        result = runner.invoke(
+            main,
+            ["--chdir", str(project.project_root), "deploy", target, "--to-change", "flips"],
+        )
+
+        assert result.exit_code != 0, result.output
+
+        golden_root = Path(__file__).resolve().parents[2] / "support" / "golden" / "error_messages"
+        expected_output = (golden_root / "unknown_change.txt").read_text(encoding="utf-8")
+        assert result.output == expected_output
+
+    def test_unknown_target_error_matches_sqitch(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Referencing an unknown target alias should mirror Sqitch messaging."""
+        from tests.support.sqlite_fixtures import ChangeScript, create_sqlite_project
+
+        project = create_sqlite_project(
+            tmp_path,
+            changes=[
+                ChangeScript(
+                    name="users",
+                    deploy_sql="SELECT 1;",
+                    revert_sql="SELECT 1;",
+                )
+            ],
+        )
+
+        result = runner.invoke(
+            main,
+            ["--chdir", str(project.project_root), "engine", "add", "demo", "analytics"],
+        )
+
+        assert result.exit_code != 0, result.output
+
+        golden_root = Path(__file__).resolve().parents[2] / "support" / "golden" / "error_messages"
+        expected_output = (golden_root / "unknown_target.txt").read_text(encoding="utf-8")
+        assert result.output == expected_output
+
+    def test_missing_dependency_error_matches_sqitch(
+        self, runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """Plans referencing unknown dependencies should match Sqitch error text."""
+        from tests.support.sqlite_fixtures import ChangeScript, create_sqlite_project
+
+        project = create_sqlite_project(
+            tmp_path,
+            changes=[
+                ChangeScript(
+                    name="alpha",
+                    deploy_sql="SELECT 1;",
+                    revert_sql="SELECT 1;",
+                    dependencies=("beta",),
+                )
+            ],
+        )
+
+        target = f"db:sqlite:{project.registry_path}"
+        result = runner.invoke(
+            main,
+            ["--chdir", str(project.project_root), "deploy", target],
+        )
+
+        assert result.exit_code != 0, result.output
+
+        golden_root = Path(__file__).resolve().parents[2] / "support" / "golden" / "error_messages"
+        expected_output = (golden_root / "missing_dependency.txt").read_text(encoding="utf-8")
+        assert result.output == expected_output
+
+
 @pytest.fixture
 def runner() -> CliRunner:
     """Provide a Click test runner."""

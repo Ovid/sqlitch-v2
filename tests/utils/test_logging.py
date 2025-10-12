@@ -109,3 +109,94 @@ def test_structured_logger_respects_quiet_mode_with_json_output() -> None:
     assert payload["event"] == "command.fail"
     assert payload["message"] == "Failure occurred"
     assert payload["data"] == {"reason": "boom"}
+
+
+# ==============================================================================
+# Credential Redaction Tests (from regression tests)
+# ==============================================================================
+
+
+def test_structured_logs_redact_credentials() -> None:
+    """Structured logs must redact sensitive credential fields.
+
+    Regression test for credential redaction in structured logging.
+    """
+    buffer = io.StringIO()
+    logger = StructuredLogger(
+        LogConfiguration(run_identifier="run", verbosity=0, quiet=False, json_mode=True),
+        json_stream=buffer,
+        clock=lambda: datetime(2024, 1, 1, tzinfo=timezone.utc),
+    )
+
+    record = logger.info(
+        "engine.connect",
+        payload={
+            "username": "admin",
+            "password": "supersecret",
+            "nested": {"token": "abc123", "note": "ok"},
+            "uri": "postgres://admin:supersecret@localhost/app",
+            "sequence": [{"api_key": "abcdef"}, "value"],
+        },
+    )
+
+    assert record is not None
+    payload = dict(record.payload)
+    assert payload["password"] == "***REDACTED***"
+    assert payload["username"] == "admin"
+
+    nested = payload["nested"]
+    assert isinstance(nested, dict)
+    assert nested["token"] == "***REDACTED***"
+    assert nested["note"] == "ok"
+
+    sequence = payload["sequence"]
+    assert isinstance(sequence, list)
+    assert sequence[0]["api_key"] == "***REDACTED***"
+    assert sequence[1] == "value"
+
+    output = buffer.getvalue()
+    assert "supersecret" not in output
+    assert "***REDACTED***" in output
+
+
+# ==============================================================================
+# Observability and Opt-In Logging Tests (from regression tests)
+# ==============================================================================
+
+
+def test_structured_logging_emits_run_identifier_when_opted_in() -> None:
+    """Structured logs should only emit when logging flags are provided.
+
+    Regression test for observability opt-in behavior.
+    """
+    from click.testing import CliRunner
+
+    from sqlitch.cli.main import main
+
+    runner = CliRunner()
+
+    human_result = runner.invoke(main, ["help"], env={"SQLITCH_RUN_ID": "human-run"})
+
+    assert human_result.exit_code == 0, human_result.stderr
+    human_lines = [line for line in human_result.stderr.splitlines() if line.strip()]
+    assert human_lines == []
+
+    verbose_result = runner.invoke(
+        main,
+        ["--verbose", "help"],
+        env={"SQLITCH_RUN_ID": "human-run-verbose"},
+    )
+
+    assert verbose_result.exit_code == 0, verbose_result.stderr
+    verbose_lines = [line for line in verbose_result.stderr.splitlines() if line.strip()]
+    assert any("human-run-verbose" in line and "command.start" in line for line in verbose_lines)
+    assert any("human-run-verbose" in line and "command.complete" in line for line in verbose_lines)
+
+    json_result = runner.invoke(main, ["--json", "help"], env={"SQLITCH_RUN_ID": "json-run"})
+
+    assert json_result.exit_code == 0, json_result.stderr
+    payloads = [json.loads(line) for line in json_result.stderr.splitlines() if line.strip()]
+    events = {payload["event"]: payload for payload in payloads}
+
+    assert events["command.start"]["run_id"] == "json-run"
+    assert events["command.complete"]["run_id"] == "json-run"

@@ -6,6 +6,17 @@ Constitutional References:
     - Constitution I: Test Isolation and Cleanup (MANDATORY)
     - FR-001b: 100% Configuration Compatibility (CRITICAL)
     - NFR-007: Test Isolation and Configuration Compatibility (MANDATORY)
+
+USAGE NOTE:
+-----------
+These tests check for config pollution by other tests in the suite. Due to pytest-randomly
+reordering tests, they may report false failures when run with the full suite.
+
+For accurate results, run these tests separately:
+    pytest tests/test_no_config_pollution.py -v
+
+If these tests fail in CI or full suite runs, it indicates a REAL PROBLEM with test
+isolation somewhere in the test suite that must be addressed.
 """
 
 from __future__ import annotations

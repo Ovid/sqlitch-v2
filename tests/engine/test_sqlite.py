@@ -596,3 +596,223 @@ def test_filesystem_path_from_split_with_url_encoded_chars() -> None:
     )
     path = _filesystem_path_from_split(split)
     assert path == Path("/path/with spaces/db.sqlite")
+
+
+# ==============================================================================
+# Deploy Behavior and Transaction Tests (from regression tests)
+# ==============================================================================
+
+
+def test_failed_deploy_does_not_persist_workspace_mutations(tmp_path) -> None:
+    """Failed deployments must not leave partial changes in workspace database.
+
+    Regression test for atomicity guarantees in SQLite deployments.
+    """
+    from contextlib import chdir, closing
+
+    from click.testing import CliRunner
+
+    from sqlitch.cli.main import main
+    from tests.support.sqlite_fixtures import ChangeScript, create_sqlite_project
+
+    project = create_sqlite_project(
+        tmp_path,
+        changes=[
+            ChangeScript(
+                name="alpha",
+                deploy_sql="""
+                CREATE TABLE alpha_data (id INTEGER PRIMARY KEY);
+                INSERT INTO alpha_data DEFAULT VALUES;
+                SELECT RAISE(ABORT, 'deploy failure');
+                """,
+            )
+        ],
+    )
+
+    workspace_db = project.project_root / "workspace.db"
+
+    runner = CliRunner()
+    with chdir(project.project_root):
+        result = runner.invoke(
+            main,
+            [
+                "deploy",
+                "--target",
+                workspace_db.as_posix(),
+            ],
+            catch_exceptions=False,
+        )
+
+    assert result.exit_code != 0, "Deploy should fail when the deploy script raises"
+
+    assert workspace_db.exists(), "Workspace database should still be created for inspection"
+
+    with closing(sqlite3.connect(workspace_db)) as connection:
+        cursor = connection.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+            ("alpha_data",),
+        )
+        tables = {row[0] for row in cursor.fetchall()}
+
+    assert not tables, "Failed deploy must not leave change tables behind in the workspace database"
+
+
+def test_deploy_respects_script_managed_transactions(tmp_path) -> None:
+    """Deploy scripts can manage their own transactions using BEGIN/COMMIT/ROLLBACK.
+
+    Regression test for script-managed transaction support in SQLite.
+    """
+    from contextlib import chdir, closing
+
+    from click.testing import CliRunner
+
+    from sqlitch.cli.main import main
+    from tests.support.sqlite_fixtures import ChangeScript, create_sqlite_project
+
+    project = create_sqlite_project(
+        tmp_path,
+        changes=[
+            ChangeScript(
+                name="script_transactions_commit",
+                deploy_sql="""
+                BEGIN;
+                CREATE TABLE committed_data (id INTEGER PRIMARY KEY, value TEXT);
+                INSERT INTO committed_data (value) VALUES ('ok');
+                COMMIT;
+                """,
+            ),
+            ChangeScript(
+                name="script_transactions_rollback",
+                deploy_sql="""
+                BEGIN;
+                CREATE TABLE rollback_data (id INTEGER PRIMARY KEY, value TEXT);
+                INSERT INTO rollback_data (value) VALUES ('should rollback');
+                ROLLBACK;
+                SELECT * FROM nonexistent_table;
+                """,
+            ),
+        ],
+    )
+
+    workspace_db = project.project_root / "workspace.db"
+
+    runner = CliRunner()
+    with chdir(project.project_root):
+        result = runner.invoke(
+            main,
+            [
+                "deploy",
+                "--target",
+                workspace_db.as_posix(),
+            ],
+            catch_exceptions=False,
+        )
+
+    assert result.exit_code != 0, "Deploy should fail after the script-triggered rollback"
+    assert "no such table: nonexistent_table" in result.output
+
+    assert workspace_db.exists(), "Workspace database should exist for inspection"
+
+    with closing(sqlite3.connect(workspace_db)) as connection:
+        committed_cursor = connection.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+            ("committed_data",),
+        )
+        committed_tables = {row[0] for row in committed_cursor.fetchall()}
+        committed_cursor.close()
+
+        row_cursor = connection.execute("SELECT COUNT(*) FROM committed_data")
+        committed_rows = row_cursor.fetchone()[0]
+        row_cursor.close()
+
+        rollback_cursor = connection.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+            ("rollback_data",),
+        )
+        rollback_tables = {row[0] for row in rollback_cursor.fetchall()}
+        rollback_cursor.close()
+
+    assert committed_tables == {"committed_data"}, "Manual transaction change should commit data"
+    assert committed_rows == 1, "Committed change should persist inserted rows"
+    assert not rollback_tables, "Rolled-back change must not leave tables behind"
+
+    assert (
+        project.registry_path.exists()
+    ), "Registry database should be created even when a later change fails"
+
+    with closing(sqlite3.connect(project.registry_path)) as connection:
+        cursor = connection.execute(
+            "SELECT change FROM changes ORDER BY committed_at ASC",
+        )
+        recorded_changes = [row[0] for row in cursor.fetchall()]
+        cursor.close()
+
+    assert recorded_changes == [
+        "script_transactions_commit"
+    ], "Registry must only record successfully committed changes"
+
+
+def test_registry_isolated_from_workspace(tmp_path) -> None:
+    """Registry tables must be stored in a separate sqitch.db, not in workspace.
+
+    Regression test for SQLite registry attachment behavior.
+    """
+    from contextlib import chdir, closing
+
+    from click.testing import CliRunner
+
+    from sqlitch.cli.main import main
+    from tests.support.sqlite_fixtures import ChangeScript, create_sqlite_project
+
+    project = create_sqlite_project(
+        tmp_path,
+        changes=[
+            ChangeScript(
+                name="alpha",
+                deploy_sql="""
+                CREATE TABLE workspace_data (id INTEGER PRIMARY KEY);
+                INSERT INTO workspace_data DEFAULT VALUES;
+                """,
+            )
+        ],
+    )
+
+    workspace_db = project.project_root / "workspace.db"
+
+    runner = CliRunner()
+    with chdir(project.project_root):
+        result = runner.invoke(
+            main,
+            [
+                "deploy",
+                "--target",
+                workspace_db.as_posix(),
+            ],
+            catch_exceptions=False,
+        )
+
+    assert result.exit_code == 0, result.output
+
+    assert (
+        project.registry_path.exists()
+    ), "SQLite deployment should create a dedicated sqitch.db registry database"
+
+    with closing(sqlite3.connect(workspace_db)) as connection:
+        cursor = connection.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN (?, ?)",
+            ("changes", "releases"),
+        )
+        workspace_tables = {row[0] for row in cursor.fetchall()}
+
+    assert (
+        not workspace_tables
+    ), "Workspace database must remain free of registry tables when deploy completes"
+
+    with closing(sqlite3.connect(project.registry_path)) as registry_conn:
+        cursor = registry_conn.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+            ("changes",),
+        )
+        registry_tables = {row[0] for row in cursor.fetchall()}
+
+    assert registry_tables == {"changes"}, "Registry database should contain the Sqitch schema"

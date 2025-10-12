@@ -79,7 +79,7 @@ def test_no_direct_isolated_filesystem_usage() -> None:
         "tests/support/test_test_helpers.py",  # Tests the helper
         "tests/support/README.md",  # Documentation
         "tests/conftest.py",  # Session hook - checks for violations
-        "tests/regression/test_test_isolation_enforcement.py",  # This file
+        "tests/test_test_isolation_enforcement.py",  # This file (moved from regression)
         "tests/regression/MIGRATION_COMPLETE.md",  # Migration documentation
         "tests/regression/README_ENFORCEMENT.md",  # Enforcement documentation
     }
@@ -95,6 +95,10 @@ def test_no_direct_isolated_filesystem_usage() -> None:
     # If git grep returns 1, no matches found (which is what we want)
     if result.returncode == 1:
         return  # All tests properly use isolated_test_context()
+
+    # If git grep returns 128, not a git repo - skip check
+    if result.returncode == 128:
+        pytest.skip("Not running in a git repository")
 
     # If git grep returns 0, matches found - check if they're exceptions
     if result.returncode == 0:
