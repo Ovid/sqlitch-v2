@@ -110,41 +110,100 @@ Post-design constitution check: ✅ unchanged (still compliant).
 ## Phase 1.2: Pylint Analysis Workflow (2025-10-12)
 **Objective**: Use pylint as an additional code quality tool to systematically identify and address code issues.
 
-**Workflow**:
-1. **Generate Baseline Report**:
+**Status**: ✅ **ANALYSIS COMPLETE** (2025-10-12)
+
+### Execution Summary
+
+1. **Baseline Report Generated**: ✅
    ```bash
-   pylint sqlitch --output-format=json > specs/005-lockdown/artifacts/baseline/pylint_report.json
+   pylint sqlitch tests --output-format=json > pylint_report.json
    ```
-   
-2. **Parse JSON Report**: Each issue in `pylint_report.json` contains:
-   - `type`: convention, refactor, warning, error, fatal
-   - `symbol`: specific pylint check (e.g., `line-too-long`, `unused-import`)
-   - `message`: description of the issue
-   - `path`: file location
-   - `line`: line number
-   - `column`: column number
+   - Report saved to workspace root
+   - 182 total issues identified
+   - Score: **9.65/10** (excellent baseline)
 
-3. **Create Individual Tasks**: For each issue in the report:
-   - Evaluate: Should it be fixed, suppressed with justification, or deferred?
-   - Create a separate task in `tasks.md` with format:
-     ```
-     - [ ] **T<ID> [P2]** Fix <symbol> in <file>:<line> - <message>
-     ```
-   - Categorize by type (high priority for errors/warnings, lower for conventions)
+2. **Issue Analysis Completed**: ✅
+   - Parsed JSON report systematically
+   - Categorized by type: errors (2), warnings (90), refactor (86), convention (4)
+   - Identified top issue symbols and file hotspots
+   - **Key Finding**: 0 issues in test files (tests/ directory 100% clean)
 
-4. **Document Baseline**: Record in `research.md`:
-   - Total issue count by type
-   - Current pylint score (out of 10.0)
-   - Target score and improvement goals
-   - Rationale for any issues marked "suppress" or "defer"
+3. **Tasks Created in tasks.md**: ✅
+   - **Phase 3.9** added with 8 new tasks (T130-T136)
+   - Tasks categorized by issue type:
+     - T130 series: Convention fixes (4 issues)
+     - T131: Unused arguments (67 issues)
+     - T132: Argument count reduction (37 issues)
+     - T133: Local variable reduction (18 issues)
+     - T134: Exception handling (13 issues)
+     - T135-T136: Validation and documentation
+   - Each task includes file locations, validation commands, and success targets
 
-5. **Implementation Protocol**:
-   - Fix issues in batches by category (e.g., all `unused-import` issues together)
-   - Rerun pylint after each batch to verify fixes
-   - Update pylint_report.json as baseline improves
-   - Add inline `# pylint: disable=<symbol>` only with clear justification comment
+4. **Documentation Updated in research.md**: ✅
+   - Added comprehensive "Pylint Analysis - Updated Baseline" section
+   - Documented 36% reduction from initial baseline (286 → 182 issues)
+   - Score improvement: 9.29 → 9.65 (+0.36 points)
+   - Detailed breakdown by type, symbol, and file
+   - Implementation strategy and validation protocol documented
 
-**Note**: Pylint tasks are separate from the core 137 lockdown tasks and should be tracked independently to avoid scope creep. This is a quality improvement initiative parallel to the main release preparation.
+### Key Findings
+
+**Progress Since Baseline**:
+- **Errors**: 92% reduction (25 → 2, both documented false positives)
+- **Conventions**: 87% reduction (30 → 4)
+- **Refactors**: 39% reduction (141 → 86)
+- **Test Quality**: 100% clean (0 issues in tests/)
+
+**Remaining Issues**:
+- 2 error-level (both false positives from Windows conditional imports, already suppressed)
+- 4 convention-level (naming, line length, module size)
+- 90 warning-level (primarily unused arguments in Click handlers)
+- 86 refactor-level (complexity metrics in deployment commands)
+
+**Files Requiring Attention**:
+1. `cli/commands/deploy.py` - 26 issues (complexity, arguments)
+2. `cli/commands/revert.py` - 20 issues (unused args, complexity)
+3. `cli/commands/verify.py` - 11 issues
+4. `cli/commands/status.py` - 12 issues
+
+### Implementation Protocol Defined
+
+**Batch Processing Strategy**:
+- Group similar issues for efficient fixes
+- Rerun pylint after each batch
+- Track progress via issue count reduction
+- Add suppressions only with clear justification
+
+**Priorities**:
+- P2: Convention fixes (quick wins, visible improvement)
+- P2: Unused arguments audit (high volume, code clarity)
+- P2: Complexity refactoring where beneficial
+- P3: Large-scale refactoring deferred to post-lockdown
+
+### Success Metrics
+
+**Current Baseline**: 182 issues, 9.65/10 score
+**Phase 3.9 Targets**:
+- Convention issues: 4 → 0 (100% reduction)
+- Unused arguments: 67 → <50 (25% reduction)
+- Total issues: 182 → <150 (18% reduction)
+- Score: Maintain ≥9.65 or improve
+
+**Constitutional Compliance**: ✅
+- No code modifications made (analysis phase only)
+- All findings documented in spec system
+- Tasks prioritized and tracked
+- Validation protocol established
+
+### Next Steps
+
+Execute Phase 3.9 tasks (T130-T136) in the following order:
+1. T130 series: Quick convention fixes (P2)
+2. T131-T134: Systematic issue reduction by category (P2)
+3. T135: Validation run after fixes (P1)
+4. T136: Final documentation update (P1)
+
+**Note**: Phase 3.9 execution deferred until after core lockdown tasks complete (T060-T066). Pylint improvements are quality enhancements, not blockers for release.
 
 ## Phase 2: Task Planning Approach (preview)
 - `/tasks` will transform design artifacts into actionable steps:

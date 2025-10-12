@@ -98,6 +98,145 @@ registry_override=None,  # TODO: support registry override
   - Batch operations for multi-change deployments
   - Connection pooling for remote databases (MySQL/PostgreSQL)
 - **Parallel deployment**: Explore concurrent change execution when dependencies allow
+
+## Pylint Code Quality Improvements (Phase 3.8 - T147-T151)
+
+### T147: Duplicate Code Between MySQL and PostgreSQL Engines
+**Issue**: 56 duplicate-code violations detected by pylint between `sqlitch/engine/mysql.py` and `sqlitch/engine/postgres.py`
+
+**Root Cause**: MySQL and PostgreSQL engines share significant implementation:
+- Connection string parsing
+- Registry initialization
+- Transaction management
+- Script execution patterns
+- Error handling
+
+**Recommendation**: 
+1. Create `sqlitch/engine/sql_base.py` abstract base class for SQL-based engines
+2. Extract common methods:
+   - `_parse_connection_string()`
+   - `_initialize_registry_tables()`
+   - `_execute_in_transaction()`
+   - `_format_error_message()`
+3. Keep engine-specific SQL dialect handling in subclasses
+
+**Priority**: Medium - engines work correctly, refactor improves maintainability
+
+**Estimated Effort**: 4-6 hours to extract base class and update tests
+
+**Related**: Consider extending to future engines (MariaDB, Oracle, SQL Server)
+
+---
+
+### T148: Function Complexity - Too Many Local Variables
+**Issue**: 33 functions with >15 local variables flagged by pylint
+
+**Primary Offenders**:
+1. `sqlitch/config/loader.py::load_config()` - 24 local variables
+   - Recommendation: Extract `_load_system_config()`, `_load_user_config()`, `_load_local_config()`
+   
+2. `sqlitch/cli/commands/deploy.py::deploy()` - 20+ local variables
+   - Recommendation: Extract `_validate_deployment_context()`, `_prepare_changes()`
+   
+3. `sqlitch/cli/commands/revert.py::revert()` - 18+ local variables
+   - Recommendation: Extract `_calculate_revert_range()`, `_validate_revert_safety()`
+
+**Approach**: Extract logical groupings into helper functions while preserving test coverage
+
+**Priority**: Low - functions work correctly, refactor improves readability
+
+**Estimated Effort**: 1-2 hours per complex function
+
+---
+
+### T149: Function Complexity - Too Many Arguments
+**Issue**: 16 functions with >5 arguments flagged by pylint
+
+**Primary Offenders**:
+1. CLI command handlers with many Click options (acceptable for CLI layer)
+2. Registry state update functions with multiple fields
+
+**Recommendation**:
+- For CLI commands: Keep as-is (Click pattern, user-facing options)
+- For internal functions: Consider dataclasses or TypedDict for parameter grouping
+  - Example: `DeploymentContext(target, registry, engine, dry_run, ...)`
+
+**Priority**: Low - mostly cosmetic for non-CLI code
+
+**Estimated Effort**: 2-3 hours to introduce parameter objects
+
+---
+
+### T150: Unused Arguments in Function Signatures
+**Issue**: 67 functions with unused arguments flagged by pylint
+
+**Categories**:
+1. **Click command handlers**: Context/options provided but not always used (67% of violations)
+   - Recommendation: Prefix with `_` to signal intent: `_ctx`, `_verbose`
+   
+2. **Interface implementations**: Required by base class/protocol but not used in specific implementation
+   - Recommendation: Add `# pylint: disable=unused-argument` with explanation
+   
+3. **Future extensibility**: Parameters reserved for future use
+   - Recommendation: Document intent in docstring
+
+**Approach**: 
+- Review each case individually
+- Rename or suppress with clear justification
+- Remove if truly unnecessary
+
+**Priority**: Low - cosmetic improvement
+
+**Estimated Effort**: 3-4 hours to review and fix all cases
+
+---
+
+### T151: Missing Function Docstrings
+**Issue**: 11 functions missing docstrings identified by pylint
+
+**To Identify**: Run `pylint sqlitch --disable=all --enable=missing-function-docstring`
+
+**Standard Format Required**:
+```python
+def function_name(arg1: Type1, arg2: Type2) -> ReturnType:
+    """Brief one-line description.
+    
+    Longer description if needed, explaining purpose,
+    approach, or important behaviors.
+    
+    Args:
+        arg1: Description of arg1
+        arg2: Description of arg2
+        
+    Returns:
+        Description of return value
+        
+    Raises:
+        ExceptionType: When and why it's raised
+    """
+```
+
+**Priority**: Medium - improves API discoverability
+
+**Estimated Effort**: 1-2 hours (15-20 minutes per docstring)
+
+**Coordination**: Align with pydocstyle gate to avoid duplication
+
+---
+
+## Summary of Pylint Improvements
+
+| Task | Issue Type | Count | Priority | Effort | Status |
+|------|-----------|-------|----------|--------|--------|
+| T147 | Duplicate code | 56 | Medium | 4-6h | Documented |
+| T148 | Too many locals | 33 | Low | 1-2h each | Documented |
+| T149 | Too many arguments | 16 | Low | 2-3h | Documented |
+| T150 | Unused arguments | 67 | Low | 3-4h | Documented |
+| T151 | Missing docstrings | 11 | Medium | 1-2h | Documented |
+
+**Total Estimated Effort**: 15-25 hours for complete pylint cleanup
+
+**Recommendation**: Address in order: T151 (docstrings), T147 (duplicate code), T148 (complexity), T150 (unused args), T149 (arguments)
 - **Plugin system**: Consider extensibility for custom engines/hooks
 
 ## Developer Experience

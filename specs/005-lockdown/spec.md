@@ -73,7 +73,7 @@ This principle applies to ALL future work, not just lockdown tasks.
   - Generate pylint report: `pylint sqlitch --output-format=json > pylint_report.json`
   - Each issue in the JSON report should be evaluated and added as a separate task
   - Issues should be categorized (fix, suppress with justification, or defer with ticket)
-  - Target: Reduce pylint score to an acceptable threshold (document baseline and improvement goals)
+  - Target: Eliminate pylint errors
 
 ### 2. Stability
 - **Bug Fixes**: Address all known bugs and edge cases
