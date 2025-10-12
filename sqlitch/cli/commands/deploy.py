@@ -1150,7 +1150,7 @@ def _resolve_script_path(plan_root: Path, change: Change, kind: str) -> Path:
 def _compute_script_hash(script_body: str) -> str:
     """Return the SHA-1 hash of the deploy script body."""
 
-    return hashlib.sha1(script_body.encode("utf-8")).hexdigest()
+    return hashlib.sha1(script_body.encode("utf-8"), usedforsecurity=False).hexdigest()
 
 
 def _resolve_committer_identity(
@@ -1615,7 +1615,9 @@ def _insert_registry_tags(
     """Insert tag rows for ``tags`` referencing ``change_id`` into the registry."""
 
     for tag in tags:
-        tag_id = hashlib.sha1(f"{change_id}:{tag}".encode("utf-8")).hexdigest()
+        tag_id = hashlib.sha1(
+            f"{change_id}:{tag}".encode("utf-8"), usedforsecurity=False
+        ).hexdigest()
         cursor.execute(
             f"""
             INSERT INTO {registry_schema}.tags (
