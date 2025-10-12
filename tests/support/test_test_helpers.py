@@ -274,4 +274,3 @@ def test_isolated_test_context_sets_sqitch_environment_variables():
 
         # Verify runner is returned
         assert runner_out is runner
-
