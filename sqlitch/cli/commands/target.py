@@ -121,7 +121,7 @@ def target_alter(
     )
 
     config = configparser.ConfigParser(interpolation=None)
-    config.optionxform = str  # type: ignore[method-assign]
+    config.optionxform = str  # type: ignore[assignment,method-assign]
     if config_path.exists():
         config.read(config_path, encoding="utf-8")
 

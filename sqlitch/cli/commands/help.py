@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import click
+
+if TYPE_CHECKING:
+    from click import BaseCommand
 
 from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
@@ -83,7 +88,7 @@ def _render_help(
     *,
     ctx: click.Context,
     root_ctx: click.Context,
-    root_command: click.BaseCommand,
+    root_command: BaseCommand,
     topic: str | None,
     usage_only: bool,
 ) -> str:

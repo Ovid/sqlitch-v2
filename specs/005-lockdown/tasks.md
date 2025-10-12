@@ -144,7 +144,7 @@ pytest --cov=sqlitch --cov-report=term
 - [X] **T120l [P2]** Fix config.py range() None arguments at lines 456, 466, 473, 485 (4 errors)
 
 #### Phase 6: Logging Module (3 errors)
-- [ ] **T120m [P2]** Fix `utils/logging.py` TextIO assignment and usage at lines 272, 274, 275 (3 errors)
+- [X] **T120m [P2]** Fix `utils/logging.py` TextIO assignment and usage at lines 272, 274, 275 (3 errors)
 
 #### Phase 7: Deploy Command (5 errors)
 - [ ] **T120n [P2]** Fix deploy.py registry_uri None handling at line 276 (1 error)
@@ -155,10 +155,14 @@ pytest --cov=sqlitch --cov-report=term
 #### Phase 8: CLI Commands (16 errors)
 - [ ] **T120r [P2]** Fix verify.py EngineTarget type at lines 246, 256 (2x), 257 (2x) (5 errors)
 - [ ] **T120s [P2]** Fix status.py EngineTarget and parse_plan types at lines 128, 134, 204 (3 errors)
-- [ ] **T120t [P2]** Fix show.py Tag variable type at lines 150, 151, 153, 155, 156 (5 errors)
-- [ ] **T120u [P2]** Fix plan.py _format_path argument type at line 271 (1 error)
-- [ ] **T120v [P2]** Fix help.py click.BaseCommand type usage at lines 86, 91, 96 (3 errors)
-- [ ] **T120w [P2]** Fix commands/__init__.py CommandError.show() override at line 66 (1 error)
+- [X] **T120t [P2]** Fix show.py Tag variable type at lines 150, 151, 153, 155, 156 (5 errors)
+- [X] **T120u [P2]** Fix plan.py _format_path argument type at line 271 (1 error)
+- [X] **T120v [P2]** Fix help.py click.BaseCommand type usage at lines 86, 91, 96 (3 errors)
+- [X] **T120w [P2]** Fix commands/__init__.py CommandError.show() override at line 66 (1 error)
+
+#### Phase 9: Rework & Revert (8 errors)
+- [ ] **T120x [P2]** Fix rework.py Path | str | None arguments at lines 200, 207, 214, 220, 221, 222 (6 errors)
+- [ ] **T120y [P2]** Fix revert.py type issues at lines 185, 752 (2 errors)
 
 #### Phase 9: Rework & Revert (8 errors)
 - [ ] **T120x [P2]** Fix rework.py Path | str | None arguments at lines 200, 207, 214, 220, 221, 222 (6 errors)
