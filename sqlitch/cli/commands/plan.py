@@ -272,7 +272,7 @@ def _entry_to_json(entry: PlanEntry, base_dir: Path) -> dict[str, object]:
             },
         }
 
-    assert isinstance(entry, Tag)
+    assert isinstance(entry, Tag)  # nosec B101 - type guard after Change branch
     return {
         "type": "tag",
         "name": entry.name,

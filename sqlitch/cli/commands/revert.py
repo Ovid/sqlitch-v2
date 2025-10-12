@@ -183,7 +183,7 @@ def _build_request(
         # Reconstruct the original reference
         original_ref = f"@{to_tag}" if to_tag else to_change
         # The if condition guarantees at least one is not None
-        assert original_ref is not None
+        assert original_ref is not None  # nosec B101 - guaranteed by conditional logic
 
         try:
             # Try to resolve as symbolic reference

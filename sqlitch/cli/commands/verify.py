@@ -254,7 +254,7 @@ def verify_command(
     )
 
     # EngineTarget.__post_init__ guarantees registry_uri is never None
-    assert engine_target.registry_uri is not None
+    assert engine_target.registry_uri is not None  # nosec B101 - type guard for invariant
 
     workspace_path = _strip_sqlite_uri_prefix(engine_target.uri)
     registry_path = _strip_sqlite_uri_prefix(engine_target.registry_uri)

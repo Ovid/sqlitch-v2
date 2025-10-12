@@ -275,7 +275,7 @@ def _execute_deploy(request: _DeployRequest) -> None:
         raise CommandError("Only the SQLite engine is supported for deploy in this milestone")
 
     # EngineTarget.__post_init__ guarantees registry_uri is never None
-    assert engine_target.registry_uri is not None
+    assert engine_target.registry_uri is not None  # nosec B101 - type guard for invariant
     registry_schema = REGISTRY_ATTACHMENT_ALIAS
 
     try:
@@ -676,7 +676,7 @@ def _create_engine_connection(
     if engine_target.engine != "sqlite":
         raise CommandError(f"Engine '{engine_target.engine}' deployment is not supported yet.")
 
-    assert isinstance(engine, SQLiteEngine)  # narrow for downstream operations
+    assert isinstance(engine, SQLiteEngine)  # nosec B101 - type guard after engine check
 
     _ensure_sqlite_parent_directory(engine_target.uri)
     if engine_target.registry_uri:
