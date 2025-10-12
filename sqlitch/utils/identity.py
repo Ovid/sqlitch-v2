@@ -221,8 +221,8 @@ def resolve_username(env: Mapping[str, str]) -> str:
     except (OSError, AttributeError):  # pragma: no cover
         pass
 
-    # Try getpwuid() on Unix/macOS
-    if pwd is not None:
+    # Try getpwuid() on Unix/macOS (not available on Windows)
+    if sys.platform != "win32" and pwd is not None:
         try:
             return pwd.getpwuid(os.getuid()).pw_name
         except (KeyError, AttributeError):  # pragma: no cover
@@ -234,11 +234,13 @@ def resolve_username(env: Mapping[str, str]) -> str:
         if value:
             return value
 
-    # Windows-specific
+    # Windows-specific API
     # pylint: disable=possibly-used-before-assignment  # win32api guarded
     if sys.platform == "win32" and win32api is not None:
         try:
-            return win32api.GetUserName()
+            username = win32api.GetUserName()
+            # Ensure we return a string (Win32 API can return Any)
+            return str(username) if username else "sqitch"
         except Exception as exc:  # pragma: no cover - Windows-specific
             # Win32 API call failed; fall back to default
             logger.debug(
@@ -392,7 +394,8 @@ def get_system_fullname(username: str) -> str | None:
     if sys.platform == "win32" and win32net is not None:
         try:
             user_info = win32net.NetUserGetInfo(None, username, 2)
-            full_name = user_info.get("full_name", "").strip()
+            # Ensure we get a string (Win32 API can return Any)
+            full_name = str(user_info.get("full_name", "")).strip()
             if full_name:
                 return full_name
         except Exception as exc:  # pragma: no cover - Windows-specific
@@ -402,7 +405,8 @@ def get_system_fullname(username: str) -> str | None:
                 exc,
                 extra={"exception_type": type(exc).__name__},
             )
-    elif pwd is not None:
+    # Try Unix/macOS GECOS field (not available on Windows)
+    if sys.platform != "win32" and pwd is not None:
         try:
             pw_record = pwd.getpwnam(username)
             gecos = pw_record.pw_gecos
