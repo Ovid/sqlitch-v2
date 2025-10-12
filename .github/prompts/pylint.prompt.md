@@ -34,7 +34,7 @@ $ARGUMENTS
         *(Identify the target `<PACKAGE_OR_MODULES>` from the `plan.md` or project structure.)*
 
     - **Issue analysis (NO FIXING)**:
-      - Parse the `pylint_report.json` file. Each object in the JSON array represents a distinct code quality issue.
+      - Parse the `pylint_report.json` file. Each object in the JSON array represents a distinct code quality issue. You examine issues, one by one, with `jq '.[0]' pylint_report.json`, `jq '.[1]' pylint_report.json`, and so on.
       - Categorize each issue by severity: `fatal`, `error`, `warning`, `convention`, `refactor`.
       - Instead of modifying code, **document** each issue in the implementation plan and task system:
         - Add or update relevant sections in:
@@ -62,6 +62,7 @@ $ARGUMENTS
     - Report progress after documenting each major issue type.
     - Halt execution if a `pylint` issue implies deeper architectural or design flaws—update `plan.md` to flag it.
     - Provide detailed reasoning when the root cause is unclear or needs investigation.
+    - The score can be fetched with `pylint --score=y pylint --score=y sqlitch tests sqlitch tests 2>&1 | tail -n 2`
 
 6. Completion validation:
     - Confirm all issues are documented in the spec/task system.
