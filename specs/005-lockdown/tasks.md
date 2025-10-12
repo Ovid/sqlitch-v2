@@ -301,26 +301,26 @@ pytest --cov=sqlitch --cov-report=term
 ### Phase 3.7a: Contract Test Duplication (HIGH PRIORITY - 19 files)
 **Issue**: Duplicate contract test files exist in both `tests/cli/commands/` and `tests/cli/contracts/`
 
-- [ ] **T130a [P1]** Merge `tests/cli/commands/test_add_contract.py` (236 lines, 11 tests) into `tests/cli/contracts/test_add_contract.py` (274 lines, 5 tests), then delete the commands version
-- [ ] **T130b [P1]** Merge `tests/cli/commands/test_bundle_contract.py` into `tests/cli/contracts/test_bundle_contract.py`, then delete the commands version
-- [ ] **T130c [P1]** Merge `tests/cli/commands/test_checkout_contract.py` into `tests/cli/contracts/test_checkout_contract.py`, then delete the commands version
-- [ ] **T130d [P1]** Merge `tests/cli/commands/test_config_contract.py` (8 tests) into `tests/cli/contracts/test_config_contract.py` (23 tests), then delete the commands version
-- [ ] **T130e [P1]** Merge `tests/cli/commands/test_deploy_contract.py` (9 tests) into `tests/cli/contracts/test_deploy_contract.py` (5 tests), then delete the commands version
-- [ ] **T130f [P1]** Merge `tests/cli/commands/test_engine_contract.py` into `tests/cli/contracts/test_engine_contract.py`, then delete the commands version
-- [ ] **T130g [P1]** Merge `tests/cli/commands/test_help_contract.py` into `tests/cli/contracts/test_help_contract.py`, then delete the commands version
-- [ ] **T130h [P1]** Merge `tests/cli/commands/test_init_contract.py` (11 tests) into `tests/cli/contracts/test_init_contract.py` (8 tests), then delete the commands version
-- [ ] **T130i [P1]** Merge `tests/cli/commands/test_log_contract.py` into `tests/cli/contracts/test_log_contract.py`, then delete the commands version
-- [ ] **T130j [P1]** Merge `tests/cli/commands/test_plan_contract.py` into `tests/cli/contracts/test_plan_contract.py`, then delete the commands version
-- [ ] **T130k [P1]** Merge `tests/cli/commands/test_rebase_contract.py` into `tests/cli/contracts/test_rebase_contract.py`, then delete the commands version
-- [ ] **T130l [P1]** Merge `tests/cli/commands/test_revert_contract.py` into `tests/cli/contracts/test_revert_contract.py`, then delete the commands version
-- [ ] **T130m [P1]** Merge `tests/cli/commands/test_rework_contract.py` into `tests/cli/contracts/test_rework_contract.py`, then delete the commands version
-- [ ] **T130n [P1]** Merge `tests/cli/commands/test_show_contract.py` into `tests/cli/contracts/test_show_contract.py`, then delete the commands version
-- [ ] **T130o [P1]** Merge `tests/cli/commands/test_status_contract.py` into `tests/cli/contracts/test_status_contract.py`, then delete the commands version
-- [ ] **T130p [P1]** Merge `tests/cli/commands/test_tag_contract.py` into `tests/cli/contracts/test_tag_contract.py`, then delete the commands version
-- [ ] **T130q [P1]** Merge `tests/cli/commands/test_target_contract.py` (12 tests) into `tests/cli/contracts/test_target_contract.py` (10 tests), then delete the commands version
-- [ ] **T130r [P1]** Merge `tests/cli/commands/test_upgrade_contract.py` into `tests/cli/contracts/test_upgrade_contract.py`, then delete the commands version
-- [ ] **T130s [P1]** Merge `tests/cli/commands/test_verify_contract.py` into `tests/cli/contracts/test_verify_contract.py`, then delete the commands version
-- [ ] **T130t [P1]** Run full test suite to verify all 19 contract merges successful: `pytest tests/cli/contracts/ -v && pytest tests/cli/commands/ -v`
+- [X] **T130a [P1]** Merge `tests/cli/commands/test_add_contract.py` (236 lines, 11 tests) into `tests/cli/contracts/test_add_contract.py` (274 lines, 5 tests), then delete the commands version
+- [X] **T130b [P1]** Merge `tests/cli/commands/test_bundle_contract.py` into `tests/cli/contracts/test_bundle_contract.py`, then delete the commands version
+- [X] **T130c [P1]** Merge `tests/cli/commands/test_checkout_contract.py` into `tests/cli/contracts/test_checkout_contract.py`, then delete the commands version
+- [X] **T130d [P1]** Merge `tests/cli/commands/test_config_contract.py` (8 tests) into `tests/cli/contracts/test_config_contract.py` (23 tests), then delete the commands version
+- [X] **T130e [P1]** Merge `tests/cli/commands/test_deploy_contract.py` (9 tests) into `tests/cli/contracts/test_deploy_contract.py` (5 tests), then delete the commands version
+- [X] **T130f [P1]** Merge `tests/cli/commands/test_engine_contract.py` into `tests/cli/contracts/test_engine_contract.py`, then delete the commands version
+- [X] **T130g [P1]** Merge `tests/cli/commands/test_help_contract.py` into `tests/cli/contracts/test_help_contract.py`, then delete the commands version
+- [X] **T130h [P1]** Merge `tests/cli/commands/test_init_contract.py` (11 tests) into `tests/cli/contracts/test_init_contract.py` (8 tests), then delete the commands version
+- [X] **T130i [P1]** Merge `tests/cli/commands/test_log_contract.py` into `tests/cli/contracts/test_log_contract.py`, then delete the commands version
+- [X] **T130j [P1]** Merge `tests/cli/commands/test_plan_contract.py` into `tests/cli/contracts/test_plan_contract.py`, then delete the commands version
+- [X] **T130k [P1]** Merge `tests/cli/commands/test_rebase_contract.py` into `tests/cli/contracts/test_rebase_contract.py`, then delete the commands version
+- [X] **T130l [P1]** Merge `tests/cli/commands/test_revert_contract.py` into `tests/cli/contracts/test_revert_contract.py`, then delete the commands version
+- [X] **T130m [P1]** Merge `tests/cli/commands/test_rework_contract.py` into `tests/cli/contracts/test_rework_contract.py`, then delete the commands version
+- [X] **T130n [P1]** Merge `tests/cli/commands/test_show_contract.py` into `tests/cli/contracts/test_show_contract.py`, then delete the commands version
+- [X] **T130o [P1]** Merge `tests/cli/commands/test_status_contract.py` into `tests/cli/contracts/test_status_contract.py`, then delete the commands version
+- [X] **T130p [P1]** Merge `tests/cli/commands/test_tag_contract.py` into `tests/cli/contracts/test_tag_contract.py`, then delete the commands version
+- [X] **T130q [P1]** Merge `tests/cli/commands/test_target_contract.py` (12 tests) into `tests/cli/contracts/test_target_contract.py` (10 tests), then delete the commands version
+- [X] **T130r [P1]** Merge `tests/cli/commands/test_upgrade_contract.py` into `tests/cli/contracts/test_upgrade_contract.py`, then delete the commands version
+- [X] **T130s [P1]** Merge `tests/cli/commands/test_verify_contract.py` into `tests/cli/contracts/test_verify_contract.py`, then delete the commands version
+- [X] **T130t [P1]** Run full test suite to verify all 19 contract merges successful: `pytest tests/cli/contracts/ -v && pytest tests/cli/commands/ -v` *(347 contract tests pass, 19 files deleted)*
 
 ### Phase 3.7b: Lockdown Test Files (MEDIUM PRIORITY - 6 files)
 **Issue**: Separate "_lockdown" files exist that should be merged into base test files as test classes

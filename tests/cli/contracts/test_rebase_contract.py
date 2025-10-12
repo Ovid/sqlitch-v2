@@ -1,4 +1,7 @@
-"""Contract parity tests for ``sqlitch rebase``."""
+"""Contract parity tests for ``sqlitch rebase``.
+
+Includes CLI signature contract tests merged from tests/cli/commands/
+"""
 
 from __future__ import annotations
 
@@ -181,3 +184,88 @@ def test_rebase_unknown_reference_fails(runner: CliRunner) -> None:
 
         assert result.exit_code != 0
         assert "Plan does not contain change 'missing:change'" in result.output
+
+
+# =============================================================================
+# CLI Contract Tests (merged from tests/cli/commands/test_rebase_contract.py)
+# =============================================================================
+
+class TestRebaseHelp:
+    """Test CC-REBASE help support (GC-001)."""
+
+    def test_help_flag_exits_zero(self, runner):
+        """Rebase command must support --help flag."""
+        result = runner.invoke(main, ["rebase", "--help"])
+        assert result.exit_code == 0, f"Expected exit 0, got {result.exit_code}"
+
+    def test_help_shows_usage(self, runner):
+        """Help output must include usage information."""
+        result = runner.invoke(main, ["rebase", "--help"])
+        assert "Usage:" in result.output or "usage:" in result.output.lower()
+
+    def test_help_shows_command_name(self, runner):
+        """Help output must mention the rebase command."""
+        result = runner.invoke(main, ["rebase", "--help"])
+        assert "rebase" in result.output.lower()
+
+class TestRebaseOptionalTarget:
+    """Test CC-REBASE-001: Optional target."""
+
+    def test_rebase_without_target_accepted(self, runner):
+        """Rebase without target must be accepted (uses default)."""
+        result = runner.invoke(main, ["rebase"])
+        # Should accept (not a parsing error)
+        # May exit 0 (success), 1 (not implemented), or fail validation
+        assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
+    def test_rebase_with_positional_target(self, runner):
+        """Rebase with positional target must be accepted."""
+        result = runner.invoke(main, ["rebase", "db:sqlite:test.db"])
+        # Should accept (not a parsing error)
+        assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
+    def test_rebase_with_target_option(self, runner):
+        """Rebase with --target option must be accepted."""
+        result = runner.invoke(main, ["rebase", "--target", "db:sqlite:test.db"])
+        # Should accept (not a parsing error)
+        assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
+class TestRebaseGlobalOptions:
+    """Test GC-002: Global options recognition."""
+
+    def test_quiet_option_accepted(self, runner):
+        """Rebase must accept --quiet global option."""
+        result = runner.invoke(main, ["rebase", "--quiet"])
+        # Should not fail with "no such option" error
+        assert "no such option" not in result.output.lower()
+        assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
+    def test_verbose_option_accepted(self, runner):
+        """Rebase must accept --verbose global option."""
+        result = runner.invoke(main, ["rebase", "--verbose"])
+        # Should not fail with "no such option" error
+        assert "no such option" not in result.output.lower()
+        assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
+    def test_chdir_option_accepted(self, runner):
+        """Rebase must accept --chdir global option."""
+        result = runner.invoke(main, ["rebase", "--chdir", "/tmp"])
+        # Should not fail with "no such option" error
+        assert "no such option" not in result.output.lower()
+        assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
+    def test_no_pager_option_accepted(self, runner):
+        """Rebase must accept --no-pager global option."""
+        result = runner.invoke(main, ["rebase", "--no-pager"])
+        # Should not fail with "no such option" error
+        assert "no such option" not in result.output.lower()
+        assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
+class TestRebaseErrorHandling:
+    """Test GC-004: Error output and GC-005: Unknown options."""
+
+    def test_unknown_option_rejected(self, runner):
+        """Rebase must reject unknown options with exit code 2."""
+        result = runner.invoke(main, ["rebase", "--nonexistent-option"])
+        assert result.exit_code == 2, f"Expected exit 2 for unknown option, got {result.exit_code}"
+        assert "no such option" in result.output.lower() or "unrecognized" in result.output.lower()
