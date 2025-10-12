@@ -37,6 +37,7 @@ if __name__ == "__main__":
         sys.path.insert(0, str(project_root))
 
 from uat import comparison, sanitization
+from uat.isolation import create_isolated_environment
 from uat.test_steps import TUTORIAL_STEPS
 
 # ---------------- Configuration ----------------
@@ -105,6 +106,9 @@ def color_print(color: str, msg: str):
 
 def run_and_stream(cmd: List[str], cwd: Path) -> Tuple[str, int]:
     """Run command and stream output to console, returning captured output and exit code."""
+    # Create isolated environment to prevent pollution of user config files
+    env = create_isolated_environment(cwd)
+
     proc = subprocess.Popen(
         cmd,
         cwd=str(cwd),
@@ -113,6 +117,7 @@ def run_and_stream(cmd: List[str], cwd: Path) -> Tuple[str, int]:
         text=True,
         bufsize=1,
         universal_newlines=True,
+        env=env,  # CRITICAL: Use isolated environment
     )
     captured_lines: List[str] = []
     assert proc.stdout is not None

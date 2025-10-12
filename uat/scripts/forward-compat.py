@@ -29,9 +29,11 @@ if __package__ in {None, ""}:
     if str(PACKAGE_ROOT) not in sys.path:
         sys.path.insert(0, str(PACKAGE_ROOT))
     from uat import comparison, sanitization
+    from uat.isolation import create_isolated_environment
     from uat.test_steps import TUTORIAL_STEPS, Step
 else:
     from .. import comparison, sanitization
+    from ..isolation import create_isolated_environment
     from ..test_steps import TUTORIAL_STEPS, Step
 
 _SKIP_ENV = "SQLITCH_UAT_SKIP_EXECUTION"
@@ -76,6 +78,10 @@ def log_append(header: str, cmd: list[str], output: str) -> None:
 def run_command(cmd: list[str], cwd: Path, tool_name: str) -> tuple[str, int]:
     """Run command and capture output."""
     color_print(CYAN, f"    Running {tool_name}: {' '.join(cmd)}")
+
+    # Create isolated environment to prevent pollution of user config files
+    env = create_isolated_environment(cwd)
+
     proc = subprocess.Popen(
         cmd,
         cwd=str(cwd),
@@ -84,6 +90,7 @@ def run_command(cmd: list[str], cwd: Path, tool_name: str) -> tuple[str, int]:
         text=True,
         bufsize=1,
         universal_newlines=True,
+        env=env,  # CRITICAL: Use isolated environment
     )
     captured_lines: list[str] = []
     assert proc.stdout is not None
@@ -102,7 +109,7 @@ def write_sql_files(step_num: int) -> None:
         (WORK_DIR / "deploy").mkdir(parents=True, exist_ok=True)
         (WORK_DIR / "revert").mkdir(parents=True, exist_ok=True)
         (WORK_DIR / "verify").mkdir(parents=True, exist_ok=True)
-        
+
         (WORK_DIR / "deploy/users.sql").write_text(
             """-- Deploy flipr:users to sqlite
 
@@ -120,7 +127,7 @@ COMMIT;
 """,
             encoding="utf-8",
         )
-        
+
         (WORK_DIR / "revert/users.sql").write_text(
             """-- Revert flipr:users from sqlite
 
@@ -132,7 +139,7 @@ COMMIT;
 """,
             encoding="utf-8",
         )
-        
+
         (WORK_DIR / "verify/users.sql").write_text(
             """-- Verify flipr:users on sqlite
 
@@ -146,7 +153,7 @@ ROLLBACK;
 """,
             encoding="utf-8",
         )
-    
+
     # Flips table (after step 18)
     elif step_num == 18:
         (WORK_DIR / "deploy/flips.sql").write_text(
@@ -166,7 +173,7 @@ COMMIT;
 """,
             encoding="utf-8",
         )
-        
+
         (WORK_DIR / "revert/flips.sql").write_text(
             """-- Revert flipr:flips from sqlite
 
@@ -178,7 +185,7 @@ COMMIT;
 """,
             encoding="utf-8",
         )
-        
+
         (WORK_DIR / "verify/flips.sql").write_text(
             """-- Verify flipr:flips on sqlite
 
@@ -192,7 +199,7 @@ ROLLBACK;
 """,
             encoding="utf-8",
         )
-    
+
     # Userflips view (after step 25)
     elif step_num == 25:
         (WORK_DIR / "deploy/userflips.sql").write_text(
@@ -211,7 +218,7 @@ COMMIT;
 """,
             encoding="utf-8",
         )
-        
+
         (WORK_DIR / "revert/userflips.sql").write_text(
             """-- Revert flipr:userflips from sqlite
 
@@ -223,7 +230,7 @@ COMMIT;
 """,
             encoding="utf-8",
         )
-        
+
         (WORK_DIR / "verify/userflips.sql").write_text(
             """-- Verify flipr:userflips on sqlite
 
@@ -237,7 +244,7 @@ ROLLBACK;
 """,
             encoding="utf-8",
         )
-    
+
     # Hashtags table (after step 34)
     elif step_num == 34:
         (WORK_DIR / "deploy/hashtags.sql").write_text(
@@ -256,7 +263,7 @@ COMMIT;
 """,
             encoding="utf-8",
         )
-        
+
         (WORK_DIR / "revert/hashtags.sql").write_text(
             """-- Revert flipr:hashtags from sqlite
 
@@ -268,7 +275,7 @@ COMMIT;
 """,
             encoding="utf-8",
         )
-        
+
         (WORK_DIR / "verify/hashtags.sql").write_text(
             """-- Verify flipr:hashtags on sqlite
 
@@ -280,7 +287,7 @@ ROLLBACK;
 """,
             encoding="utf-8",
         )
-    
+
     # Reworked userflips (after step 39)
     elif step_num == 39:
         deploy_content = """-- Deploy flipr:userflips to sqlite
@@ -338,7 +345,6 @@ ROLLBACK;
             verify_content,
             encoding="utf-8",
         )
-    
 
 
 def prepare_step(step_num: int) -> None:
@@ -351,11 +357,11 @@ def prepare_step(step_num: int) -> None:
 
 def execute_step(step: Step, use_sqitch: bool) -> tuple[bool, str]:
     """Execute a single tutorial step with either sqitch or sqlitch.
-    
+
     Returns (success, error_message).
     """
     tool = "sqitch" if use_sqitch else "sqlitch"
-    
+
     # Build command
     if step.command == "sqlitch":
         cmd = [tool] + list(step.args)
@@ -363,19 +369,19 @@ def execute_step(step: Step, use_sqitch: bool) -> tuple[bool, str]:
         cmd = ["sqlite3"] + list(step.args)
     else:
         return False, f"Unknown command: {step.command}"
-    
+
     prepare_step(step.number)
 
     # Execute command FIRST (for 'add' commands that create file structure)
     output, returncode = run_command(cmd, WORK_DIR, tool)
     log_append(f"Step {step.number}: {step.description}", cmd, output)
-    
+
     if returncode != 0:
         return False, f"Command failed with exit code {returncode}"
-    
+
     # Write SQL files AFTER successful execution for steps that need them
     write_sql_files(step.number)
-    
+
     return True, ""
 
 
@@ -427,21 +433,21 @@ def main() -> int:
         # Alternate: even indices (0, 2, 4...) use sqlitch, odd use sqitch
         use_sqitch = (i % 2) == 1
         tool_name = "sqitch" if use_sqitch else "sqlitch"
-        
+
         color_print(BLUE, f"\n{'='*60}")
         color_print(BLUE, f"▶️  Step {step.number}: {step.description}")
         color_print(BLUE, f"    Tool: {tool_name}")
         color_print(BLUE, f"{'='*60}")
-        
+
         success, error_msg = execute_step(step, use_sqitch)
-        
+
         if not success:
             color_print(RED, f"\n⛔️ Step {step.number} FAILED: {error_msg}")
             color_print(YELLOW, f"Working directory preserved at: {WORK_DIR}")
             color_print(YELLOW, f"Log file: {LOG_FILE}")
             had_failure = True
             break
-        
+
         color_print(GREEN, f"    ✅ Step {step.number} completed successfully")
 
     # Write final log
@@ -449,7 +455,7 @@ def main() -> int:
         color_print(RED, "\n" + "=" * 60)
         color_print(RED, "  ❌ FORWARD COMPATIBILITY TEST FAILED")
         color_print(RED, "=" * 60)
-        
+
         # Copy log to output location
         shutil.copy(LOG_FILE, log_path)
         return 1
@@ -458,17 +464,17 @@ def main() -> int:
         color_print(GREEN, "  ✅ ALL STEPS PASSED!")
         color_print(GREEN, "  Sqitch can continue workflows started by SQLitch")
         color_print(GREEN, "=" * 60)
-        
+
         # Sanitize and write final log
         log_content = LOG_FILE.read_text(encoding="utf-8")
         sanitized = sanitization.sanitize_output(log_content)
         log_path.parent.mkdir(parents=True, exist_ok=True)
         log_path.write_text(sanitized, encoding="utf-8")
-        
+
         # Cleanup
         cleanup()
         color_print(CYAN, "\nTest directory cleaned up.")
-        
+
         return 0
 
 
