@@ -145,7 +145,10 @@ def generate_change_id(
     info_bytes = info.encode("utf-8")
     git_object = f"change {len(info_bytes)}\x00".encode("utf-8") + info_bytes
 
-    return hashlib.sha1(git_object).hexdigest()
+    # SHA1 is used for Git-compatible change IDs (matching Sqitch behavior)
+    # NOT for cryptographic security - flagged with usedforsecurity=False
+    # to suppress security scanner warnings while maintaining Sqitch parity
+    return hashlib.sha1(git_object, usedforsecurity=False).hexdigest()
 
 
 def resolve_planner_identity(
