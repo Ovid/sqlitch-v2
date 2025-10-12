@@ -40,6 +40,7 @@ Extending this module:
 from __future__ import annotations
 
 import os
+import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Generator
@@ -47,7 +48,68 @@ from typing import TYPE_CHECKING, Generator
 if TYPE_CHECKING:
     from click.testing import CliRunner
 
-__all__ = ["isolated_test_context"]
+__all__ = ["isolated_test_context", "IsolatedContext"]
+
+
+class IsolatedContext:
+    """Context manager for fully isolated test environments.
+
+    Provides comprehensive isolation of environment variables, temp files,
+    and filesystem state between tests.
+    """
+
+    def __init__(self, temp_dir: Path | None = None):
+        self._temp_dir = temp_dir or Path(tempfile.mkdtemp())
+        self._old_env: dict[str, str | None] = {}
+
+    def __enter__(self) -> Path:
+        # Save original environment
+        env_vars = [
+            "SQLITCH_SYSTEM_CONFIG",
+            "SQLITCH_USER_CONFIG",
+            "SQLITCH_CONFIG",
+            "SQITCH_SYSTEM_CONFIG",
+            "SQITCH_USER_CONFIG",
+            "SQITCH_CONFIG",
+            "TMPDIR",
+            "TEMP",
+            "TMP",
+        ]
+        self._old_env = {var: os.environ.get(var) for var in env_vars}
+
+        # Set up isolated environment
+        self._temp_dir.mkdir(parents=True, exist_ok=True)
+        os.environ["TMPDIR"] = str(self._temp_dir)
+
+        # Set up config isolation
+        system_config_dir = self._temp_dir / "etc" / "sqitch"
+        user_config_dir = self._temp_dir / ".sqitch"
+        local_config = self._temp_dir / "sqitch.conf"
+
+        system_config_dir.mkdir(parents=True, exist_ok=True)
+        user_config_dir.mkdir(parents=True, exist_ok=True)
+
+        os.environ["SQLITCH_SYSTEM_CONFIG"] = str(system_config_dir / "sqitch.conf")
+        os.environ["SQLITCH_USER_CONFIG"] = str(user_config_dir / "sqitch.conf")
+        os.environ["SQLITCH_CONFIG"] = str(local_config)
+        os.environ["SQITCH_SYSTEM_CONFIG"] = str(system_config_dir / "sqitch.conf")
+        os.environ["SQITCH_USER_CONFIG"] = str(user_config_dir / "sqitch.conf")
+        os.environ["SQITCH_CONFIG"] = str(local_config)
+
+        return self._temp_dir
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # Restore original environment
+        for var, value in self._old_env.items():
+            if value is None:
+                os.environ.pop(var, None)
+            else:
+                os.environ[var] = value
+
+        # Clean up temp directory
+        import shutil
+
+        shutil.rmtree(self._temp_dir, ignore_errors=True)
 
 
 @contextmanager

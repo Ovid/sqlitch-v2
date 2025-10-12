@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -9,6 +10,7 @@ from pathlib import Path
 __all__ = [
     "DEFAULT_TEMPLATE_BODIES",
     "default_template_body",
+    "is_safe_path",
     "resolve_template_path",
     "render_template",
     "write_default_templates",
@@ -56,6 +58,17 @@ def default_template_body(kind: str) -> str:
         return DEFAULT_TEMPLATE_BODIES[kind]
     except KeyError as exc:  # pragma: no cover - defensive programming
         raise ValueError(f"Unknown template kind: {kind!r}") from exc
+
+
+def is_safe_path(basedir: Path | str, user_path: Path | str) -> bool:
+    """Check if user_path is safely contained within basedir.
+
+    This prevents path traversal attacks by ensuring absolute user paths
+    are user-controlled and don't escape intended boundaries.
+    """
+    abs_base = os.path.abspath(basedir)
+    abs_user = os.path.abspath(user_path)
+    return abs_user.startswith(abs_base)
 
 
 def write_default_templates(destination_root: Path, engine: str) -> tuple[Path, ...]:
