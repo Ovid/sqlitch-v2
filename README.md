@@ -8,6 +8,17 @@
 
 ## What is SQLitch?
 
+SQLitch is a **database change management system** that enables teams to track, version, and deploy database schema changes safely and reliably. It provides a structured approach to database migrations, ensuring that schema changes are applied consistently across development, staging, and production environments.
+
+**Why SQLitch is powerful:**
+
+- **Version Control for Databases**: Treat your database schema like code - track changes, collaborate with teams, and maintain a complete history of schema evolution
+- **Safe Deployments**: Prevent data loss and corruption with dependency tracking, verification scripts, and rollback capabilities
+- **Multi-Environment Support**: Deploy the same changes to SQLite, MySQL, PostgreSQL, and other databases with consistent tooling
+- **Team Collaboration**: Multiple developers can work on schema changes simultaneously with proper conflict resolution
+- **Audit Trail**: Complete history of who made what changes and when, with full traceability
+- **Reversible Changes**: Every change can be rolled back, giving you confidence to evolve your schema
+
 SQLitch aims to deliver drop-in compatibility with the original Sqitch
 Perl tooling while adopting a modern Python 3.11 stack. The end goal is to match
 Sqitch command behavior, plan semantics, and registry schemas so existing teams
