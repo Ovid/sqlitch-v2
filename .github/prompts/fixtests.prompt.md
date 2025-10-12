@@ -52,6 +52,7 @@ $ARGUMENTS
 4. Implementation execution rules:
    - **Setup first**: Initialize project structure, dependencies, and configuration as needed.
    - **Tests before code**: If missing or outdated tests exist, add or update them before implementing fixes.
+   - **Avoid mocks and doubles**: Mocked or doubled code can hide real errors. Do not use them unless necessary.
    - **Core development**: Apply fixes and improvements following TDD principles where possible.
    - **Integration validation**: Ensure database connections, API contracts, and external service mocks/stubs are correctly handled.
    - **Polish and validation**: Perform refactoring, test optimizations, and ensure style and lint checks pass.
