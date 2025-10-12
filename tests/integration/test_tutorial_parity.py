@@ -1025,3 +1025,15 @@ def test_rework_output_matches_sqitch(tmp_path: Path) -> None:
 
         expected_output = (CLI_GOLDEN_ROOT / "rework_users_output.txt").read_text(encoding="utf-8")
         assert rework_result.output == expected_output
+
+
+# Migrated from tests/regression/test_sqitch_parity.py
+@pytest.mark.skip(reason="Pending T028: regression parity against Sqitch projects")
+def test_sqitch_parity_fixture_alignment() -> None:
+    """Placeholder regression test for T028 - Sqitch parity fixture alignment.
+
+    When implemented, this should test that SQLitch can successfully operate on
+    projects originally created by Sqitch, validating that all fixtures, file
+    formats, and database structures are correctly interpreted.
+    """
+    ...

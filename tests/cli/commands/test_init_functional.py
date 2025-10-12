@@ -302,3 +302,16 @@ class TestInitErrorHandling:
 
             assert result.exit_code == 1, "Should fail when deploy/ exists"
             assert "deploy" in result.output.lower(), "Error should mention deploy directory"
+
+
+# Migrated from tests/regression/test_artifact_cleanup.py
+@pytest.mark.skip(reason="Pending T035: artifact cleanup regression coverage")
+def test_artifact_cleanup_guarantees() -> None:
+    """Placeholder regression test for T035 - artifact cleanup guarantees.
+
+    When implemented, this should test that SQLitch commands properly clean up
+    temporary files, partial artifacts, and database connections after execution,
+    especially in error scenarios. Should verify no leaked resources remain after
+    init, add, deploy, revert, and other state-modifying operations.
+    """
+    ...

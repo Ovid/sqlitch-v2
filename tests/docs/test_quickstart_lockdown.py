@@ -83,3 +83,16 @@ def test_quickstart_commands_are_executable():
         check=False,
     )
     assert result.returncode == 0, "mypy should be available in dev environment"
+
+
+# Migrated from tests/regression/test_onboarding_workflow.py
+@pytest.mark.skip(reason="Pending T029: onboarding workflow regression coverage")
+def test_onboarding_workflow_documents() -> None:
+    """Placeholder regression test for T029 - onboarding workflow documentation.
+
+    When implemented, this should test that the documented contributor onboarding
+    workflow (README + CONTRIBUTING) matches actual project requirements and that
+    a new contributor can successfully set up their environment by following the
+    documented steps.
+    """
+    ...

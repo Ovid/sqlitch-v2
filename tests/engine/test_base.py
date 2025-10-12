@@ -140,3 +140,15 @@ def test_registered_engines_reports_registered_engines() -> None:
             base.register_engine("sqlite", previous, replace=True)
         else:
             base.unregister_engine("sqlite")
+
+
+# Migrated from tests/regression/test_unsupported_engine.py
+@pytest.mark.skip(reason="Pending T031: unsupported engine failure regression")
+def test_unsupported_engine_failure() -> None:
+    """Placeholder regression test for T031 - unsupported engine failure handling.
+
+    When implemented, this should test that attempts to use unsupported database
+    engines (e.g., Oracle, SQL Server) produce clear error messages and fail
+    gracefully without leaving the system in an inconsistent state.
+    """
+    ...

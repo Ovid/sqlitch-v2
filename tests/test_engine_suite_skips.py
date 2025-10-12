@@ -56,3 +56,15 @@ def test_engine_stub_suites_report_skips(pytester: pytest.Pytester) -> None:
     stdout = result.stdout.str()
     assert "MySQL engine suite skipped" in stdout
     assert "PostgreSQL engine suite skipped" in stdout
+
+
+# Migrated from tests/regression/test_docker_skip.py
+@pytest.mark.skip(reason="Pending T033: Docker unavailability skip regression")
+def test_docker_unavailable_skip_behaviour() -> None:
+    """Placeholder regression test for T033 - Docker unavailability skip behavior.
+
+    When implemented, this should test that tests requiring Docker are properly
+    skipped with appropriate messaging when Docker is not available, similar to
+    how engine stub tests are skipped.
+    """
+    ...

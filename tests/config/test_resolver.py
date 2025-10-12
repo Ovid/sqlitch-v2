@@ -7,6 +7,11 @@ import pytest
 from sqlitch.config import resolver
 from sqlitch.config.loader import ConfigConflictError
 
+# Migrated from tests/regression/test_config_root_override.py
+pytestmark_config_root = pytest.mark.skip(
+    reason="Pending T034: configuration root override regression"
+)
+
 
 def _write_config(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -335,3 +340,15 @@ def test_resolve_registry_uri_non_sqlite_defaults_to_workspace() -> None:
     )
 
     assert overridden == override
+
+
+# Migrated from tests/regression/test_config_root_override.py
+@pytest.mark.skip(reason="Pending T034: configuration root override regression")
+def test_config_root_override_isolation() -> None:
+    """Placeholder regression test for T034 - config root override isolation.
+
+    When implemented, this should test that SQLITCH_CONFIG_ROOT environment
+    variable properly isolates configuration lookups without polluting other
+    scopes or causing conflicts with system/user configs.
+    """
+    ...

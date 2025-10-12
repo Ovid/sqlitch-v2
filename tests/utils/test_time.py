@@ -100,3 +100,15 @@ def test_format_registry_timestamp_drops_decimal_when_zero_microseconds() -> Non
 
     # Normalized to UTC, no fractional seconds
     assert rendered == "2025-01-01 17:00:00"
+
+
+# Migrated from tests/regression/test_timestamp_parity.py
+@pytest.mark.skip(reason="Pending T032: timestamp and timezone parity regression")
+def test_timestamp_parity_across_engines() -> None:
+    """Placeholder regression test for T032 - timestamp and timezone parity.
+
+    When implemented, this should test that timestamp handling is consistent
+    across all database engines (SQLite, PostgreSQL, MySQL), ensuring that
+    timezone conversions, formatting, and storage behave identically.
+    """
+    ...
