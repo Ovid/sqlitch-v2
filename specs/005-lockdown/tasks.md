@@ -336,14 +336,14 @@ pytest --cov=sqlitch --cov-report=term
 ### Phase 3.7c: Helper Test Files (MEDIUM PRIORITY - 6 files)
 **Issue**: Separate helper test files exist that should be co-located with command functional tests
 
-- [ ] **T132a [P2]** Merge `tests/cli/test_add_helpers.py` (212 lines) into `tests/cli/commands/test_add_functional.py` as `class TestAddHelpers:`, then delete helper file
-- [ ] **T132b [P2]** Merge `tests/cli/test_config_helpers.py` into `tests/cli/commands/test_config_functional.py` as `class TestConfigHelpers:`, then delete helper file
-- [ ] **T132c [P2]** Merge `tests/cli/test_deploy_helpers.py` into `tests/cli/commands/test_deploy_functional.py` as `class TestDeployHelpers:`, then delete helper file
-- [ ] **T132d [P2]** Merge `tests/cli/test_init_helpers.py` (174 lines) into `tests/cli/commands/test_init_functional.py` as `class TestInitHelpers:`, then delete helper file
-- [ ] **T132e [P2]** Merge `tests/cli/test_plan_helpers.py` into appropriate plan test file as `class TestPlanHelpers:`, then delete helper file
-- [ ] **T132f [P2]** Merge `tests/cli/test_rework_helpers.py` into `tests/cli/commands/test_rework_functional.py` as `class TestReworkHelpers:`, then delete helper file
-- [ ] **T132g [P2]** Keep `tests/cli/test_cli_context_helpers.py` as-is (tests shared context, not command-specific)
-- [ ] **T132h [P2]** Run full test suite to verify all 6 helper merges successful: `pytest tests/cli/ -v`
+- [X] **T132a [P2]** Merge `tests/cli/test_add_helpers.py` (212 lines) into `tests/cli/commands/test_add_functional.py` as `class TestAddHelpers:`, then delete helper file *(17 tests merged successfully, file deleted)*
+- [X] **T132b [P2]** Merge `tests/cli/test_config_helpers.py` into `tests/cli/commands/test_config_functional.py` as `class TestConfigHelpers:`, then delete helper file *(10 tests merged successfully, file deleted)*
+- [X] **T132c [P2]** Merge `tests/cli/test_deploy_helpers.py` into `tests/cli/commands/test_deploy_functional.py` as `class TestDeployHelpers:`, then delete helper file *(12 tests merged successfully, file deleted, imports added)*
+- [X] **T132d [P2]** Merge `tests/cli/test_init_helpers.py` (174 lines) into `tests/cli/commands/test_init_functional.py` as `class TestInitHelpers:`, then delete helper file *(8 tests merged successfully, file deleted)*
+- [ ] **T132e [P2]** Merge `tests/cli/test_plan_helpers.py` into appropriate plan test file as `class TestPlanHelpers:`, then delete helper file *(DEFERRED - no functional test file exists, tests remain in test_plan_helpers.py)*
+- [X] **T132f [P2]** Merge `tests/cli/test_rework_helpers.py` into `tests/cli/commands/test_rework_functional.py` as `class TestReworkHelpers:`, then delete helper file *(7 tests merged successfully, file deleted, imports added)*
+- [X] **T132g [P2]** Keep `tests/cli/test_cli_context_helpers.py` as-is (tests shared context, not command-specific) *(Confirmed - no changes needed)*
+- [X] **T132h [P2]** Run full test suite to verify all 6 helper merges successful: `pytest tests/cli/ -v` *(701 CLI tests pass, 5 helper files deleted)*
 
 ### Phase 3.7d: Identity Test Fragmentation (LOW-MEDIUM PRIORITY - 2 files)
 **Issue**: Identity tests split across 3 files for the same module

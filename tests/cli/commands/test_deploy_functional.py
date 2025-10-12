@@ -11,6 +11,8 @@ import pytest
 from click.testing import CliRunner, Result
 
 from sqlitch.cli.main import main
+from sqlitch.plan.model import Change, Plan, Tag
+from sqlitch.utils.logging import StructuredLogger
 
 _SUPPORT_DIR = Path(__file__).resolve().parents[2] / "support"
 _TUTORIAL_ENV_OVERRIDES_PATH = _SUPPORT_DIR / "tutorial_parity" / "env_overrides.json"
@@ -1687,6 +1689,276 @@ class TestDeployErrorMessages:
         golden_root = Path(__file__).resolve().parents[2] / "support" / "golden" / "error_messages"
         expected_output = (golden_root / "missing_dependency.txt").read_text(encoding="utf-8")
         assert result.output == expected_output
+
+
+class TestDeployHelpers:
+    """Unit coverage for helper functions in sqlitch.cli.commands.deploy.
+
+    Merged from tests/cli/test_deploy_helpers.py during Phase 3.7c consolidation.
+    """
+
+    @staticmethod
+    def _make_change(name: str) -> Change:
+        """Helper to create a test Change object."""
+        from datetime import datetime, timezone
+
+        timestamp = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        return Change.create(
+            name=name,
+            script_paths={"deploy": Path("deploy.sql"), "revert": Path("revert.sql")},
+            planner="Tester",
+            planned_at=timestamp,
+        )
+
+    @staticmethod
+    def _make_plan(changes: tuple[Change, ...], tags: tuple[Tag, ...] = ()) -> Plan:
+        """Helper to create a test Plan object."""
+        entries = changes + tags
+        return Plan(
+            project_name="demo",
+            file_path=Path("sqlitch.plan"),
+            entries=entries,
+            checksum="checksum",
+            default_engine="sqlite",
+        )
+
+    @staticmethod
+    def _make_logger(*, quiet: bool = False) -> StructuredLogger:
+        """Helper to create a test StructuredLogger."""
+        from sqlitch.cli.options import LogConfiguration
+        from sqlitch.utils.logging import StructuredLogger
+
+        config = LogConfiguration(
+            run_identifier="test",
+            verbosity=0,
+            quiet=quiet,
+            json_mode=False,
+        )
+        return StructuredLogger(config)
+
+    def test_resolve_target_prefers_option_over_config(self) -> None:
+        """Test target resolution prefers CLI option over config."""
+        from types import MappingProxyType
+
+        from sqlitch.cli.commands import deploy as deploy_module
+
+        assert (
+            deploy_module._resolve_target(
+                option_value="cli",
+                configured_target="config",
+                positional_targets=(),
+                project_root=Path.cwd(),
+                config_root=Path.cwd(),
+                env=MappingProxyType({}),
+                default_engine="sqlite",
+            )
+            == "cli"
+        )
+
+    def test_resolve_target_accepts_positional_target(self) -> None:
+        """Test target resolution accepts positional argument."""
+        from types import MappingProxyType
+
+        from sqlitch.cli.commands import deploy as deploy_module
+
+        assert (
+            deploy_module._resolve_target(
+                option_value=None,
+                configured_target=None,
+                positional_targets=("db:sqlite:demo",),
+                project_root=Path.cwd(),
+                config_root=Path.cwd(),
+                env=MappingProxyType({}),
+                default_engine="sqlite",
+            )
+            == "db:sqlite:demo"
+        )
+
+    def test_resolve_target_rejects_both_option_and_positional(self) -> None:
+        """Test target resolution rejects both option and positional."""
+        from types import MappingProxyType
+
+        from sqlitch.cli.commands import CommandError
+        from sqlitch.cli.commands import deploy as deploy_module
+
+        with pytest.raises(CommandError, match="either --target or a positional"):
+            deploy_module._resolve_target(
+                option_value="cli",
+                configured_target=None,
+                positional_targets=("db:sqlite:demo",),
+                project_root=Path.cwd(),
+                config_root=Path.cwd(),
+                env=MappingProxyType({}),
+                default_engine="sqlite",
+            )
+
+    def test_resolve_target_rejects_multiple_positional_targets(self) -> None:
+        """Test target resolution rejects multiple positional targets."""
+        from types import MappingProxyType
+
+        from sqlitch.cli.commands import CommandError
+        from sqlitch.cli.commands import deploy as deploy_module
+
+        with pytest.raises(CommandError, match="Multiple positional targets"):
+            deploy_module._resolve_target(
+                option_value=None,
+                configured_target=None,
+                positional_targets=("db:sqlite:one", "db:sqlite:two"),
+                project_root=Path.cwd(),
+                config_root=Path.cwd(),
+                env=MappingProxyType({}),
+                default_engine="sqlite",
+            )
+
+    def test_resolve_target_requires_value(self) -> None:
+        """Test target resolution requires a value."""
+        from types import MappingProxyType
+
+        from sqlitch.cli.commands import CommandError
+        from sqlitch.cli.commands import deploy as deploy_module
+
+        with pytest.raises(CommandError, match="must be provided"):
+            deploy_module._resolve_target(
+                option_value=None,
+                configured_target=None,
+                positional_targets=(),
+                project_root=Path.cwd(),
+                config_root=Path.cwd(),
+                env=MappingProxyType({}),
+                default_engine="sqlite",
+            )
+
+    def test_select_changes_by_change_filters(self) -> None:
+        """Test change selection by change name filter."""
+        from sqlitch.cli.commands import deploy as deploy_module
+
+        first = self._make_change("one")
+        second = self._make_change("two")
+        plan = self._make_plan((first, second))
+
+        selected = deploy_module._select_changes(plan=plan, to_change="two", to_tag=None)
+
+        assert selected == (first, second)
+
+    def test_select_changes_by_tag_filters(self) -> None:
+        """Test change selection by tag filter."""
+        from datetime import datetime, timezone
+
+        from sqlitch.cli.commands import deploy as deploy_module
+
+        first = self._make_change("one")
+        second = self._make_change("two")
+        tag = Tag(
+            name="v1.0",
+            change_ref=second.name,
+            planner="Tester",
+            tagged_at=datetime(2025, 1, 1, tzinfo=timezone.utc),
+        )
+        plan = self._make_plan((first, second), (tag,))
+
+        selected = deploy_module._select_changes(plan=plan, to_change=None, to_tag="v1.0")
+
+        assert selected == (first, second)
+
+    def test_select_changes_missing_change_raises(self) -> None:
+        """Test change selection raises for missing change."""
+        from sqlitch.cli.commands import CommandError
+        from sqlitch.cli.commands import deploy as deploy_module
+
+        plan = self._make_plan((self._make_change("one"),))
+
+        with pytest.raises(CommandError, match="Unknown change"):
+            deploy_module._select_changes(plan=plan, to_change="missing", to_tag=None)
+
+    def test_select_changes_missing_tag_raises(self) -> None:
+        """Test change selection raises for missing tag."""
+        from sqlitch.cli.commands import CommandError
+        from sqlitch.cli.commands import deploy as deploy_module
+
+        plan = self._make_plan((self._make_change("one"),))
+
+        with pytest.raises(CommandError, match="does not contain tag"):
+            deploy_module._select_changes(plan=plan, to_change=None, to_tag="v1.0")
+
+    def test_render_log_only_deploy_respects_quiet(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Test log-only deploy respects quiet mode."""
+        import click
+
+        from sqlitch.cli.commands import deploy as deploy_module
+
+        captured: list[str] = []
+        monkeypatch.setattr(click, "echo", lambda message: captured.append(message))
+
+        plan = self._make_plan((self._make_change("one"),))
+        request = deploy_module._DeployRequest(
+            project_root=tmp_path,
+            config_root=tmp_path,
+            env={},
+            plan_path=tmp_path / "sqlitch.plan",
+            plan=plan,
+            target="db:sqlite:demo",
+            to_change=None,
+            to_tag=None,
+            log_only=True,
+            quiet=True,
+            logger=self._make_logger(quiet=True),
+            registry_override=None,
+        )
+
+        deploy_module._render_log_only_deploy(request, plan.changes)
+
+        assert captured == []
+
+    def test_render_log_only_deploy_outputs_messages(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Test log-only deploy outputs messages when not quiet."""
+        import click
+
+        from sqlitch.cli.commands import deploy as deploy_module
+
+        captured: list[str] = []
+        monkeypatch.setattr(click, "echo", lambda message: captured.append(message))
+
+        plan = self._make_plan((self._make_change("one"),))
+        request = deploy_module._DeployRequest(
+            project_root=tmp_path,
+            config_root=tmp_path,
+            env={},
+            plan_path=tmp_path / "sqlitch.plan",
+            plan=plan,
+            target="db:sqlite:demo",
+            to_change=None,
+            to_tag=None,
+            log_only=True,
+            quiet=False,
+            logger=self._make_logger(),
+            registry_override=None,
+        )
+
+        deploy_module._render_log_only_deploy(request, ())
+
+        assert "No changes available for deployment." in captured
+        assert any("Log-only run" in line for line in captured)
+
+    def test_build_emitter_obeys_quiet_flag(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test emitter respects quiet flag."""
+        import click
+
+        from sqlitch.cli.commands import deploy as deploy_module
+
+        captured: list[str] = []
+        monkeypatch.setattr(click, "echo", lambda message: captured.append(message))
+
+        loud = deploy_module._build_emitter(False)
+        quiet = deploy_module._build_emitter(True)
+
+        loud("hello")
+        quiet("ignored")
+
+        assert captured == ["hello"]
 
 
 @pytest.fixture
