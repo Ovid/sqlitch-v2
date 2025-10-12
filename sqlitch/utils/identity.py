@@ -237,9 +237,9 @@ def resolve_username(env: Mapping[str, str]) -> str:
             return value
 
     # Windows-specific
+    # pylint: disable=possibly-used-before-assignment  # win32api guarded
     if sys.platform == "win32" and win32api is not None:
         try:
-            # pylint: disable=possibly-used-before-assignment  # Guarded by sys.platform check
             return win32api.GetUserName()
         except Exception as exc:  # pragma: no cover - Windows-specific
             # Win32 API call failed; fall back to default
@@ -390,9 +390,9 @@ def get_system_fullname(username: str) -> str | None:
     Returns:
         Full name if found, None otherwise.
     """
+    # pylint: disable=possibly-used-before-assignment  # win32net guarded
     if sys.platform == "win32" and win32net is not None:
         try:
-            # pylint: disable=possibly-used-before-assignment  # Guarded by sys.platform check
             user_info = win32net.NetUserGetInfo(None, username, 2)
             full_name = user_info.get("full_name", "").strip()
             if full_name:

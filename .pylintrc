@@ -43,6 +43,3 @@ max-branches=15
 [SIMILARITIES]
 # Minimum lines number of a similarity (reduce noise from short similar blocks)
 min-similarity-lines=10
-
-[TYPECHECK]
-ignore-mixin-members=yes
