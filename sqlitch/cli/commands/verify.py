@@ -234,9 +234,9 @@ def verify_command(
             env=environment,
         )
         engine_section = f'engine "{default_engine}"'
-        engine_target = config_profile.settings.get(engine_section, {}).get("target")
-        if engine_target:
-            target_value = engine_target
+        engine_target_value = config_profile.settings.get(engine_section, {}).get("target")
+        if engine_target_value and isinstance(engine_target_value, str):
+            target_value = engine_target_value
 
     if not target_value:
         raise CommandError("A target must be provided via --target or configuration.")
@@ -252,6 +252,9 @@ def verify_command(
         plan_path=plan_path,
         registry_override=cli_context.registry,
     )
+
+    # EngineTarget.__post_init__ guarantees registry_uri is never None
+    assert engine_target.registry_uri is not None
 
     workspace_path = _strip_sqlite_uri_prefix(engine_target.uri)
     registry_path = _strip_sqlite_uri_prefix(engine_target.registry_uri)

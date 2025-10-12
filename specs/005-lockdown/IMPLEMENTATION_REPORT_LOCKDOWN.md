@@ -207,6 +207,46 @@ UAT Helpers:
 - ✅ `uat/scripts/forward-compat.py` - Implemented with CLI and skip mode
 - ✅ `uat/scripts/backward-compat.py` - Implemented with CLI and skip mode
 
+### Phase 3.3b: Mypy Type Safety - 100% Compliance Achieved ✅
+**Status**: Complete (T120a-T120aa) — 2025-10-12
+
+**Achievement**: Successfully eliminated all 24 mypy --strict errors, achieving 100% type safety compliance.
+
+**Starting Point**: 24 errors across 6 files (deploy, verify, status, help, rework, revert)
+
+**Key Fixes Implemented**:
+1. **Deploy Command (T120n-T120q)**: 
+   - Created `DeployedMetadata` TypedDict to properly type metadata dictionaries containing `set[str]` tags
+   - Added assertion for `registry_uri` (guaranteed non-None by `EngineTarget.__post_init__`)
+   - Fixed target resolution to properly handle `dict.get()` return types with isinstance() checks
+   
+2. **CLI Commands (T120r-T120s)**:
+   - Renamed shadowed `engine_target` variables in verify.py and status.py to avoid type confusion
+   - Simplified status.py `_load_plan()` to call `parse_plan()` directly instead of using untyped kwargs
+   - Added registry_uri assertions where EngineTarget guarantees non-None values
+   
+3. **Help Command (T120v-T120w)**:
+   - Removed deprecated `click.BaseCommand` (Click 9.0 deprecation)
+   - Switched to `click.Command` type with proper hasattr() checks for `get_command` method
+   - Eliminated unnecessary type:ignore comments after proper typing
+   
+4. **Rework & Revert (T120x-T120y)**:
+   - Added `normalize_path()` helper in rework.py to convert `Path | str | None` to `Path | None`
+   - Added assertion in revert.py for symbolic reference resolution (guaranteed non-None in conditional)
+   - Added explicit `target: str | None` type annotations to prevent inference errors
+
+**Validation**:
+- ✅ `mypy --strict sqlitch/` reports "Success: no issues found in 53 source files"
+- ✅ `tests/test_type_safety.py::test_mypy_no_new_errors` passes
+- ✅ Updated `BASELINE_MYPY_ERROR_COUNT` from 24 to 0 in test suite
+
+**Regression Protection**:
+- Automated test enforces zero tolerance for new mypy errors
+- Test fails if error count increases above baseline
+- Forces developers to fix type issues rather than accumulate technical debt
+
+**Impact**: This achievement establishes a high-quality foundation for future development, ensuring all code additions maintain strict type safety standards.
+
 ### Phase 3.4: Documentation & Guidance ✅
 **Status**: Complete (T040-T044)
 

@@ -8,7 +8,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable
+from typing import Callable, TypedDict
 
 import click
 
@@ -53,6 +53,14 @@ from ._context import (
 from ._plan_utils import resolve_default_engine, resolve_plan_path
 
 __all__ = ["deploy_command"]
+
+
+class DeployedMetadata(TypedDict):
+    """Type for deployed change metadata dictionary."""
+
+    change_id: str
+    script_hash: str
+    tags: set[str]
 
 
 @dataclass(frozen=True, slots=True)
@@ -262,6 +270,8 @@ def _execute_deploy(request: _DeployRequest) -> None:
     if not isinstance(engine, SQLiteEngine):  # pragma: no cover - defensive guard
         raise CommandError("Only the SQLite engine is supported for deploy in this milestone")
 
+    # EngineTarget.__post_init__ guarantees registry_uri is never None
+    assert engine_target.registry_uri is not None
     registry_schema = REGISTRY_ATTACHMENT_ALIAS
 
     try:
@@ -413,6 +423,7 @@ def _resolve_target(
     if len(positional_targets) > 1:
         raise CommandError("Multiple positional targets are not supported yet.")
 
+    target: str | None
     if positional_targets:
         target = positional_targets[0]
     elif option_value:
@@ -428,9 +439,9 @@ def _resolve_target(
             env=env,
         )
         engine_section = f'engine "{default_engine}"'
-        engine_target = config_profile.settings.get(engine_section, {}).get("target")
-        if engine_target:
-            target = engine_target
+        engine_target_value = config_profile.settings.get(engine_section, {}).get("target")
+        if engine_target_value and isinstance(engine_target_value, str):
+            target = engine_target_value
 
     if not target:
         raise CommandError(
@@ -935,15 +946,14 @@ def _load_deployed_state(
     connection: sqlite3.Connection,
     registry_schema: str,
     project: str,
-) -> tuple[set[str], dict[str, dict[str, str]]]:
+) -> tuple[set[str], dict[str, DeployedMetadata]]:
     """Return deployed change IDs and a mapping of names to registry metadata.
 
-        Returns:
-            A tuple of (deployed_change_ids, name_to_metadata) where:
-            - deployed_change_ids: Set of change_id strings for all deployed changes
-    ```
-            - name_to_metadata: Dict mapping change names to their latest deployment metadata
-                               (useful for script_hash validation and tag lookups)
+    Returns:
+        A tuple of (deployed_change_ids, name_to_metadata) where:
+        - deployed_change_ids: Set of change_id strings for all deployed changes
+        - name_to_metadata: Dict mapping change names to their latest deployment metadata
+                           (useful for script_hash validation and tag lookups)
     """
 
     cursor = connection.execute(
@@ -970,7 +980,7 @@ def _load_deployed_state(
         tag_lookup.setdefault(str(change_id), set()).add(str(tag))
 
     deployed_ids: set[str] = set()
-    name_to_metadata: dict[str, dict[str, str]] = {}
+    name_to_metadata: dict[str, DeployedMetadata] = {}
 
     for change_name, change_id, script_hash in rows:
         change_id_str = str(change_id)
@@ -996,7 +1006,7 @@ def _apply_change(
     env: Mapping[str, str],
     committer_name: str,
     committer_email: str,
-    deployed: dict[str, dict[str, str]],
+    deployed: dict[str, DeployedMetadata],
     registry_schema: str,
 ) -> str:
     """Execute a deploy script and record registry state for ``change``.
@@ -1633,7 +1643,7 @@ def _synchronise_registry_tags(
     registry_schema: str,
     project: str,
     plan: Plan,
-    deployed: dict[str, dict[str, str]],
+    deployed: dict[str, DeployedMetadata],
     env: Mapping[str, str],
     committer_name: str,
     committer_email: str,

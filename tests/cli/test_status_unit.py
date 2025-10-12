@@ -572,7 +572,7 @@ def test_load_plan_wraps_parser_errors(monkeypatch: pytest.MonkeyPatch, tmp_path
     plan_path = tmp_path / "sqlitch.plan"
     plan_path.write_text("%project=widgets\n%default_engine=sqlite\n", encoding="utf-8")
 
-    def fake_parse(_: Path) -> None:
+    def fake_parse(_: Path, *, default_engine: str | None = None) -> None:
         raise PlanParseError("boom")
 
     monkeypatch.setattr("sqlitch.cli.commands.status.parse_plan", fake_parse)

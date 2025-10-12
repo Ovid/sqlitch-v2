@@ -179,6 +179,8 @@ def _build_request(
 
         # Reconstruct the original reference
         original_ref = f"@{to_tag}" if to_tag else to_change
+        # The if condition guarantees at least one is not None
+        assert original_ref is not None
 
         try:
             # Try to resolve as symbolic reference
@@ -744,6 +746,7 @@ def _resolve_target(
     if len(positional_targets) > 1:
         raise CommandError("Multiple positional targets are not supported yet.")
 
+    target: str | None
     if positional_targets:
         target = positional_targets[0]
     elif option_value:
@@ -761,9 +764,9 @@ def _resolve_target(
             env=env,
         )
         engine_section = f'engine "{default_engine}"'
-        engine_target = config_profile.settings.get(engine_section, {}).get("target")
-        if engine_target:
-            target = engine_target
+        engine_target_value = config_profile.settings.get(engine_section, {}).get("target")
+        if engine_target_value and isinstance(engine_target_value, str):
+            target = engine_target_value
 
     if not target:
         raise CommandError(

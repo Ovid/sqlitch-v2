@@ -2,12 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import click
-
-if TYPE_CHECKING:
-    from click import BaseCommand
 
 from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
@@ -88,16 +83,21 @@ def _render_help(
     *,
     ctx: click.Context,
     root_ctx: click.Context,
-    root_command: BaseCommand,
+    root_command: click.Command,
     topic: str | None,
     usage_only: bool,
 ) -> str:
     if topic is None:
-        with click.Context(root_command, info_name=root_command.name) as help_ctx:
+        # root_command is Command (or MultiCommand, Group, etc.)
+        command_name = getattr(root_command, "name", None) or "sqlitch"
+        with click.Context(root_command, info_name=command_name) as help_ctx:
             if usage_only:
                 return help_ctx.command.get_usage(help_ctx)
             return help_ctx.command.get_help(help_ctx)
 
+    # Command.get_command() for MultiCommand returns Command | None
+    if not hasattr(root_command, "get_command"):
+        raise CommandError(f'No help for "{topic}"')
     command = root_command.get_command(root_ctx, topic)
     if command is None:
         raise CommandError(f'No help for "{topic}"')

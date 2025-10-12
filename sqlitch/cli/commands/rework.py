@@ -191,9 +191,15 @@ def rework_command(
     slug = slugify_change_name(change_name)
     suffix = _resolve_rework_suffix(plan, change_name)
 
-    deploy_source = original_change.script_paths.get("deploy")
-    revert_source = original_change.script_paths.get("revert")
-    verify_source = original_change.script_paths.get("verify")
+    # script_paths values can be Path | str | None; normalize to Path | None
+    def normalize_path(p: Path | str | None) -> Path | None:
+        if p is None:
+            return None
+        return Path(p) if isinstance(p, str) else p
+
+    deploy_source = normalize_path(original_change.script_paths.get("deploy"))
+    revert_source = normalize_path(original_change.script_paths.get("revert"))
+    verify_source = normalize_path(original_change.script_paths.get("verify"))
 
     deploy_target = _resolve_new_path(
         project_root=project_root,

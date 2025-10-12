@@ -111,9 +111,9 @@ def status_command(
             env=environment,
         )
         engine_section = f'engine "{default_engine}"'
-        engine_target = config_profile.settings.get(engine_section, {}).get("target")
-        if engine_target:
-            target_value = engine_target
+        engine_target_value = config_profile.settings.get(engine_section, {}).get("target")
+        if engine_target_value and isinstance(engine_target_value, str):
+            target_value = engine_target_value
 
     if not target_value:
         raise CommandError("A target must be provided via --target or configuration.")
@@ -198,10 +198,7 @@ def _resolve_plan_path(
 
 def _load_plan(plan_path: Path, default_engine: str | None = None) -> Plan:
     try:
-        kwargs: dict[str, object] = {}
-        if default_engine is not None:
-            kwargs["default_engine"] = default_engine
-        return parse_plan(plan_path, **kwargs)
+        return parse_plan(plan_path, default_engine=default_engine)
     except (PlanParseError, ValueError) as exc:
         raise CommandError(str(exc)) from exc
     except OSError as exc:  # pragma: no cover - IO failures propagated to the user
