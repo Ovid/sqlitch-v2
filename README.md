@@ -38,11 +38,72 @@ progress across milestones.
 
 ## Getting Started
 
+### Quick Start with Docker
+
+You can install and run this on your computer, but it's strongly recommended
+that you test it out in docker for safe isolation while it's in alpha. If you
+already have [sqitch](https://sqitch.org/) installed, you don't want to risk
+overwriting your user or system config files. The test suite has been designed
+to avoid this, but we make no guarantees at this time.
+
+The fastest way to try SQLitch is with Docker (no local Python setup required):
+
+```bash
+# Start an interactive container
+docker run -it --rm -v /tmp/sqlitch-demo:/home/rando -w /home/rando python:3.11 bash
+```
+
+Now you're inside the container in `/home/rando`.
+
+For a more thorough experiment, work through the full [Sqitch SQLite
+Tutorial](https://sqitch.org/docs/manual/sqitchtutorial-sqlite/). Otherwise,
+run these commands:
+
+```bash
+# Install SQLitch
+pip install git+https://github.com/Ovid/sqlitch-v2.git
+
+# Initialize a sample project
+mkdir myapp
+cd myapp
+sqlitch init myapp --uri https://github.com/example/myapp/ --engine sqlite
+
+# Configure identity
+sqlitch config user.name "Your Name"
+sqlitch config user.email "you@example.com"
+
+# Add your first database change
+sqlitch add users -n "Creates users table"
+
+# Edit the generated scripts
+echo "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT);" > deploy/users.sql
+echo "DROP TABLE users;" > revert/users.sql
+echo "SELECT * FROM users WHERE 0;" > verify/users.sql
+
+# Deploy to a database
+sqlitch deploy db:sqlite:myapp.db
+
+# Check status
+sqlitch status db:sqlite:myapp.db
+
+# When done, exit the container
+exit
+```
+
+For production use, mount your project directory as a volume:
+
+```bash
+docker run -it --rm -v $(pwd):/workspace -w /workspace python:3.11 bash -c "
+  pip install git+https://github.com/Ovid/sqlitch-v2.git &&
+  sqlitch status db:sqlite:myapp.db
+"
+```
+
 ### Prerequisites
 
 - Python 3.11+
 - SQLite (included in Python standard library)
-- (Optional) Docker, for future cross-engine parity tests
+- (Optional) Docker, for containerized deployment
 
 ### Local Setup
 
