@@ -24,8 +24,8 @@ if sys.platform != "win32":
 else:
     pwd = None  # type: ignore[assignment]  # pylint: disable=invalid-name
     try:
-        import win32api  # type: ignore[import-not-found]
-        import win32net  # type: ignore[import-not-found]
+        import win32api
+        import win32net
     except ImportError:  # pragma: no cover
         win32api = None  # type: ignore[assignment]
         win32net = None  # type: ignore[assignment]
@@ -393,7 +393,8 @@ def get_system_fullname(username: str) -> str | None:
     # pylint: disable=possibly-used-before-assignment  # win32net guarded
     if sys.platform == "win32" and win32net is not None:
         try:
-            user_info = win32net.NetUserGetInfo(None, username, 2)
+            # None = local computer, but mypy stubs expect str | None with stricter checking
+            user_info = win32net.NetUserGetInfo(None, username, 2)  # type: ignore[arg-type]
             # Ensure we get a string (Win32 API can return Any)
             full_name = str(user_info.get("full_name", "")).strip()
             if full_name:
