@@ -51,3 +51,5 @@ uat/sqlitch_results/
 uat/backward_compat_results/
 uat/forward_compat_results/
 *.out
+pylint_report.json
+pylint-report.json
