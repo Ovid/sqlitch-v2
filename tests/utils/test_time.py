@@ -8,6 +8,7 @@ from sqlitch.utils.time import (
     coerce_datetime,
     coerce_optional_datetime,
     ensure_timezone,
+    format_registry_timestamp,
     isoformat_utc,
     parse_iso_datetime,
 )
@@ -82,3 +83,32 @@ def test_isoformat_utc_retains_microseconds_when_requested() -> None:
     rendered = isoformat_utc(value, drop_microseconds=False, use_z_suffix=False)
 
     assert rendered == "2025-01-01T12:00:01.123456+00:00"
+
+
+def test_format_registry_timestamp_trims_trailing_microseconds() -> None:
+    value = datetime(2025, 1, 1, 12, 0, 1, 123400, tzinfo=timezone.utc)
+
+    rendered = format_registry_timestamp(value)
+
+    assert rendered == "2025-01-01 12:00:01.1234"
+
+
+def test_format_registry_timestamp_drops_decimal_when_zero_microseconds() -> None:
+    value = datetime(2025, 1, 1, 12, 0, tzinfo=timezone(timedelta(hours=-5)))
+
+    rendered = format_registry_timestamp(value)
+
+    # Normalized to UTC, no fractional seconds
+    assert rendered == "2025-01-01 17:00:00"
+
+
+# Migrated from tests/regression/test_timestamp_parity.py
+@pytest.mark.skip(reason="Pending T032: timestamp and timezone parity regression")
+def test_timestamp_parity_across_engines() -> None:
+    """Placeholder regression test for T032 - timestamp and timezone parity.
+
+    When implemented, this should test that timestamp handling is consistent
+    across all database engines (SQLite, PostgreSQL, MySQL), ensuring that
+    timezone conversions, formatting, and storage behave identically.
+    """
+    ...

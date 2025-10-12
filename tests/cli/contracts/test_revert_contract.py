@@ -1,17 +1,20 @@
-"""Contract parity tests for ``sqlitch revert``."""
+"""Contract parity tests for ``sqlitch revert``.
+
+Includes CLI signature contract tests merged from tests/cli/commands/
+"""
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
 
-from click.testing import CliRunner
 import pytest
+from click.testing import CliRunner
 
 from sqlitch.cli.main import main
-from tests.support.test_helpers import isolated_test_context
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change, Tag
+from tests.support.test_helpers import isolated_test_context
 
 
 @pytest.fixture()
@@ -129,3 +132,102 @@ def test_revert_conflicting_filters_error(runner: CliRunner) -> None:
 
         assert result.exit_code != 0
         assert "Cannot combine --to-change and --to-tag" in result.output
+
+
+# =============================================================================
+# CLI Contract Tests (merged from tests/cli/commands/test_revert_contract.py)
+# =============================================================================
+
+
+class TestRevertHelp:
+    """Test CC-REVERT help support (GC-001)."""
+
+    def test_help_flag_exits_zero(self, runner):
+        """Revert command must support --help flag."""
+        result = runner.invoke(main, ["revert", "--help"])
+        assert result.exit_code == 0, f"Expected exit 0, got {result.exit_code}"
+
+    def test_help_shows_usage(self, runner):
+        """Help output must include usage information."""
+        result = runner.invoke(main, ["revert", "--help"])
+        assert "Usage:" in result.output or "usage:" in result.output.lower()
+
+    def test_help_shows_command_name(self, runner):
+        """Help output must mention the revert command."""
+        result = runner.invoke(main, ["revert", "--help"])
+        assert "revert" in result.output.lower()
+
+
+class TestRevertOptionalTarget:
+    """Test CC-REVERT-001: Optional target."""
+
+    def test_revert_without_target_accepted(self, runner):
+        """Revert without target must be accepted (uses default)."""
+        result = runner.invoke(main, ["revert"])
+        # Should accept (not a parsing error)
+        # May exit 0 (success), 1 (not implemented/no target), or fail validation
+        assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
+
+class TestRevertPositionalTarget:
+    """Test CC-REVERT-002: Positional target."""
+
+    def test_revert_with_positional_target(self, runner):
+        """Revert with positional target must be accepted."""
+        result = runner.invoke(main, ["revert", "db:sqlite:test.db"])
+        # Should accept (not a parsing error)
+        assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
+    def test_revert_with_target_option(self, runner):
+        """Revert with --target option must be accepted."""
+        result = runner.invoke(main, ["revert", "--target", "db:sqlite:test.db"])
+        # Should accept (not a parsing error)
+        assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
+    def test_revert_with_change_and_target(self, runner):
+        """Revert with change and target must be accepted."""
+        result = runner.invoke(main, ["revert", "my_change", "--target", "db:sqlite:test.db"])
+        # Should accept (not a parsing error)
+        assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
+
+class TestRevertGlobalOptions:
+    """Test GC-002: Global options recognition."""
+
+    def test_quiet_option_accepted(self, runner):
+        """Revert must accept --quiet global option."""
+        result = runner.invoke(main, ["revert", "--quiet"])
+        # Should not fail with "no such option" error
+        assert "no such option" not in result.output.lower()
+        assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
+    def test_verbose_option_accepted(self, runner):
+        """Revert must accept --verbose global option."""
+        result = runner.invoke(main, ["revert", "--verbose"])
+        # Should not fail with "no such option" error
+        assert "no such option" not in result.output.lower()
+        assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
+    def test_chdir_option_accepted(self, runner):
+        """Revert must accept --chdir global option."""
+        result = runner.invoke(main, ["revert", "--chdir", "/tmp"])
+        # Should not fail with "no such option" error
+        assert "no such option" not in result.output.lower()
+        assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
+    def test_no_pager_option_accepted(self, runner):
+        """Revert must accept --no-pager global option."""
+        result = runner.invoke(main, ["revert", "--no-pager"])
+        # Should not fail with "no such option" error
+        assert "no such option" not in result.output.lower()
+        assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
+
+class TestRevertErrorHandling:
+    """Test GC-004: Error output and GC-005: Unknown options."""
+
+    def test_unknown_option_rejected(self, runner):
+        """Revert must reject unknown options with exit code 2."""
+        result = runner.invoke(main, ["revert", "--nonexistent-option"])
+        assert result.exit_code == 2, f"Expected exit 2 for unknown option, got {result.exit_code}"
+        assert "no such option" in result.output.lower() or "unrecognized" in result.output.lower()

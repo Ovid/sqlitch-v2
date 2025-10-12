@@ -60,10 +60,12 @@ def test_python_m_sqlitch_cli_main_executes_commands(monkeypatch, tmp_path):
         else f"{repo_root}{os.pathsep}{existing_pythonpath}"
     )
 
+    # Use 'python -m sqlitch.cli' instead of 'python -m sqlitch.cli.main'
+    # to avoid module import conflicts (cli.__init__ imports main)
     command = [
         sys.executable,
         "-m",
-        "sqlitch.cli.main",
+        "sqlitch.cli",
         "init",
         "flipr",
         "--uri",

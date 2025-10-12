@@ -11,9 +11,9 @@ import click
 from sqlitch.plan.formatter import write_plan
 from sqlitch.utils.fs import ArtifactConflictError, resolve_config_file, resolve_plan_file
 
+from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
 from ._context import require_cli_context
-from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["init_command"]
 

@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from pathlib import Path
 
-import pytest
 from click.testing import CliRunner
 
 from sqlitch.cli.main import main
-from tests.support.test_helpers import isolated_test_context
 from sqlitch.plan.parser import parse_plan
-
+from tests.support.test_helpers import isolated_test_context
 
 CLI_GOLDEN_ROOT = Path(__file__).resolve().parents[2] / "support" / "golden" / "cli"
 

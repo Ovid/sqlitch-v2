@@ -1,20 +1,22 @@
-"""Contract parity tests for ``sqlitch rework``."""
+"""Contract parity tests for ``sqlitch rework``.
+
+Includes CLI signature contract tests merged from tests/cli/commands/
+"""
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
 
-from click.testing import CliRunner
 import pytest
+from click.testing import CliRunner
 
 from sqlitch.cli.commands import rework as rework_module
 from sqlitch.cli.main import main
-from tests.support.test_helpers import isolated_test_context
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change
 from sqlitch.plan.parser import parse_plan
-
+from tests.support.test_helpers import isolated_test_context
 
 TAG_NAME = "v1.0.0"
 
@@ -89,7 +91,6 @@ def test_rework_creates_rework_scripts_and_updates_plan(
     # Mock system functions to prevent system full name from taking precedence
     monkeypatch.setattr("os.getlogin", lambda: "test")
     try:
-        import pwd
         import collections
 
         MockPwRecord = collections.namedtuple("MockPwRecord", ["pw_name", "pw_gecos"])
@@ -126,7 +127,8 @@ def test_rework_creates_rework_scripts_and_updates_plan(
             plan_path=plan_path,
         )
 
-        # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
+        # Create minimal config so commands can find engine
+        # (Sqitch stores engine in config, not plan)
         config_path = plan_path.parent / "sqitch.conf"
         config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
 
@@ -168,7 +170,8 @@ def test_rework_creates_rework_scripts_and_updates_plan(
         assert relative_revert == revert_name
         assert relative_verify == verify_name
         assert updated_change.notes == "Adds widgets"
-        assert updated_change.dependencies == ("core:init",)
+        # Reworked changes have a single dependency: self-reference to previous version
+        assert updated_change.dependencies == ("widgets:add@v1.0.0",)
         assert updated_change.planner == "Grace Hopper <grace@example.com>"
         assert updated_change.planned_at == timestamp
 
@@ -217,7 +220,8 @@ def test_rework_applies_overrides(monkeypatch: pytest.MonkeyPatch, runner: CliRu
             plan_path=plan_path,
         )
 
-        # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
+        # Create minimal config so commands can find engine
+        # (Sqitch stores engine in config, not plan)
         config_path = plan_path.parent / "sqitch.conf"
         config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
 
@@ -261,7 +265,8 @@ def test_rework_unknown_change_errors(runner: CliRunner) -> None:
         plan_path = Path("sqlitch.plan")
         write_plan(project_name="demo", default_engine="sqlite", entries=(), plan_path=plan_path)
 
-        # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
+        # Create minimal config so commands can find engine
+        # (Sqitch stores engine in config, not plan)
         config_path = plan_path.parent / "sqitch.conf"
         config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
 
@@ -269,3 +274,107 @@ def test_rework_unknown_change_errors(runner: CliRunner) -> None:
 
         assert result.exit_code != 0
         assert 'Unknown change "missing:change"' in result.output
+
+
+# =============================================================================
+# CLI Contract Tests (merged from tests/cli/commands/test_rework_contract.py)
+# =============================================================================
+
+
+class TestReworkHelp:
+    """Test CC-REWORK help support (GC-001)."""
+
+    def test_help_flag_exits_zero(self, runner):
+        """Rework command must support --help flag."""
+        result = runner.invoke(main, ["rework", "--help"])
+        assert result.exit_code == 0, f"Expected exit 0, got {result.exit_code}"
+
+    def test_help_shows_usage(self, runner):
+        """Help output must include usage information."""
+        result = runner.invoke(main, ["rework", "--help"])
+        assert "Usage:" in result.output or "usage:" in result.output.lower()
+
+    def test_help_shows_command_name(self, runner):
+        """Help output must mention the rework command."""
+        result = runner.invoke(main, ["rework", "--help"])
+        assert "rework" in result.output.lower()
+
+
+class TestReworkRequiredChangeName:
+    """Test CC-REWORK-001: Required change name."""
+
+    def test_rework_without_change_name_fails(self, runner):
+        """Rework without change name must fail with exit code 2."""
+        result = runner.invoke(main, ["rework"])
+        assert (
+            result.exit_code == 2
+        ), f"Expected exit 2 for missing argument, got {result.exit_code}"
+        # Error should mention missing argument
+        assert "missing" in result.output.lower() or "required" in result.output.lower()
+
+
+class TestReworkValidChangeName:
+    """Test CC-REWORK-002: Valid change name."""
+
+    def test_rework_with_change_name_accepted(self, runner):
+        """Rework with change name must be accepted."""
+        result = runner.invoke(main, ["rework", "my_change"])
+        # Should accept (not a parsing error)
+        # May exit 0 (success), 1 (not implemented), or fail validation
+        assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
+    def test_rework_with_note_option(self, runner):
+        """Rework with --note option must be accepted."""
+        result = runner.invoke(
+            main, ["rework", "my_change", "--note", "Reworking for improvements"]
+        )
+        # Should accept (not a parsing error)
+        assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
+    def test_rework_with_requires_option(self, runner):
+        """Rework with --requires option must be accepted."""
+        result = runner.invoke(main, ["rework", "my_change", "--requires", "other_change"])
+        # Should accept (not a parsing error)
+        assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
+
+class TestReworkGlobalOptions:
+    """Test GC-002: Global options recognition."""
+
+    def test_quiet_option_accepted(self, runner):
+        """Rework must accept --quiet global option."""
+        result = runner.invoke(main, ["rework", "--quiet", "my_change"])
+        # Should not fail with "no such option" error
+        assert "no such option" not in result.output.lower()
+        assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
+    def test_verbose_option_accepted(self, runner):
+        """Rework must accept --verbose global option."""
+        result = runner.invoke(main, ["rework", "--verbose", "my_change"])
+        # Should not fail with "no such option" error
+        assert "no such option" not in result.output.lower()
+        assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
+    def test_chdir_option_accepted(self, runner):
+        """Rework must accept --chdir global option."""
+        result = runner.invoke(main, ["rework", "--chdir", "/tmp", "my_change"])
+        # Should not fail with "no such option" error
+        assert "no such option" not in result.output.lower()
+        assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
+    def test_no_pager_option_accepted(self, runner):
+        """Rework must accept --no-pager global option."""
+        result = runner.invoke(main, ["rework", "--no-pager", "my_change"])
+        # Should not fail with "no such option" error
+        assert "no such option" not in result.output.lower()
+        assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
+
+class TestReworkErrorHandling:
+    """Test GC-004: Error output and GC-005: Unknown options."""
+
+    def test_unknown_option_rejected(self, runner):
+        """Rework must reject unknown options with exit code 2."""
+        result = runner.invoke(main, ["rework", "--nonexistent-option"])
+        assert result.exit_code == 2, f"Expected exit 2 for unknown option, got {result.exit_code}"
+        assert "no such option" in result.output.lower() or "unrecognized" in result.output.lower()

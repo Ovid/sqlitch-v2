@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import hashlib
+import logging
 import sqlite3
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -15,15 +15,16 @@ import click
 from sqlitch.config import resolver as config_resolver
 from sqlitch.engine import EngineTarget, canonicalize_engine_name
 from sqlitch.engine.sqlite import (
-    derive_sqlite_registry_uri,
     extract_sqlite_statements,
-    resolve_sqlite_filesystem_path,
     script_manages_transactions,
+    validate_sqlite_script,
 )
 from sqlitch.plan.model import Change, Plan
 from sqlitch.plan.parser import PlanParseError, parse_plan
-from sqlitch.utils.time import isoformat_utc
+from sqlitch.plan.symbolic import resolve_symbolic_reference
+from sqlitch.utils.time import format_registry_timestamp
 
+from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
 from ._context import (
     environment_from,
@@ -33,9 +34,10 @@ from ._context import (
     require_cli_context,
 )
 from ._plan_utils import resolve_default_engine, resolve_plan_path
-from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["revert_command"]
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -96,13 +98,16 @@ def revert_command(
     # Validate --to option usage
     if to and (to_change or to_tag):
         raise CommandError("Cannot specify both --to and --to-change/--to-tag options.")
-    
+
     # If --to is provided, determine if it's a tag or change
+    # First, check if it contains symbolic references like @HEAD^, @ROOT, etc.
     if to:
-        # Tags in Sqitch start with '@'
+        # Try to handle symbolic references early (before assuming it's a tag)
+        # Tags in Sqitch start with '@', but so do symbolic references like @HEAD, @ROOT
         if to.startswith("@"):
-            # Strip the @ prefix when storing the tag name
-            to_tag = to[1:]
+            # Could be @HEAD^, @ROOT, @tag_name
+            # We'll resolve this after loading the plan
+            to_tag = to[1:]  # Strip @ for potential tag lookup
             to_change = None
         else:
             to_change = to
@@ -167,14 +172,38 @@ def _build_request(
     plan_path = _resolve_plan_path(project_root=project_root, override=plan_override, env=env)
     plan = _load_plan(plan_path, default_engine)
 
+    # Resolve symbolic references (e.g., @HEAD^, @ROOT, HEAD^2)
+    resolved_to_change = to_change
+    resolved_to_tag = to_tag
+
+    if to_tag or to_change:
+        # Get list of change names from plan for symbolic resolution
+        change_names = [c.name for c in plan.changes]
+
+        # Reconstruct the original reference
+        original_ref = f"@{to_tag}" if to_tag else to_change
+        # The if condition guarantees at least one is not None
+        assert original_ref is not None  # nosec B101 - guaranteed by conditional logic
+
+        try:
+            # Try to resolve as symbolic reference
+            resolved_name = resolve_symbolic_reference(original_ref, change_names)
+            # If successful, it's a change reference (not a tag)
+            resolved_to_change = resolved_name
+            resolved_to_tag = None
+        except ValueError:
+            # Not a symbolic reference - could be a plain tag or change name
+            # Keep the original classification
+            pass
+
     return _RevertRequest(
         project_root=project_root,
         env=env,
         plan_path=plan_path,
         plan=plan,
         target=target,
-        to_change=to_change,
-        to_tag=to_tag,
+        to_change=resolved_to_change,
+        to_tag=resolved_to_tag,
         log_only=log_only,
         skip_prompt=skip_prompt,
         quiet=quiet,
@@ -235,23 +264,56 @@ def _execute_revert(request: _RevertRequest) -> None:
     registry_schema = "sqitch"
 
     try:
-        # Load currently deployed changes
+        # Load currently deployed changes (keyed by change_id for rework support)
         deployed = _load_deployed_changes(connection, registry_schema, request.plan.project_name)
+
+        # Import here to avoid circular dependency
+        from sqlitch.cli.commands.deploy import (
+            _compute_change_id_for_change,
+            _resolve_parent_id_for_change,
+        )
+
+        # Build a cache of change IDs as we process the plan sequentially
+        # This allows us to resolve parent IDs (previous change chronologically)
+        change_id_cache: dict[int, str] = {}
+
+        # Pre-compute all change IDs with correct parent resolution
+        change_ids_by_index: dict[int, str] = {}
+        for i, change in enumerate(request.plan.changes):
+            parent_id = _resolve_parent_id_for_change(request.plan, i, change_id_cache)
+            change_id = _compute_change_id_for_change(
+                request.plan.project_name,
+                change,
+                request.plan.uri,
+                parent_id,
+            )
+            change_id_cache[i] = change_id
+            change_ids_by_index[i] = change_id
 
         # Filter to only revert deployed changes in reverse order
         # If --to-change or --to-tag specified, `changes` contains the target point
         # We revert everything AFTER the target (in deployment order)
-        changes_to_keep_set = (
-            {c.name for c in changes} if (request.to_change or request.to_tag) else set()
-        )
+        #
+        # Important: For reworked changes, we match by change_id, not name.
+        changes_to_keep_indices = set()
+        if request.to_change or request.to_tag:
+            # Build a set of indices of changes to keep
+            for i, change in enumerate(changes):
+                changes_to_keep_indices.add(i)
 
         changes_to_revert = []
-        for change in reversed(request.plan.changes):
-            if change.name in deployed:
-                # If we have a target and this change should be kept, stop
-                if changes_to_keep_set and change.name in changes_to_keep_set:
+        for i in range(len(request.plan.changes) - 1, -1, -1):
+            change = request.plan.changes[i]
+            # Get the pre-computed change_id for this plan entry
+            change_id = change_ids_by_index[i]
+
+            # Check if this specific instance is deployed
+            if change_id in deployed:
+                # If we have a target and this change (by position) should be kept, stop
+                if changes_to_keep_indices and i in changes_to_keep_indices:
                     break
-                changes_to_revert.append(change)
+                # Store both the change and its computed ID for the revert step
+                changes_to_revert.append((change, change_id))
 
         target_change = changes[-1] if (request.to_change or request.to_tag) and changes else None
 
@@ -276,19 +338,21 @@ def _execute_revert(request: _RevertRequest) -> None:
         emitter(intro_message)
 
         # Revert each change
-        for change in changes_to_revert:
+        for change, change_id in changes_to_revert:
             try:
                 _revert_change(
                     connection=connection,
                     project=request.plan.project_name,
                     plan_root=request.plan_path.parent,
                     change=change,
+                    change_id=change_id,
                     env=request.env,
                     committer_name=committer_name,
                     committer_email=committer_email,
                     deployed=deployed,
                     registry_schema=registry_schema,
                     emitter=emitter,
+                    uri=request.plan.uri,
                 )
             except CommandError:
                 emitter(f"  - {change.name} .. not ok")
@@ -306,9 +370,13 @@ def _execute_revert(request: _RevertRequest) -> None:
 def _load_deployed_changes(
     connection: sqlite3.Connection, registry_schema: str, project: str
 ) -> dict[str, dict[str, str]]:
-    """Load deployed changes from registry for the given project."""
+    """Load deployed changes from registry for the given project.
+
+    Returns a dict mapping change_id to metadata. For reworked changes
+    (same name, different instances), each instance has a unique change_id.
+    """
     cursor = connection.execute(
-        f'SELECT "change", change_id, script_hash FROM {registry_schema}.changes '
+        f'SELECT "change", change_id, script_hash FROM {registry_schema}.changes '  # nosec B608
         f"WHERE project = ? ORDER BY committed_at DESC",
         (project,),
     )
@@ -319,8 +387,11 @@ def _load_deployed_changes(
 
     deployed: dict[str, dict[str, str]] = {}
     for change_name, change_id, script_hash in rows:
-        deployed[str(change_name)] = {
-            "change_id": str(change_id),
+        change_id_str = str(change_id)
+        # Map by change_id, not name, to support reworked changes
+        deployed[change_id_str] = {
+            "change_name": str(change_name),
+            "change_id": change_id_str,
             "script_hash": str(script_hash) if script_hash is not None else "",
         }
     return deployed
@@ -332,41 +403,71 @@ def _revert_change(
     project: str,
     plan_root: Path,
     change: Change,
+    change_id: str,
     env: Mapping[str, str],
     committer_name: str,
     committer_email: str,
     deployed: dict[str, dict[str, str]],
     registry_schema: str,
     emitter: Callable[[str], None],
+    uri: str | None = None,
 ) -> None:
     """Execute a revert script and update registry state for a change."""
-    # Load revert script
-    script_path = plan_root / "revert" / f"{change.name}.sql"
+    # Load revert script using the script_paths from the parser
+    script_ref = change.script_paths.get("revert")
+    if script_ref is None:
+        raise CommandError(f"Change '{change.name}' is missing a revert script path.")
+
+    script_path = Path(script_ref)
+    if not script_path.is_absolute():
+        script_path = plan_root / script_path
+
     if not script_path.exists():
         raise CommandError(f"Revert script {script_path} is missing for change '{change.name}'.")
 
     script_body = script_path.read_text(encoding="utf-8")
+    validate_sqlite_script(script_body)
     manages_transactions = script_manages_transactions(script_body)
 
-    # Get change metadata from deployed state
-    change_metadata = deployed.get(change.name)
+    # Get change metadata from deployed state (keyed by change_id for rework support)
+    change_metadata = deployed.get(change_id)
     if not change_metadata:
         raise CommandError(f"Change '{change.name}' is not deployed.")
 
-    change_id = change_metadata["change_id"]
+    # Use the change_id from metadata (should match computed one)
+    registry_change_id = change_metadata["change_id"]
 
     # Parse planner identity
     planner_name, planner_email = _resolve_planner_identity(change.planner, env, committer_email)
 
-    committed_at = isoformat_utc(datetime.now(timezone.utc), drop_microseconds=False)
-    planned_at = isoformat_utc(change.planned_at, drop_microseconds=False)
+    committed_at = format_registry_timestamp(datetime.now(timezone.utc))
+    planned_at = format_registry_timestamp(change.planned_at)
     note = change.notes or ""
 
     def _record(cursor: sqlite3.Cursor) -> None:
+        # Delete tags first (if this change has any tags pointing to it)
+        cursor.execute(
+            f"DELETE FROM {registry_schema}.tags WHERE change_id = ?",  # nosec B608
+            (registry_change_id,),
+        )
+
+        # Delete dependencies FROM this change (where this is the source)
+        cursor.execute(
+            f"DELETE FROM {registry_schema}.dependencies WHERE change_id = ?",  # nosec B608
+            (registry_change_id,),
+        )
+
+        # Delete dependencies TO this change (where this is the target)
+        # This is necessary because dependency_id FK doesn't have ON DELETE CASCADE
+        cursor.execute(
+            f"DELETE FROM {registry_schema}.dependencies WHERE dependency_id = ?",  # nosec B608
+            (registry_change_id,),
+        )
+
         # Delete from changes table
         cursor.execute(
-            f"DELETE FROM {registry_schema}.changes WHERE change_id = ?",
-            (change_id,),
+            f"DELETE FROM {registry_schema}.changes WHERE change_id = ?",  # nosec B608
+            (registry_change_id,),
         )
 
         # Insert revert event
@@ -388,10 +489,10 @@ def _revert_change(
                 planner_name,
                 planner_email
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
+            """,  # nosec B608
             (
                 "revert",
-                change_id,
+                registry_change_id,
                 change.name,
                 project,
                 note,
@@ -503,8 +604,15 @@ def _resolve_committer_identity(
         user_section = config.settings.get("user", {})
         config_name = user_section.get("name")
         config_email = user_section.get("email")
-    except Exception:
-        pass
+    except Exception as exc:
+        # Config loading failure is non-fatal; fall back to environment variables
+        logger.debug(
+            "Failed to load config for user identity: %s",
+            exc,
+            extra={"exception_type": type(exc).__name__},
+        )
+        config_name = None
+        config_email = None
 
     name = (
         env.get("SQLITCH_USER_NAME")
@@ -566,7 +674,7 @@ def _resolve_engine_target(
     """Return an EngineTarget for the requested target."""
 
     candidate = target.strip()
-    
+
     # Check if the candidate is a target alias and resolve it
     if not candidate.startswith("db:"):
         # Might be a target alias - try to resolve it
@@ -591,7 +699,7 @@ def _resolve_engine_target(
             original_display = candidate
     else:
         original_display = candidate
-    
+
     if candidate.startswith("db:"):
         remainder = candidate[3:]
         engine_token, separator, payload = remainder.partition(":")
@@ -648,6 +756,7 @@ def _resolve_target(
     if len(positional_targets) > 1:
         raise CommandError("Multiple positional targets are not supported yet.")
 
+    target: str | None
     if positional_targets:
         target = positional_targets[0]
     elif option_value:
@@ -665,13 +774,14 @@ def _resolve_target(
             env=env,
         )
         engine_section = f'engine "{default_engine}"'
-        engine_target = config_profile.settings.get(engine_section, {}).get("target")
-        if engine_target:
-            target = engine_target
+        engine_target_value = config_profile.settings.get(engine_section, {}).get("target")
+        if engine_target_value and isinstance(engine_target_value, str):
+            target = engine_target_value
 
     if not target:
         raise CommandError(
-            "A deployment target must be provided via --target, positional argument, or configuration."
+            "A deployment target must be provided via --target, "
+            "positional argument, or configuration."
         )
 
     return target

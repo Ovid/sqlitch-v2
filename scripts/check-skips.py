@@ -4,12 +4,12 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Mapping
-import ast
 
 DEFAULT_TEST_PATHS = ("tests", "xt")
 ENV_TASKS = "SQLITCH_ACTIVE_TASKS"
@@ -237,7 +237,9 @@ def main(argv: Iterable[str]) -> int:
 
     sys.stderr.write("Detected skip markers referencing active tasks:\n")
     for hit in hits:
-        rel_path = hit.file_path.relative_to(Path.cwd()) if hit.file_path.is_absolute() else hit.file_path
+        rel_path = (
+            hit.file_path.relative_to(Path.cwd()) if hit.file_path.is_absolute() else hit.file_path
+        )
         sys.stderr.write(f"  - {rel_path}:{hit.line} -> {hit.task_id}: {hit.snippet}\n")
     sys.stderr.write(
         "Remove these skip markers (or update the active task list) before proceeding with implementation.\n"

@@ -6,6 +6,7 @@ from bisect import bisect_right
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any, cast
 
 from sqlitch.utils.time import coerce_datetime, isoformat_utc, parse_iso_datetime
 
@@ -42,7 +43,7 @@ class DeployedChange:
     planner_email: str
 
     @classmethod
-    def from_registry_row(cls, row: tuple) -> DeployedChange:
+    def from_registry_row(cls, row: tuple[Any, ...]) -> DeployedChange:
         """Create DeployedChange from database row.
 
         Args:
@@ -60,10 +61,18 @@ class DeployedChange:
             change=row[2],
             project=row[3],
             note=row[4],
-            committed_at=parse_iso_datetime(row[5], label="committed_at"),
+            committed_at=parse_iso_datetime(
+                row[5],
+                label="committed_at",
+                assume_utc_if_naive=True,
+            ),
             committer_name=row[6],
             committer_email=row[7],
-            planned_at=parse_iso_datetime(row[8], label="planned_at"),
+            planned_at=parse_iso_datetime(
+                row[8],
+                label="planned_at",
+                assume_utc_if_naive=True,
+            ),
             planner_name=row[9],
             planner_email=row[10],
         )
@@ -93,7 +102,7 @@ class DeploymentEvent:
     planner_email: str
 
     @classmethod
-    def from_registry_row(cls, row: tuple) -> DeploymentEvent:
+    def from_registry_row(cls, row: tuple[Any, ...]) -> DeploymentEvent:
         """Create DeploymentEvent from database row.
 
         Args:
@@ -115,10 +124,18 @@ class DeploymentEvent:
             requires=row[5],
             conflicts=row[6],
             tags=row[7],
-            committed_at=parse_iso_datetime(row[8], label="committed_at"),
+            committed_at=parse_iso_datetime(
+                row[8],
+                label="committed_at",
+                assume_utc_if_naive=True,
+            ),
             committer_name=row[9],
             committer_email=row[10],
-            planned_at=parse_iso_datetime(row[11], label="planned_at"),
+            planned_at=parse_iso_datetime(
+                row[11],
+                label="planned_at",
+                assume_utc_if_naive=True,
+            ),
             planner_name=row[12],
             planner_email=row[13],
         )
@@ -170,6 +187,7 @@ class RegistryEntry:
     note: str = ""
 
     def __post_init__(self) -> None:
+        """Validate required fields and normalize datetime values."""
         if not self.project:
             raise ValueError("RegistryEntry.project is required")
         if not self.change_id:
@@ -196,19 +214,23 @@ class RegistryState:
     """In-memory view of registry entries keyed by ``change_id``."""
 
     def __init__(self, entries: Iterable[RegistryEntry] | None = None) -> None:
+        """Initialize registry state with optional entries."""
         self._records: dict[str, RegistryEntry] = {}
         self._ordered: list[tuple[tuple[datetime, str, str], str]] = []
         for entry in entries or ():
             self.record_deploy(entry)
 
     def __iter__(self) -> Iterator[RegistryEntry]:
+        """Iterate over registry entries in deployment order."""
         for _, change_id in self._ordered:
             yield self._records[change_id]
 
     def __len__(self) -> int:
+        """Return the number of entries in the registry."""
         return len(self._ordered)
 
     def records(self) -> Sequence[RegistryEntry]:
+        """Return all entries as a tuple."""
         return tuple(self)
 
     def record_deploy(self, entry: RegistryEntry) -> None:
@@ -217,7 +239,6 @@ class RegistryState:
         Raises:
             ValueError: If an entry with the same ``change_id`` already exists.
         """
-
         change_id = entry.change_id
         if change_id in self._records:
             raise ValueError(f"RegistryState already contains change_id {change_id}")
@@ -229,13 +250,13 @@ class RegistryState:
 
     def remove_change(self, change_id: str) -> None:
         """Remove a change from the state (e.g., after a revert)."""
-
         if change_id not in self._records:
-            raise KeyError(change_id)
+            raise KeyError(f"RegistryState missing change_id '{change_id}'")
         del self._records[change_id]
         self._ordered = [item for item in self._ordered if item[1] != change_id]
 
     def get_record(self, change_id: str) -> RegistryEntry:
+        """Retrieve the registry entry for the given change_id."""
         return self._records[change_id]
 
 
@@ -245,33 +266,62 @@ def sort_registry_entries_by_deployment(
     reverse: bool = False,
 ) -> tuple[RegistryEntry, ...]:
     """Return entries ordered by commit time, change name, and change ID."""
-
     ordered = sorted(entries, key=_ordering_key, reverse=reverse)
     return tuple(ordered)
 
 
-def _resolve_value(row: Mapping[str, object], *candidates: str) -> object:
+def _require_registry_value(row: Mapping[str, object], *candidates: str) -> object:
     for key in candidates:
         if key in row:
-            return row[key]
-    raise KeyError(f"Row is missing required keys: {', '.join(candidates)}")
+            value = row[key]
+            if value is None:
+                raise ValueError(f"registry row field '{key}' cannot be None")
+            return value
+    keys = ", ".join(candidates)
+    raise ValueError(f"registry row missing required keys: {keys}")
+
+
+def _coerce_required_text(value: object, *, field: str) -> str:
+    if value is None:
+        raise ValueError(f"registry row field '{field}' cannot be None")
+    text = str(value)
+    if text == "":
+        raise ValueError(f"registry row field '{field}' cannot be empty")
+    return text
 
 
 def deserialize_registry_rows(rows: Iterable[Mapping[str, object]]) -> Sequence[RegistryEntry]:
     """Convert registry query rows into :class:`RegistryEntry` instances."""
-
     entries = []
     for row in rows:
         entry = RegistryEntry(
-            project=str(_resolve_value(row, "project")),
-            change_id=str(_resolve_value(row, "change_id")),
-            change_name=str(_resolve_value(row, "change", "change_name")),
-            committed_at=_resolve_value(row, "committed_at"),
-            committer_name=str(_resolve_value(row, "committer_name")),
-            committer_email=str(_resolve_value(row, "committer_email")),
-            planned_at=_resolve_value(row, "planned_at"),
-            planner_name=str(_resolve_value(row, "planner_name")),
-            planner_email=str(_resolve_value(row, "planner_email")),
+            project=_coerce_required_text(_require_registry_value(row, "project"), field="project"),
+            change_id=_coerce_required_text(
+                _require_registry_value(row, "change_id"), field="change_id"
+            ),
+            change_name=_coerce_required_text(
+                _require_registry_value(row, "change", "change_name"), field="change"
+            ),
+            committed_at=coerce_datetime(
+                cast("datetime | str", _require_registry_value(row, "committed_at")),
+                label="committed_at",
+            ),
+            committer_name=_coerce_required_text(
+                _require_registry_value(row, "committer_name"), field="committer_name"
+            ),
+            committer_email=_coerce_required_text(
+                _require_registry_value(row, "committer_email"), field="committer_email"
+            ),
+            planned_at=coerce_datetime(
+                cast("datetime | str", _require_registry_value(row, "planned_at")),
+                label="planned_at",
+            ),
+            planner_name=_coerce_required_text(
+                _require_registry_value(row, "planner_name"), field="planner_name"
+            ),
+            planner_email=_coerce_required_text(
+                _require_registry_value(row, "planner_email"), field="planner_email"
+            ),
             script_hash=(str(value) if (value := row.get("script_hash")) is not None else None),
             note=str(row.get("note", "")),
         )
@@ -281,7 +331,6 @@ def deserialize_registry_rows(rows: Iterable[Mapping[str, object]]) -> Sequence[
 
 def serialize_registry_entries(entries: Iterable[RegistryEntry]) -> list[dict[str, object]]:
     """Render entries as dictionaries matching the Sqitch ``changes`` schema."""
-
     serialized: list[dict[str, object]] = []
     for entry in entries:
         serialized.append(

@@ -12,6 +12,7 @@ from sqlitch.plan.model import Change, Plan
 from sqlitch.plan.parser import PlanParseError, parse_plan
 from sqlitch.utils.time import isoformat_utc
 
+from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
 from ._context import (
     environment_from,
@@ -21,7 +22,6 @@ from ._context import (
 )
 from ._plan_utils import resolve_default_engine, resolve_plan_path
 from .add import _format_display_path
-from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["show_command"]
 
@@ -88,7 +88,8 @@ def show_command(
 
     if project_filter and project_filter != plan.project_name:
         raise CommandError(
-            f"Plan project '{plan.project_name}' does not match requested project '{project_filter}'."
+            f"Plan project '{plan.project_name}' does not match "
+            f"requested project '{project_filter}'."
         )
 
     if not item:
@@ -141,18 +142,18 @@ def _collect_tags(plan: Plan, change: Change) -> tuple[str, ...]:
     ordered: list[str] = []
     seen: set[str] = set()
 
-    for tag in change.tags:
-        if tag not in seen:
-            ordered.append(tag)
-            seen.add(tag)
+    for tag_name in change.tags:
+        if tag_name not in seen:
+            ordered.append(tag_name)
+            seen.add(tag_name)
 
-    for tag in plan.tags:
-        if tag.change_ref != change.name:
+    for tag_entry in plan.tags:
+        if tag_entry.change_ref != change.name:
             continue
-        if tag.name in seen:
+        if tag_entry.name in seen:
             continue
-        ordered.append(tag.name)
-        seen.add(tag.name)
+        ordered.append(tag_entry.name)
+        seen.add(tag_entry.name)
 
     return tuple(ordered)
 
@@ -194,7 +195,7 @@ def _build_human_output(
     lines = [
         f"Change: {change.name}",
         f"Planner: {change.planner}",
-        f"Planned At: {isoformat_utc(change.planned_at, drop_microseconds=True, use_z_suffix=True)}",
+        f"Planned At: {isoformat_utc(change.planned_at, drop_microseconds=True, use_z_suffix=True)}",  # noqa: E501 pylint: disable=line-too-long
         f"Dependencies: {_format_list(change.dependencies)}",
         f"Tags: {_format_list(tags)}",
     ]

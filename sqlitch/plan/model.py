@@ -60,6 +60,48 @@ class Change:
     dependencies: Sequence[str] = field(default_factory=tuple)
     conflicts: Sequence[str] = field(default_factory=tuple)
     tags: Sequence[str] = field(default_factory=tuple)
+    # Rework support: track if this is a reworked version
+    rework_of: str | None = None  # e.g., "userflips@v1.0.0-dev2"
+
+    def is_rework(self) -> bool:
+        """Check if this change is a reworked version.
+
+        A change is considered a rework if:
+        1. It has an explicit rework_of field set, OR
+        2. Its dependencies contain a self-reference with a tag (e.g., "userflips@v1.0.0-dev2")
+
+        Returns:
+            True if this is a reworked change
+        """
+        if self.rework_of:
+            return True
+
+        # Check dependencies for self-reference pattern
+        for dep in self.dependencies:
+            if "@" in dep:
+                base_name = dep.split("@")[0]
+                if base_name == self.name:
+                    return True
+        return False
+
+    def get_rework_tag(self) -> str | None:
+        """Extract the tag reference from rework dependency.
+
+        For a reworked change like "userflips [userflips@v1.0.0-dev2]",
+        returns "v1.0.0-dev2".
+
+        Returns:
+            The tag name, or None if not a rework
+        """
+        if self.rework_of and "@" in self.rework_of:
+            return self.rework_of.split("@", 1)[1]
+
+        for dep in self.dependencies:
+            if "@" in dep:
+                base_name, tag = dep.split("@", 1)
+                if base_name == self.name:
+                    return tag
+        return None
 
     def __post_init__(self) -> None:
         normalized = _normalize_change_fields(
@@ -93,6 +135,7 @@ class Change:
         dependencies: Sequence[str] | None = None,
         conflicts: Sequence[str] | None = None,
         tags: Sequence[str] | None = None,
+        rework_of: str | None = None,
     ) -> "Change":
         """Factory method that applies validation prior to instantiation."""
 
@@ -117,6 +160,7 @@ class Change:
             dependencies=normalized.dependencies,
             conflicts=normalized.conflicts,
             tags=normalized.tags,
+            rework_of=rework_of,
         )
 
 
@@ -152,7 +196,8 @@ class Plan:
         for entry in normalized_entries:
             if not isinstance(entry, (Change, Tag)):
                 raise TypeError(
-                    f"Plan.entries must contain Change or Tag instances, got: {type(entry).__name__}"
+                    f"Plan.entries must contain Change or Tag instances, "
+                    f"got: {type(entry).__name__}"
                 )
         object.__setattr__(self, "entries", normalized_entries)
 
@@ -161,15 +206,18 @@ class Plan:
         missing_dependencies: list[str] = []
         for entry in normalized_entries:
             if isinstance(entry, Change):
-                if entry.name in seen_changes:
-                    raise ValueError(f"Plan contains duplicate change name: {entry.name}")
+                # Allow duplicate change names (reworked changes)
+                # Duplicate names are valid in Sqitch when reworking changes
                 change_missing = False
                 for dependency in entry.dependencies:
                     if dependency == entry.name:
                         raise ValueError(f"Change '{entry.name}' cannot depend on itself")
-                    if dependency not in seen_changes or dependency not in satisfied_changes:
+                    # For dependencies, check base name (strip @tag suffix)
+                    dep_base = dependency.split("@")[0] if "@" in dependency else dependency
+                    if dep_base not in seen_changes or dep_base not in satisfied_changes:
                         missing_dependencies.append(f"{entry.name}->{dependency}")
                         change_missing = True
+                # Store the latest version of each change name
                 seen_changes[entry.name] = entry
                 if not change_missing:
                     satisfied_changes.add(entry.name)
@@ -190,15 +238,77 @@ class Plan:
         return tuple(entry for entry in self.entries if isinstance(entry, Tag))
 
     def get_change(self, name: str) -> Change:
-        try:
-            return next(
-                entry for entry in self.entries if isinstance(entry, Change) and entry.name == name
-            )
-        except StopIteration as exc:  # pragma: no cover - defensive API
-            raise KeyError(name) from exc
+        """Get a change by name.
+
+        For reworked changes (same name appearing multiple times), returns the
+        most recent version (last occurrence in the plan).
+
+        Args:
+            name: The change name to look up
+
+        Returns:
+            The Change object (latest version if reworked)
+
+        Raises:
+            KeyError: If no change with that name exists
+        """
+        result = None
+        for entry in self.entries:
+            if isinstance(entry, Change) and entry.name == name:
+                result = entry
+
+        if result is None:
+            raise KeyError(name)
+        return result
 
     def has_change(self, name: str) -> bool:
         return any(isinstance(entry, Change) and entry.name == name for entry in self.entries)
+
+    def get_latest_version(self, name: str) -> Change | None:
+        """Get the most recent version of a change by name.
+
+        For reworked changes, returns the last occurrence in the plan.
+        For non-reworked changes, returns the single occurrence.
+
+        Args:
+            name: The change name to look up
+
+        Returns:
+            The latest Change with that name, or None if not found
+        """
+        result = None
+        for entry in self.entries:
+            if isinstance(entry, Change) and entry.name == name:
+                result = entry
+        return result
+
+    def get_all_versions(self, name: str) -> tuple[Change, ...]:
+        """Get all versions of a change by name, in plan order.
+
+        For reworked changes, returns multiple Change objects.
+        For non-reworked changes, returns a single-element tuple.
+
+        Args:
+            name: The change name to look up
+
+        Returns:
+            Tuple of all Changes with that name, in order of appearance
+        """
+        return tuple(
+            entry for entry in self.entries if isinstance(entry, Change) and entry.name == name
+        )
+
+    def is_reworked(self, name: str) -> bool:
+        """Check if a change has been reworked (appears multiple times).
+
+        Args:
+            name: The change name to check
+
+        Returns:
+            True if the change appears more than once in the plan
+        """
+        count = sum(1 for entry in self.entries if isinstance(entry, Change) and entry.name == name)
+        return count > 1
 
     def iter_changes(self) -> Iterable[Change]:
         for entry in self.entries:

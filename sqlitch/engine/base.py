@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+import importlib
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-import importlib
 from types import MappingProxyType, ModuleType
 from typing import Any, TypeVar
 
@@ -133,7 +133,8 @@ def connection_factory_for_engine(engine: str) -> ConnectionFactory:
     return ConnectionFactory(canonical, module_name, connect_attribute)
 
 
-EngineType = TypeVar("EngineType", bound="Engine")
+# TypeVar follows PEP 484 naming: PascalCase for type variables
+EngineType = TypeVar("EngineType", bound="Engine")  # pylint: disable=invalid-name
 
 
 class Engine(ABC):

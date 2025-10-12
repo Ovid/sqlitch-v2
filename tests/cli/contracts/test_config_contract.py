@@ -1,12 +1,20 @@
-"""Contract parity tests for ``sqlitch config``."""
+"""Contract parity tests for ``sqlitch config``.
+
+Perl Reference:
+- Source: sqitch/lib/App/Sqitch/Command/config.pm
+- POD: sqitch/lib/sqitch-config.pod
+- Tests: sqitch/t/config.t
+
+Includes CLI signature contract tests merged from tests/cli/commands/
+"""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
-from click.testing import CliRunner
 import pytest
+from click.testing import CliRunner
 
 from sqlitch.cli.main import main
 from tests.support.test_helpers import isolated_test_context
@@ -130,7 +138,9 @@ def test_config_list_plain_outputs_lines(runner: CliRunner) -> None:
     """Plain --list should emit key=value pairs sorted alphabetically."""
 
     with isolated_test_context(runner) as (runner, temp_dir):
-        _write_config((temp_dir / "sqitch.conf"), "[DEFAULT]\ncolor = blue\n[core]\nengine = sqlite\n")
+        _write_config(
+            (temp_dir / "sqitch.conf"), "[DEFAULT]\ncolor = blue\n[core]\nengine = sqlite\n"
+        )
         env = {"SQLITCH_CONFIG_ROOT": str((temp_dir / "config-root"))}
 
         result = runner.invoke(main, ["config", "--list"], env=env)
@@ -341,3 +351,104 @@ def test_config_requires_section_and_option_components(runner: CliRunner) -> Non
 
         assert result.exit_code != 0
         assert "must include both section and option components" in result.stderr
+
+
+# =============================================================================
+# CLI Contract Tests (merged from tests/cli/commands/test_config_contract.py)
+# =============================================================================
+
+
+class TestConfigCommandContract:
+    """Contract tests for 'sqlitch config' command signature and behavior."""
+
+    @pytest.fixture
+    def runner(self) -> CliRunner:
+        """Provide a Click test runner."""
+        return CliRunner()
+
+    # CC-CONFIG-001: Action without name (--list)
+    def test_config_accepts_list_action(self, runner: CliRunner) -> None:
+        """Test that 'sqlitch config --list' works without additional arguments.
+
+        Contract: CC-CONFIG-001
+        Perl behavior: --list action requires no name argument
+        """
+        with isolated_test_context(runner) as (runner, temp_dir):
+            result = runner.invoke(main, ["config", "--list"])
+
+            # Should not be parsing error
+            assert result.exit_code != 2, (
+                f"Should accept --list without name argument. "
+                f"Exit code: {result.exit_code}, Output: {result.output}"
+            )
+
+    # CC-CONFIG-002: Get with name
+    def test_config_accepts_get_with_name(self, runner: CliRunner) -> None:
+        """Test that 'sqlitch config' accepts name argument for getting values.
+
+        Contract: CC-CONFIG-002
+        Perl behavior: config uses positional NAME argument for getting values
+        """
+        with isolated_test_context(runner) as (runner, temp_dir):
+            result = runner.invoke(main, ["config", "user.name"])
+
+            # Should accept the name argument (exit 0 or 1, not 2)
+            assert result.exit_code != 2, (
+                f"Should accept name argument. Exit code: {result.exit_code}, "
+                f"Output: {result.output}"
+            )
+
+
+class TestConfigGlobalContracts:
+    """Test global contracts for 'config' command."""
+
+    @pytest.fixture
+    def runner(self) -> CliRunner:
+        """Provide a Click test runner."""
+        return CliRunner()
+
+    # GC-001: Help flag support
+    def test_config_help_flag(self, runner: CliRunner) -> None:
+        """Test that 'sqlitch config --help' displays help and exits 0."""
+        with isolated_test_context(runner) as (runner, temp_dir):
+            result = runner.invoke(main, ["config", "--help"])
+            assert result.exit_code == 0
+            assert "config" in result.output.lower()
+            assert "usage" in result.output.lower()
+
+    # GC-002: Global options recognition
+    def test_config_accepts_quiet_flag(self, runner: CliRunner) -> None:
+        """Test that 'sqlitch config' accepts --quiet global option."""
+        with isolated_test_context(runner) as (runner, temp_dir):
+            result = runner.invoke(main, ["config", "--quiet", "--list"])
+            assert "no such option" not in result.output.lower()
+            assert result.exit_code != 2
+
+    def test_config_accepts_verbose_flag(self, runner: CliRunner) -> None:
+        """Test that 'sqlitch config' accepts --verbose global option."""
+        with isolated_test_context(runner) as (runner, temp_dir):
+            result = runner.invoke(main, ["config", "--verbose", "--list"])
+            assert "no such option" not in result.output.lower()
+            assert result.exit_code != 2
+
+    def test_config_accepts_chdir_option(self, runner: CliRunner) -> None:
+        """Test that 'sqlitch config' accepts --chdir global option."""
+        with isolated_test_context(runner) as (runner, temp_dir):
+            result = runner.invoke(main, ["config", "--chdir", "/tmp", "--list"])
+            assert "no such option" not in result.output.lower()
+            assert result.exit_code != 2
+
+    def test_config_accepts_no_pager_flag(self, runner: CliRunner) -> None:
+        """Test that 'sqlitch config' accepts --no-pager global option."""
+        with isolated_test_context(runner) as (runner, temp_dir):
+            result = runner.invoke(main, ["config", "--no-pager", "--list"])
+            assert "no such option" not in result.output.lower()
+            assert result.exit_code != 2
+
+    # GC-005: Unknown option rejection
+    def test_config_rejects_unknown_option(self, runner: CliRunner) -> None:
+        """Test that 'sqlitch config' rejects unknown options with exit code 2."""
+        with isolated_test_context(runner) as (runner, temp_dir):
+            result = runner.invoke(main, ["config", "--nonexistent"])
+            assert result.exit_code == 2
+            assert "no such option" in result.output.lower()

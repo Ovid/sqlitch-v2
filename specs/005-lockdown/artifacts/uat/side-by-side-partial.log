@@ -1,0 +1,666 @@
+============================================================
+Sqitch vs. Sqlitch Functional Equivalence Test (User-Focused)
+============================================================
+
+Checking for required commands...
+Setting up test environment...
+Test directories created.
+
+
+============================================================
+▶️  STEP 1: Initialize Project
+    COMMAND: sqlitch init flipr --uri https://github.com/sqitchers/sqitch-sqlite-intro/ --engine sqlite
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+Created sqitch.conf
+Created sqitch.plan
+Created deploy/
+Created revert/
+Created verify/
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+Created sqitch.conf
+Created sqitch.plan
+Created deploy/
+Created revert/
+Created verify/
+
+    ✅ Step completed successfully
+
+============================================================
+▶️  STEP 2: Configure User Name
+    COMMAND: sqlitch config user.name Test User
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+Set user.name in local scope
+⚠️  Command output differs (this may be OK if user state matches)
+
+Output diff:
+--- sqitch(out)
++++ sqlitch(out)
+@@ -0,0 +1 @@
++Set user.name in local scope
+
+    ✅ Step completed successfully
+
+============================================================
+▶️  STEP 3: Configure User Email
+    COMMAND: sqlitch config user.email test@example.com
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+Set user.email in local scope
+⚠️  Command output differs (this may be OK if user state matches)
+
+Output diff:
+--- sqitch(out)
++++ sqlitch(out)
+@@ -0,0 +1 @@
++Set user.email in local scope
+
+    ✅ Step completed successfully
+
+============================================================
+▶️  STEP 4: Disable Pager
+    COMMAND: sqlitch config --bool core.pager false
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+Set core.pager in local scope
+⚠️  Command output differs (this may be OK if user state matches)
+
+Output diff:
+--- sqitch(out)
++++ sqlitch(out)
+@@ -0,0 +1 @@
++Set core.pager in local scope
+
+    ✅ Step completed successfully
+
+============================================================
+▶️  STEP 5: Add 'users' Table
+    COMMAND: sqlitch add users -n Creates table to track our users.
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+Created deploy/users.sql
+Created revert/users.sql
+Created verify/users.sql
+Added "users" to sqitch.plan
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+Created deploy/users.sql
+Created revert/users.sql
+Created verify/users.sql
+Added "users" to sqitch.plan
+
+    ✅ Step completed successfully
+
+============================================================
+▶️  STEP 6: Deploy 'users' Table
+    COMMAND: sqlitch deploy db:sqlite:flipr_test.db
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+Adding registry tables to db:sqlite:sqitch.db
+Deploying changes to db:sqlite:flipr_test.db
+  + users .. ok
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+Deploying plan 'flipr' to target 'db:sqlite:flipr_test.db'.
+Adding registry tables to db:sqlite:/Users/poecurt/projects/sqlitch/uat/sqlitch_results/sqitch.db
+  + users
+Deployment complete. Applied 1 change(s).
+⚠️  Command output differs (this may be OK if user state matches)
+
+Output diff:
+--- sqitch(out)
++++ sqlitch(out)
+@@ -1,3 +1,4 @@
+-Adding registry tables to db:sqlite:sqitch.db
+-Deploying changes to db:sqlite:flipr_test.db
+-  + users .. ok+Deploying plan 'flipr' to target 'db:sqlite:flipr_test.db'.
++Adding registry tables to db:sqlite:/Users/poecurt/projects/sqlitch/uat/sqlitch_results/sqitch.db
++  + users
++Deployment complete. Applied 1 change(s).
+
+    ✅ User-visible database 'sqitch.db' matches
+
+    ✅ User-visible database 'flipr_test.db' matches
+
+    ✅ Step completed successfully
+
+============================================================
+▶️  STEP 7: Verify 'users' Deployment
+    COMMAND: sqlitch verify db:sqlite:flipr_test.db
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+Verifying db:sqlite:flipr_test.db
+  * users .. ok
+Verify successful
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+Verifying flipr_test
+  * users .. ok
+Verify successful
+⚠️  Command output differs (this may be OK if user state matches)
+
+Output diff:
+--- sqitch(out)
++++ sqlitch(out)
+@@ -1,3 +1,3 @@
+-Verifying db:sqlite:flipr_test.db
++Verifying flipr_test
+   * users .. ok
+ Verify successful
+
+    ✅ User-visible database 'sqitch.db' matches
+
+    ✅ User-visible database 'flipr_test.db' matches
+
+    ✅ Step completed successfully
+
+============================================================
+▶️  STEP 8: Check Status After Deploy
+    COMMAND: sqlitch status db:sqlite:flipr_test.db
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+# On database db:sqlite:flipr_test.db
+# Project:  flipr
+# Change:   6e32bfc8c29a1c5cafc8eebc500fde1a1e4cb380
+# Name:     users
+# Deployed: 2025-10-11 10:46:03 +0200
+# By:       Test User <test@example.com>
+# 
+Nothing to deploy (up-to-date)
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+# On database db:sqlite:flipr_test.db
+# Project:  flipr
+# Change:   bc897e24c02b1302513e48bace57b9b00bfefc78
+# Name:     users
+# Deployed: 2025-10-11T08:46:03.364398+00:00
+# By:       Test User <test@example.com>
+# 
+Nothing to deploy (up-to-date)
+⚠️  Command output differs (this may be OK if user state matches)
+
+Output diff:
+--- sqitch(out)
++++ sqlitch(out)
+@@ -2,7 +2,7 @@
+ # Project:  flipr
+ # Change:   [REDACTED_CHANGE_ID]
+ # Name:     users
+-# Deployed: 2025-10-11 10:46:03 +0200
++# Deployed: 2025-10-11T08:46:03.364398+00:00
+ # By:       Test User <test@example.com>
+ # 
+ Nothing to deploy (up-to-date)
+
+    ✅ User-visible database 'sqitch.db' matches
+
+    ✅ User-visible database 'flipr_test.db' matches
+
+    ✅ Step completed successfully
+
+============================================================
+▶️  STEP 9: Check DB Schema with sqlite3
+    COMMAND: sqlite3 flipr_test.db .tables
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+users
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+users
+
+    ✅ User-visible database 'sqitch.db' matches
+
+    ✅ User-visible database 'flipr_test.db' matches
+
+    ✅ Step completed successfully
+
+============================================================
+▶️  STEP 10: Revert 'users' Table
+    COMMAND: sqlitch revert db:sqlite:flipr_test.db -y
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+Reverting all changes from db:sqlite:flipr_test.db
+  - users .. ok
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+Reverting all changes from db:sqlite:flipr_test.db
+  - users .. ok
+
+    ✅ User-visible database 'sqitch.db' matches
+
+    ✅ User-visible database 'flipr_test.db' matches
+
+    ✅ Step completed successfully
+
+============================================================
+▶️  STEP 11: Verify Revert with sqlite3
+    COMMAND: sqlite3 flipr_test.db .tables
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+
+    ✅ User-visible database 'sqitch.db' matches
+
+    ✅ User-visible database 'flipr_test.db' matches
+
+    ✅ Step completed successfully
+
+============================================================
+▶️  STEP 12: Check Sqitch Log
+    COMMAND: sqlitch log db:sqlite:flipr_test.db
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+On database db:sqlite:flipr_test.db
+Revert 6e32bfc8c29a1c5cafc8eebc500fde1a1e4cb380
+Name:      users
+Committer: Test User <test@example.com>
+Date:      2025-10-11 10:46:04 +0200
+
+    Creates table to track our users.
+
+Deploy 6e32bfc8c29a1c5cafc8eebc500fde1a1e4cb380
+Name:      users
+Committer: Test User <test@example.com>
+Date:      2025-10-11 10:46:03 +0200
+
+    Creates table to track our users.
+
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+On database db:sqlite:flipr_test.db
+Revert bc897e24c02b1302513e48bace57b9b00bfefc78
+Name:      users
+Committer: Test User <test@example.com>
+Date:      2025-10-11T08:46:04.236763+00:00
+
+    Creates table to track our users.
+
+Deploy bc897e24c02b1302513e48bace57b9b00bfefc78
+Name:      users
+Committer: Test User <test@example.com>
+Date:      2025-10-11T08:46:03.364398+00:00
+    Creates table to track our users.
+
+⚠️  Command output differs (this may be OK if user state matches)
+
+Output diff:
+--- sqitch(out)
++++ sqlitch(out)
+@@ -2,13 +2,12 @@
+ Revert [REDACTED_CHANGE_ID]
+ Name:      users
+ Committer: Test User <test@example.com>
+-Date:      2025-10-11 10:46:SS +0200
++Date:      2025-10-11T08:46:SS+00:00
+ 
+     Creates table to track our users.
+ 
+ Deploy [REDACTED_CHANGE_ID]
+ Name:      users
+ Committer: Test User <test@example.com>
+-Date:      2025-10-11 10:46:SS +0200
+-
++Date:      2025-10-11T08:46:SS+00:00
+     Creates table to track our users.
+
+
+    ✅ User-visible database 'sqitch.db' matches
+
+    ✅ User-visible database 'flipr_test.db' matches
+
+    ✅ Step completed successfully
+
+============================================================
+▶️  STEP 13: Add Target 'flipr_test'
+    COMMAND: sqlitch target add flipr_test db:sqlite:flipr_test.db
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+Added target flipr_test
+⚠️  Command output differs (this may be OK if user state matches)
+
+Output diff:
+--- sqitch(out)
++++ sqlitch(out)
+@@ -0,0 +1 @@
++Added target flipr_test
+
+    ✅ User-visible database 'sqitch.db' matches
+
+    ✅ User-visible database 'flipr_test.db' matches
+
+    ✅ Step completed successfully
+
+============================================================
+▶️  STEP 14: Add Engine for Target
+    COMMAND: sqlitch engine add sqlite flipr_test
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+Created engine 'sqlite'
+⚠️  Command output differs (this may be OK if user state matches)
+
+Output diff:
+--- sqitch(out)
++++ sqlitch(out)
+@@ -0,0 +1 @@
++Created engine 'sqlite'
+
+    ✅ User-visible database 'sqitch.db' matches
+
+    ✅ User-visible database 'flipr_test.db' matches
+
+    ✅ Step completed successfully
+
+============================================================
+▶️  STEP 15: Enable Deploy Verification
+    COMMAND: sqlitch config --bool deploy.verify true
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+Set deploy.verify in local scope
+⚠️  Command output differs (this may be OK if user state matches)
+
+Output diff:
+--- sqitch(out)
++++ sqlitch(out)
+@@ -0,0 +1 @@
++Set deploy.verify in local scope
+
+    ✅ User-visible database 'sqitch.db' matches
+
+    ✅ User-visible database 'flipr_test.db' matches
+
+    ✅ Step completed successfully
+
+============================================================
+▶️  STEP 16: Enable Rebase Verification
+    COMMAND: sqlitch config --bool rebase.verify true
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+Set rebase.verify in local scope
+⚠️  Command output differs (this may be OK if user state matches)
+
+Output diff:
+--- sqitch(out)
++++ sqlitch(out)
+@@ -0,0 +1 @@
++Set rebase.verify in local scope
+
+    ✅ User-visible database 'sqitch.db' matches
+
+    ✅ User-visible database 'flipr_test.db' matches
+
+    ✅ Step completed successfully
+
+============================================================
+▶️  STEP 17: Deploy Again with Target
+    COMMAND: sqlitch deploy
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+Deploying changes to flipr_test
+  + users .. ok
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+Deploying plan 'flipr' to target 'db:sqlite:flipr_test.db'.
+  + users
+Deployment complete. Applied 1 change(s).
+⚠️  Command output differs (this may be OK if user state matches)
+
+Output diff:
+--- sqitch(out)
++++ sqlitch(out)
+@@ -1,2 +1,3 @@
+-Deploying changes to flipr_test
+-  + users .. ok+Deploying plan 'flipr' to target 'db:sqlite:flipr_test.db'.
++  + users
++Deployment complete. Applied 1 change(s).
+
+    ✅ User-visible database 'sqitch.db' matches
+
+    ✅ User-visible database 'flipr_test.db' matches
+
+    ✅ Step completed successfully
+
+============================================================
+▶️  STEP 18: Add 'flips' Table
+    COMMAND: sqlitch add flips --requires users -n Adds table for storing flips.
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+Created deploy/flips.sql
+Created revert/flips.sql
+Created verify/flips.sql
+Added "flips [users]" to sqitch.plan
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+Created deploy/flips.sql
+Created revert/flips.sql
+Created verify/flips.sql
+Added "flips" to sqitch.plan
+⚠️  Command output differs (this may be OK if user state matches)
+
+Output diff:
+--- sqitch(out)
++++ sqlitch(out)
+@@ -1,4 +1,4 @@
+ Created deploy/flips.sql
+ Created revert/flips.sql
+ Created verify/flips.sql
+-Added "flips [users]" to sqitch.plan+Added "flips" to sqitch.plan
+
+    ✅ User-visible database 'sqitch.db' matches
+
+    ✅ User-visible database 'flipr_test.db' matches
+
+    ✅ Step completed successfully
+
+============================================================
+▶️  STEP 19: Deploy 'flips' Table
+    COMMAND: sqlitch deploy
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+Deploying changes to flipr_test
+  + flips .. ok
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+Deploying plan 'flipr' to target 'db:sqlite:flipr_test.db'.
+  + flips
+Deployment complete. Applied 1 change(s).
+⚠️  Command output differs (this may be OK if user state matches)
+
+Output diff:
+--- sqitch(out)
++++ sqlitch(out)
+@@ -1,2 +1,3 @@
+-Deploying changes to flipr_test
+-  + flips .. ok+Deploying plan 'flipr' to target 'db:sqlite:flipr_test.db'.
++  + flips
++Deployment complete. Applied 1 change(s).
+
+    ✅ User-visible database 'sqitch.db' matches
+
+    ✅ User-visible database 'flipr_test.db' matches
+
+    ✅ Step completed successfully
+
+============================================================
+▶️  STEP 20: Verify All Deployments
+    COMMAND: sqlitch verify
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+Verifying flipr_test
+  * users .. ok
+  * flips .. ok
+Verify successful
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+Verifying flipr_test
+  * users .. ok
+  * flips .. ok
+Verify successful
+
+    ✅ User-visible database 'sqitch.db' matches
+
+    ✅ User-visible database 'flipr_test.db' matches
+
+    ✅ Step completed successfully
+
+============================================================
+▶️  STEP 21: Check DB Schema for 'users' and 'flips'
+    COMMAND: sqlite3 flipr_test.db .tables
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+flips  users
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+flips  users
+
+    ✅ User-visible database 'sqitch.db' matches
+
+    ✅ User-visible database 'flipr_test.db' matches
+
+    ✅ Step completed successfully
+
+============================================================
+▶️  STEP 22: Partial Revert to HEAD^
+    COMMAND: sqlitch revert --to @HEAD^ -y
+============================================================
+
+    ┌───────────────────────────┐
+    │   Running sqitch (💎)     │
+    └───────────────────────────┘
+Reverting changes to users from flipr_test
+  - flips .. ok
+
+    ┌───────────────────────────┐
+    │   Running sqlitch (✨)    │
+    └───────────────────────────┘
+Reverting changes to users from flipr_test
+  - flips .. ok
+
+    ✅ User-visible database 'sqitch.db' matches
+
+    ✅ User-visible database 'flipr_test.db' matches
+
+    ✅ Step completed successfully
+
+🛑 Stopping after step 22 as requested (--stop 22)

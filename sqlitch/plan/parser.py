@@ -2,17 +2,18 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
 import hashlib
 import re
 import shlex
+from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
 from uuid import UUID
 
-from .model import Change, Plan, PlanEntry, Tag
 from sqlitch.plan.utils import slugify_change_name
 from sqlitch.utils.time import parse_iso_datetime
+
+from .model import Change, Plan, PlanEntry, Tag
 
 
 class PlanParseError(ValueError):
@@ -51,8 +52,8 @@ def parse_plan(path: Path | str, *, default_engine: str | None = None) -> Plan:
 
     headers: dict[str, str] = {}
     entries: list[PlanEntry] = []
-    change_tags: dict[str, list[str]] = {}
-    last_change: Change | None = None
+    change_tags_by_index: dict[int, list[str]] = {}  # Map change index to tag names
+    last_change_index: int | None = None
 
     for line_no, raw_line in enumerate(content.splitlines(), start=1):
         line = raw_line.strip()
@@ -63,23 +64,44 @@ def parse_plan(path: Path | str, *, default_engine: str | None = None) -> Plan:
             headers[key] = value
             continue
 
-        tokens = shlex.split(line, comments=False, posix=True)
+        # Try parsing as compact entry first (most common case)
+        # Compact format doesn't use shell quoting, so avoid shlex
         entry: PlanEntry
-        if not tokens:
-            continue
-        entry_type, *rest = tokens
-        if entry_type == "change":
-            entry = _parse_change(rest, plan_path.parent, line_no)
-        elif entry_type == "tag":
-            entry = _parse_tag(rest, line_no)
-        else:
+        # pylint: disable=invalid-sequence-index  # last_change_index is int or None
+        last_change = entries[last_change_index] if last_change_index is not None else None
+        try:
             entry = _parse_compact_entry(raw_line, plan_path.parent, line_no, last_change)
+        except (ValueError, PlanParseError):
+            # Fall back to verbose format parsing with shlex
+            try:
+                tokens = shlex.split(line, comments=False, posix=True)
+            except ValueError as exc:
+                # shlex parsing failed (e.g., unclosed quotes)
+                # Try one more time with the compact parser in case it's just a parsing issue
+                try:
+                    entry = _parse_compact_entry(raw_line, plan_path.parent, line_no, last_change)
+                except Exception:
+                    # Re-raise the original shlex error
+                    raise PlanParseError(str(exc)) from exc
+            else:
+                if not tokens:
+                    continue
+                entry_type, *rest = tokens
+                if entry_type == "change":
+                    entry = _parse_change(rest, plan_path.parent, line_no)
+                elif entry_type == "tag":
+                    entry = _parse_tag(rest, line_no)
+                else:
+                    # Assume it's a compact entry
+                    entry = _parse_compact_entry(raw_line, plan_path.parent, line_no, last_change)
 
         entries.append(entry)
         if isinstance(entry, Change):
-            last_change = entry
+            last_change_index = len(entries) - 1
         elif isinstance(entry, Tag):
-            change_tags.setdefault(entry.change_ref, []).append(entry.name)
+            # Tag references the last change by index, not by name
+            if last_change_index is not None:
+                change_tags_by_index.setdefault(last_change_index, []).append(entry.name)
 
     project = headers.get("project")
     header_engine = headers.get("default_engine")
@@ -92,7 +114,7 @@ def parse_plan(path: Path | str, *, default_engine: str | None = None) -> Plan:
 
     adjusted_entries = _apply_rework_metadata(
         entries=tuple(entries),
-        change_tags=change_tags,
+        change_tags_by_index=change_tags_by_index,
         base_dir=plan_path.parent,
     )
 
@@ -136,9 +158,9 @@ def _parse_change(tokens: Sequence[str], base_path: Path, line_no: int) -> Chang
     notes = metadata.get("notes")
     depends = _split_csv(metadata.get("depends"))
     tags = _split_csv(metadata.get("tags"))
-    change_id = (
-        _parse_uuid(metadata.get("change_id"), line_no) if metadata.get("change_id") else None
-    )
+
+    change_id_str = metadata.get("change_id")
+    change_id = _parse_uuid(change_id_str, line_no) if change_id_str else None
 
     script_paths: dict[str, str | None] = {
         "deploy": deploy,
@@ -188,7 +210,7 @@ def _parse_compact_entry(
     raw_line: str,
     base_dir: Path,
     line_no: int,
-    last_change: Change | None,
+    last_change: Change | Tag | None,
 ) -> PlanEntry:
     body, note = _split_note(raw_line)
     entry = body.strip()
@@ -237,24 +259,74 @@ def _parse_compact_change(line: str, note: str | None, line_no: int, base_dir: P
 def _apply_rework_metadata(
     *,
     entries: Sequence[PlanEntry],
-    change_tags: dict[str, list[str]],
+    change_tags_by_index: dict[int, list[str]],
     base_dir: Path,
 ) -> tuple[PlanEntry, ...]:
-    """Attach tag metadata and reworked script paths to change entries."""
+    """Attach tag metadata and reworked script paths to change entries.
 
+    Tags are matched to specific change instances by their index in the plan,
+    not by name. This correctly handles reworked changes where the same name
+    appears multiple times with different tags.
+
+    For reworked changes (where dependencies reference the same change with a tag),
+    script paths are resolved to use the @tag suffix.
+    """
+
+    # First pass: identify which changes are being reworked and at which tag
+    # Maps (change_name, instance_index) -> rework_tag
+    # A reworked change has a dependency on its previous version like "users@v1.0.0"
+    # The NEW instance (the reworked one) should have the @tag suffix in its scripts
+    rework_tags: dict[tuple[str, int], str] = {}
+    name_counts: dict[str, int] = {}
+
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, Change):
+            continue
+
+        # Check if THIS change is a rework by examining its dependencies
+        # A reworked change has a dependency like "users@v1.0.0" where the name matches its own name
+        for dep in entry.dependencies:
+            if "@" in dep:
+                dep_name, dep_tag = dep.split("@", 1)
+                # If this change depends on a tagged version of itself, it's a rework
+                if dep_name == entry.name:
+                    # Mark THIS instance as reworked (should use @tag scripts)
+                    current_instance = name_counts.get(entry.name, 0)
+                    rework_tags[(entry.name, current_instance)] = dep_tag
+
+        # Count this instance AFTER checking dependencies
+        name_counts[entry.name] = name_counts.get(entry.name, 0) + 1
+
+    # Second pass: apply tags and script paths
+    name_counts_second_pass: dict[str, int] = {}
     adjusted: list[PlanEntry] = []
-    for entry in entries:
+
+    for index, entry in enumerate(entries):
         if not isinstance(entry, Change):
             adjusted.append(entry)
             continue
 
-        tags = tuple(change_tags.get(entry.name, ()))
-        script_paths = dict(entry.script_paths)
-        if tags:
+        # Get the instance index for this change
+        instance_index = name_counts_second_pass.get(entry.name, 0)
+        name_counts_second_pass[entry.name] = instance_index + 1
+
+        # Get tags for THIS specific change instance by its index
+        tags = tuple(change_tags_by_index.get(index, ()))
+
+        # Check if this specific instance was reworked
+        rework_tag = rework_tags.get((entry.name, instance_index))
+
+        # At this point in parsing, script_paths are already resolved to Path | None
+        script_paths: dict[str, Path | None] = {
+            k: v if not isinstance(v, str) else Path(v) for k, v in entry.script_paths.items()
+        }
+        # If this change was reworked (has a later instance that references it with @tag),
+        # use the @tag suffixed scripts
+        if rework_tag:
             script_paths = _resolve_reworked_script_paths(
                 change_name=entry.name,
                 script_paths=script_paths,
-                tags=tags,
+                tags=(rework_tag,),  # Use the rework tag, not the change's own tags
                 base_dir=base_dir,
             )
 
@@ -268,6 +340,9 @@ def _apply_rework_metadata(
                 change_id=entry.change_id,
                 dependencies=entry.dependencies,
                 tags=tags or entry.tags,
+                rework_of=(
+                    f"{entry.name}@{rework_tag}" if rework_tag and instance_index > 0 else None
+                ),
             )
         )
 
@@ -281,7 +356,11 @@ def _resolve_reworked_script_paths(
     tags: Sequence[str],
     base_dir: Path,
 ) -> dict[str, Path | None]:
-    """Compute script paths for reworked changes preferring ``@tag`` suffixes."""
+    """Compute script paths for reworked changes preferring ``@tag`` suffixes.
+
+    Note: script_paths values are already constructed relative to base_dir,
+    so we use them as-is to find the @tag suffixed versions.
+    """
 
     if not tags:
         return script_paths
@@ -295,7 +374,9 @@ def _resolve_reworked_script_paths(
             resolved[kind] = None
             continue
 
-        original_path = original if original.is_absolute() else base_dir / original
+        # Original is already the correct path (constructed as base_dir / kind / name.sql)
+        # We just need to check for @tag suffixed versions in the same directory
+        original_path = Path(original)
         parent = original_path.parent
         extension = original_path.suffix
 
@@ -312,9 +393,11 @@ def _resolve_reworked_script_paths(
 
 
 def _parse_compact_tag(
-    line: str, note: str | None, line_no: int, last_change: Change | None
+    line: str, note: str | None, line_no: int, last_change: Change | Tag | None
 ) -> Tag:
-    if last_change is None:
+    # Extract the last actual Change (skip Tags)
+    last_actual_change = last_change if isinstance(last_change, Change) else None
+    if last_actual_change is None:
         raise PlanParseError(f"Tag on line {line_no} has no preceding change to reference")
 
     match = _TAG_PATTERN.match(line)
@@ -327,7 +410,7 @@ def _parse_compact_tag(
 
     return Tag(
         name=name,
-        change_ref=last_change.name,
+        change_ref=last_actual_change.name,
         planner=planner,
         tagged_at=tagged_at,
         note=_clean_note(note),

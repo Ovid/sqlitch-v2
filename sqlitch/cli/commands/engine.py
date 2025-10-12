@@ -13,9 +13,9 @@ from sqlitch.cli.main import CLIContext
 from sqlitch.config.resolver import resolve_config
 from sqlitch.utils.fs import ArtifactConflictError, resolve_config_file
 
+from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
 from ._context import quiet_mode_enabled, require_cli_context
-from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["engine_group"]
 
@@ -83,11 +83,11 @@ def add_engine(
     """Create a new engine definition in the configuration root."""
 
     cli_context = require_cli_context(ctx)
-    
+
     # Resolve to validate, but store the original value if it's a target name
     resolved_uri = _resolve_engine_uri(cli_context=cli_context, candidate=uri)
     _validate_engine_uri(resolved_uri)
-    
+
     # If the original value wasn't a URI, it was a target name - store the name, not the URI
     is_target_alias = not _is_supported_engine_uri(uri)
     target_value = uri if is_target_alias else resolved_uri
@@ -132,11 +132,11 @@ def update_engine(
     """Update an existing engine definition."""
 
     cli_context = require_cli_context(ctx)
-    
+
     # Resolve to validate, but store the original value if it's a target name
     resolved_uri = _resolve_engine_uri(cli_context=cli_context, candidate=uri)
     _validate_engine_uri(resolved_uri)
-    
+
     # If the original value wasn't a URI, it was a target name - store the name, not the URI
     is_target_alias = not _is_supported_engine_uri(uri)
     target_value = uri if is_target_alias else resolved_uri
@@ -262,7 +262,7 @@ def _section_name(name: str) -> str:
 
 def _load_parser(path: Path) -> configparser.ConfigParser:
     parser = configparser.ConfigParser(interpolation=None)
-    parser.optionxform = str
+    parser.optionxform = str  # type: ignore[assignment,method-assign]
     if path.exists():
         parser.read(path, encoding="utf-8")
     return parser

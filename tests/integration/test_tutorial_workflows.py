@@ -742,5 +742,31 @@ class TestScenario9TargetEngineParity:
             assert not parser.has_section('engine "sqlite"')
 
 
+# Migrated from tests/regression/test_sqitch_dropin.py
+@pytest.mark.skip(reason="Pending T030: drop-in Sqitch artifact parity")
+def test_sqitch_dropin_behaviour() -> None:
+    """Placeholder regression test for T030 - drop-in Sqitch artifact parity.
+
+    When implemented, this should test that SQLitch can successfully operate as
+    a drop-in replacement for Sqitch, reading and writing artifacts (config files,
+    plan files, databases) that are fully compatible with Sqitch.
+    """
+    ...
+
+
+# Migrated from tests/regression/test_sqitch_conflicts.py
+@pytest.mark.skip(
+    reason="Pending T030a: enforce blocking conflicts between Sqitch and SQLitch artifacts"
+)
+def test_sqitch_sqlitch_conflict_detection() -> None:
+    """Placeholder regression test for T030a - Sqitch/SQLitch conflict detection.
+
+    When implemented, this should test that when both Sqitch and SQLitch artifacts
+    exist in the same project (e.g., both sqitch.db and sqlitch.db), the system
+    detects the conflict and provides clear guidance on resolution.
+    """
+    ...
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

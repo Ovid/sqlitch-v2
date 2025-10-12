@@ -12,9 +12,9 @@ Tests for T028: Config implementation (validation)
 from __future__ import annotations
 
 import os
+
 import pytest
 from click.testing import CliRunner
-from pathlib import Path
 
 from sqlitch.cli.main import main
 from tests.support.test_helpers import isolated_test_context
@@ -49,9 +49,7 @@ class TestConfigGetOperation:
             user_config = user_dir / "sqitch.conf"
             user_config.write_text("[user]\n\tname = Test User\n")
 
-            result = runner.invoke(
-                main, ["config", "--user", "user.name"]
-            )
+            result = runner.invoke(main, ["config", "--user", "user.name"])
 
             # Should read from user config
             assert result.exit_code == 0, f"Config get --user failed: {result.output}"
@@ -67,9 +65,7 @@ class TestConfigGetOperation:
             user_config.write_text("[user]\n\tname = Global Test User\n")
 
             # --global should be accepted as alias for --user
-            result = runner.invoke(
-                main, ["config", "--global", "user.name"]
-            )
+            result = runner.invoke(main, ["config", "--global", "user.name"])
 
             assert result.exit_code == 0, f"Config get --global failed: {result.output}"
             assert "Global Test User" in result.output, "Should return user name via --global"
@@ -236,9 +232,7 @@ class TestConfigListOperation:
             user_config = user_dir / "sqitch.conf"
             user_config.write_text("[user]\n\tname = Test User\n")
 
-            result = runner.invoke(
-                main, ["config", "--list", "--user"]
-            )
+            result = runner.invoke(main, ["config", "--list", "--user"])
 
             assert result.exit_code == 0, f"Config --list --user failed: {result.output}"
             # Should show user config
@@ -259,9 +253,7 @@ class TestConfigListOperation:
             user_config.write_text("[user]\n\tname = Global User\n")
 
             # --global should be accepted as alias for --user
-            result = runner.invoke(
-                main, ["config", "--list", "--global"]
-            )
+            result = runner.invoke(main, ["config", "--list", "--global"])
 
             assert result.exit_code == 0, f"Config --list --global failed: {result.output}"
             assert (
@@ -360,11 +352,13 @@ class TestConfigEnvironmentOverrides:
 
             # Merge with existing environment from isolated_test_context
             env = os.environ.copy()
-            env.update({
-                "SQITCH_SYSTEM_CONFIG": str(system_conf),
-                "SQITCH_USER_CONFIG": str(user_conf),
-                "SQITCH_CONFIG": str(local_conf),
-            })
+            env.update(
+                {
+                    "SQITCH_SYSTEM_CONFIG": str(system_conf),
+                    "SQITCH_USER_CONFIG": str(user_conf),
+                    "SQITCH_CONFIG": str(local_conf),
+                }
+            )
 
             result = runner.invoke(main, ["config", "core.engine"], env=env)
 
@@ -383,10 +377,12 @@ class TestConfigEnvironmentOverrides:
 
             # Merge with existing environment from isolated_test_context
             env = os.environ.copy()
-            env.update({
-                "SQITCH_CONFIG": str(fallback_conf),
-                "SQLITCH_CONFIG": str(preferred_conf),
-            })
+            env.update(
+                {
+                    "SQITCH_CONFIG": str(fallback_conf),
+                    "SQLITCH_CONFIG": str(preferred_conf),
+                }
+            )
 
             result = runner.invoke(main, ["config", "core.engine"], env=env)
 
@@ -394,3 +390,117 @@ class TestConfigEnvironmentOverrides:
                 result.exit_code == 0
             ), f"Config get failed with SQLITCH override: {result.output}"
             assert "sqlite" in result.output, "SQLITCH_CONFIG should override SQITCH_CONFIG"
+
+
+class TestConfigHelpers:
+    """Unit coverage for helper utilities in sqlitch.cli.commands.config.
+
+    Merged from tests/cli/test_config_helpers.py during Phase 3.7c consolidation.
+    """
+
+    def test_resolve_scope_defaults_to_local(self) -> None:
+        """Test scope resolution defaults to local."""
+        from sqlitch.cli.commands import config as config_module
+        from sqlitch.config.loader import ConfigScope
+
+        scope, explicit = config_module._resolve_scope(False, False, False, False)
+
+        assert scope == ConfigScope.LOCAL
+        assert explicit is False
+
+    def test_resolve_scope_user_selected(self) -> None:
+        """Test scope resolution with user selected."""
+        from sqlitch.cli.commands import config as config_module
+        from sqlitch.config.loader import ConfigScope
+
+        scope, explicit = config_module._resolve_scope(True, False, False, False)
+
+        assert scope == ConfigScope.USER
+        assert explicit is True
+
+    def test_resolve_scope_conflicting_flags(self) -> None:
+        """Test scope resolution with conflicting flags."""
+        from sqlitch.cli.commands import CommandError
+        from sqlitch.cli.commands import config as config_module
+
+        with pytest.raises(CommandError, match="Only one scope option may be specified"):
+            config_module._resolve_scope(True, False, True, False)
+
+    def test_normalize_bool_value_converts_truthy(self) -> None:
+        """Test boolean value normalization for truthy values."""
+        from sqlitch.cli.commands import config as config_module
+
+        assert config_module._normalize_bool_value("YES") == "true"
+        assert config_module._normalize_bool_value("0") == "false"
+
+    def test_normalize_bool_value_rejects_invalid(self) -> None:
+        """Test boolean value normalization rejects invalid values."""
+        from sqlitch.cli.commands import CommandError
+        from sqlitch.cli.commands import config as config_module
+
+        with pytest.raises(CommandError, match="Invalid boolean value"):
+            config_module._normalize_bool_value("maybe")
+
+    def test_flatten_settings_handles_default_section(self) -> None:
+        """Test settings flattening with DEFAULT section."""
+        from sqlitch.cli.commands import config as config_module
+
+        settings = {
+            "DEFAULT": {"color": "blue"},
+            "core": {"engine": "sqlite"},
+        }
+
+        flattened = config_module._flatten_settings(settings)
+
+        assert flattened == {"color": "blue", "core.engine": "sqlite"}
+
+    def test_set_config_value_updates_existing_entry(self) -> None:
+        """Test config value update for existing entry."""
+        from sqlitch.cli.commands import config as config_module
+
+        lines = ["[core]", "\tengine = sqlite"]
+
+        updated = config_module._set_config_value(lines, "core", "engine", "postgres")
+
+        assert updated[1] == "\tengine = postgres"
+
+    def test_set_config_value_appends_when_missing(self) -> None:
+        """Test config value append when missing."""
+        from sqlitch.cli.commands import config as config_module
+
+        lines: list[str] = []
+
+        updated = config_module._set_config_value(lines, "core", "engine", "sqlite")
+
+        assert updated == ["[core]", "\tengine = sqlite"]
+
+    def test_remove_config_value_deletes_section_when_empty(self) -> None:
+        """Test config value removal deletes empty section."""
+        from sqlitch.cli.commands import config as config_module
+
+        lines = ["[core]", "\tengine = sqlite"]
+
+        updated, removed = config_module._remove_config_value(lines, "core", "engine")
+
+        assert removed is True
+        assert updated == []
+
+    def test_build_emitter_suppresses_output_when_quiet(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test emitter suppresses output in quiet mode."""
+        import click
+
+        from sqlitch.cli.commands import config as config_module
+
+        captured: list[str] = []
+
+        monkeypatch.setattr(click, "echo", lambda message: captured.append(message))
+
+        loud_emitter = config_module._build_emitter(False)
+        quiet_emitter = config_module._build_emitter(True)
+
+        loud_emitter("one")
+        quiet_emitter("two")
+
+        assert captured == ["one"]

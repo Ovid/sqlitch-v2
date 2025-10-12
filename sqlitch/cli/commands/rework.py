@@ -2,25 +2,24 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable
 
 import click
 
 from sqlitch.config.resolver import resolve_config
 from sqlitch.plan.formatter import write_plan
-from sqlitch.plan.model import Change, PlanEntry, Plan, Tag
+from sqlitch.plan.model import Change, Plan, PlanEntry, Tag
 from sqlitch.plan.parser import PlanParseError, parse_plan
 from sqlitch.plan.utils import slugify_change_name
 from sqlitch.utils.identity import resolve_planner_identity
 
+from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
 from ._context import require_cli_context
 from ._plan_utils import resolve_default_engine, resolve_plan_path
 from .add import _ensure_script_path, _format_display_path
-from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["rework_command"]
 
@@ -51,11 +50,16 @@ def _resolve_new_path(
 
 
 def _resolve_rework_suffix(plan: Plan, change_name: str) -> str:
-    """Return the suffix (``@tag``) used for reworked script filenames."""
+    """Return the suffix (``@tag``) used for reworked script filenames.
 
+    Sqitch uses the most recent tag in the plan (the one closest to the
+    rework point), not necessarily a tag associated with the change being
+    reworked.
+    """
+    # Find the last tag in the plan (most recent)
     latest_tag: str | None = None
     for entry in plan.entries:
-        if isinstance(entry, Tag) and entry.change_ref == change_name:
+        if isinstance(entry, Tag):
             latest_tag = entry.name
 
     if latest_tag is None:
@@ -78,18 +82,36 @@ def _copy_script(source: Path | None, target: Path | None) -> None:
     target.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
 
 
-def _replace_change(
+def _append_rework_change(
     *,
     entries: Sequence[PlanEntry],
     name: str,
-    replacement: Change,
+    rework: Change,
 ) -> tuple[PlanEntry, ...]:
-    updated: list[PlanEntry] = list(entries)
-    for index, entry in enumerate(updated):
-        if isinstance(entry, Change) and entry.name == name:
-            updated[index] = replacement
-            return tuple(updated)
-    raise CommandError(f'Unknown change "{name}"')
+    """Append a reworked change to the plan entries (Sqitch behavior).
+
+    Unlike _replace_change, this adds a new entry at the end of the plan
+    while keeping the original entry intact. This matches Sqitch's rework
+    behavior where the same change name can appear multiple times.
+
+    Args:
+        entries: Current plan entries
+        name: Name of the change being reworked
+        rework: New Change object representing the reworked version
+
+    Returns:
+        Updated tuple of entries with rework appended
+
+    Raises:
+        CommandError: If the change doesn't exist in the plan
+    """
+    # Verify the change exists
+    has_change = any(isinstance(entry, Change) and entry.name == name for entry in entries)
+    if not has_change:
+        raise CommandError(f'Unknown change "{name}"')
+
+    # Append the reworked change at the end
+    return tuple(list(entries) + [rework])
 
 
 @click.command("rework")
@@ -169,9 +191,15 @@ def rework_command(
     slug = slugify_change_name(change_name)
     suffix = _resolve_rework_suffix(plan, change_name)
 
-    deploy_source = original_change.script_paths.get("deploy")
-    revert_source = original_change.script_paths.get("revert")
-    verify_source = original_change.script_paths.get("verify")
+    # script_paths values can be Path | str | None; normalize to Path | None
+    def normalize_path(p: Path | str | None) -> Path | None:
+        if p is None:
+            return None
+        return Path(p) if isinstance(p, str) else p
+
+    deploy_source = normalize_path(original_change.script_paths.get("deploy"))
+    revert_source = normalize_path(original_change.script_paths.get("revert"))
+    verify_source = normalize_path(original_change.script_paths.get("verify"))
 
     deploy_target = _resolve_new_path(
         project_root=project_root,
@@ -199,7 +227,6 @@ def rework_command(
     _copy_script(revert_source, revert_target)
     _copy_script(verify_source, verify_target)
 
-    dependencies = tuple(requires) if requires else original_change.dependencies
     new_notes = note if note is not None else original_change.notes
 
     script_map: dict[str, Path | None] = {
@@ -209,6 +236,13 @@ def rework_command(
     if verify_target is not None:
         script_map["verify"] = verify_target
 
+    # Create rework change with dependency on previous version via tag
+    # Format: change_name [change_name@tag]
+    # The rework inherits a single dependency: reference to the previous version
+    # If --requires is specified, use those instead
+    rework_dependency = f"{change_name}{suffix}"
+    rework_dependencies = tuple(requires) if requires else (rework_dependency,)
+
     replacement = Change.create(
         name=original_change.name,
         script_paths=script_map,
@@ -216,12 +250,14 @@ def rework_command(
         planned_at=timestamp,
         notes=new_notes,
         change_id=original_change.change_id,
-        dependencies=dependencies,
+        dependencies=rework_dependencies,
         tags=original_change.tags,
+        rework_of=rework_dependency,  # Mark as rework
     )
 
-    updated_entries = _replace_change(
-        entries=plan.entries, name=change_name, replacement=replacement
+    # Append rework to plan (Sqitch behavior: adds new entry, doesn't replace)
+    updated_entries = _append_rework_change(
+        entries=plan.entries, name=change_name, rework=replacement
     )
 
     write_plan(

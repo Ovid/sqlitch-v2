@@ -1,4 +1,7 @@
-"""Contract parity tests for ``sqlitch status``."""
+"""Contract parity tests for ``sqlitch status``.
+
+Includes CLI signature contract tests merged from tests/cli/commands/
+"""
 
 from __future__ import annotations
 
@@ -9,15 +12,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, Sequence
 
-from click.testing import CliRunner
 import pytest
+from click.testing import CliRunner
 
 from sqlitch.cli.main import main
-from tests.support.test_helpers import isolated_test_context
 from sqlitch.engine.sqlite import derive_sqlite_registry_uri, resolve_sqlite_filesystem_path
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change, PlanEntry, Tag
-
+from tests.support.test_helpers import isolated_test_context
 
 GOLDEN_REGISTRY_ROOT = (
     Path(__file__).resolve().parents[2] / "support" / "golden" / "registry" / "sqlite"
@@ -237,8 +239,6 @@ def _seed_registry(db_path: Path, rows: Iterable[RegistryFixtureRow]) -> None:
 def test_status_outputs_in_sync_snapshot(runner: CliRunner) -> None:
     """Human output should match Sqitch when the database is fully deployed."""
 
-    expected = _read_golden("status_after_users.txt")
-
     with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         change_time = datetime(2013, 12, 31, 18, 26, 59, tzinfo=timezone.utc)
@@ -267,9 +267,9 @@ def test_status_outputs_in_sync_snapshot(runner: CliRunner) -> None:
         result = runner.invoke(main, ["status", "--target", "db:sqlite:flipr_test.db"])
 
         assert result.exit_code == 0, result.output
-    lines = result.stdout.splitlines()
-    assert lines[0] == "# On database db:sqlite:flipr_test.db"
-    assert lines[-1] == "Nothing to deploy (up-to-date)"
+        lines = result.stdout.splitlines()
+        assert lines[0] == "# On database db:sqlite:flipr_test.db"
+        assert lines[-1] == "Nothing to deploy (up-to-date)"
 
 
 def test_status_reports_undeployed_changes(runner: CliRunner) -> None:
@@ -315,7 +315,7 @@ def test_status_reports_undeployed_changes(runner: CliRunner) -> None:
             ["status", "--target", "flipr_test", "--project", PROJECT],
         )
 
-        assert result.exit_code == 1, result.output
+        assert result.exit_code == 0, result.output
         assert result.stdout == expected
         lines = result.stdout.splitlines()
         assert lines[0] == "# On database flipr_test"
@@ -406,3 +406,102 @@ def test_status_json_format_matches_fixture(runner: CliRunner) -> None:
         assert payload["change"]["tag"] == "@v1.0.0-dev1"
         assert payload["pending_changes"] == []
         assert golden_text.splitlines()[1].split()[2] == payload["project"]
+
+
+# =============================================================================
+# CLI Contract Tests (merged from tests/cli/commands/test_status_contract.py)
+# =============================================================================
+
+
+class TestStatusHelp:
+    """Test CC-STATUS help support (GC-001)."""
+
+    def test_help_flag_exits_zero(self, runner):
+        """Status command must support --help flag."""
+        result = runner.invoke(main, ["status", "--help"])
+        assert result.exit_code == 0, f"Expected exit 0, got {result.exit_code}"
+
+    def test_help_shows_usage(self, runner):
+        """Help output must include usage information."""
+        result = runner.invoke(main, ["status", "--help"])
+        assert "Usage:" in result.output or "usage:" in result.output.lower()
+
+    def test_help_shows_command_name(self, runner):
+        """Help output must mention the status command."""
+        result = runner.invoke(main, ["status", "--help"])
+        assert "status" in result.output.lower()
+
+
+class TestStatusOptionalTarget:
+    """Test CC-STATUS-001: Optional target."""
+
+    def test_status_without_target_accepted(self, runner):
+        """Status without target must be accepted (uses default)."""
+        result = runner.invoke(main, ["status"])
+        # Should accept (not a parsing error)
+        # May exit 0 (success), 1 (not implemented/no target), or fail validation
+        assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
+
+class TestStatusPositionalTarget:
+    """Test CC-STATUS-002: Positional target."""
+
+    def test_status_with_positional_target(self, runner):
+        """Status with positional target must be accepted."""
+        result = runner.invoke(main, ["status", "db:sqlite:test.db"])
+        # Should accept (not a parsing error)
+        assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
+    def test_status_with_target_option(self, runner):
+        """Status with --target option must be accepted."""
+        result = runner.invoke(main, ["status", "--target", "db:sqlite:test.db"])
+        # Should accept (not a parsing error)
+        assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
+    def test_status_with_show_tags_option(self, runner):
+        """Status with --show-tags option must be accepted."""
+        result = runner.invoke(main, ["status", "--show-tags"])
+        # Should accept (not a parsing error)
+        assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
+
+class TestStatusGlobalOptions:
+    """Test GC-002: Global options recognition."""
+
+    def test_quiet_option_accepted(self, runner):
+        """Status must accept --quiet global option."""
+        result = runner.invoke(main, ["status", "--quiet"])
+        # Should not fail with "no such option" error
+        assert "no such option" not in result.output.lower()
+        assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
+    def test_verbose_option_accepted(self, runner):
+        """Status must accept --verbose global option."""
+        result = runner.invoke(main, ["status", "--verbose"])
+        # Should not fail with "no such option" error
+        assert "no such option" not in result.output.lower()
+        assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
+    def test_chdir_option_accepted(self, runner):
+        """Status must accept --chdir global option."""
+        result = runner.invoke(main, ["status", "--chdir", "/tmp"])
+        # Should not fail with "no such option" error
+        assert "no such option" not in result.output.lower()
+        assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
+    def test_no_pager_option_accepted(self, runner):
+        """Status must accept --no-pager global option."""
+        result = runner.invoke(main, ["status", "--no-pager"])
+        # Should not fail with "no such option" error
+        assert "no such option" not in result.output.lower()
+        assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
+
+class TestStatusErrorHandling:
+    """Test GC-004: Error output and GC-005: Unknown options."""
+
+    def test_unknown_option_rejected(self, runner):
+        """Status must reject unknown options with exit code 2."""
+        result = runner.invoke(main, ["status", "--nonexistent-option"])
+        assert result.exit_code == 2, f"Expected exit 2 for unknown option, got {result.exit_code}"
+        assert "no such option" in result.output.lower() or "unrecognized" in result.output.lower()

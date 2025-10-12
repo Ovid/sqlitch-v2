@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-import re
 
 __all__ = [
     "DEFAULT_TEMPLATE_BODIES",
@@ -42,7 +42,8 @@ DEFAULT_TEMPLATE_BODIES: dict[str, str] = {
 }
 
 _FOREACH_PATTERN = re.compile(
-    r"\[\%\s*FOREACH\s+(?P<name>\w+)\s+IN\s+(?P<collection>\w+)\s*-?%\](?P<body>.*?)\[\%\s*END\s*-?%\]",
+    r"\[\%\s*FOREACH\s+(?P<name>\w+)\s+IN\s+(?P<collection>\w+)\s*-?%\]"
+    r"(?P<body>.*?)\[\%\s*END\s*-?%\]",
     re.DOTALL,
 )
 _SIMPLE_TOKEN_PATTERN = re.compile(r"\[\%\s*(?P<name>\w+)\s*%\]")

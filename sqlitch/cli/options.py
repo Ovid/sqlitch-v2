@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, Callable, TypeVar, cast
+from typing import Any, Callable, TypeVar
 from uuid import uuid4
 
 import click
@@ -150,7 +150,7 @@ def global_output_options(func: F) -> F:
         count=True,
         help="Increase output verbosity. May be specified multiple times.",
     )(func)
-    return cast(F, func)
+    return func
 
 
 def global_sqitch_options(func: F) -> F:
@@ -176,7 +176,7 @@ def global_sqitch_options(func: F) -> F:
         is_eager=True,
     )(func)
     # Note: --quiet and --verbose are already in global_output_options
-    return cast(F, func)
+    return func
 
 
 __all__ = [

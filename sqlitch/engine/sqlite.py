@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 import sqlite3
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
-from urllib.parse import SplitResult, urlsplit, urlunsplit, unquote
+from typing import Any, cast
+from urllib.parse import SplitResult, unquote, urlsplit, urlunsplit
 
 from .base import (
     ConnectArguments,
@@ -41,15 +41,18 @@ class SQLiteEngine(Engine):
 
     def build_registry_connect_arguments(self) -> ConnectArguments:
         """Return connection arguments pointing to the registry database."""
-        return self._build_connect_arguments(self.target.registry_uri)
+        registry_uri = self.target.registry_uri or self.target.uri
+        return self._build_connect_arguments(registry_uri)
 
     def build_workspace_connect_arguments(self) -> ConnectArguments:
         """Return connection arguments pointing to the workspace database."""
         return self._build_connect_arguments(self.target.uri)
 
     def connect_workspace(self) -> sqlite3.Connection:
-        connection = super().connect_workspace()
+        connection = cast(sqlite3.Connection, super().connect_workspace())
         self._attach_registry(connection)
+        # Enable foreign keys for proper cascading deletes (sqitch parity)
+        connection.execute("PRAGMA foreign_keys = ON")
         return connection
 
     def registry_filesystem_path(self) -> Path:
@@ -224,6 +227,7 @@ __all__ = [
     "derive_sqlite_registry_uri",
     "extract_sqlite_statements",
     "script_manages_transactions",
+    "validate_sqlite_script",
     "resolve_sqlite_filesystem_path",
 ]
 
@@ -277,20 +281,64 @@ def script_manages_transactions(script_sql: str) -> bool:
     return False
 
 
+def validate_sqlite_script(script_sql: str) -> None:
+    """Validate ``script_sql`` for disallowed pragmas and unbalanced transactions."""
+
+    statements = extract_sqlite_statements(script_sql)
+    transaction_depth = 0
+
+    for statement in statements:
+        keyword = _leading_keyword(statement)
+
+        if keyword == "PRAGMA":
+            _validate_sqlite_pragma(statement)
+
+        if keyword in {"BEGIN", "SAVEPOINT"}:
+            transaction_depth += 1
+            continue
+
+        if keyword in {"COMMIT", "END", "ROLLBACK", "RELEASE"}:
+            if transaction_depth:
+                transaction_depth -= 1
+            else:  # pragma: no cover - defensive guard for malformed scripts
+                raise SQLiteEngineError(
+                    "SQLite deploy scripts contain unmatched transaction terminators."
+                )
+
+    if transaction_depth > 0:
+        raise SQLiteEngineError(
+            "SQLite deploy scripts that open transactions must end with COMMIT or ROLLBACK."
+        )
+
+
+def _validate_sqlite_pragma(statement: str) -> None:
+    body = statement.strip().split("--", 1)[0].rstrip(";").strip()
+    pragma_payload = body[len("PRAGMA") :].strip()
+    if not pragma_payload:
+        return
+
+    name_part, _, value_part = pragma_payload.partition("=")
+    name = name_part.strip().strip('"').strip("'").lower()
+    value = value_part.strip().split(";", 1)[0].strip().strip('"').strip("'").lower()
+
+    if name == "foreign_keys" and value in {"off", "0", "false"}:
+        raise SQLiteEngineError("SQLite foreign_keys pragma must remain enabled during deploy.")
+
+
 def _leading_keyword(statement: str) -> str:
     tokens = _tokenize_statement(statement)
     return tokens[0] if tokens else ""
 
 
 def _tokenize_statement(statement: str) -> list[str]:
-    normalized = statement.strip()
+    normalized = _strip_leading_sql_comments(statement.strip())
     if not normalized:
         return []
     pieces: list[str] = []
     token = []
     in_string = False
     string_quote: str | None = None
-    for char in normalized:
+    for idx, char in enumerate(normalized):
         if in_string:
             token.append(char)
             if char == string_quote:
@@ -306,6 +354,9 @@ def _tokenize_statement(statement: str) -> list[str]:
             token.append(char)
             continue
 
+        if char == "-" and idx + 1 < len(normalized) and normalized[idx + 1] == "-":
+            break
+
         if char.isspace() or char in {",", "(", ")", ";"}:
             if token:
                 pieces.append("".join(token).upper())
@@ -318,3 +369,22 @@ def _tokenize_statement(statement: str) -> list[str]:
         pieces.append("".join(token).upper())
 
     return pieces
+
+
+def _strip_leading_sql_comments(statement: str) -> str:
+    text = statement.lstrip()
+    while text:
+        if text.startswith("--"):
+            newline = text.find("\n")
+            if newline == -1:
+                return ""
+            text = text[newline + 1 :].lstrip()
+            continue
+        if text.startswith("/*"):
+            end = text.find("*/")
+            if end == -1:
+                return ""
+            text = text[end + 2 :].lstrip()
+            continue
+        break
+    return text

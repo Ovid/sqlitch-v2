@@ -1,17 +1,26 @@
 <!--
 - Sync Impact Report
-- Version change: 1.10.0 → 1.10.1 (PATCH bump)
+- Version change: 1.10.1 → 1.11.0 (MINOR bump)
 - Modified sections:
-  • Development Workflow & Quality Gates — Added "Terminal Command Decomposition" requirement
+  • VI. Behavioral Parity with Sqitch — Added "Implementation Verification Protocol"
+    requiring consultation of sqitch/ directory before implementing features
+  • Added mandatory 5-step verification workflow
+  • Added examples of syntax requiring verification (e.g., @HEAD^, @ROOT)
 - Added sections: None
 - Removed sections: None
-- Rationale: Added workflow principle requiring AI agents to decompose compound shell commands
-  into separate sequential steps. Environment setup (source .venv/bin/activate) should run once,
-  followed by commands that depend on it. This reduces repeated approval friction and improves
-  automation flow. This is a clarification/process improvement, not a semantic change to existing
-  principles, warranting a PATCH version bump.
-- Templates requiring updates: None (workflow guidance, not template change)
+- Rationale: Codified the critical requirement that all SQLitch implementation work
+  must verify behavior against the Perl Sqitch source code in sqitch/ directory, not
+  just documentation. This is a material expansion of the behavioral parity principle,
+  adding concrete verification steps that must be followed. This is a substantive
+  addition to governance workflow, warranting a MINOR version bump.
+- Templates requiring updates: All future spec/plan/tasks documents should reference
+  this verification protocol when describing implementation work
 - Follow-up TODOs: None
+- Previous sync report (v1.10.0 → v1.10.1):
+  Modified sections:
+  • Development Workflow & Quality Gates — Added "Terminal Command Decomposition" requirement
+  Rationale: Added workflow principle requiring AI agents to decompose compound shell commands
+  into separate sequential steps.
 -->
 
 # SQLitch Constitution
@@ -111,8 +120,33 @@ diagnostics rich when explicitly requested.
   CLI syntax and help text, and output formats (human and JSON when applicable).
 - Tests MUST be derived from or validated against the upstream Sqitch behavior
   to ensure 100% compliance.
+
+**Implementation Verification Protocol (MANDATORY)**:
+Before implementing or fixing ANY command, feature, or syntax handling:
+1. **Consult Sqitch Source**: Review the corresponding Perl implementation in
+   `sqitch/lib/App/Sqitch/` to understand the canonical behavior
+2. **Document Sqitch Behavior**: Note how Sqitch handles:
+   - Command-line syntax (including symbolic references like `@HEAD^`, `@ROOT`)
+   - Options and flags
+   - Error messages and error handling patterns
+   - Edge cases and boundary conditions
+   - Output formatting
+3. **Implement to Match**: Write SQLitch code that produces identical behavior
+4. **Verify Against Sqitch**: Test the implementation against actual Sqitch behavior
+   using UAT scripts or manual comparison
+5. **Document Deviations**: Any intentional difference MUST be documented in code
+   comments with clear rationale
+
+**Examples requiring verification**:
+- If Sqitch supports `sqlitch revert --to @HEAD^`, SQLitch MUST support it identically
+- If Sqitch accepts certain flag combinations, SQLitch MUST accept the same
+- If Sqitch produces specific error messages, SQLitch SHOULD match them closely
+
+This verification protocol applies to ALL implementation work, not just new features.
+
 Rationale: Treating Sqitch as a golden source guarantees predictable behavior and
-user familiarity while reducing ambiguity.
+user familiarity while reducing ambiguity. Verifying against implementation (not just
+documentation) ensures we match actual behavior including undocumented edge cases.
 
 ### VII. Simplicity-First, No Duplication
 - Each change MUST be the simplest thing that can possibly work while maintaining
@@ -186,6 +220,16 @@ by making behavior discoverable without reverse-engineering the implementation.
   gate. Before any implementation task begins, the responsible engineer MUST
   delete the related skip marker(s), confirm the test fails, and treat the
   unskipped failure as part of the Red→Green→Refactor loop.
+- Exception Handling: No exception should ever be silently ignored. All `except` blocks
+  MUST either:
+
+  1. Re-raise the exception after cleanup/logging, OR
+  2. Log the exception at an appropriate level (error/warning/debug based on severity), OR
+  3. Handle the exception with explicit recovery logic
+  
+  Bare `except Exception: pass` statements are prohibited as they hide bugs and security
+  issues. Use specific exception types when possible, and always provide context about
+  why an exception is being caught and what recovery action (if any) is being taken.
 
 ## Development Workflow & Quality Gates
 
@@ -232,6 +276,6 @@ by making behavior discoverable without reverse-engineering the implementation.
 - Compliance: All specs, plans, tasks, and PRs MUST reference and adhere to this
   document. Non-compliance is a change request, not a discretionary choice.
 
-**Version**: 1.10.1 | **Ratified**: 2025-10-03 | **Last Amended**: 2025-10-07
+**Version**: 1.11.0 | **Ratified**: 2025-10-03 | **Last Amended**: 2025-10-11
 
 ```

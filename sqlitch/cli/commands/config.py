@@ -12,10 +12,11 @@ from typing import Callable
 
 import click
 
-from sqlitch.config.loader import ConfigScope
 from sqlitch.config import resolver as config_resolver
+from sqlitch.config.loader import ConfigScope
 from sqlitch.utils.fs import ArtifactConflictError, resolve_config_file
 
+from ..options import global_sqitch_options
 from . import CommandError, register_command
 from ._context import (
     environment_from,
@@ -23,7 +24,6 @@ from ._context import (
     quiet_mode_enabled,
     require_cli_context,
 )
-from ..options import global_sqitch_options
 
 __all__ = ["config_command"]
 
@@ -391,7 +391,7 @@ def _split_key(name: str) -> tuple[str, str]:
 
 def _load_parser(path: Path) -> configparser.ConfigParser:
     parser = configparser.ConfigParser(interpolation=None)
-    parser.optionxform = str
+    parser.optionxform = str  # type: ignore[assignment,method-assign]
     if path.exists():
         parser.read(path, encoding="utf-8")
     return parser
@@ -450,6 +450,9 @@ def _set_config_value(lines: list[str], section: str, option: str, value: str) -
             new_lines.append(f"{option} = {value}")
         return new_lines
 
+    # If start is not None, end must also be not None (per _find_section_bounds logic)
+    assert end is not None, "end must be set when start is set"  # nosec B101 - invariant check
+
     indent_default = "" if section == "DEFAULT" else "\t"
     indent = _detect_indent(new_lines[start:end], indent_default)
 
@@ -480,6 +483,9 @@ def _remove_config_value(lines: list[str], section: str, option: str) -> tuple[l
     start, end, header_index = _find_section_bounds(new_lines, section)
     if start is None:
         return new_lines, False
+
+    # If start is not None, end must also be not None (per _find_section_bounds logic)
+    assert end is not None, "end must be set when start is set"  # nosec B101 - invariant check
 
     target_index = None
     for idx in range(start, end):

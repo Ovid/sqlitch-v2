@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import sqlite3
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -17,12 +18,14 @@ from sqlitch.engine.sqlite import resolve_sqlite_filesystem_path
 from sqlitch.plan.model import Plan
 from sqlitch.plan.parser import PlanParseError, parse_plan
 
+from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
 from ._context import require_cli_context
 from ._plan_utils import resolve_default_engine, resolve_plan_path
-from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["status_command"]
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -94,9 +97,6 @@ def status_command(
     else:
         target_value = cli_context.target
 
-    if not target_value:
-        raise CommandError("A target must be provided via --target or configuration.")
-
     plan_path = _resolve_plan_path(project_root, cli_context.plan_file, environment)
     default_engine = resolve_default_engine(
         project_root=project_root,
@@ -105,6 +105,21 @@ def status_command(
         engine_override=cli_context.engine,
         plan_path=plan_path,
     )
+
+    # If no target from CLI/env, check if the default engine has a target configured
+    if not target_value and default_engine:
+        config_profile = config_resolver.resolve_config(
+            root_dir=project_root,
+            config_root=cli_context.config_root,
+            env=environment,
+        )
+        engine_section = f'engine "{default_engine}"'
+        engine_target_value = config_profile.settings.get(engine_section, {}).get("target")
+        if engine_target_value and isinstance(engine_target_value, str):
+            target_value = engine_target_value
+
+    if not target_value:
+        raise CommandError("A target must be provided via --target or configuration.")
     plan = _load_plan(plan_path, default_engine)
 
     resolved_project = plan.project_name
@@ -125,7 +140,8 @@ def status_command(
         registry_project = registry_rows[-1].project
         if registry_project != resolved_project:
             raise CommandError(
-                f"Registry project '{registry_project}' does not match plan project '{resolved_project}'"
+                f"Registry project '{registry_project}' does not match "
+                f"plan project '{resolved_project}'"
             )
 
     plan_changes = tuple(change.name for change in plan.changes)
@@ -157,12 +173,8 @@ def status_command(
         )
         click.echo(text, nl=False)
 
-    exit_code = 0
-    if status in {"behind", "ahead", "not_deployed"}:
-        exit_code = 1
-
-    if exit_code:
-        ctx.exit(exit_code)
+    if status == "not_deployed":
+        ctx.exit(1)
 
 
 @register_command("status")
@@ -189,10 +201,7 @@ def _resolve_plan_path(
 
 def _load_plan(plan_path: Path, default_engine: str | None = None) -> Plan:
     try:
-        kwargs: dict[str, object] = {}
-        if default_engine is not None:
-            kwargs["default_engine"] = default_engine
-        return parse_plan(plan_path, **kwargs)
+        return parse_plan(plan_path, default_engine=default_engine)
     except (PlanParseError, ValueError) as exc:
         raise CommandError(str(exc)) from exc
     except OSError as exc:  # pragma: no cover - IO failures propagated to the user
@@ -353,12 +362,20 @@ def _load_registry_state(
         if cursor is not None:
             try:
                 cursor.close()
-            except Exception:  # pragma: no cover - best effort cleanup
-                pass
+            except Exception as exc:  # pragma: no cover - best effort cleanup
+                logger.warning(
+                    "Failed to close cursor during cleanup: %s",
+                    exc,
+                    extra={"exception_type": type(exc).__name__},
+                )
         try:
             connection.close()
-        except Exception:  # pragma: no cover - best effort cleanup
-            pass
+        except Exception as exc:  # pragma: no cover - best effort cleanup
+            logger.warning(
+                "Failed to close database connection during cleanup: %s",
+                exc,
+                extra={"exception_type": type(exc).__name__},
+            )
 
     if not rows:
         return (), failure_row
@@ -448,8 +465,12 @@ def _load_last_failure_event(
         if failure_cursor is not None:
             try:
                 failure_cursor.close()
-            except Exception:  # pragma: no cover - best effort cleanup
-                pass
+            except Exception as exc:  # pragma: no cover - best effort cleanup
+                logger.warning(
+                    "Failed to close failure cursor during cleanup: %s",
+                    exc,
+                    extra={"exception_type": type(exc).__name__},
+                )
 
 
 def _registry_schema_missing(error: Exception) -> bool:
@@ -470,14 +491,15 @@ def _determine_status(plan_changes: Sequence[str], deployed_changes: Sequence[st
     if not deployed_changes:
         return "not_deployed" if plan_changes else "in_sync"
 
+    # Check for extra deployed changes first (ahead takes precedence)
+    extra = [name for name in deployed_changes if name not in plan_changes]
+    if extra:
+        return "ahead"
+
     pending = _calculate_pending(plan_changes, deployed_changes)
 
     if pending:
         return "behind"
-
-    extra = [name for name in deployed_changes if name not in plan_changes]
-    if extra:
-        return "ahead"
 
     return "in_sync"
 
@@ -491,12 +513,26 @@ def _calculate_pending(
     if not deployed_changes:
         return tuple(plan_changes)
 
-    last_deployed = deployed_changes[-1]
-    if last_deployed not in plan_changes:
-        return tuple(plan_changes)
+    # For rework support: find where deployed and plan sequences diverge
+    # This handles cases where the same change name appears multiple times
+    deployed_count = len(deployed_changes)
+    plan_count = len(plan_changes)
 
-    last_index = plan_changes.index(last_deployed)
-    return tuple(plan_changes[last_index + 1 :])
+    # Find the first position where they differ
+    matching_count = 0
+    for i in range(min(deployed_count, plan_count)):
+        if deployed_changes[i] == plan_changes[i]:
+            matching_count = i + 1
+        else:
+            break
+
+    # If all deployed changes match the plan prefix, return the remaining plan changes
+    if matching_count == deployed_count:
+        return tuple(plan_changes[deployed_count:])
+
+    # If they diverge, the database is ahead or inconsistent
+    # Return all remaining plan changes after the last match
+    return tuple(plan_changes[matching_count:])
 
 
 def _render_human_output(

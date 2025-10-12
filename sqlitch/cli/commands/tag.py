@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from pathlib import Path
 
 import click
 
@@ -13,10 +12,10 @@ from sqlitch.plan.model import Change, PlanEntry, Tag
 from sqlitch.plan.parser import PlanParseError, parse_plan
 from sqlitch.utils.identity import resolve_planner_identity
 
+from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
 from ._context import quiet_mode_enabled, require_cli_context
 from ._plan_utils import resolve_default_engine, resolve_plan_path
-from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["tag_command"]
 

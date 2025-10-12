@@ -62,7 +62,6 @@ def load_config(
     Defaults to ``("sqitch.conf", "sqlitch.conf")`` while retaining support for
     legacy SQLitch-specific filenames.
     """
-
     search_names: Sequence[str] = config_filenames or _CONFIG_FILENAMES
     root_path = Path(root_dir)
     resolved_scopes = {scope: Path(path) for scope, path in scope_dirs.items()}
@@ -92,7 +91,7 @@ def load_config(
         ordered_files.append(config_path)
 
         parser = configparser.ConfigParser(interpolation=None)
-        parser.optionxform = str  # preserve case
+        parser.optionxform = str  # type: ignore[assignment,method-assign]  # preserve case
         parser.read(config_path, encoding="utf-8")
 
         if parser.defaults():

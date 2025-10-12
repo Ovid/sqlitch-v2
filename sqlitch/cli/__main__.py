@@ -5,4 +5,4 @@ from __future__ import annotations
 from .main import main
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=no-value-for-parameter  # Click decorator injects parameters

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import os
 import socket
 import sys
@@ -17,19 +18,17 @@ if TYPE_CHECKING:  # pragma: no cover
 # Platform-specific imports
 if sys.platform != "win32":
     try:
-        import pwd
+        import pwd  # pylint: disable=invalid-name  # Module name, not constant
     except ImportError:  # pragma: no cover
-        pwd = None  # type: ignore[assignment]
+        pwd = None  # type: ignore[assignment]  # pylint: disable=invalid-name
 else:
-    pwd = None  # type: ignore[assignment]
+    pwd = None  # pylint: disable=invalid-name
     try:
-        import win32api  # type: ignore[import-not-found]
-        import win32net  # type: ignore[import-not-found]
-        import win32netcon  # type: ignore[import-not-found]
+        import win32api
+        import win32net
     except ImportError:  # pragma: no cover
         win32api = None  # type: ignore[assignment]
         win32net = None  # type: ignore[assignment]
-        win32netcon = None  # type: ignore[assignment]
 
 __all__ = [
     "UserIdentity",
@@ -41,6 +40,8 @@ __all__ = [
     "get_system_fullname",
     "get_hostname",
 ]
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,8 +64,10 @@ def generate_change_id(
     note: str = "",
     requires: tuple[str, ...] = (),
     conflicts: tuple[str, ...] = (),
+    uri: str | None = None,
+    parent_id: str | None = None,
 ) -> str:
-    """Generate a unique change ID using Git-style SHA1 hash.
+    r"""Generate a unique change ID using Git-style SHA1 hash.
 
     Follows Sqitch's format: SHA1 of Git object containing change metadata.
     Sqitch uses Git's object format: 'change <length>\0<content>'
@@ -78,6 +81,8 @@ def generate_change_id(
         note: Optional note/description
         requires: Tuple of required change names
         conflicts: Tuple of conflicting change names
+        uri: Optional project URI (REQUIRED for Sqitch compatibility)
+        parent_id: Optional parent change ID (set for changes with dependencies or rework)
 
     Returns:
         40-character SHA1 hex digest string
@@ -86,7 +91,8 @@ def generate_change_id(
         >>> from datetime import datetime, timezone
         >>> generate_change_id(
         ...     "flipr", "users", datetime(2025, 1, 1, tzinfo=timezone.utc),
-        ...     "Test User", "test@example.com", "Add users table"
+        ...     "Test User", "test@example.com", "Add users table",
+        ...     uri="https://example.com/project/"
         ... )
         'a1b2c3...'  # 40-character hex string
     """
@@ -96,12 +102,27 @@ def generate_change_id(
     timestamp_str = isoformat_utc(timestamp, drop_microseconds=True, use_z_suffix=True)
 
     # Build info string in Sqitch's format
+    # CRITICAL: Field order must match Sqitch exactly for compatibility
     info_parts = [
         f"project {project}",
-        f"change {change}",
-        f"planner {planner_name} <{planner_email}>",
-        f"date {timestamp_str}",
     ]
+
+    # Add URI if present (Sqitch includes this when available)
+    if uri:
+        info_parts.append(f"uri {uri}")
+
+    info_parts.append(f"change {change}")
+
+    # Add parent if present (for changes with dependencies or rework)
+    if parent_id:
+        info_parts.append(f"parent {parent_id}")
+
+    info_parts.extend(
+        [
+            f"planner {planner_name} <{planner_email}>",
+            f"date {timestamp_str}",
+        ]
+    )
 
     # Add requires/conflicts if present
     if requires:
@@ -125,7 +146,10 @@ def generate_change_id(
     info_bytes = info.encode("utf-8")
     git_object = f"change {len(info_bytes)}\x00".encode("utf-8") + info_bytes
 
-    return hashlib.sha1(git_object).hexdigest()
+    # SHA1 is used for Git-compatible change IDs (matching Sqitch behavior)
+    # NOT for cryptographic security - flagged with usedforsecurity=False
+    # to suppress security scanner warnings while maintaining Sqitch parity
+    return hashlib.sha1(git_object, usedforsecurity=False).hexdigest()
 
 
 def resolve_planner_identity(
@@ -145,7 +169,10 @@ def resolve_planner_identity(
         Formatted string: ``Name <email>``
 
     Examples:
-        >>> resolve_planner_identity({"SQITCH_FULLNAME": "Ada", "SQITCH_EMAIL": "ada@example.com"}, None)
+        >>> resolve_planner_identity(
+        ...     {"SQITCH_FULLNAME": "Ada", "SQITCH_EMAIL": "ada@example.com"},
+        ...     None
+        ... )
         'Ada <ada@example.com>'
 
         >>> # With config file containing user.name and user.email
@@ -194,8 +221,8 @@ def resolve_username(env: Mapping[str, str]) -> str:
     except (OSError, AttributeError):  # pragma: no cover
         pass
 
-    # Try getpwuid() on Unix/macOS
-    if pwd is not None:
+    # Try getpwuid() on Unix/macOS (not available on Windows)
+    if sys.platform != "win32" and pwd is not None:
         try:
             return pwd.getpwuid(os.getuid()).pw_name
         except (KeyError, AttributeError):  # pragma: no cover
@@ -207,12 +234,20 @@ def resolve_username(env: Mapping[str, str]) -> str:
         if value:
             return value
 
-    # Windows-specific
+    # Windows-specific API
+    # pylint: disable=possibly-used-before-assignment  # win32api guarded
     if sys.platform == "win32" and win32api is not None:
         try:
-            return win32api.GetUserName()
-        except Exception:  # pragma: no cover - Windows-specific
-            pass
+            username = win32api.GetUserName()
+            # Ensure we return a string (Win32 API can return Any)
+            return str(username) if username else "sqitch"
+        except Exception as exc:  # pragma: no cover - Windows-specific
+            # Win32 API call failed; fall back to default
+            logger.debug(
+                "Failed to get Windows username: %s",
+                exc,
+                extra={"exception_type": type(exc).__name__},
+            )
 
     # Last resort fallback
     return "sqitch"
@@ -229,9 +264,9 @@ def resolve_fullname(
         1. ``$SQITCH_FULLNAME`` environment variable
         2. Legacy ``$SQLITCH_USER_NAME`` (backward compatibility)
         3. ``$SQITCH_ORIG_FULLNAME`` (internal)
-        4. ``user.name`` from config
-        5. Full name from system (GECOS field on Unix/macOS, UserInfo on Windows)
-        6. Legacy ``$GIT_AUTHOR_NAME`` (backward compatibility)
+        4. Legacy ``$GIT_AUTHOR_NAME`` (backward compatibility)
+        5. ``user.name`` from config
+        6. Full name from system (GECOS field on Unix/macOS, UserInfo on Windows)
         7. ``username_fallback``
 
     Args:
@@ -265,7 +300,6 @@ def resolve_fullname(
     if value:
         return value
 
-    # Check config user.name after Git author overrides
     if config is not None:
         user_section = config.settings.get("user", {})
         value = user_section.get("name")
@@ -290,12 +324,12 @@ def resolve_email(
 
     Precedence (highest to lowest):
         1. ``$SQITCH_EMAIL`` environment variable
-    2. Legacy ``$SQLITCH_USER_EMAIL`` (backward compatibility)
-    3. ``$SQITCH_ORIG_EMAIL`` (internal)
-    4. ``user.email`` from config
-    5. Legacy ``$GIT_AUTHOR_EMAIL`` (backward compatibility)
-    6. Legacy ``$EMAIL`` (backward compatibility)
-    7. Synthesized as ``<username>@<hostname>``
+        2. Legacy ``$SQLITCH_USER_EMAIL`` (backward compatibility)
+        3. ``$SQITCH_ORIG_EMAIL`` (internal)
+        4. Legacy ``$GIT_AUTHOR_EMAIL`` (backward compatibility)
+        5. ``user.email`` from config
+        6. Legacy ``$EMAIL`` (backward compatibility)
+        7. Synthesized as ``<username>@<hostname>``
 
     Args:
         env: Environment variable mapping.
@@ -329,7 +363,6 @@ def resolve_email(
     if value:
         return value
 
-    # Check config user.email after Git author overrides
     if config is not None:
         user_section = config.settings.get("user", {})
         value = user_section.get("email")
@@ -357,15 +390,24 @@ def get_system_fullname(username: str) -> str | None:
     Returns:
         Full name if found, None otherwise.
     """
+    # pylint: disable=possibly-used-before-assignment  # win32net guarded
     if sys.platform == "win32" and win32net is not None:
         try:
-            user_info = win32net.NetUserGetInfo(None, username, 2)
-            full_name = user_info.get("full_name", "").strip()
+            # None = local computer, but mypy stubs expect str | None with stricter checking
+            user_info = win32net.NetUserGetInfo(None, username, 2)  # type: ignore[arg-type]
+            # Ensure we get a string (Win32 API can return Any)
+            full_name = str(user_info.get("full_name", "")).strip()
             if full_name:
                 return full_name
-        except Exception:  # pragma: no cover - Windows-specific
-            pass
-    elif pwd is not None:
+        except Exception as exc:  # pragma: no cover - Windows-specific
+            # Win32 API call failed; fall back to other methods
+            logger.debug(
+                "Failed to get Windows full name via NetUserGetInfo: %s",
+                exc,
+                extra={"exception_type": type(exc).__name__},
+            )
+    # Try Unix/macOS GECOS field (not available on Windows)
+    if sys.platform != "win32" and pwd is not None:
         try:
             pw_record = pwd.getpwnam(username)
             gecos = pw_record.pw_gecos

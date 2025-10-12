@@ -658,14 +658,12 @@ def _normalize_engine(engine: str) -> str:
 
 def get_registry_migrations(engine: str) -> tuple[RegistryMigration, ...]:
     """Return the ordered registry migrations for the given engine."""
-
     key = _normalize_engine(engine)
     return _REGISTRY_MIGRATIONS[key]
 
 
 def list_registry_engines() -> tuple[str, ...]:
     """Return the canonical list of engines with registry migrations."""
-
     return tuple(sorted(_REGISTRY_MIGRATIONS))
 
 

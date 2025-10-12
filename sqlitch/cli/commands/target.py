@@ -14,9 +14,9 @@ from sqlitch.engine.sqlite import (
 )
 from sqlitch.utils.fs import ArtifactConflictError, resolve_config_file
 
+from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
 from ._context import quiet_mode_enabled, require_cli_context
-from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["target_command"]
 
@@ -61,7 +61,7 @@ def target_add(
     )
 
     config = configparser.ConfigParser(interpolation=None)
-    config.optionxform = str
+    config.optionxform = str  # type: ignore[assignment,method-assign]
     if config_path.exists():
         config.read(config_path, encoding="utf-8")
 
@@ -81,9 +81,12 @@ def target_add(
     config.set(section, "uri", normalised_uri)
     if engine:
         config.set(section, "engine", engine)
-    registry_value = inferred_registry if inferred_registry is not None else registry
-    if registry_value:
-        config.set(section, "registry", registry_value)
+    # Only write registry if explicitly provided via --registry option.
+    # For SQLite, Sqitch infers the registry location (adjacent to the database)
+    # unless explicitly overridden. Writing an inferred absolute path causes
+    # compatibility issues with Sqitch's target resolution.
+    if registry is not None:
+        config.set(section, "registry", registry)
     elif config.has_option(section, "registry"):
         config.remove_option(section, "registry")
 
@@ -118,7 +121,7 @@ def target_alter(
     )
 
     config = configparser.ConfigParser(interpolation=None)
-    config.optionxform = str
+    config.optionxform = str  # type: ignore[assignment,method-assign]
     if config_path.exists():
         config.read(config_path, encoding="utf-8")
 
@@ -135,9 +138,11 @@ def target_alter(
     config.set(section, "uri", normalised_uri)
     if engine:
         config.set(section, "engine", engine)
-    registry_value = inferred_registry if inferred_registry is not None else registry
-    if registry_value:
-        config.set(section, "registry", registry_value)
+    # Only write registry if explicitly provided via --registry option (see target_add)
+    if registry is not None:
+        config.set(section, "registry", registry)
+    elif config.has_option(section, "registry"):
+        config.remove_option(section, "registry")
 
     with config_path.open("w", encoding="utf-8") as f:
         config.write(f)
@@ -160,7 +165,7 @@ def target_show(ctx: click.Context, name: str) -> None:
     )
 
     config = configparser.ConfigParser(interpolation=None)
-    config.optionxform = str
+    config.optionxform = str  # type: ignore[assignment,method-assign]
     if config_path.exists():
         config.read(config_path, encoding="utf-8")
 
@@ -194,7 +199,7 @@ def target_remove(ctx: click.Context, name: str) -> None:
     )
 
     config = configparser.ConfigParser(interpolation=None)
-    config.optionxform = str
+    config.optionxform = str  # type: ignore[assignment,method-assign]
     if config_path.exists():
         config.read(config_path, encoding="utf-8")
 
@@ -224,7 +229,7 @@ def target_list(ctx: click.Context) -> None:
     )
 
     config = configparser.ConfigParser(interpolation=None)
-    config.optionxform = str
+    config.optionxform = str  # type: ignore[assignment,method-assign]
     if config_path.exists():
         config.read(config_path, encoding="utf-8")
 
@@ -254,58 +259,46 @@ def _normalise_target_entry(
     uri: str,
     registry_override: str | None,
 ) -> tuple[str, str | None]:
+    registry_override = registry_override.strip() if registry_override else None
+
     if not uri.startswith(SQLITE_SCHEME_PREFIX):
         return uri, registry_override
 
     payload = uri[len(SQLITE_SCHEME_PREFIX) :]
+    resolved_path: Path | None = None
+
     if payload in {"", ":memory:"}:
         normalised_uri = f"{SQLITE_SCHEME_PREFIX}:memory:"
-        registry_uri = derive_sqlite_registry_uri(
-            workspace_uri=normalised_uri,
-            project_root=project_root,
-            registry_override=registry_override,
-        )
-        return normalised_uri, registry_uri
-
-    filesystem_path = resolve_sqlite_filesystem_path(uri)
-    if str(filesystem_path) == ":memory:":
-        normalised_uri = f"{SQLITE_SCHEME_PREFIX}:memory:"
-        registry_uri = derive_sqlite_registry_uri(
-            workspace_uri=normalised_uri,
-            project_root=project_root,
-            registry_override=registry_override,
-        )
-        return normalised_uri, registry_uri
-
-    original_path = filesystem_path
-    if not filesystem_path.is_absolute():
-        resolved_path = (project_root / filesystem_path).resolve()
     else:
-        resolved_path = filesystem_path.resolve()
+        filesystem_path = resolve_sqlite_filesystem_path(uri)
+        if str(filesystem_path) == ":memory:":
+            normalised_uri = f"{SQLITE_SCHEME_PREFIX}:memory:"
+        else:
+            if not filesystem_path.is_absolute():
+                resolved_path = (project_root / filesystem_path).resolve()
+            else:
+                resolved_path = filesystem_path.resolve()
 
-    is_file_uri = payload.startswith("file:")
-    is_simple_relative = (
-        not is_file_uri and not original_path.is_absolute() and len(original_path.parts) == 1
-    )
+            is_file_uri = payload.startswith("file:")
+            is_simple_relative = (
+                not is_file_uri
+                and not filesystem_path.is_absolute()
+                and len(filesystem_path.parts) == 1
+            )
 
-    if is_file_uri:
-        normalised_uri = f"{SQLITE_SCHEME_PREFIX}file:{resolved_path.as_posix()}"
-    elif is_simple_relative:
-        normalised_uri = uri
-    else:
-        normalised_uri = f"{SQLITE_SCHEME_PREFIX}{resolved_path.as_posix()}"
-
-    canonical_workspace_uri = (
-        f"{SQLITE_SCHEME_PREFIX}file:{resolved_path.as_posix()}"
-        if is_file_uri
-        else f"{SQLITE_SCHEME_PREFIX}{resolved_path.as_posix()}"
-    )
+            if is_file_uri:
+                normalised_uri = f"{SQLITE_SCHEME_PREFIX}file:{resolved_path.as_posix()}"
+            elif is_simple_relative:
+                normalised_uri = uri
+            else:
+                normalised_uri = f"{SQLITE_SCHEME_PREFIX}{resolved_path.as_posix()}"
 
     registry_uri = derive_sqlite_registry_uri(
-        workspace_uri=canonical_workspace_uri,
+        workspace_uri=normalised_uri,
         project_root=project_root,
         registry_override=registry_override,
     )
+
     return normalised_uri, registry_uri
 
 

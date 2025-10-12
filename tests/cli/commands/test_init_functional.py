@@ -9,9 +9,10 @@ Tests for T052: Engine validation
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from click.testing import CliRunner
-from pathlib import Path
 
 from sqlitch.cli.main import main
 from tests.support.test_helpers import isolated_test_context
@@ -301,3 +302,209 @@ class TestInitErrorHandling:
 
             assert result.exit_code == 1, "Should fail when deploy/ exists"
             assert "deploy" in result.output.lower(), "Error should mention deploy directory"
+
+
+# Migrated from tests/regression/test_artifact_cleanup.py
+@pytest.mark.skip(reason="Pending T035: artifact cleanup regression coverage")
+def test_artifact_cleanup_guarantees() -> None:
+    """Placeholder regression test for T035 - artifact cleanup guarantees.
+
+    When implemented, this should test that SQLitch commands properly clean up
+    temporary files, partial artifacts, and database connections after execution,
+    especially in error scenarios. Should verify no leaked resources remain after
+    init, add, deploy, revert, and other state-modifying operations.
+    """
+    ...
+
+
+class TestInitHelpers:
+    """Unit tests for helper functions in sqlitch.cli.commands.init.
+
+    Merged from tests/cli/test_init_helpers.py during Phase 3.7c consolidation.
+    """
+
+    def test_determine_project_name_variants(self, tmp_path: Path) -> None:
+        """Test project name determination variants."""
+        import sqlitch.cli.commands.init as init_module
+
+        root = tmp_path
+        assert init_module._determine_project_name("flipr", root) == "flipr"
+        assert init_module._determine_project_name(None, root) == root.name
+        assert init_module._determine_project_name(None, Path("")) == "sqlitch"
+
+    def test_normalize_engine_alias_and_rejection(self) -> None:
+        """Test engine normalization and rejection."""
+        import sqlitch.cli.commands.init as init_module
+        from sqlitch.cli.commands import CommandError
+
+        assert init_module._normalize_engine(None) == "sqlite"
+        assert init_module._normalize_engine("Postgres") == "pg"
+
+        with pytest.raises(CommandError) as exc:
+            init_module._normalize_engine("oracle")
+        assert "Unsupported engine" in str(exc.value)
+
+    def test_determine_top_dir_sources(self, tmp_path: Path) -> None:
+        """Test top directory determination from various sources."""
+        import sqlitch.cli.commands.init as init_module
+
+        project_root = tmp_path
+
+        option_path, option_display = init_module._determine_top_dir(
+            project_root, Path("scripts"), {}
+        )
+        assert option_path == project_root / "scripts"
+        assert option_display == "scripts"
+
+        absolute_env = (tmp_path / "db" / "deploys").resolve()
+        env_path, env_display = init_module._determine_top_dir(
+            project_root,
+            None,
+            {"SQLITCH_TOP_DIR": str(absolute_env)},
+        )
+        assert env_path == absolute_env
+        assert env_display == absolute_env.as_posix()
+
+        default_path, default_display = init_module._determine_top_dir(project_root, None, {})
+        assert default_path == project_root
+        assert default_display == "."
+
+    def test_determine_plan_path_precedence(self, tmp_path: Path) -> None:
+        """Test plan path determination precedence."""
+        import sqlitch.cli.commands.init as init_module
+
+        project_root = tmp_path
+        plan_option = Path("plans/custom.plan")
+
+        option_path = init_module._determine_plan_path(
+            project_root=project_root,
+            plan_option=plan_option,
+            global_override=None,
+            env={},
+        )
+        assert option_path == project_root / plan_option
+
+        override = project_root / "override.plan"
+        override_path = init_module._determine_plan_path(
+            project_root=project_root,
+            plan_option=None,
+            global_override=override,
+            env={"SQLITCH_PLAN_FILE": "ignored.plan"},
+        )
+        assert override_path == override
+
+        env_path = init_module._determine_plan_path(
+            project_root=project_root,
+            plan_option=None,
+            global_override=None,
+            env={"SQITCH_PLAN_FILE": "plans/from-env.plan"},
+        )
+        assert env_path == project_root / "plans/from-env.plan"
+
+    def test_determine_plan_path_existing_and_conflict(self, tmp_path: Path) -> None:
+        """Test plan path determination with existing files and conflicts."""
+        import sqlitch.cli.commands.init as init_module
+        from sqlitch.cli.commands import CommandError
+
+        project_root = tmp_path
+
+        sqitch_plan = project_root / "sqitch.plan"
+        sqitch_plan.write_text("", encoding="utf-8")
+        chosen = init_module._determine_plan_path(
+            project_root=project_root,
+            plan_option=None,
+            global_override=None,
+            env={},
+        )
+        assert chosen == sqitch_plan
+
+        sqitch_plan.unlink()
+        legacy_plan = project_root / "sqlitch.plan"
+        legacy_plan.write_text("", encoding="utf-8")
+        legacy_chosen = init_module._determine_plan_path(
+            project_root=project_root,
+            plan_option=None,
+            global_override=None,
+            env={},
+        )
+        assert legacy_chosen == legacy_plan
+
+        # Introduce conflict between sqitch and sqlitch plan files
+        sqitch_plan.write_text("", encoding="utf-8")
+        with pytest.raises(CommandError) as exc:
+            init_module._determine_plan_path(
+                project_root=project_root,
+                plan_option=None,
+                global_override=None,
+                env={},
+            )
+        assert "conflicting artifacts" in str(exc.value)
+
+    def test_determine_config_path_existing_and_conflict(self, tmp_path: Path) -> None:
+        """Test config path determination with existing files and conflicts."""
+        import sqlitch.cli.commands.init as init_module
+        from sqlitch.cli.commands import CommandError
+
+        project_root = tmp_path
+
+        sqitch_conf = project_root / "sqitch.conf"
+        sqitch_conf.write_text("", encoding="utf-8")
+        chosen = init_module._determine_config_path(project_root)
+        assert chosen == sqitch_conf
+
+        sqlitch_conf = project_root / "sqlitch.conf"
+        sqlitch_conf.write_text("", encoding="utf-8")
+        with pytest.raises(CommandError) as exc:
+            init_module._determine_config_path(project_root)
+        assert "conflicting artifacts" in str(exc.value)
+
+    def test_validation_helpers_raise_when_artifacts_exist(self, tmp_path: Path) -> None:
+        """Test validation helpers raise when artifacts exist."""
+        import sqlitch.cli.commands.init as init_module
+        from sqlitch.cli.commands import CommandError
+
+        file_path = tmp_path / "existing.plan"
+        file_path.write_text("", encoding="utf-8")
+        with pytest.raises(CommandError):
+            init_module._validate_absent(file_path, "Plan file")
+
+        dir_path = tmp_path / "deploy"
+        dir_path.mkdir()
+        with pytest.raises(CommandError):
+            init_module._validate_directory_absent(dir_path)
+
+    def test_render_config_and_format_display(self, tmp_path: Path) -> None:
+        """Test config rendering and display path formatting."""
+        import os
+
+        import sqlitch.cli.commands.init as init_module
+
+        project_root = tmp_path
+        plan_path = project_root / "sqitch.plan"
+        plan_path.write_text("", encoding="utf-8")
+
+        config = init_module._render_config(
+            engine="sqlite",
+            plan_path=plan_path,
+            project_root=project_root,
+            top_dir_display="deployments",
+            target="db:sqlite:flipr",
+            uri=None,
+        )
+
+        assert "engine = sqlite" in config
+        assert "# plan_file = sqitch.plan" in config
+        assert "# top_dir = deployments" in config
+        assert "# target = db:sqlite:flipr" in config
+        assert "# registry = sqitch" in config
+        assert "# client = sqlite3" in config
+
+        internal_display = init_module._format_display_path(plan_path, project_root)
+        assert internal_display == "sqitch.plan"
+
+        external = project_root.parent / "shared" / "alt.plan"
+        external.parent.mkdir(parents=True, exist_ok=True)
+        external.touch()
+        external_display = init_module._format_display_path(external, project_root)
+        expected = os.path.relpath(external, project_root).replace(os.sep, "/")
+        assert external_display == expected

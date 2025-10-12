@@ -1,0 +1,279 @@
+sqlitch/config/loader.py:95: error: Cannot assign to a method  [method-assign]
+            parser.optionxform = str  # preserve case
+            ^~~~~~~~~~~~~~~~~~
+sqlitch/config/loader.py:95: error: Incompatible types in assignment
+(expression has type "type[str]", variable has type "Callable[[str], str]") 
+[assignment]
+            parser.optionxform = str  # preserve case
+                                 ^~~
+sqlitch/registry/state.py:45: error: Missing type parameters for generic type
+"tuple"  [type-arg]
+        def from_registry_row(cls, row: tuple) -> DeployedChange:
+                                        ^
+sqlitch/registry/state.py:96: error: Missing type parameters for generic type
+"tuple"  [type-arg]
+        def from_registry_row(cls, row: tuple) -> DeploymentEvent:
+                                        ^
+sqlitch/registry/state.py:269: error: Argument "committed_at" to
+"RegistryEntry" has incompatible type "object"; expected "datetime"  [arg-type]
+                committed_at=_resolve_value(row, "committed_at"),
+                             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+sqlitch/registry/state.py:272: error: Argument "planned_at" to "RegistryEntry"
+has incompatible type "object"; expected "datetime"  [arg-type]
+                planned_at=_resolve_value(row, "planned_at"),
+                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+sqlitch/engine/sqlite.py:44: error: Argument 1 to "_build_connect_arguments" of
+"SQLiteEngine" has incompatible type "str | None"; expected "str"  [arg-type]
+            return self._build_connect_arguments(self.target.registry_uri)
+                                                 ^~~~~~~~~~~~~~~~~~~~~~~~
+sqlitch/engine/sqlite.py:53: error: Returning Any from function declared to
+return "Connection"  [no-any-return]
+            return connection
+            ^~~~~~~~~~~~~~~~~
+sqlitch/plan/parser.py:141: error: Argument 1 to "_parse_uuid" has incompatible
+type "str | None"; expected "str"  [arg-type]
+            _parse_uuid(metadata.get("change_id"), line_no) if metadata.ge...
+                        ^~~~~~~~~~~~~~~~~~~~~~~~~
+sqlitch/plan/parser.py:255: error: Incompatible types in assignment (expression
+has type "dict[str, Path | None]", variable has type
+"dict[str, Path | str | None]")  [assignment]
+                script_paths = _resolve_reworked_script_paths(
+                               ^
+sqlitch/plan/parser.py:255: note: "dict" is invariant -- see https://mypy.readthedocs.io/en/stable/common_issues.html#variance
+sqlitch/plan/parser.py:255: note: Consider using "Mapping" instead, which is covariant in the value type
+sqlitch/plan/parser.py:257: error: Argument "script_paths" to
+"_resolve_reworked_script_paths" has incompatible type
+"dict[str, Path | str | None]"; expected "dict[str, Path | None]"  [arg-type]
+                    script_paths=script_paths,
+                                 ^~~~~~~~~~~~
+sqlitch/cli/options.py:153: error: Redundant cast to "F"  [redundant-cast]
+        return cast(F, func)
+               ^
+sqlitch/cli/options.py:179: error: Redundant cast to "F"  [redundant-cast]
+        return cast(F, func)
+               ^
+sqlitch/cli/commands/__init__.py:58: error: Argument 1 of "show" is
+incompatible with supertype "click.exceptions.ClickException"; supertype defines
+the argument type as "IO[Any] | None"  [override]
+        def show(self, file: t.TextIO | None = None) -> None:
+                       ^~~~~~~~~~~~~~~~~~~~~
+sqlitch/cli/commands/__init__.py:58: note: This violates the Liskov substitution principle
+sqlitch/cli/commands/__init__.py:58: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+sqlitch/utils/logging.py:272: error: Incompatible types in assignment
+(expression has type "IO[str]", variable has type "TextIO | None")  [assignment]
+                stream = self._console.file
+                         ^~~~~~~~~~~~~~~~~~
+sqlitch/utils/logging.py:274: error: Item "None" of "TextIO | None" has no
+attribute "write"  [union-attr]
+            stream.write(f"{payload}\n")
+            ^~~~~~~~~~~~
+sqlitch/utils/logging.py:275: error: Item "None" of "TextIO | None" has no
+attribute "flush"  [union-attr]
+            stream.flush()
+            ^~~~~~~~~~~~
+sqlitch/config/resolver.py:237: error: Argument 1 to "Path" has incompatible
+type "str | PathLike[str] | None"; expected "str | PathLike[str]"  [arg-type]
+        return Path(value)
+                    ^~~~~
+sqlitch/cli/main.py:126: error: Unused "type: ignore" comment  [unused-ignore]
+        def invoke(self, ctx: click.Context) -> Any:  # type: ignore[overr...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+sqlitch/cli/commands/verify.py:247: error: Incompatible types in assignment
+(expression has type "EngineTarget", variable has type "str | None") 
+[assignment]
+        engine_target, display_target = _resolve_engine_target(
+                                        ^
+sqlitch/cli/commands/verify.py:257: error: Item "str" of "str | None" has no
+attribute "uri"  [union-attr]
+        workspace_path = _strip_sqlite_uri_prefix(engine_target.uri)
+                                                  ^~~~~~~~~~~~~~~~~
+sqlitch/cli/commands/verify.py:257: error: Item "None" of "str | None" has no
+attribute "uri"  [union-attr]
+        workspace_path = _strip_sqlite_uri_prefix(engine_target.uri)
+                                                  ^~~~~~~~~~~~~~~~~
+sqlitch/cli/commands/verify.py:258: error: Item "str" of "str | None" has no
+attribute "registry_uri"  [union-attr]
+        registry_path = _strip_sqlite_uri_prefix(engine_target.registry_ur...
+                                                 ^~~~~~~~~~~~~~~~~~~~~~~~~~
+sqlitch/cli/commands/verify.py:258: error: Item "None" of "str | None" has no
+attribute "registry_uri"  [union-attr]
+        registry_path = _strip_sqlite_uri_prefix(engine_target.registry_ur...
+                                                 ^~~~~~~~~~~~~~~~~~~~~~~~~~
+sqlitch/cli/commands/target.py:64: error: Cannot assign to a method 
+[method-assign]
+        config.optionxform = str
+        ^~~~~~~~~~~~~~~~~~
+sqlitch/cli/commands/target.py:64: error: Incompatible types in assignment
+(expression has type "type[str]", variable has type "Callable[[str], str]") 
+[assignment]
+        config.optionxform = str
+                             ^~~
+sqlitch/cli/commands/target.py:121: error: Cannot assign to a method 
+[method-assign]
+        config.optionxform = str
+        ^~~~~~~~~~~~~~~~~~
+sqlitch/cli/commands/target.py:121: error: Incompatible types in assignment
+(expression has type "type[str]", variable has type "Callable[[str], str]") 
+[assignment]
+        config.optionxform = str
+                             ^~~
+sqlitch/cli/commands/target.py:163: error: Cannot assign to a method 
+[method-assign]
+        config.optionxform = str
+        ^~~~~~~~~~~~~~~~~~
+sqlitch/cli/commands/target.py:163: error: Incompatible types in assignment
+(expression has type "type[str]", variable has type "Callable[[str], str]") 
+[assignment]
+        config.optionxform = str
+                             ^~~
+sqlitch/cli/commands/target.py:197: error: Cannot assign to a method 
+[method-assign]
+        config.optionxform = str
+        ^~~~~~~~~~~~~~~~~~
+sqlitch/cli/commands/target.py:197: error: Incompatible types in assignment
+(expression has type "type[str]", variable has type "Callable[[str], str]") 
+[assignment]
+        config.optionxform = str
+                             ^~~
+sqlitch/cli/commands/target.py:227: error: Cannot assign to a method 
+[method-assign]
+        config.optionxform = str
+        ^~~~~~~~~~~~~~~~~~
+sqlitch/cli/commands/target.py:227: error: Incompatible types in assignment
+(expression has type "type[str]", variable has type "Callable[[str], str]") 
+[assignment]
+        config.optionxform = str
+                             ^~~
+sqlitch/cli/commands/status.py:195: error: Argument 2 to "parse_plan" has
+incompatible type "**dict[str, object]"; expected "str | None"  [arg-type]
+            return parse_plan(plan_path, **kwargs)
+                                           ^~~~~~
+sqlitch/cli/commands/revert.py:656: error: Incompatible types in assignment
+(expression has type "str | None", variable has type "str")  [assignment]
+            target = configured_target
+                     ^~~~~~~~~~~~~~~~~
+sqlitch/cli/commands/plan.py:271: error: Argument 1 to "_format_path" has
+incompatible type "Path | str | None"; expected "Path | None"  [arg-type]
+                    key: _format_path(path, base_dir) for key, path in ent...
+                                      ^~~~
+sqlitch/cli/commands/help.py:86: error: Variable "click.BaseCommand" is not
+valid as a type  [valid-type]
+        root_command: click.BaseCommand,
+                      ^
+sqlitch/cli/commands/help.py:86: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+sqlitch/cli/commands/help.py:91: error: click.BaseCommand? has no attribute
+"name"  [attr-defined]
+    ...      with click.Context(root_command, info_name=root_command.name) as...
+                                                        ^~~~~~~~~~~~~~~~~
+sqlitch/cli/commands/help.py:96: error: click.BaseCommand? has no attribute
+"get_command"  [attr-defined]
+        command = root_command.get_command(root_ctx, topic)
+                  ^~~~~~~~~~~~~~~~~~~~~~~~
+sqlitch/cli/commands/engine.py:265: error: Cannot assign to a method 
+[method-assign]
+        parser.optionxform = str
+        ^~~~~~~~~~~~~~~~~~
+sqlitch/cli/commands/engine.py:265: error: Incompatible types in assignment
+(expression has type "type[str]", variable has type "Callable[[str], str]") 
+[assignment]
+        parser.optionxform = str
+                             ^~~
+sqlitch/cli/commands/deploy.py:275: error: Argument "registry_uri" to
+"_initialise_registry_state" has incompatible type "str | None"; expected "str" 
+[arg-type]
+                registry_uri=engine_target.registry_uri,
+                             ^~~~~~~~~~~~~~~~~~~~~~~~~~
+sqlitch/cli/commands/deploy.py:396: error: Incompatible types in assignment
+(expression has type "str | None", variable has type "str")  [assignment]
+            target = configured_target
+                     ^~~~~~~~~~~~~~~~~
+sqlitch/cli/commands/deploy.py:862: error: Dict entry 2 has incompatible type
+"str": "set[str]"; expected "str": "str"  [dict-item]
+                "tags": tag_lookup.get(str(change_id), set()),
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+sqlitch/cli/commands/deploy.py:913: error: Argument "requires" to
+"generate_change_id" has incompatible type "Sequence[str]"; expected
+"tuple[str, ...]"  [arg-type]
+                requires=change.dependencies,
+                         ^~~~~~~~~~~~~~~~~~~
+sqlitch/cli/commands/deploy.py:998: error: Dict entry 2 has incompatible type
+"str": "set[str]"; expected "str": "str"  [dict-item]
+            "tags": set(change.tags),
+            ^~~~~~~~~~~~~~~~~~~~~~~~
+sqlitch/cli/commands/deploy.py:1554: error: Incompatible types in assignment
+(expression has type "set[str]", target has type "str")  [assignment]
+            deployed_meta["tags"] = recorded_tags
+                                    ^~~~~~~~~~~~~
+sqlitch/cli/commands/config.py:394: error: Cannot assign to a method 
+[method-assign]
+        parser.optionxform = str
+        ^~~~~~~~~~~~~~~~~~
+sqlitch/cli/commands/config.py:394: error: Incompatible types in assignment
+(expression has type "type[str]", variable has type "Callable[[str], str]") 
+[assignment]
+        parser.optionxform = str
+                             ^~~
+sqlitch/cli/commands/config.py:456: error: Argument 2 to "range" has
+incompatible type "int | None"; expected "SupportsIndex"  [arg-type]
+        for idx in range(start, end):
+                                ^~~
+sqlitch/cli/commands/config.py:466: error: Argument 2 to "range" has
+incompatible type "int | None"; expected "SupportsIndex"  [arg-type]
+        for idx in range(start, end):
+                                ^~~
+sqlitch/cli/commands/config.py:473: error: Incompatible types in assignment
+(expression has type "int | None", variable has type "int")  [assignment]
+            insertion_index = end
+                              ^~~
+sqlitch/cli/commands/config.py:485: error: Argument 2 to "range" has
+incompatible type "int | None"; expected "SupportsIndex"  [arg-type]
+        for idx in range(start, end):
+                                ^~~
+sqlitch/cli/commands/show.py:149: error: Incompatible types in assignment
+(expression has type "Tag", variable has type "str")  [assignment]
+        for tag in plan.tags:
+        ^
+sqlitch/cli/commands/show.py:150: error: "str" has no attribute "change_ref" 
+[attr-defined]
+            if tag.change_ref != change.name:
+               ^~~~~~~~~~~~~~
+sqlitch/cli/commands/show.py:152: error: "str" has no attribute "name" 
+[attr-defined]
+            if tag.name in seen:
+               ^~~~~~~~
+sqlitch/cli/commands/show.py:154: error: "str" has no attribute "name" 
+[attr-defined]
+            ordered.append(tag.name)
+                           ^~~~~~~~
+sqlitch/cli/commands/show.py:155: error: "str" has no attribute "name" 
+[attr-defined]
+            seen.add(tag.name)
+                     ^~~~~~~~
+sqlitch/cli/commands/rework.py:178: error: Argument "original" to
+"_resolve_new_path" has incompatible type "Path | str | None"; expected
+"Path | None"  [arg-type]
+            original=deploy_source,
+                     ^~~~~~~~~~~~~
+sqlitch/cli/commands/rework.py:185: error: Argument "original" to
+"_resolve_new_path" has incompatible type "Path | str | None"; expected
+"Path | None"  [arg-type]
+            original=revert_source,
+                     ^~~~~~~~~~~~~
+sqlitch/cli/commands/rework.py:192: error: Argument "original" to
+"_resolve_new_path" has incompatible type "Path | str | None"; expected
+"Path | None"  [arg-type]
+            original=verify_source,
+                     ^~~~~~~~~~~~~
+sqlitch/cli/commands/rework.py:198: error: Argument 1 to "_copy_script" has
+incompatible type "Path | str | None"; expected "Path | None"  [arg-type]
+        _copy_script(deploy_source, deploy_target)
+                     ^~~~~~~~~~~~~
+sqlitch/cli/commands/rework.py:199: error: Argument 1 to "_copy_script" has
+incompatible type "Path | str | None"; expected "Path | None"  [arg-type]
+        _copy_script(revert_source, revert_target)
+                     ^~~~~~~~~~~~~
+sqlitch/cli/commands/rework.py:200: error: Argument 1 to "_copy_script" has
+incompatible type "Path | str | None"; expected "Path | None"  [arg-type]
+        _copy_script(verify_source, verify_target)
+                     ^~~~~~~~~~~~~
+Found 65 errors in 20 files (checked 52 source files)

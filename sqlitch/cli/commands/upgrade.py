@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import click
 
 from sqlitch.registry.migrations import LATEST_REGISTRY_VERSION
 
+from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
 from ._context import require_cli_context
-from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["upgrade_command"]
 

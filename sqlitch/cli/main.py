@@ -15,7 +15,13 @@ import click
 from sqlitch.config import resolver as config_resolver
 from sqlitch.utils.logging import StructuredLogger, create_logger
 
-from .commands import CommandError, iter_command_registrars, load_commands
+from .commands import (
+    CommandError,
+    iter_command_registrars,
+    load_commands,
+    reset_global_json_mode,
+    set_global_json_mode,
+)
 from .options import LogConfiguration, build_log_configuration, global_output_options
 
 _CLI_CONTEXT_META_KEY = "sqlitch_cli_context"
@@ -123,7 +129,7 @@ def _build_cli_context(
 class SqlitchGroup(click.Group):
     """Custom Click group that emits structured logging events."""
 
-    def invoke(self, ctx: click.Context) -> Any:  # type: ignore[override]
+    def invoke(self, ctx: click.Context) -> Any:
         error: BaseException | None = None
         try:
             return super().invoke(ctx)
@@ -226,6 +232,12 @@ def main(
     The function resolves global options into a shared context that downstream
     command handlers can consume via :func:`click.get_current_context`.
     """
+    token = set_global_json_mode(json_mode)
+
+    def _restore_json_mode() -> None:
+        reset_global_json_mode(token)
+
+    ctx.call_on_close(_restore_json_mode)
 
     # Handle --chdir before any other processing
     if chdir_path:
@@ -292,4 +304,4 @@ for registrar in iter_command_registrars():
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=no-value-for-parameter  # Click decorator injects parameters

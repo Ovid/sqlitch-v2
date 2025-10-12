@@ -9,7 +9,6 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-import pytest
 from click.testing import CliRunner
 
 from tests.support.test_helpers import isolated_test_context
@@ -96,7 +95,6 @@ def test_isolated_test_context_no_pollution_of_user_home():
 
     # Check state before test
     sqlitch_config_before = (home / ".config" / "sqlitch").exists()
-    sqitch_config_before = (home / ".sqitch" / "sqitch.conf").exists()
 
     with isolated_test_context(runner) as (_, temp_dir):
         # Create a config file in the isolated location
@@ -111,7 +109,6 @@ def test_isolated_test_context_no_pollution_of_user_home():
 
     # After context exits, verify state unchanged
     sqlitch_config_after = (home / ".config" / "sqlitch").exists()
-    sqitch_config_after = (home / ".sqitch" / "sqitch.conf").exists()
 
     assert sqlitch_config_after == sqlitch_config_before
     # Can't assert on sqitch_config since it may legitimately exist
@@ -234,3 +231,43 @@ def test_isolated_test_context_system_user_local_hierarchy():
         assert "pg" in system_config.read_text()
         assert "System User" in user_config.read_text()
         assert "sqlite" in local_config.read_text()
+
+
+def test_isolated_test_context_sets_sqitch_environment_variables():
+    """CRITICAL: Test that Sqitch environment variables are also set to prevent pollution.
+
+    This test ensures that UAT tests running actual `sqitch` commands via subprocess
+    do not pollute the user's real Sqitch configuration files.
+
+    Without these variables, UAT tests would write to ~/.sqitch/sqitch.conf and
+    potentially destroy user configuration.
+    """
+    runner = CliRunner()
+
+    with isolated_test_context(runner) as (runner_out, temp_dir):
+        # Verify SQITCH_* environment variables are set (not just SQLITCH_*)
+        assert "SQITCH_SYSTEM_CONFIG" in os.environ, "SQITCH_SYSTEM_CONFIG must be set"
+        assert "SQITCH_USER_CONFIG" in os.environ, "SQITCH_USER_CONFIG must be set"
+        assert "SQITCH_CONFIG" in os.environ, "SQITCH_CONFIG must be set"
+
+        # Verify they point to paths within temp_dir (same as SQLITCH_*)
+        sqitch_system = Path(os.environ["SQITCH_SYSTEM_CONFIG"])
+        sqitch_user = Path(os.environ["SQITCH_USER_CONFIG"])
+        sqitch_local = Path(os.environ["SQITCH_CONFIG"])
+
+        sqlitch_system = Path(os.environ["SQLITCH_SYSTEM_CONFIG"])
+        sqlitch_user = Path(os.environ["SQLITCH_USER_CONFIG"])
+        sqlitch_local = Path(os.environ["SQLITCH_CONFIG"])
+
+        # Both should point to the same isolated locations
+        assert sqitch_system == sqlitch_system, "SQITCH and SQLITCH system config must match"
+        assert sqitch_user == sqlitch_user, "SQITCH and SQLITCH user config must match"
+        assert sqitch_local == sqlitch_local, "SQITCH and SQLITCH local config must match"
+
+        # Verify all paths are within temp_dir
+        assert sqitch_system.parent == temp_dir / "etc" / "sqitch"
+        assert sqitch_user.parent == temp_dir / ".sqitch"
+        assert sqitch_local.parent == temp_dir
+
+        # Verify runner is returned
+        assert runner_out is runner

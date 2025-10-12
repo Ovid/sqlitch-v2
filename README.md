@@ -38,11 +38,72 @@ progress across milestones.
 
 ## Getting Started
 
+### Quick Start with Docker
+
+You can install and run this on your computer, but it's strongly recommended
+that you test it out in docker for safe isolation while it's in alpha. If you
+already have [sqitch](https://sqitch.org/) installed, you don't want to risk
+overwriting your user or system config files. The test suite has been designed
+to avoid this, but we make no guarantees at this time.
+
+The fastest way to try SQLitch is with Docker (no local Python setup required):
+
+```bash
+# Start an interactive container
+docker run -it --rm -v /tmp/sqlitch-demo:/home/rando -w /home/rando python:3.11 bash
+```
+
+Now you're inside the container in `/home/rando`.
+
+For a more thorough experiment, work through the full [Sqitch SQLite
+Tutorial](https://sqitch.org/docs/manual/sqitchtutorial-sqlite/). Otherwise,
+run these commands:
+
+```bash
+# Install SQLitch
+pip install git+https://github.com/Ovid/sqlitch-v2.git
+
+# Initialize a sample project
+mkdir myapp
+cd myapp
+sqlitch init myapp --uri https://github.com/example/myapp/ --engine sqlite
+
+# Configure identity
+sqlitch config user.name "Your Name"
+sqlitch config user.email "you@example.com"
+
+# Add your first database change
+sqlitch add users -n "Creates users table"
+
+# Edit the generated scripts
+echo "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT);" > deploy/users.sql
+echo "DROP TABLE users;" > revert/users.sql
+echo "SELECT * FROM users WHERE 0;" > verify/users.sql
+
+# Deploy to a database
+sqlitch deploy db:sqlite:myapp.db
+
+# Check status
+sqlitch status db:sqlite:myapp.db
+
+# When done, exit the container
+exit
+```
+
+For production use, mount your project directory as a volume:
+
+```bash
+docker run -it --rm -v $(pwd):/workspace -w /workspace python:3.11 bash -c "
+  pip install git+https://github.com/Ovid/sqlitch-v2.git &&
+  sqlitch status db:sqlite:myapp.db
+"
+```
+
 ### Prerequisites
 
 - Python 3.11+
 - SQLite (included in Python standard library)
-- (Optional) Docker, for future cross-engine parity tests
+- (Optional) Docker, for containerized deployment
 
 ### Local Setup
 
@@ -84,8 +145,9 @@ sqlitch log db:sqlite:flipr.db
 ```
 
 For the complete tutorial workflow with all commands, see:
-- [Tutorial Quick Start](specs/004-sqlitch-tutorial-parity/quickstart.md)
-- [Official Sqitch Tutorial](https://sqitch.org/docs/manual/sqitchtutorial-sqlite/)
+- **[📖 SQLitch SQLite Tutorial](docs/TUTORIAL_SQLITE.md)** - Comprehensive Python-focused guide
+- [Tutorial Quick Start](specs/004-sqlitch-tutorial-parity/quickstart.md) - Spec validation reference
+- [Official Sqitch Tutorial](https://sqitch.org/docs/manual/sqitchtutorial-sqlite/) - Original Perl version
 
 ### Running the Test Suite
 
@@ -114,6 +176,25 @@ python -m pytest
 
 Tests enforce ≥90% coverage and fail when skip guards are violated.
 
+### Troubleshooting
+
+**Issue: Configuration tests modify my real Sqitch config**
+- Ensure you're running tests in an isolated environment (see "Running the Test Suite" above)
+- Back up your `~/.sqitch/` and `~/.config/sqlitch/` directories before running tests locally
+
+**Issue: SQLite database locked errors**
+- Close any SQLite database browsers or other tools accessing your database
+- Ensure no other SQLitch/Sqitch processes are running: `ps aux | grep -E "sqitch|sqlitch"`
+
+**Issue: Import errors or missing dependencies**
+- Reinstall in development mode: `pip install -e .[dev]`
+- Verify Python version: `python --version` (must be 3.11+)
+
+**Issue: Template files not found**
+- Ensure you've initialized a project with `sqlitch init`
+- Check that your working directory contains a `sqitch.plan` or `sqlitch.plan` file
+- Verify template directories exist: `~/.sqlitch/templates/`, `~/.sqitch/templates/`, or `/etc/sqlitch/templates/`
+
 ### Code Quality Gates
 
 This project mirrors Sqitch’s zero-warning philosophy. Lint and type gates live
@@ -135,6 +216,44 @@ python -m tox
 - `specs/` – design documents, contracts, and milestone tracker.
 - `sqitch/` – vendored upstream Sqitch code used for parity validation.
 - `scripts/` – developer tooling, CI helpers, and Docker harness.
+- `uat/` – User acceptance testing scripts for validating Sqitch compatibility
+
+## Release Checklist (for Maintainers)
+
+Before tagging a new release:
+
+1. **Run all quality gates:**
+   ```bash
+   source .venv/bin/activate
+   pytest --cov=sqlitch --cov-report=term  # Coverage must be ≥90%
+   mypy --strict sqlitch/                  # No type errors
+   pydocstyle sqlitch/                     # All docstrings compliant
+   pip-audit                               # No unresolved security issues
+   bandit -r sqlitch/                      # Security scan passes
+   python -m tox                           # Full gate suite
+   ```
+
+2. **Execute manual UAT compatibility scripts** (SQLite tutorial only):
+   ```bash
+   python uat/side-by-side.py --out artifacts/side-by-side.log
+   python uat/forward-compat.py --out artifacts/forward-compat.log
+   python uat/backward-compat.py --out artifacts/backward-compat.log
+   ```
+   - All three scripts must exit with code 0
+   - Review logs for behavioral differences (cosmetic diffs acceptable)
+   - Post evidence summary in release PR comment
+
+3. **Update version and CHANGELOG:**
+   - Bump version in `pyproject.toml`
+   - Document changes in `CHANGELOG.md`
+   - Update migration notes if registry schema changed
+
+4. **Final verification:**
+   - Run full test suite one more time: `pytest`
+   - Verify clean git status: `git status`
+   - Tag release: `git tag v1.x.x`
+
+See `specs/005-lockdown/quickstart.md` for detailed UAT execution instructions.
 
 ## Contributing
 

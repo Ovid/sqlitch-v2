@@ -7,8 +7,9 @@ from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
 
-from .model import Change, Plan, PlanEntry, Tag
 from sqlitch.utils.time import isoformat_utc
+
+from .model import Change, Plan, PlanEntry, Tag
 
 
 def compute_checksum(content: str) -> str:

@@ -208,6 +208,70 @@ tox -e lint type security
 
 Additional tox environments may be added as features land; check `tox.ini` for the latest list.
 
+## 4a. Lockdown Workflow and UAT Evidence
+
+**For release-related work (lockdown phases, pre-1.0 stabilization):**
+
+### Quality Lockdown Process
+
+The lockdown workflow ensures SQLitch meets all constitutional quality gates before tagging stable releases:
+
+1. **Baseline Assessment:**
+   ```bash
+   # Run full quality gate suite
+   pytest --cov=sqlitch --cov-report=term --cov-report=html
+   mypy --strict sqlitch/
+   pydocstyle sqlitch/
+   pip-audit
+   bandit -r sqlitch/
+   ```
+
+2. **Coverage Requirements:**
+   - Overall coverage must be ≥90%
+   - All lockdown-modified modules (config, registry, identity) must pass pydocstyle
+   - Zero mypy --strict errors in core modules
+
+3. **Manual UAT Compatibility Scripts:**
+   
+   Before any release, execute the three UAT compatibility scripts to validate Sqitch parity:
+   
+   ```bash
+   python uat/side-by-side.py --out artifacts/side-by-side.log
+   python uat/forward-compat.py --out artifacts/forward-compat.log
+   python uat/backward-compat.py --out artifacts/backward-compat.log
+   ```
+   
+   **Success criteria:**
+   - All three scripts exit with code 0
+   - Only cosmetic differences allowed (whitespace, case formatting)
+   - Behavioral differences must be documented and justified
+   
+4. **UAT Evidence Requirements:**
+   
+   Post a summary comment on the release PR:
+   ```
+   UAT Compatibility Run (SQLite tutorial)
+   - Side-by-side: ✅ (log: <link to sanitized log>)
+   - Forward compat: ✅ (log: <link to sanitized log>)
+   - Backward compat: ✅ (log: <link to sanitized log>)
+   Notes: <surface any observed cosmetic diffs>
+   ```
+   
+   - Upload sanitized logs to PR thread or link to persistent storage
+   - Never commit large raw logs to git history
+   - Review logs for timestamp/SHA1 sanitization before sharing
+
+5. **Release Blockers:**
+   
+   These must be resolved before tagging:
+   - Any UAT script failure (non-zero exit)
+   - Coverage below 90%
+   - Unresolved security findings from pip-audit or bandit
+   - mypy --strict errors in core modules
+   - Missing or incomplete UAT evidence in release PR
+
+**Reference:** See `specs/005-lockdown/quickstart.md` for detailed UAT execution instructions.
+
 ## 5. Pull Request Checklist
 
 Every PR must check the boxes in `.github/pull_request_template.md`, which cover:

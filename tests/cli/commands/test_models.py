@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import pytest
 from types import MappingProxyType
+
+import pytest
 
 from sqlitch.cli.commands._models import CommandResult, DeployOptions, RevertOptions
 

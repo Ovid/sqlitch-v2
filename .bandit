@@ -1,0 +1,37 @@
+# Bandit Security Scan Configuration
+# https://bandit.readthedocs.io/
+
+# Exclude test directories to reduce noise
+exclude_dirs:
+  - /tests/
+  - /uat/
+  - /specs/
+  - /build/
+  - /.venv/
+
+# Skip specific tests (false positives)
+skips:
+  # B303, B324: Use of insecure MD5/SHA1 hash functions
+  # RATIONALE: SHA1 is used for Sqitch-compatible change ID generation and
+  # script checksums, NOT for security purposes. These are content hashes
+  # matching upstream Sqitch behavior.
+  # LOCATIONS: 
+  #   - sqlitch/utils/identity.py (change ID generation per Sqitch spec)
+  #   - sqlitch/cli/commands/deploy.py (script checksums for integrity)
+  - B303
+  - B324
+  
+  # B608: Hardcoded SQL expressions (f-strings with schema names)
+  # RATIONALE: registry_schema is validated internally and comes from engine
+  # configuration, not user input. All actual user data is properly parameterized
+  # using ? placeholders. Schema names cannot be parameterized in SQL.
+  # LOCATIONS:
+  #   - sqlitch/cli/commands/deploy.py (registry operations)
+  #   - sqlitch/cli/commands/revert.py (registry operations)
+  - B608
+
+# Tests to run (all others enabled by default)
+# No additional tests explicitly enabled
+
+# Severity thresholds
+# We fail on MEDIUM and above, but document all suppressions

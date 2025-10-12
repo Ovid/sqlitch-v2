@@ -10,6 +10,7 @@ __all__ = [
     "coerce_optional_datetime",
     "parse_iso_datetime",
     "isoformat_utc",
+    "format_registry_timestamp",
 ]
 
 
@@ -81,4 +82,24 @@ def isoformat_utc(
     rendered = normalized.isoformat()
     if use_z_suffix:
         rendered = rendered.replace("+00:00", "Z")
+    return rendered
+
+
+def format_registry_timestamp(
+    value: datetime,
+    *,
+    label: str | None = None,
+) -> str:
+    """Render a timestamp matching Sqitch registry formatting.
+
+    Sqitch stores registry timestamps using a space separator without a
+    timezone offset. Microseconds are preserved but trailing zeros are
+    trimmed to mirror the SQLite storage format.
+    """
+
+    normalized = ensure_timezone(value, label or "value").astimezone(timezone.utc)
+    rendered = normalized.strftime("%Y-%m-%d %H:%M:%S.%f")
+    rendered = rendered.rstrip("0")
+    if rendered.endswith("."):
+        rendered = rendered[:-1]
     return rendered

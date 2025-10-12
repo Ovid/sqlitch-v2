@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from sqlitch.registry.state import DeployedChange, DeploymentStatus
-from datetime import datetime, timezone
+from sqlitch.registry.state import DeploymentStatus
 
 
 class TestDeploymentStatusProperties:

@@ -68,6 +68,27 @@ class TestDeployedChangeFromRegistryRow:
         assert deployed.script_hash is None
         assert deployed.change_id == "abc123"
 
+    def test_parses_naive_registry_timestamps_as_utc(self):
+        """Should treat naive registry timestamps as UTC."""
+        row = (
+            "abc123",
+            "deadbeef",
+            "users",
+            "flipr",
+            "",
+            "2025-01-15 10:30:00.250",  # committed_at without timezone
+            "Ada",
+            "ada@example.com",
+            "2025-01-14 18:00:00",  # planned_at without timezone
+            "Ada",
+            "ada@example.com",
+        )
+
+        deployed = DeployedChange.from_registry_row(row)
+
+        assert deployed.committed_at == _aware(datetime(2025, 1, 15, 10, 30, 0, 250000))
+        assert deployed.planned_at == _aware(datetime(2025, 1, 14, 18, 0))
+
     def test_timezone_aware_datetime_handling(self):
         """Should ensure datetime fields are timezone-aware."""
         row = (

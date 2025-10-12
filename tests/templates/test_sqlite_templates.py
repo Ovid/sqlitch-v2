@@ -8,7 +8,6 @@ import pytest
 
 from sqlitch.plan.formatter import compute_checksum
 
-
 pytestmark = pytest.mark.skip(reason="Pending template packaging (see T012h)")
 
 

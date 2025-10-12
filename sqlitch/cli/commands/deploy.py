@@ -3,19 +3,21 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import sqlite3
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable
+from typing import Callable, TypedDict
 
 import click
 
+from sqlitch.config import resolver as config_resolver
 from sqlitch.engine import (
-    EngineTarget,
     MYSQL_STUB_MESSAGE,
     POSTGRES_STUB_MESSAGE,
+    EngineTarget,
     canonicalize_engine_name,
     create_engine,
 )
@@ -26,6 +28,7 @@ from sqlitch.engine.sqlite import (
     extract_sqlite_statements,
     resolve_sqlite_filesystem_path,
     script_manages_transactions,
+    validate_sqlite_script,
 )
 from sqlitch.plan.model import Change, Plan
 from sqlitch.plan.parser import PlanParseError, parse_plan
@@ -37,10 +40,9 @@ from sqlitch.utils.identity import (
     resolve_username,
 )
 from sqlitch.utils.logging import StructuredLogger
-from sqlitch.utils.time import isoformat_utc
+from sqlitch.utils.time import format_registry_timestamp
 
-from sqlitch.config import resolver as config_resolver
-
+from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
 from ._context import (
     environment_from,
@@ -50,9 +52,19 @@ from ._context import (
     require_cli_context,
 )
 from ._plan_utils import resolve_default_engine, resolve_plan_path
-from ..options import global_output_options, global_sqitch_options
 
 __all__ = ["deploy_command"]
+
+# Module-level logger for low-level warnings (e.g., cleanup failures)
+_module_logger = logging.getLogger(__name__)
+
+
+class DeployedMetadata(TypedDict):
+    """Type for deployed change metadata dictionary."""
+
+    change_id: str
+    script_hash: str
+    tags: set[str]
 
 
 @dataclass(frozen=True, slots=True)
@@ -262,6 +274,8 @@ def _execute_deploy(request: _DeployRequest) -> None:
     if not isinstance(engine, SQLiteEngine):  # pragma: no cover - defensive guard
         raise CommandError("Only the SQLite engine is supported for deploy in this milestone")
 
+    # EngineTarget.__post_init__ guarantees registry_uri is never None
+    assert engine_target.registry_uri is not None  # nosec B101 - type guard for invariant
     registry_schema = REGISTRY_ATTACHMENT_ALIAS
 
     try:
@@ -276,19 +290,42 @@ def _execute_deploy(request: _DeployRequest) -> None:
             registry_uri=engine_target.registry_uri,
         )
 
-        deployed = _load_deployed_state(
+        deployed_ids, deployed_metadata = _load_deployed_state(
             connection=connection,
             registry_schema=registry_schema,
             project=request.plan.project_name,
         )
-        pending = [change for change in changes if change.name not in deployed]
+
+        # Build a cache of change IDs as we process the plan sequentially
+        # This allows us to resolve parent IDs (previous change chronologically)
+        change_id_cache: dict[int, str] = {}
+
+        # Compute change_id for each change in the plan and filter out deployed ones
+        pending: list[tuple[Change, str]] = []
+        for idx, change in enumerate(request.plan.changes):
+            # Resolve parent ID (the previous change chronologically)
+            parent_id = _resolve_parent_id_for_change(request.plan, idx, change_id_cache)
+
+            # Compute the change ID with the resolved parent
+            change_id = _compute_change_id_for_change(
+                request.plan.project_name,
+                change,
+                request.plan.uri,
+                parent_id,
+            )
+
+            # Cache the ID by index for parent resolution
+            change_id_cache[idx] = change_id
+
+            if change_id not in deployed_ids:
+                pending.append((change, change_id))
 
         _synchronise_registry_tags(
             connection=connection,
             registry_schema=registry_schema,
             project=request.plan.project_name,
             plan=request.plan,
-            deployed=deployed,
+            deployed=deployed_metadata,
             env=request.env,
             committer_name=committer_name,
             committer_email=committer_email,
@@ -307,7 +344,7 @@ def _execute_deploy(request: _DeployRequest) -> None:
             return
 
         applied = 0
-        for change in pending:
+        for change, change_id in pending:
             change_payload = {
                 "change": change.name,
                 "plan": request.plan.project_name,
@@ -321,10 +358,11 @@ def _execute_deploy(request: _DeployRequest) -> None:
                     project=request.plan.project_name,
                     plan_root=request.plan_path.parent,
                     change=change,
+                    change_id=change_id,
                     env=request.env,
                     committer_name=committer_name,
                     committer_email=committer_email,
-                    deployed=deployed,
+                    deployed=deployed_metadata,
                     registry_schema=registry_schema,
                 )
             except Exception as exc:
@@ -369,8 +407,13 @@ def _execute_deploy(request: _DeployRequest) -> None:
     finally:
         try:
             connection.close()
-        except Exception:  # pragma: no cover - best effort cleanup
-            pass
+        except Exception as exc:  # pragma: no cover - best effort cleanup
+            # Log connection cleanup failure but don't mask the original exception
+            _module_logger.warning(
+                "Failed to close database connection during cleanup: %s",
+                exc,
+                extra={"exception_type": type(exc).__name__},
+            )
 
 
 def _resolve_target(
@@ -389,6 +432,7 @@ def _resolve_target(
     if len(positional_targets) > 1:
         raise CommandError("Multiple positional targets are not supported yet.")
 
+    target: str | None
     if positional_targets:
         target = positional_targets[0]
     elif option_value:
@@ -404,13 +448,14 @@ def _resolve_target(
             env=env,
         )
         engine_section = f'engine "{default_engine}"'
-        engine_target = config_profile.settings.get(engine_section, {}).get("target")
-        if engine_target:
-            target = engine_target
+        engine_target_value = config_profile.settings.get(engine_section, {}).get("target")
+        if engine_target_value and isinstance(engine_target_value, str):
+            target = engine_target_value
 
     if not target:
         raise CommandError(
-            "A deployment target must be provided via --target, positional argument, or configuration."
+            "A deployment target must be provided via --target, "
+            "positional argument, or configuration."
         )
 
     return target
@@ -440,11 +485,18 @@ def _load_plan(plan_path: Path, default_engine: str | None) -> Plan:
 
 
 def _assert_plan_dependencies_present(*, plan: Plan, plan_path: Path) -> None:
+    """Verify all dependencies exist in the plan.
+
+    Dependencies can include tag references (e.g., "userflips@v1.0.0-dev2" for reworked changes).
+    We normalize these to bare change names when checking plan presence.
+    """
     known_changes = {change.name for change in plan.changes}
     missing: list[str] = []
     for change in plan.changes:
         for dependency in change.dependencies:
-            if dependency not in known_changes and dependency not in missing:
+            # Strip tag suffix if present (e.g., "userflips@v1.0.0-dev2" -> "userflips")
+            dependency_name = dependency.split("@", 1)[0] if "@" in dependency else dependency
+            if dependency_name not in known_changes and dependency not in missing:
                 missing.append(dependency)
 
     if not missing:
@@ -499,7 +551,7 @@ def _resolve_engine_target(
     """Return an :class:`EngineTarget` for the requested deployment target."""
 
     candidate = target.strip()
-    
+
     # Check if the candidate is a target alias and resolve it
     if not candidate.startswith("db:"):
         # Might be a target alias - try to resolve it
@@ -524,7 +576,7 @@ def _resolve_engine_target(
             original_display = candidate
     else:
         original_display = candidate
-    
+
     if candidate.startswith("db:"):
         remainder = candidate[3:]
         engine_token, separator, payload = remainder.partition(":")
@@ -624,7 +676,7 @@ def _create_engine_connection(
     if engine_target.engine != "sqlite":
         raise CommandError(f"Engine '{engine_target.engine}' deployment is not supported yet.")
 
-    assert isinstance(engine, SQLiteEngine)  # narrow for downstream operations
+    assert isinstance(engine, SQLiteEngine)  # nosec B101 - type guard after engine check
 
     _ensure_sqlite_parent_directory(engine_target.uri)
     if engine_target.registry_uri:
@@ -731,7 +783,7 @@ def _registry_tables_exist(connection: sqlite3.Connection, registry_schema: str)
     """Return ``True`` if essential registry tables are present."""
 
     cursor = connection.execute(
-        f"SELECT name FROM {registry_schema}.sqlite_master WHERE type = 'table' "
+        f"SELECT name FROM {registry_schema}.sqlite_master WHERE type = 'table' "  # nosec B608
         "AND name IN ('changes', 'projects', 'events')"
     )
     try:
@@ -781,7 +833,7 @@ def _ensure_release_entry(
     """Ensure the registry release version row exists."""
 
     cursor = connection.execute(
-        f"SELECT 1 FROM {registry_schema}.releases WHERE version = ?",
+        f"SELECT 1 FROM {registry_schema}.releases WHERE version = ?",  # nosec B608
         (LATEST_REGISTRY_VERSION,),
     )
     try:
@@ -792,7 +844,7 @@ def _ensure_release_entry(
     if not exists:
         connection.execute(
             f"INSERT INTO {registry_schema}.releases (version, installer_name, installer_email) "
-            "VALUES (?, ?, ?)",
+            "VALUES (?, ?, ?)",  # nosec B608
             (LATEST_REGISTRY_VERSION, committer_name, committer_email),
         )
 
@@ -809,7 +861,7 @@ def _ensure_project_entry(
     """Insert the project metadata if it has not already been registered."""
 
     cursor = connection.execute(
-        f"SELECT 1 FROM {registry_schema}.projects WHERE project = ?",
+        f"SELECT 1 FROM {registry_schema}.projects WHERE project = ?",  # nosec B608
         (project,),
     )
     try:
@@ -820,21 +872,102 @@ def _ensure_project_entry(
     if not exists:
         connection.execute(
             f"INSERT INTO {registry_schema}.projects (project, uri, creator_name, creator_email) "
-            "VALUES (?, ?, ?, ?)",
+            "VALUES (?, ?, ?, ?)",  # nosec B608
             (project, plan_uri, creator_name, creator_email),
         )
+
+
+def _resolve_parent_id_for_change(
+    plan: Plan,
+    change_index: int,
+    change_id_cache: dict[int, str],
+) -> str | None:
+    """Resolve the parent change ID based on chronological order in the plan.
+
+    Following Sqitch's behavior, the parent is simply the ID of the previous change
+    in the plan (chronologically). This creates a chain that links all changes together,
+    regardless of their dependency relationships.
+
+    Args:
+        plan: The Plan object (not used, kept for API consistency)
+        change_index: The index of the current change in the plan (0-based)
+        change_id_cache: Dict mapping change indices to their calculated IDs
+
+    Returns:
+        The parent change ID if this is not the first change, None otherwise
+    """
+    # The first change has no parent
+    if change_index == 0:
+        return None
+
+    # The parent is the previous change (by index)
+    return change_id_cache.get(change_index - 1)
+
+
+def _compute_change_id_for_change(
+    project: str,
+    change: Change,
+    uri: str | None = None,
+    parent_id: str | None = None,
+) -> str:
+    """Compute the change_id for a Change object using Sqitch's algorithm.
+
+    Args:
+        project: Project name
+        change: Change object from the plan
+        uri: Optional project URI (required for Sqitch compatibility)
+        parent_id: Optional parent change ID (ID of last required change,
+                   required for Sqitch compatibility)
+
+    Returns:
+        40-character SHA1 hex digest string
+    """
+    # Extract planner name and email
+    # Change.planner format is "Name <email>"
+    planner_match = change.planner.split("<", 1)
+    if len(planner_match) == 2:
+        planner_name = planner_match[0].strip()
+        planner_email = planner_match[1].rstrip(">").strip()
+    else:
+        planner_name = change.planner
+        planner_email = ""
+
+    # Get dependencies (requires) - keep the full dependency strings including @tag suffixes
+    # This must match what's used during deployment
+    requires = tuple(change.dependencies)
+
+    # Change.planned_at is already a datetime object
+    return generate_change_id(
+        project=project,
+        change=change.name,
+        timestamp=change.planned_at,
+        planner_name=planner_name,
+        planner_email=planner_email,
+        note=change.notes or "",
+        requires=requires,
+        conflicts=tuple(change.conflicts),
+        uri=uri,
+        parent_id=parent_id,
+    )
 
 
 def _load_deployed_state(
     connection: sqlite3.Connection,
     registry_schema: str,
     project: str,
-) -> dict[str, dict[str, str]]:
-    """Return a mapping of deployed change names to registry metadata."""
+) -> tuple[set[str], dict[str, DeployedMetadata]]:
+    """Return deployed change IDs and a mapping of names to registry metadata.
+
+    Returns:
+        A tuple of (deployed_change_ids, name_to_metadata) where:
+        - deployed_change_ids: Set of change_id strings for all deployed changes
+        - name_to_metadata: Dict mapping change names to their latest deployment metadata
+                           (useful for script_hash validation and tag lookups)
+    """
 
     cursor = connection.execute(
         f'SELECT "change", change_id, script_hash FROM {registry_schema}.changes WHERE project = ? '
-        "ORDER BY committed_at ASC, change_id ASC",
+        "ORDER BY committed_at ASC, change_id ASC",  # nosec B608
         (project,),
     )
     try:
@@ -843,7 +976,7 @@ def _load_deployed_state(
         cursor.close()
 
     tag_cursor = connection.execute(
-        f"SELECT change_id, tag FROM {registry_schema}.tags WHERE project = ?",
+        f"SELECT change_id, tag FROM {registry_schema}.tags WHERE project = ?",  # nosec B608
         (project,),
     )
     try:
@@ -855,14 +988,21 @@ def _load_deployed_state(
     for change_id, tag in tag_rows:
         tag_lookup.setdefault(str(change_id), set()).add(str(tag))
 
-    deployed: dict[str, dict[str, str]] = {}
+    deployed_ids: set[str] = set()
+    name_to_metadata: dict[str, DeployedMetadata] = {}
+
     for change_name, change_id, script_hash in rows:
-        deployed[str(change_name)] = {
-            "change_id": str(change_id),
+        change_id_str = str(change_id)
+        deployed_ids.add(change_id_str)
+        # Keep updating the dict so the last (most recent) version wins
+        # This is used for script_hash checking and tag lookups
+        name_to_metadata[str(change_name)] = {
+            "change_id": change_id_str,
             "script_hash": str(script_hash) if script_hash is not None else "",
-            "tags": tag_lookup.get(str(change_id), set()),
+            "tags": tag_lookup.get(change_id_str, set()),
         }
-    return deployed
+
+    return deployed_ids, name_to_metadata
 
 
 def _apply_change(
@@ -871,10 +1011,11 @@ def _apply_change(
     project: str,
     plan_root: Path,
     change: Change,
+    change_id: str,
     env: Mapping[str, str],
     committer_name: str,
     committer_email: str,
-    deployed: dict[str, dict[str, str]],
+    deployed: dict[str, DeployedMetadata],
     registry_schema: str,
 ) -> str:
     """Execute a deploy script and record registry state for ``change``.
@@ -887,6 +1028,7 @@ def _apply_change(
         raise CommandError(f"Deploy script {script_path} is missing for change '{change.name}'.")
 
     script_body = script_path.read_text(encoding="utf-8")
+    validate_sqlite_script(script_body)
     script_hash = _compute_script_hash(script_body)
     manages_transactions = script_manages_transactions(script_body)
 
@@ -899,24 +1041,13 @@ def _apply_change(
         committer_email,
     )
 
-    # Compute change_id using Sqitch's Git-style algorithm if not already set
+    # Use the pre-computed change_id passed in (already includes parent_id)
+    # Fall back to computing if change has an explicit change_id set
     if change.change_id is not None:
         change_id = str(change.change_id)
-    else:
-        note = change.notes or ""
-        change_id = generate_change_id(
-            project=project,
-            change=change.name,
-            timestamp=change.planned_at,
-            planner_name=planner_name,
-            planner_email=planner_email,
-            note=note,
-            requires=change.dependencies,
-            conflicts=(),  # SQLitch doesn't support conflicts yet
-        )
 
-    committed_at = isoformat_utc(datetime.now(timezone.utc), drop_microseconds=False)
-    planned_at = isoformat_utc(change.planned_at, drop_microseconds=False)
+    committed_at = format_registry_timestamp(datetime.now(timezone.utc))
+    planned_at = format_registry_timestamp(change.planned_at)
     note = change.notes or ""
 
     def _record(cursor: sqlite3.Cursor) -> None:
@@ -1012,13 +1143,14 @@ def _resolve_script_path(plan_root: Path, change: Change, kind: str) -> Path:
     path = Path(script_ref)
     if not path.is_absolute():
         path = plan_root / path
+
     return path
 
 
 def _compute_script_hash(script_body: str) -> str:
     """Return the SHA-1 hash of the deploy script body."""
 
-    return hashlib.sha1(script_body.encode("utf-8")).hexdigest()
+    return hashlib.sha1(script_body.encode("utf-8"), usedforsecurity=False).hexdigest()
 
 
 def _resolve_committer_identity(
@@ -1094,19 +1226,36 @@ def _parse_identity(identity: str) -> tuple[str, str | None]:
 
 
 def _validate_dependencies(change: Change, deployed_lookup: Mapping[str, str]) -> None:
-    """Ensure all required dependencies have been deployed."""
+    """Ensure all required dependencies have been deployed.
+
+    Dependencies can include tag references (e.g., "userflips@v1.0.0-dev2" for reworked changes).
+    We normalize these to bare change names when checking deployment status.
+    """
+
+    def _normalize_dependency(dep: str) -> str:
+        """Strip tag suffix from dependency name if present."""
+        if "@" in dep:
+            return dep.split("@", 1)[0]
+        return dep
 
     missing = [
-        dependency for dependency in change.dependencies if dependency not in deployed_lookup
+        dependency
+        for dependency in change.dependencies
+        if _normalize_dependency(dependency) not in deployed_lookup
     ]
     if not missing:
         return
 
     if len(missing) == 1:
-        message = f"Change '{change.name}' depends on '{missing[0]}' which has not been deployed."
+        message = (
+            f"Change '{change.name}' depends on '{missing[0]}' " f"which has not been deployed."
+        )
     else:
         joined = ", ".join(missing)
-        message = f"Change '{change.name}' depends on the following changes which have not been deployed: {joined}."
+        message = (
+            f"Change '{change.name}' depends on the following changes "
+            f"which have not been deployed: {joined}."
+        )
     raise CommandError(message)
 
 
@@ -1232,6 +1381,8 @@ def _record_deployment_entries(
 ) -> None:
     """Persist registry entries for a deployed change."""
 
+    # nosec B608: registry_schema is always the constant REGISTRY_ATTACHMENT_ALIAS ("sqitch")
+    # It's never user input, so SQL injection is not possible.
     cursor.execute(
         f"""
         INSERT INTO {registry_schema}.changes (
@@ -1247,7 +1398,7 @@ def _record_deployment_entries(
             planner_name,
             planner_email
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
+        """,  # nosec B608
         (
             change_id,
             script_hash,
@@ -1281,7 +1432,7 @@ def _record_deployment_entries(
             planner_name,
             planner_email
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
+        """,  # nosec B608
         (
             "deploy",
             change_id,
@@ -1301,16 +1452,22 @@ def _record_deployment_entries(
     )
 
     for dependency in dependencies:
-        dependency_id = dependency_lookup.get(dependency)
+        # Normalize dependency name by stripping tag suffix if present
+        # (e.g., "userflips@v1.0.0-dev2" -> "userflips")
+        # This handles reworked changes where dependencies reference
+        # previous versions
+        dependency_name = dependency.split("@", 1)[0] if "@" in dependency else dependency
+        dependency_id = dependency_lookup.get(dependency_name)
         if dependency_id is None:
             raise CommandError(
-                f"Dependency '{dependency}' is not recorded in the registry for change '{change.name}'."
+                f"Dependency '{dependency}' is not recorded in the registry "
+                f"for change '{change.name}'."
             )
         cursor.execute(
             f"""
             INSERT INTO {registry_schema}.dependencies (change_id, type, dependency, dependency_id)
             VALUES (?, 'require', ?, ?)
-            """,
+            """,  # nosec B608
             (change_id, dependency, dependency_id),
         )
 
@@ -1386,7 +1543,7 @@ def _record_failure_event(
                 planner_name,
                 planner_email
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
+            """,  # nosec B608
             (
                 "deploy_fail",
                 change_id,
@@ -1458,7 +1615,9 @@ def _insert_registry_tags(
     """Insert tag rows for ``tags`` referencing ``change_id`` into the registry."""
 
     for tag in tags:
-        tag_id = hashlib.sha1(f"{change_id}:{tag}".encode("utf-8")).hexdigest()
+        tag_id = hashlib.sha1(
+            f"{change_id}:{tag}".encode("utf-8"), usedforsecurity=False
+        ).hexdigest()
         cursor.execute(
             f"""
             INSERT INTO {registry_schema}.tags (
@@ -1474,7 +1633,7 @@ def _insert_registry_tags(
                 planner_name,
                 planner_email
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
+            """,  # nosec B608
             (
                 tag_id,
                 tag,
@@ -1497,16 +1656,48 @@ def _synchronise_registry_tags(
     registry_schema: str,
     project: str,
     plan: Plan,
-    deployed: dict[str, dict[str, str]],
+    deployed: dict[str, DeployedMetadata],
     env: Mapping[str, str],
     committer_name: str,
     committer_email: str,
 ) -> None:
-    """Ensure registry tag entries mirror plan metadata for deployed changes."""
+    """Ensure registry tag entries mirror plan metadata for deployed changes.
 
-    for change in plan.changes:
+    Note: The 'deployed' dict maps change names to their LATEST deployment metadata.
+    For reworked changes with duplicate names, we need to match by change_id to avoid
+    trying to insert the same tags multiple times.
+    """
+
+    # Build a cache of change IDs as we process the plan sequentially
+    # This allows us to resolve parent IDs (previous change chronologically)
+    change_id_cache: dict[int, str] = {}
+
+    # Build a set of already-processed change_ids to avoid duplicate tag insertions
+    processed_change_ids: set[str] = set()
+
+    for idx, change in enumerate(plan.changes):
+        # Resolve parent ID (the previous change chronologically)
+        parent_id = _resolve_parent_id_for_change(plan, idx, change_id_cache)
+
+        # Compute this change's ID to match against deployed changes
+        change_id = _compute_change_id_for_change(project, change, plan.uri, parent_id)
+
+        # Cache the ID by index for parent resolution
+        change_id_cache[idx] = change_id
+
+        # Skip if we've already processed this specific change_id
+        if change_id in processed_change_ids:
+            continue
+        processed_change_ids.add(change_id)
+
+        # Find deployed metadata by name (works for single changes, gets latest for reworks)
         deployed_meta = deployed.get(change.name)
         if not deployed_meta:
+            continue
+
+        # Only process if this is actually the deployed version
+        # (deployed_meta might be for a different version of a reworked change)
+        if deployed_meta["change_id"] != change_id:
             continue
 
         recorded_tags = set(deployed_meta.get("tags") or ())
@@ -1520,8 +1711,8 @@ def _synchronise_registry_tags(
             env,
             committer_email,
         )
-        committed_at = isoformat_utc(datetime.now(timezone.utc), drop_microseconds=False)
-        planned_at = isoformat_utc(change.planned_at, drop_microseconds=False)
+        committed_at = format_registry_timestamp(datetime.now(timezone.utc))
+        planned_at = format_registry_timestamp(change.planned_at)
         note = change.notes or ""
 
         cursor = connection.cursor()

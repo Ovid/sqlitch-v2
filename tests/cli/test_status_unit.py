@@ -7,28 +7,28 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-from click.testing import CliRunner
 import pytest
+from click.testing import CliRunner
 
-from sqlitch.cli.main import main
-from tests.support.test_helpers import isolated_test_context
 from sqlitch.cli.commands import CommandError
 from sqlitch.cli.commands.status import (
     CurrentChange,
     _build_json_payload,
     _calculate_pending,
     _determine_status,
-    _render_human_output,
-    _resolve_registry_target,
-    _resolve_plan_path,
     _load_plan,
     _load_registry_rows,
+    _render_human_output,
+    _resolve_plan_path,
+    _resolve_registry_target,
 )
+from sqlitch.cli.main import main
 from sqlitch.engine.sqlite import derive_sqlite_registry_uri, resolve_sqlite_filesystem_path
 from sqlitch.plan.formatter import write_plan
 from sqlitch.plan.model import Change
 from sqlitch.plan.parser import PlanParseError
 from sqlitch.utils.fs import ArtifactConflictError, ArtifactResolution
+from tests.support.test_helpers import isolated_test_context
 
 
 @pytest.fixture()
@@ -124,6 +124,12 @@ def test_status_requires_explicit_target(runner: CliRunner) -> None:
     """Invoking status without a target should raise a user-facing error."""
 
     with isolated_test_context(runner) as (runner, temp_dir):
+        # Create a minimal plan so we can test target requirement
+        Path("sqitch.plan").write_text(
+            "%project=test\n%uri=https://example.com/test\n\n", encoding="utf-8"
+        )
+        Path("sqitch.conf").write_text("[core]\n    engine = sqlite\n", encoding="utf-8")
+
         result = runner.invoke(main, ["status"])
 
         assert result.exit_code != 0
@@ -566,7 +572,7 @@ def test_load_plan_wraps_parser_errors(monkeypatch: pytest.MonkeyPatch, tmp_path
     plan_path = tmp_path / "sqlitch.plan"
     plan_path.write_text("%project=widgets\n%default_engine=sqlite\n", encoding="utf-8")
 
-    def fake_parse(_: Path) -> None:
+    def fake_parse(_: Path, *, default_engine: str | None = None) -> None:
         raise PlanParseError("boom")
 
     monkeypatch.setattr("sqlitch.cli.commands.status.parse_plan", fake_parse)
