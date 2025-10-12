@@ -62,7 +62,7 @@ def default_template_body(kind: str) -> str:
 
 def is_safe_path(basedir: Path | str, user_path: Path | str) -> bool:
     """Check if user_path is safely contained within basedir.
-    
+
     This prevents path traversal attacks by ensuring absolute user paths
     are user-controlled and don't escape intended boundaries.
     """
