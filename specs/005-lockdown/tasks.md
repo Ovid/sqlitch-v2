@@ -293,6 +293,78 @@ pytest --cov=sqlitch --cov-report=term
 
 ---
 
+## Phase 3.7 · Test Suite Consolidation (added 2025-10-12)
+**Reference**: See `tests/REGRESSION_MIGRATION_2025-10-12.md` for previous consolidation  
+**Goal**: Reduce test file count by ~34-37 files, eliminate duplication, improve maintainability  
+**Baseline**: 121 test files, 1,182 tests
+
+### Phase 3.7a: Contract Test Duplication (HIGH PRIORITY - 19 files)
+**Issue**: Duplicate contract test files exist in both `tests/cli/commands/` and `tests/cli/contracts/`
+
+- [ ] **T130a [P1]** Merge `tests/cli/commands/test_add_contract.py` (236 lines, 11 tests) into `tests/cli/contracts/test_add_contract.py` (274 lines, 5 tests), then delete the commands version
+- [ ] **T130b [P1]** Merge `tests/cli/commands/test_bundle_contract.py` into `tests/cli/contracts/test_bundle_contract.py`, then delete the commands version
+- [ ] **T130c [P1]** Merge `tests/cli/commands/test_checkout_contract.py` into `tests/cli/contracts/test_checkout_contract.py`, then delete the commands version
+- [ ] **T130d [P1]** Merge `tests/cli/commands/test_config_contract.py` (8 tests) into `tests/cli/contracts/test_config_contract.py` (23 tests), then delete the commands version
+- [ ] **T130e [P1]** Merge `tests/cli/commands/test_deploy_contract.py` (9 tests) into `tests/cli/contracts/test_deploy_contract.py` (5 tests), then delete the commands version
+- [ ] **T130f [P1]** Merge `tests/cli/commands/test_engine_contract.py` into `tests/cli/contracts/test_engine_contract.py`, then delete the commands version
+- [ ] **T130g [P1]** Merge `tests/cli/commands/test_help_contract.py` into `tests/cli/contracts/test_help_contract.py`, then delete the commands version
+- [ ] **T130h [P1]** Merge `tests/cli/commands/test_init_contract.py` (11 tests) into `tests/cli/contracts/test_init_contract.py` (8 tests), then delete the commands version
+- [ ] **T130i [P1]** Merge `tests/cli/commands/test_log_contract.py` into `tests/cli/contracts/test_log_contract.py`, then delete the commands version
+- [ ] **T130j [P1]** Merge `tests/cli/commands/test_plan_contract.py` into `tests/cli/contracts/test_plan_contract.py`, then delete the commands version
+- [ ] **T130k [P1]** Merge `tests/cli/commands/test_rebase_contract.py` into `tests/cli/contracts/test_rebase_contract.py`, then delete the commands version
+- [ ] **T130l [P1]** Merge `tests/cli/commands/test_revert_contract.py` into `tests/cli/contracts/test_revert_contract.py`, then delete the commands version
+- [ ] **T130m [P1]** Merge `tests/cli/commands/test_rework_contract.py` into `tests/cli/contracts/test_rework_contract.py`, then delete the commands version
+- [ ] **T130n [P1]** Merge `tests/cli/commands/test_show_contract.py` into `tests/cli/contracts/test_show_contract.py`, then delete the commands version
+- [ ] **T130o [P1]** Merge `tests/cli/commands/test_status_contract.py` into `tests/cli/contracts/test_status_contract.py`, then delete the commands version
+- [ ] **T130p [P1]** Merge `tests/cli/commands/test_tag_contract.py` into `tests/cli/contracts/test_tag_contract.py`, then delete the commands version
+- [ ] **T130q [P1]** Merge `tests/cli/commands/test_target_contract.py` (12 tests) into `tests/cli/contracts/test_target_contract.py` (10 tests), then delete the commands version
+- [ ] **T130r [P1]** Merge `tests/cli/commands/test_upgrade_contract.py` into `tests/cli/contracts/test_upgrade_contract.py`, then delete the commands version
+- [ ] **T130s [P1]** Merge `tests/cli/commands/test_verify_contract.py` into `tests/cli/contracts/test_verify_contract.py`, then delete the commands version
+- [ ] **T130t [P1]** Run full test suite to verify all 19 contract merges successful: `pytest tests/cli/contracts/ -v && pytest tests/cli/commands/ -v`
+
+### Phase 3.7b: Lockdown Test Files (MEDIUM PRIORITY - 6 files)
+**Issue**: Separate "_lockdown" files exist that should be merged into base test files as test classes
+
+- [ ] **T131a [P2]** Merge `tests/cli/test_main_lockdown.py` (53 lines) into `tests/cli/test_main_module.py` (64 lines) as `class TestMainLockdown:`, then delete lockdown file
+- [ ] **T131b [P2]** Merge `tests/config/test_resolver_lockdown.py` into `tests/config/test_resolver.py` as `class TestResolverLockdown:`, then delete lockdown file
+- [ ] **T131c [P2]** Merge `tests/docs/test_quickstart_lockdown.py` into new or existing docs validation file as `class TestQuickstartLockdown:`, then delete lockdown file (or keep if it's the only docs test file)
+- [ ] **T131d [P2]** Merge `tests/engine/test_sqlite_lockdown.py` into `tests/engine/test_sqlite.py` as `class TestSQLiteLockdown:`, then delete lockdown file
+- [ ] **T131e [P2]** Merge `tests/registry/test_state_lockdown.py` into `tests/registry/test_state.py` as `class TestStateLockdown:`, then delete lockdown file
+- [ ] **T131f [P2]** Merge `tests/utils/test_identity_lockdown.py` into `tests/utils/test_identity.py` as `class TestIdentityLockdown:`, then delete lockdown file
+- [ ] **T131g [P2]** Run full test suite to verify all 6 lockdown merges successful: `pytest tests/ -v`
+
+### Phase 3.7c: Helper Test Files (MEDIUM PRIORITY - 6 files)
+**Issue**: Separate helper test files exist that should be co-located with command functional tests
+
+- [ ] **T132a [P2]** Merge `tests/cli/test_add_helpers.py` (212 lines) into `tests/cli/commands/test_add_functional.py` as `class TestAddHelpers:`, then delete helper file
+- [ ] **T132b [P2]** Merge `tests/cli/test_config_helpers.py` into `tests/cli/commands/test_config_functional.py` as `class TestConfigHelpers:`, then delete helper file
+- [ ] **T132c [P2]** Merge `tests/cli/test_deploy_helpers.py` into `tests/cli/commands/test_deploy_functional.py` as `class TestDeployHelpers:`, then delete helper file
+- [ ] **T132d [P2]** Merge `tests/cli/test_init_helpers.py` (174 lines) into `tests/cli/commands/test_init_functional.py` as `class TestInitHelpers:`, then delete helper file
+- [ ] **T132e [P2]** Merge `tests/cli/test_plan_helpers.py` into appropriate plan test file as `class TestPlanHelpers:`, then delete helper file
+- [ ] **T132f [P2]** Merge `tests/cli/test_rework_helpers.py` into `tests/cli/commands/test_rework_functional.py` as `class TestReworkHelpers:`, then delete helper file
+- [ ] **T132g [P2]** Keep `tests/cli/test_cli_context_helpers.py` as-is (tests shared context, not command-specific)
+- [ ] **T132h [P2]** Run full test suite to verify all 6 helper merges successful: `pytest tests/cli/ -v`
+
+### Phase 3.7d: Identity Test Fragmentation (LOW-MEDIUM PRIORITY - 2 files)
+**Issue**: Identity tests split across 3 files for the same module
+
+- [ ] **T133a [P2]** Merge `tests/utils/test_identity_edge_cases.py` (365 lines) into `tests/utils/test_identity.py` as `class TestIdentityEdgeCases:`, then delete edge_cases file
+- [ ] **T133b [P2]** Note: `test_identity_lockdown.py` will be handled in T131f (lockdown phase)
+- [ ] **T133c [P2]** Run identity tests to verify merge successful: `pytest tests/utils/test_identity.py -v`
+
+### Phase 3.7e: Final Validation & Documentation
+- [ ] **T134a [P1]** Run full test suite after all consolidations: `pytest tests/ -v`
+- [ ] **T134b [P1]** Verify test count and coverage unchanged: should have ~1,182 tests passing, 92%+ coverage
+- [ ] **T134c [P1]** Update `tests/REGRESSION_MIGRATION_2025-10-12.md` with consolidation summary (files removed, organizational improvements)
+- [ ] **T134d [P1]** Verify file count reduction: `find tests -type f -name "test_*.py" | wc -l` should show ~84-87 files (down from 121)
+
+**Expected Outcome**: 
+- ~34-37 fewer test files
+- Same test count (~1,182 tests)
+- Same coverage (92%+)
+- Better organization and discoverability
+- Reduced maintenance burden
+
 ## Dependencies
 - **T001 → T002 → T003 → T004 → T005** bootstrap baseline insight before new tests
 - Tests T010–T034 must complete (and fail) prior to implementation tasks T110–T119 they unlock

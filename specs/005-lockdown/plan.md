@@ -182,6 +182,7 @@ _None required; plan remains within constitutional constraints._
 - [x] Phase 1: Design complete (/plan command)
 - [x] Phase 2: Task planning complete (/plan command - describe approach only)
 - [x] Phase 3: Tasks generated (/tasks command)
+- [ ] Phase 3.7: Test suite consolidation (2025-10-12) - 37 tasks to reduce file count by ~34-37 files
 - [ ] Phase 4: Implementation complete
 - [ ] Phase 5: Validation passed
 
@@ -190,6 +191,7 @@ _None required; plan remains within constitutional constraints._
 - [x] Post-Design Constitution Check: PASS
 - [x] All NEEDS CLARIFICATION resolved
 - [ ] Complexity deviations documented (not required)
+- [ ] Test consolidation complete (Phase 3.7: T130a-T134d)
 - [ ] Implementation report assembled (`specs/005-lockdown/IMPLEMENTATION_REPORT_LOCKDOWN.md`) capturing rerun results for pytest, mypy, pydocstyle, pip-audit, bandit, tox, and summarizing follow-up actions
 
 ---
