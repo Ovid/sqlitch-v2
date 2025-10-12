@@ -19,8 +19,6 @@ This is a CRITICAL violation that must be fixed immediately.
 
 from __future__ import annotations
 
-import os
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -92,9 +90,9 @@ def test_no_sqlitch_config_directory_created(config_snapshot):
 
     # ~/.config/sqlitch/ should NEVER exist
     assert not sqlitch_dir.exists(), (
-        f"CRITICAL VIOLATION: ~/.config/sqlitch/ directory exists!\n"
-        f"SQLitch must use ~/.sqitch/ for Sqitch compatibility (FR-001b).\n"
-        f"This directory should never be created."
+        "CRITICAL VIOLATION: ~/.config/sqlitch/ directory exists!\n"
+        "SQLitch must use ~/.sqitch/ for Sqitch compatibility (FR-001b).\n"
+        "This directory should never be created."
     )
 
 
@@ -132,8 +130,8 @@ def test_config_functional_tests_are_isolated():
 
     # Verify no SQLitch-specific directory created
     assert not sqlitch_dir.exists() or sqlitch_existed_before, (
-        f"CRITICAL: Config tests created ~/.config/sqlitch/!\n"
-        f"Tests must use isolated_test_context() from tests.support.test_helpers"
+        "CRITICAL: Config tests created ~/.config/sqlitch/!\n"
+        "Tests must use isolated_test_context() from tests.support.test_helpers"
     )
 
     # Verify no unexpected changes to ~/.sqitch/
@@ -172,7 +170,7 @@ def test_sample_tests_from_each_directory():
         if not test_path.exists():
             continue
 
-        result = subprocess.run(
+        subprocess.run(
             [sys.executable, "-m", "pytest", test_file, "--no-cov", "-q"],
             capture_output=True,
             text=True,
@@ -198,8 +196,6 @@ def test_isolated_test_context_helper_is_available():
         )
 
     # Verify it's a context manager
-    import inspect
-
     assert hasattr(isolated_test_context, "__call__"), "isolated_test_context should be callable"
 
 
@@ -209,9 +205,10 @@ def test_readme_documents_isolation_requirements():
     test_root = Path(__file__).parent
     readme_path = test_root / "support" / "README.md"
 
-    assert (
-        readme_path.exists()
-    ), f"tests/support/README.md must exist to document isolation patterns (looked in: {readme_path})"
+    assert readme_path.exists(), (
+        f"tests/support/README.md must exist to document isolation patterns "
+        f"(looked in: {readme_path})"
+    )
 
     content = readme_path.read_text()
 
