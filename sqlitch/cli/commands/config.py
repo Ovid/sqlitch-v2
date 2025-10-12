@@ -450,6 +450,9 @@ def _set_config_value(lines: list[str], section: str, option: str, value: str) -
             new_lines.append(f"{option} = {value}")
         return new_lines
 
+    # If start is not None, end must also be not None (per _find_section_bounds logic)
+    assert end is not None, "end must be set when start is set"
+    
     indent_default = "" if section == "DEFAULT" else "\t"
     indent = _detect_indent(new_lines[start:end], indent_default)
 
@@ -480,6 +483,9 @@ def _remove_config_value(lines: list[str], section: str, option: str) -> tuple[l
     start, end, header_index = _find_section_bounds(new_lines, section)
     if start is None:
         return new_lines, False
+
+    # If start is not None, end must also be not None (per _find_section_bounds logic)
+    assert end is not None, "end must be set when start is set"
 
     target_index = None
     for idx in range(start, end):

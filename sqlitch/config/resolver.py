@@ -227,7 +227,7 @@ def _determine_system_root(*, env: Mapping[str, str], system_path: Path | str | 
 
 
 def _coerce_path(value: str | os.PathLike[str] | None) -> Path | None:
-    if value in (None, ""):
+    if value is None or value == "":
         return None
     return Path(value)
 

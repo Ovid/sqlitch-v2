@@ -5,7 +5,7 @@ from __future__ import annotations
 import sqlite3
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from urllib.parse import SplitResult, unquote, urlsplit, urlunsplit
 
 from .base import (
@@ -41,14 +41,15 @@ class SQLiteEngine(Engine):
 
     def build_registry_connect_arguments(self) -> ConnectArguments:
         """Return connection arguments pointing to the registry database."""
-        return self._build_connect_arguments(self.target.registry_uri)
+        registry_uri = self.target.registry_uri or self.target.uri
+        return self._build_connect_arguments(registry_uri)
 
     def build_workspace_connect_arguments(self) -> ConnectArguments:
         """Return connection arguments pointing to the workspace database."""
         return self._build_connect_arguments(self.target.uri)
 
     def connect_workspace(self) -> sqlite3.Connection:
-        connection = super().connect_workspace()
+        connection = cast(sqlite3.Connection, super().connect_workspace())
         self._attach_registry(connection)
         # Enable foreign keys for proper cascading deletes (sqitch parity)
         connection.execute("PRAGMA foreign_keys = ON")
