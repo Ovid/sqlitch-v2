@@ -157,7 +157,7 @@ def _parse_change(tokens: Sequence[str], base_path: Path, line_no: int) -> Chang
     notes = metadata.get("notes")
     depends = _split_csv(metadata.get("depends"))
     tags = _split_csv(metadata.get("tags"))
-    
+
     change_id_str = metadata.get("change_id")
     change_id = _parse_uuid(change_id_str, line_no) if change_id_str else None
 
@@ -317,8 +317,7 @@ def _apply_rework_metadata(
 
         # At this point in parsing, script_paths are already resolved to Path | None
         script_paths: dict[str, Path | None] = {
-            k: v if not isinstance(v, str) else Path(v)
-            for k, v in entry.script_paths.items()
+            k: v if not isinstance(v, str) else Path(v) for k, v in entry.script_paths.items()
         }
         # If this change was reworked (has a later instance that references it with @tag),
         # use the @tag suffixed scripts

@@ -17,7 +17,7 @@ PROJECT_ROOT = Path(__file__).parent.parent
 # Current baseline of known mypy --strict errors
 # This should ONLY decrease over time as we fix type issues
 # DO NOT increase this number - fix the new type errors instead!
-BASELINE_MYPY_ERROR_COUNT = 62
+BASELINE_MYPY_ERROR_COUNT = 24
 
 
 class TestMypyCompliance:
