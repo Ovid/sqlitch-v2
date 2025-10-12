@@ -110,6 +110,12 @@ pytest --cov=sqlitch --cov-report=term
 - [X] **T118 [P1]** Wire helper modules into packaging/import paths (update `uat/__init__.py`, `pyproject.toml` entry points if needed) *(helpers properly exposed via __init__.py, import verified)*
 - [X] **T119 [P1]** Update quickstart automation scripts or Make targets for running new UAT harnesses (align with T016-T017) *(UAT scripts designed for manual execution, usage documented in spec.md, no automation framework to update)*
 
+### Phase 3.3a · Quality Signal Remediation (added 2025-10-12)
+- [ ] **T120 [P1]** Resolve the current `mypy --strict` backlog (70 reported errors across CLI command modules), refactor signatures or helper types as needed, and add a regression guard (pytest or tox environment) that fails when mypy reports new issues.
+- [ ] **T121 [P1]** Eliminate outstanding `flake8` violations (line length, unused imports, duplicate helper definitions) and integrate flake8 into the lockdown quality gate checklist so formatting regressions fail fast.
+- [ ] **T122 [P1]** Update Git-compatible SHA1 usage in `sqlitch/utils/identity.py` to pass Bandit (`usedforsecurity=False`), document Sqitch parity, and verify the Bandit run reports zero high-severity findings.
+- [ ] **T123 [P1]** Add automated enforcement (pytest plugin or tox environment) for `black --check` and `isort --check-only`, ensuring formatting compliance is tested just like unit tests.
+
 ## Phase 3.4 · Documentation & Guidance
 - [X] **T040 [P1]** Ensure all touched public APIs/docstrings updated (run `pydocstyle` after edits) across `sqlitch/*`
 - [X] **T041 [P1]** Refresh README quickstart, troubleshooting, and add release checklist details per manual UAT workflow (`README.md`, `docs/`)
@@ -238,6 +244,7 @@ pytest --cov=sqlitch --cov-report=term
 - **T001 → T002 → T003 → T004 → T005** bootstrap baseline insight before new tests
 - Tests T010–T034 must complete (and fail) prior to implementation tasks T110–T119 they unlock
 - T115 must precede T116 & T117 (shared helper extraction before new scripts)
+- T120–T123 rely on baseline setup (T001–T005) and should complete before rerunning global gates in T061
 - Documentation tasks (T040–T044) depend on implementation completion (T110–T119)
 - Security audits (T050–T051) depend on core implementation stabilizing
 - Validation tasks (T060a–T066) run last and require all earlier phases complete

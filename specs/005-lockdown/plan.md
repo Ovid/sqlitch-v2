@@ -97,6 +97,13 @@ Deliverable: Research doc complete ✅
 
 Post-design constitution check: ✅ unchanged (still compliant).
 
+## Phase 1.1: Quality Signal Follow-Up (2025-10-12)
+- Recorded fresh gate results (pytest ✅, coverage 91.39%) exposing three regression areas:
+  - **Type Safety**: `mypy` currently reports 70 errors concentrated in `sqlitch/cli/commands/{target,deploy,rework,...}`; requires coordinated refactor plus regression guard to keep `mypy --strict` in CI.
+  - **Linting**: `flake8` reports 73 violations (line length, unused imports, duplicate helpers) led by `sqlitch/registry/migrations.py`; plan includes trimming lines, removing unused imports, and consolidating helper definitions.
+  - **Security**: `bandit` flags SHA1 usage in `sqlitch/utils/identity.py`; mitigation is to mark `usedforsecurity=False` while keeping Sqitch-compatible change IDs.
+- Action: escalate these items into Phase 3 tasks (see new T120–T123) and document black/mypy regression tests to ensure future runs fail fast.
+
 ## Phase 2: Task Planning Approach (preview)
 - `/tasks` will transform design artifacts into actionable steps:
   - Coverage and docstring gaps → failing tests then fixes per module.

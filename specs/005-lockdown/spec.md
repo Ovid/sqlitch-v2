@@ -64,9 +64,10 @@ This principle applies to ALL future work, not just lockdown tasks.
 
 ### 1. Code Quality
 - **Test Coverage**: Achieve ≥90% coverage in all modules
-- **Type Safety**: Add missing type hints, pass mypy --strict
+- **Type Safety**: Eliminate the current 70-error mypy backlog and keep `mypy --strict` green; add an automated guard (pytest or tox) that fails when mypy regresses.
 - **Documentation**: Complete docstrings for all public APIs
-- **Code Style**: Enforce consistent formatting (Black, isort)
+- **Code Style**: Enforce consistent formatting (Black, isort) and ensure linting (flake8) runs clean via an automated check.
+- **Formatting Gates**: Add regression tests/automation that assert `black --check` and `isort --check-only` remain compliant.
 
 ### 2. Stability
 - **Bug Fixes**: Address all known bugs and edge cases
@@ -79,6 +80,7 @@ This principle applies to ALL future work, not just lockdown tasks.
 - **File Operations**: Audit file handling for path traversal
 - **Configuration**: Audit config parsing for security issues
 - **Dependencies**: Update dependencies with known vulnerabilities
+- **Hashing**: Update any Git-compatible SHA1 usage (e.g., `utils/identity.generate_change_id`) to pass Bandit by marking `usedforsecurity=False` while retaining Sqitch parity.
 
 ### 4. User Experience
 - **Error Messages**: Clear, actionable error messages
@@ -116,7 +118,8 @@ This principle applies to ALL future work, not just lockdown tasks.
 - Test coverage ≥90% in all modules
 - All public functions have docstrings
 - mypy --strict passes with zero errors
-- Black and isort formatting enforced
+- Black and isort formatting enforced with automated regression tests
+- flake8 linting passes with zero violations (no ignored errors)
 - No pylint warnings above configurable threshold
 - All TODO comments addressed or ticketed
 
