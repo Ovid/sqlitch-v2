@@ -116,6 +116,60 @@ pytest --cov=sqlitch --cov-report=term
 - [X] **T122 [P1]** Update Git-compatible SHA1 usage in `sqlitch/utils/identity.py` to pass Bandit (`usedforsecurity=False`), document Sqitch parity, and verify the Bandit run reports zero high-severity findings. *(Already completed in commit d085737)*
 - [X] **T123 [P1]** Add automated enforcement (pytest plugin or tox environment) for `black --check` and `isort --check-only`, ensuring formatting compliance is tested just like unit tests. *(Completed via tests/test_formatting.py)*
 
+### Phase 3.3b · Mypy Type Safety - Granular Fixes (added 2025-10-12)
+**Reference**: See `specs/005-lockdown/T120_T121_PLAN.md` for detailed breakdown  
+**Baseline**: 62 mypy --strict errors to eliminate  
+**Goal**: Achieve 100% mypy --strict compliance (0 errors)
+
+#### Phase 1: Quick Wins (7 errors)
+- [ ] **T120a [P1]** Fix unused type:ignore comment in `cli/main.py:132` - Remove unnecessary comment (1 error)
+- [ ] **T120b [P1]** Fix redundant casts in `cli/options.py:153, 179` - Remove unnecessary cast() calls (2 errors)
+- [ ] **T120c [P1]** Fix optionxform type:ignore to use `# type: ignore[assignment,method-assign]` in loader.py, target.py (5x), engine.py, config.py (4 errors with "not covered" notes)
+
+#### Phase 2: Registry State (4 errors)
+- [ ] **T120d [P1]** Add tuple type parameters in `registry/state.py:45, 104` - Change `tuple` to `tuple[...]` (2 errors)
+- [ ] **T120e [P1]** Fix datetime type casts in `registry/state.py:304, 311` - Add proper type assertion (2 errors)
+
+#### Phase 3: Plan Parser (6 errors)
+- [ ] **T120f [P1]** Fix `_parse_compact_entry` last_entry type in `plan/parser.py:72, 81, 95` - Accept `Change | Tag | None` (3 errors)
+- [ ] **T120g [P1]** Fix `_parse_uuid` None argument in `plan/parser.py:161` - Add None check (1 error)
+- [ ] **T120h [P1]** Fix script_paths dict type variance in `plan/parser.py:322, 324` - Align dict types (2 errors)
+
+#### Phase 4: SQLite Engine (2 errors)
+- [ ] **T120i [P2]** Fix `SQLiteEngine._build_connect_arguments` None handling in `engine/sqlite.py:44` (1 error)
+- [ ] **T120j [P2]** Fix `SQLiteEngine.connect` return type annotation in `engine/sqlite.py:55` (1 error)
+
+#### Phase 5: Config Module (5 errors)
+- [ ] **T120k [P2]** Fix config/resolver.py Path None handling at line 232 (1 error)
+- [ ] **T120l [P2]** Fix config.py range() None arguments at lines 456, 466, 473, 485 (4 errors)
+
+#### Phase 6: Logging Module (3 errors)
+- [ ] **T120m [P2]** Fix `utils/logging.py` TextIO assignment and usage at lines 272, 274, 275 (3 errors)
+
+#### Phase 7: Deploy Command (5 errors)
+- [ ] **T120n [P2]** Fix deploy.py registry_uri None handling at line 276 (1 error)
+- [ ] **T120o [P2]** Fix deploy.py target variable type at line 421 (1 error)
+- [ ] **T120p [P2]** Fix deploy.py dict type annotations at lines 983, 1111 (2 errors)
+- [ ] **T120q [P2]** Fix deploy.py set[str] assignment at line 1723 (1 error)
+
+#### Phase 8: CLI Commands (16 errors)
+- [ ] **T120r [P2]** Fix verify.py EngineTarget type at lines 246, 256 (2x), 257 (2x) (5 errors)
+- [ ] **T120s [P2]** Fix status.py EngineTarget and parse_plan types at lines 128, 134, 204 (3 errors)
+- [ ] **T120t [P2]** Fix show.py Tag variable type at lines 150, 151, 153, 155, 156 (5 errors)
+- [ ] **T120u [P2]** Fix plan.py _format_path argument type at line 271 (1 error)
+- [ ] **T120v [P2]** Fix help.py click.BaseCommand type usage at lines 86, 91, 96 (3 errors)
+- [ ] **T120w [P2]** Fix commands/__init__.py CommandError.show() override at line 66 (1 error)
+
+#### Phase 9: Rework & Revert (8 errors)
+- [ ] **T120x [P2]** Fix rework.py Path | str | None arguments at lines 200, 207, 214, 220, 221, 222 (6 errors)
+- [ ] **T120y [P2]** Fix revert.py type issues at lines 185, 752 (2 errors)
+
+#### Phase 10: Final Cleanup (2 tasks)
+- [ ] **T120z [P1]** Update `BASELINE_MYPY_ERROR_COUNT` to 0 in `tests/test_type_safety.py` after all fixes
+- [ ] **T120aa [P1]** Document mypy compliance achievement in `IMPLEMENTATION_REPORT_LOCKDOWN.md`
+
+**Progress Tracking**: After each phase, validate with `mypy --strict sqlitch/ 2>&1 | grep "^Found"` and `pytest tests/test_type_safety.py`
+
 ## Phase 3.4 · Documentation & Guidance
 - [X] **T040 [P1]** Ensure all touched public APIs/docstrings updated (run `pydocstyle` after edits) across `sqlitch/*`
 - [X] **T041 [P1]** Refresh README quickstart, troubleshooting, and add release checklist details per manual UAT workflow (`README.md`, `docs/`)
