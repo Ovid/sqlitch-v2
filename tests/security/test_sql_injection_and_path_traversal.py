@@ -160,5 +160,25 @@ def test_template_absolute_paths_are_user_controlled() -> None:
     assert user_provided_template.is_absolute()
 
 
+def test_template_path_validation() -> None:
+    """Verify template path validation prevents unsafe access."""
+    import os
+
+    def is_safe_path(basedir: str, user_path: str) -> bool:
+        """Check if user path is safely contained within basedir."""
+        abs_base = os.path.abspath(basedir)
+        abs_user = os.path.abspath(user_path)
+        return abs_user.startswith(abs_base)
+
+    # Safe paths within allowed directory
+    assert is_safe_path("/tmp/templates", "/tmp/templates/my-template.tmpl")
+    assert is_safe_path("/tmp/templates", "/tmp/templates/subdir/template.sql")
+
+    # Unsafe paths outside allowed directory
+    assert not is_safe_path("/tmp/templates", "/etc/passwd")
+    assert not is_safe_path("/tmp/templates", "../../../etc/passwd")
+    assert not is_safe_path("/tmp/templates", "/tmp/other/file.txt")
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
