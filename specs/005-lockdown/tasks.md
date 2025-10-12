@@ -365,6 +365,97 @@ pytest --cov=sqlitch --cov-report=term
 - Better organization and discoverability ✅ Test classes organize helpers, lockdown, contracts, edge cases
 - Reduced maintenance burden
 
+---
+
+## Phase 3.8 · Pylint Code Quality Analysis (added 2025-10-12)
+**Reference**: Baseline analysis captured in `specs/005-lockdown/research.md` - Pylint section  
+**Goal**: Document and track pylint-identified issues for future resolution (NO CODE CHANGES in this phase)  
+**Baseline**: 286 issues total, 9.29/10 score, pylint_report.json saved to repo root  
+**Note**: This is a **documentation-only phase** - issues are tracked for post-alpha resolution
+
+### Phase 3.8a: Baseline Documentation & Configuration
+- [X] **T140 [P3]** Run pylint analysis and generate baseline report:
+  - Command: `source .venv/bin/activate && pylint sqlitch tests --output-format=json > pylint_report.json`
+  - Score: 9.29/10 (286 issues: 25E, 90W, 141R, 30C)
+  - Report moved to: `specs/005-lockdown/artifacts/baseline/pylint_report.json`
+  - Comprehensive analysis: `specs/005-lockdown/PYLINT_ANALYSIS_2025-10-12.md`
+- [X] **T141 [P3]** Document pylint findings in research.md with categorization and priority assessment
+- [ ] **T142 [P3]** Create `.pylintrc` configuration file with recommended settings from PYLINT_ANALYSIS:
+  - Disable `missing-kwoa` and `no-value-for-parameter` for Click false positives
+  - Increase `max-locals` to 20, `max-args` to 7
+  - Configure `duplicate-code` minimum lines to 10
+  - Document rationale for each suppression in comments
+- [ ] **T143 [P3]** Add pylint score tracking to `IMPLEMENTATION_REPORT_LOCKDOWN.md` baseline section
+
+### Phase 3.8b: Critical Error Fixes (1 legitimate error)
+- [ ] **T143 [P2]** Fix type safety error in `sqlitch/plan/parser.py:70` - Add proper index validation for `entries[last_change_index]`
+  - **Context**: `invalid-sequence-index` error where type checker cannot verify index safety
+  - **Fix**: Add `assert last_change_index is not None` or proper type guard before index access
+  - **Test**: Verify with `pytest tests/plan/test_parser.py` and `mypy --strict sqlitch/plan/parser.py`
+
+### Phase 3.8c: False Positive Suppressions (23 errors)
+- [ ] **T144 [P3]** Add inline pylint suppressions for Click decorator false positives in `sqlitch/cli/main.py:307`:
+  - Comment: `# pylint: disable=missing-kwoa,no-value-for-parameter  # Click decorator injects parameters`
+  - Affects: 11 false positive errors about missing kwargs in main() call
+- [ ] **T145 [P3]** Add inline pylint suppressions for Click decorator false positives in `sqlitch/cli/__main__.py:8`:
+  - Comment: `# pylint: disable=missing-kwoa,no-value-for-parameter  # Click decorator injects parameters`
+  - Affects: 11 false positive errors about missing kwargs in main() call
+- [ ] **T146 [P3]** Add inline pylint suppressions for Windows conditional imports in `sqlitch/utils/identity.py`:
+  - Line 237: `# pylint: disable=possibly-used-before-assignment  # Guarded by sys.platform check`
+  - Line 384: `# pylint: disable=possibly-used-before-assignment  # Guarded by sys.platform check`
+
+### Phase 3.8d: High-Impact Warnings (duplicate code - 56 issues)
+- [ ] **T147 [P3]** Document duplicate code between `sqlitch/engine/mysql.py` and `sqlitch/engine/postgres.py`:
+  - **Issue**: 56 duplicate-code violations indicate significant similarity between MySQL and PostgreSQL engines
+  - **Analysis**: Review both files to identify common patterns that could be extracted
+  - **Recommendation**: Create shared base class or helper module for common SQL operations
+  - **Defer**: Post-alpha refactor - engines working correctly, refactor is optimization
+  - **Documentation**: Add findings to `TODO.md` for post-1.0 roadmap
+
+### Phase 3.8e: Code Complexity Refactoring (141 refactor issues)
+**Note**: All tasks in this section are P3 (nice-to-have) and deferred to post-alpha
+
+- [ ] **T148 [P3]** Document `too-many-locals` violations (33 issues) in `TODO.md`:
+  - Primary offender: `sqlitch/config/loader.py` load_config() with 24 local variables
+  - Consider extracting sub-functions for logical groupings (system/user/local config sections)
+  - Defer: Function works correctly, refactor is readability improvement
+  
+- [ ] **T149 [P3]** Document `too-many-arguments` violations (16 issues) in `TODO.md`:
+  - Primarily in CLI command handlers with many options
+  - Consider using dataclasses or TypedDict for parameter grouping
+  - Defer: Click's option handling makes this acceptable for CLI layer
+  
+- [ ] **T150 [P3]** Document `unused-argument` violations (67 issues) in `TODO.md`:
+  - Many in CLI command handlers where Click/context provides parameters
+  - Consider `_` prefix for intentionally unused parameters to signal intent
+  - Defer: Not affecting functionality, cosmetic improvement
+
+### Phase 3.8f: Documentation Gaps (11 missing docstrings)
+- [ ] **T151 [P3]** Add function docstrings for 11 missing docstrings identified by pylint:
+  - Run `pylint sqlitch --disable=all --enable=missing-function-docstring` to get list
+  - Add standard docstring format: brief description, Args, Returns, Raises
+  - Coordinate with pydocstyle gate (T003 baseline) to avoid duplication
+
+### Phase 3.8g: Validation & Tracking
+- [ ] **T152 [P3]** Re-run pylint after T143-T146 fixes and suppressions:
+  - Command: `source .venv/bin/activate && pylint sqlitch tests --output-format=json > specs/005-lockdown/artifacts/post-fixes/pylint_report.json`
+  - Expected: Error count drops from 25 to 0, score improves from 9.29 to ~9.5
+  - Document improvement in research.md
+  
+- [ ] **T153 [P3]** Create `TODO.md` entries for all deferred issues (T147-T151):
+  - Group by category: duplicate code, complexity, unused arguments, docstrings
+  - Link each TODO item back to specific pylint task ID
+  - Set priority based on impact: duplicate code > complexity > documentation > unused arguments
+
+### Summary
+- **Immediate Action (P2)**: T143 only - fix legitimate type safety error
+- **Optional Suppressions (P3)**: T144-T146 - reduce noise from false positives
+- **Deferred Refactoring (P3)**: T147-T151 - document for post-alpha improvement
+- **No CI Integration**: Pylint checks remain manual until baseline issues resolved
+- **Success Criteria**: All 25 errors documented/resolved, score tracked, issues triaged
+
+---
+
 ## Dependencies
 - **T001 → T002 → T003 → T004 → T005** bootstrap baseline insight before new tests
 - Tests T010–T034 must complete (and fail) prior to implementation tasks T110–T119 they unlock
