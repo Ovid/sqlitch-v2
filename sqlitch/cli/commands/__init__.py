@@ -12,6 +12,7 @@ from __future__ import annotations
 import contextvars
 import importlib
 import typing as t
+from typing import IO, Any
 
 import click
 
@@ -63,7 +64,7 @@ class CommandError(click.ClickException):
         ctx = click.get_current_context(silent=True)
         self._suppress_output = _is_json_mode_enabled(ctx)
 
-    def show(self, file: t.TextIO | None = None) -> None:
+    def show(self, file: IO[Any] | None = None) -> None:
         if getattr(self, "_suppress_output", False):
             return
         ctx = click.get_current_context(silent=True)

@@ -136,12 +136,12 @@ pytest --cov=sqlitch --cov-report=term
 - [X] **T120h [P1]** Fix script_paths dict type variance in `plan/parser.py:322, 324` - Align dict types (2 errors)
 
 #### Phase 4: SQLite Engine (2 errors)
-- [ ] **T120i [P2]** Fix `SQLiteEngine._build_connect_arguments` None handling in `engine/sqlite.py:44` (1 error)
-- [ ] **T120j [P2]** Fix `SQLiteEngine.connect` return type annotation in `engine/sqlite.py:55` (1 error)
+- [X] **T120i [P2]** Fix `SQLiteEngine._build_connect_arguments` None handling in `engine/sqlite.py:44` (1 error)
+- [X] **T120j [P2]** Fix `SQLiteEngine.connect` return type annotation in `engine/sqlite.py:55` (1 error)
 
 #### Phase 5: Config Module (5 errors)
-- [ ] **T120k [P2]** Fix config/resolver.py Path None handling at line 232 (1 error)
-- [ ] **T120l [P2]** Fix config.py range() None arguments at lines 456, 466, 473, 485 (4 errors)
+- [X] **T120k [P2]** Fix config/resolver.py Path None handling at line 232 (1 error)
+- [X] **T120l [P2]** Fix config.py range() None arguments at lines 456, 466, 473, 485 (4 errors)
 
 #### Phase 6: Logging Module (3 errors)
 - [ ] **T120m [P2]** Fix `utils/logging.py` TextIO assignment and usage at lines 272, 274, 275 (3 errors)

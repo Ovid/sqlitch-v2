@@ -282,9 +282,11 @@ def _entry_to_json(entry: PlanEntry, base_dir: Path) -> dict[str, object]:
     }
 
 
-def _format_path(path: Path | None, base_dir: Path) -> str | None:
+def _format_path(path: Path | str | None, base_dir: Path) -> str | None:
     if path is None:
         return None
+    if isinstance(path, str):
+        path = Path(path)
     try:
         return path.relative_to(base_dir).as_posix()
     except ValueError:

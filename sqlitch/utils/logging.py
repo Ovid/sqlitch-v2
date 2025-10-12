@@ -267,9 +267,7 @@ class StructuredLogger:
         self._console.print(text)
 
     def _emit_json(self, record: StructuredLogRecord) -> None:
-        stream = self._json_stream
-        if stream is None:
-            stream = self._console.file
+        stream = self._json_stream if self._json_stream is not None else self._console.file
         payload = self._json_dumps(record.to_dict())
         stream.write(f"{payload}\n")
         stream.flush()
