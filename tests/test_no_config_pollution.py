@@ -7,16 +7,14 @@ Constitutional References:
     - FR-001b: 100% Configuration Compatibility (CRITICAL)
     - NFR-007: Test Isolation and Configuration Compatibility (MANDATORY)
 
-USAGE NOTE:
------------
-These tests check for config pollution by other tests in the suite. Due to pytest-randomly
-reordering tests, they may report false failures when run with the full suite.
+These tests use a module-scoped fixture to snapshot config directories before
+and after running tests. If these tests fail, it means:
 
-For accurate results, run these tests separately:
-    pytest tests/test_no_config_pollution.py -v
+1. A test in the suite is NOT using isolated_test_context()
+2. A test is creating files in ~/.config/sqlitch/ or ~/.sqitch/
+3. Test isolation is broken somewhere
 
-If these tests fail in CI or full suite runs, it indicates a REAL PROBLEM with test
-isolation somewhere in the test suite that must be addressed.
+This is a CRITICAL violation that must be fixed immediately.
 """
 
 from __future__ import annotations
@@ -39,12 +37,18 @@ def get_config_dirs() -> tuple[Path, Path]:
     )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session", autouse=True)
 def config_snapshot():
-    """Snapshot filesystem state before and after module tests."""
+    """Snapshot filesystem state at session start and verify at session end.
+
+    This fixture automatically runs for the entire test session, taking a
+    snapshot before ANY tests run and checking for pollution after ALL tests
+    complete. This ensures we catch any test that violates isolation, regardless
+    of test execution order (including with pytest-randomly).
+    """
     sqlitch_dir, sqitch_dir = get_config_dirs()
 
-    # Record initial state
+    # Record initial state at session start
     initial_state = {
         "sqlitch_exists": sqlitch_dir.exists(),
         "sqlitch_files": list(sqlitch_dir.rglob("*")) if sqlitch_dir.exists() else [],
@@ -54,7 +58,7 @@ def config_snapshot():
 
     yield initial_state
 
-    # Verify state after tests
+    # Verify state at session end (after ALL tests have run)
     final_state = {
         "sqlitch_exists": sqlitch_dir.exists(),
         "sqlitch_files": list(sqlitch_dir.rglob("*")) if sqlitch_dir.exists() else [],
@@ -102,6 +106,9 @@ def test_config_functional_tests_are_isolated():
     sqlitch_existed_before = sqlitch_dir.exists()
     sqitch_files_before = list(sqitch_dir.rglob("*")) if sqitch_dir.exists() else []
 
+    # Get repo root from this test file's location
+    repo_root = Path(__file__).parent.parent
+
     # Run config tests (most likely to cause pollution)
     result = subprocess.run(
         [
@@ -114,6 +121,7 @@ def test_config_functional_tests_are_isolated():
         ],
         capture_output=True,
         text=True,
+        cwd=repo_root,  # Ensure we run from repo root
     )
 
     # Tests should pass (or at least not crash)
@@ -147,6 +155,9 @@ def test_sample_tests_from_each_directory():
     """
     sqlitch_dir, sqitch_dir = get_config_dirs()
 
+    # Get repo root from this test file's location
+    repo_root = Path(__file__).parent.parent
+
     test_samples = [
         "tests/cli/test_cli_context.py",
         "tests/cli/commands/test_config_functional.py",
@@ -157,13 +168,15 @@ def test_sample_tests_from_each_directory():
     sqlitch_existed_before = sqlitch_dir.exists()
 
     for test_file in test_samples:
-        if not Path(test_file).exists():
+        test_path = repo_root / test_file
+        if not test_path.exists():
             continue
 
         result = subprocess.run(
             [sys.executable, "-m", "pytest", test_file, "--no-cov", "-q"],
             capture_output=True,
             text=True,
+            cwd=repo_root,  # Ensure we run from repo root
         )
 
         # Check for pollution after each test file
@@ -192,9 +205,13 @@ def test_isolated_test_context_helper_is_available():
 
 def test_readme_documents_isolation_requirements():
     """Verify documentation exists for test isolation patterns."""
-    readme_path = Path("tests/support/README.md")
+    # Use absolute path from this file's location
+    test_root = Path(__file__).parent
+    readme_path = test_root / "support" / "README.md"
 
-    assert readme_path.exists(), "tests/support/README.md must exist to document isolation patterns"
+    assert (
+        readme_path.exists()
+    ), f"tests/support/README.md must exist to document isolation patterns (looked in: {readme_path})"
 
     content = readme_path.read_text()
 

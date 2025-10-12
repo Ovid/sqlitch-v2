@@ -48,7 +48,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
         "tests/support/test_test_helpers.py",  # Tests the helper
         "tests/support/README.md",  # Documentation
         "tests/conftest.py",  # This file - checks for violations
-        "tests/regression/test_test_isolation_enforcement.py",  # Enforcement test
+        "tests/test_test_isolation_enforcement.py",  # Enforcement test (moved from regression)
         "tests/regression/MIGRATION_COMPLETE.md",  # Migration documentation
         "tests/regression/README_ENFORCEMENT.md",  # Enforcement documentation
     }
