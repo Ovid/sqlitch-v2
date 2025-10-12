@@ -304,4 +304,4 @@ for registrar in iter_command_registrars():
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=no-value-for-parameter  # Click decorator injects parameters

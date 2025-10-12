@@ -1,27 +1,48 @@
 [MASTER]
 ignore=tests
-jobs=1
+jobs=0
 persistent=no
 load-plugins=
 
 [MESSAGES CONTROL]
+# Disable specific checks that produce false positives or are not applicable
 disable=
+    # Click framework false positives - decorators inject parameters at runtime
+    missing-kwoa,
+    no-value-for-parameter,
+    
+    # Import patterns required for platform-specific and engine modules  
+    import-outside-toplevel,
+    
+    # Documentation - handled by pydocstyle separately
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
+    
+    # Code duplication - documented for post-alpha refactoring
+    duplicate-code
 
 [REPORTS]
 output-format=colorized
-reports=no
-score=no
+reports=yes
+score=yes
 
 [FORMAT]
 max-line-length=100
 
 [BASIC]
-good-names=i,j,k,ex,Run,_,db
+good-names=i,j,k,ex,Run,_,db,e,f,fp,id,fd,qa
 
 [DESIGN]
-max-args=10
+max-args=7
 max-attributes=15
 max-public-methods=20
+max-locals=20
+max-branches=15
+
+[SIMILARITIES]
+# Minimum lines number of a similarity (reduce noise from short similar blocks)
+min-similarity-lines=10
 
 [TYPECHECK]
 ignore-mixin-members=yes

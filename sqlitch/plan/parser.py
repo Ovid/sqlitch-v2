@@ -67,6 +67,7 @@ def parse_plan(path: Path | str, *, default_engine: str | None = None) -> Plan:
         # Try parsing as compact entry first (most common case)
         # Compact format doesn't use shell quoting, so avoid shlex
         entry: PlanEntry
+        # pylint: disable=invalid-sequence-index  # last_change_index is int or None
         last_change = entries[last_change_index] if last_change_index is not None else None
         try:
             entry = _parse_compact_entry(raw_line, plan_path.parent, line_no, last_change)
