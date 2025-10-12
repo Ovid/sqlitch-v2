@@ -348,9 +348,9 @@ pytest --cov=sqlitch --cov-report=term
 ### Phase 3.7d: Identity Test Fragmentation (LOW-MEDIUM PRIORITY - 2 files)
 **Issue**: Identity tests split across 3 files for the same module
 
-- [ ] **T133a [P2]** Merge `tests/utils/test_identity_edge_cases.py` (365 lines) into `tests/utils/test_identity.py` as `class TestIdentityEdgeCases:`, then delete edge_cases file
-- [ ] **T133b [P2]** Note: `test_identity_lockdown.py` will be handled in T131f (lockdown phase)
-- [ ] **T133c [P2]** Run identity tests to verify merge successful: `pytest tests/utils/test_identity.py -v`
+- [X] **T133a [P2]** Merge `tests/utils/test_identity_edge_cases.py` (365 lines) into `tests/utils/test_identity.py` as `class TestIdentityEdgeCases:`, then delete edge_cases file *(35 tests merged successfully, file deleted)*
+- [X] **T133b [P2]** Note: `test_identity_lockdown.py` will be handled in T131f (lockdown phase) *(Already completed in Phase 3.7b)*
+- [X] **T133c [P2]** Run identity tests to verify merge successful: `pytest tests/utils/test_identity.py -v` *(79 tests pass, 4 skipped for Windows, 91% coverage of identity module)*
 
 ### Phase 3.7e: Final Validation & Documentation
 - [ ] **T134a [P1]** Run full test suite after all consolidations: `pytest tests/ -v`
