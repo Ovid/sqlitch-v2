@@ -7,3 +7,5 @@ exclude =
   build,
   dist
 per-file-ignores =
+    # W293: Sqitch SQL schema has intentional trailing whitespace for exact byte parity
+    sqlitch/registry/migrations.py:W293

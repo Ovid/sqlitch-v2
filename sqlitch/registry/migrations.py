@@ -188,7 +188,7 @@ PRAGMA foreign_keys = OFF;
 DROP TABLE changes;
 ALTER TABLE new_changes RENAME TO changes;
 PRAGMA foreign_keys = ON;
-
+ 
 COMMIT;
 """
 
