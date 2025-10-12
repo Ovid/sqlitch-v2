@@ -18,6 +18,7 @@ SQLitch is a **database change management system** that enables teams to track, 
 - **Team Collaboration**: Multiple developers can work on schema changes simultaneously with proper conflict resolution
 - **Audit Trail**: Complete history of who made what changes and when, with full traceability
 - **Reversible Changes**: Every change can be rolled back, giving you confidence to evolve your schema
+- **Complex Scenario Handling**: Unlike many other similar tools, SQLitch excels at managing complex scenarios like merging branches with different migration histories or handling fixes to erroneous migrations that can cause data loss without proper safeguards
 
 SQLitch aims to deliver drop-in compatibility with the original Sqitch
 Perl tooling while adopting a modern Python 3.11 stack. The end goal is to match
