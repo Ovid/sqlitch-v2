@@ -495,12 +495,14 @@ class TestGetHostname:
 # Lockdown Tests (merged from test_identity_lockdown.py)
 # =============================================================================
 
+
 @pytest.fixture(name="config_profile")
 def _config_profile() -> MagicMock:
     """Provide a config profile stub with mutable settings."""
     config = MagicMock()
     config.settings = {}
     return config
+
 
 def test_resolve_fullname_prefers_git_author_over_config(config_profile: MagicMock) -> None:
     """Legacy Git author name should outrank config user.name."""
@@ -511,6 +513,7 @@ def test_resolve_fullname_prefers_git_author_over_config(config_profile: MagicMo
 
     assert result == "Git Author"
 
+
 def test_resolve_email_prefers_git_author_over_config(config_profile: MagicMock) -> None:
     """Legacy Git author email should outrank config user.email."""
     config_profile.settings = {"user": {"email": "config@example.com"}}
@@ -519,6 +522,7 @@ def test_resolve_email_prefers_git_author_over_config(config_profile: MagicMock)
     result = resolve_email(env, config_profile, "fallback")
 
     assert result == "git@example.com"
+
 
 def test_resolve_username_uses_win32_api_when_available(monkeypatch: pytest.MonkeyPatch) -> None:
     """On Windows, win32api should be used when standard sources are unavailable."""

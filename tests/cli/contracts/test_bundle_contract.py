@@ -95,6 +95,7 @@ def test_bundle_no_plan_flag_skips_plan_copy() -> None:
 # CLI Contract Tests (merged from tests/cli/commands/test_bundle_contract.py)
 # =============================================================================
 
+
 class TestBundleCommandContract:
     """Contract tests for 'sqlitch bundle' command signature and behavior."""
 
@@ -139,6 +140,7 @@ class TestBundleCommandContract:
                 f"Should accept --dest option. Exit code: {result.exit_code}, "
                 f"Output: {result.output}"
             )
+
 
 class TestBundleGlobalContracts:
     """Test global contracts for 'bundle' command."""

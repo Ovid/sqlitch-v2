@@ -157,6 +157,7 @@ def test_tag_reports_error_when_no_changes_exist(runner: CliRunner) -> None:
 # CLI Contract Tests (merged from tests/cli/commands/test_tag_contract.py)
 # =============================================================================
 
+
 class TestTagHelp:
     """Test CC-TAG help support (GC-001)."""
 
@@ -175,6 +176,7 @@ class TestTagHelp:
         result = runner.invoke(main, ["tag", "--help"])
         assert "tag" in result.output.lower()
 
+
 class TestTagOptionalName:
     """Test CC-TAG-001: Optional tag name (list tags)."""
 
@@ -184,6 +186,7 @@ class TestTagOptionalName:
         # Should accept (not a parsing error)
         # May exit 0 (success/list), 1 (not implemented), or fail validation
         assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
 
 class TestTagWithName:
     """Test CC-TAG-002: With tag name."""
@@ -205,6 +208,7 @@ class TestTagWithName:
         result = runner.invoke(main, ["tag", "v1.0", "--change", "my_change"])
         # Should accept (not a parsing error)
         assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
 
 class TestTagGlobalOptions:
     """Test GC-002: Global options recognition."""
@@ -236,6 +240,7 @@ class TestTagGlobalOptions:
         # Should not fail with "no such option" error
         assert "no such option" not in result.output.lower()
         assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
 
 class TestTagErrorHandling:
     """Test GC-004: Error output and GC-005: Unknown options."""

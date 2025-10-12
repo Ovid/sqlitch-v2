@@ -138,6 +138,7 @@ def test_revert_conflicting_filters_error(runner: CliRunner) -> None:
 # CLI Contract Tests (merged from tests/cli/commands/test_revert_contract.py)
 # =============================================================================
 
+
 class TestRevertHelp:
     """Test CC-REVERT help support (GC-001)."""
 
@@ -156,6 +157,7 @@ class TestRevertHelp:
         result = runner.invoke(main, ["revert", "--help"])
         assert "revert" in result.output.lower()
 
+
 class TestRevertOptionalTarget:
     """Test CC-REVERT-001: Optional target."""
 
@@ -165,6 +167,7 @@ class TestRevertOptionalTarget:
         # Should accept (not a parsing error)
         # May exit 0 (success), 1 (not implemented/no target), or fail validation
         assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
 
 class TestRevertPositionalTarget:
     """Test CC-REVERT-002: Positional target."""
@@ -186,6 +189,7 @@ class TestRevertPositionalTarget:
         result = runner.invoke(main, ["revert", "my_change", "--target", "db:sqlite:test.db"])
         # Should accept (not a parsing error)
         assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
 
 class TestRevertGlobalOptions:
     """Test GC-002: Global options recognition."""
@@ -217,6 +221,7 @@ class TestRevertGlobalOptions:
         # Should not fail with "no such option" error
         assert "no such option" not in result.output.lower()
         assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
 
 class TestRevertErrorHandling:
     """Test GC-004: Error output and GC-005: Unknown options."""

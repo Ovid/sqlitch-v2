@@ -288,6 +288,7 @@ class TestEngineHelp:
         result = runner.invoke(main, ["engine", "--help"])
         assert "engine" in result.output.lower()
 
+
 class TestEngineAction:
     """Test CC-ENGINE-001: Action handling."""
 
@@ -319,6 +320,7 @@ class TestEngineAction:
         # May fail with exit 1 for validation or not implemented
         assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
 
+
 class TestEngineGlobalOptions:
     """Test GC-002: Global options recognition."""
 
@@ -349,6 +351,7 @@ class TestEngineGlobalOptions:
         # Should not fail with "no such option" error
         assert "no such option" not in result.output.lower()
         assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
 
 class TestEngineErrorHandling:
     """Test GC-004: Error output and GC-005: Unknown options."""

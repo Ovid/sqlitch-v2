@@ -357,6 +357,7 @@ def test_config_requires_section_and_option_components(runner: CliRunner) -> Non
 # CLI Contract Tests (merged from tests/cli/commands/test_config_contract.py)
 # =============================================================================
 
+
 class TestConfigCommandContract:
     """Contract tests for 'sqlitch config' command signature and behavior."""
 
@@ -396,6 +397,7 @@ class TestConfigCommandContract:
                 f"Should accept name argument. Exit code: {result.exit_code}, "
                 f"Output: {result.output}"
             )
+
 
 class TestConfigGlobalContracts:
     """Test global contracts for 'config' command."""

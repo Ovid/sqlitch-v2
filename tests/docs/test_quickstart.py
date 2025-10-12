@@ -8,7 +8,6 @@ from pathlib import Path
 
 import pytest
 
-
 # =============================================================================
 # Lockdown Tests (merged from test_quickstart_lockdown.py)
 # =============================================================================
@@ -17,6 +16,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 README = REPO_ROOT / "README.md"
 CONTRIBUTING = REPO_ROOT / "CONTRIBUTING.md"
 
+
 def test_readme_includes_venv_setup():
     """README quickstart should document virtual environment creation."""
     content = README.read_text()
@@ -24,15 +24,18 @@ def test_readme_includes_venv_setup():
         "python3 -m venv" in content or "python -m venv" in content
     ), "README should include venv setup instructions"
 
+
 def test_readme_includes_editable_install():
     """README should document the editable install command."""
     content = README.read_text()
     assert "pip install -e" in content, "README should document editable install"
 
+
 def test_contributing_references_pytest():
     """CONTRIBUTING should mention pytest as the test runner."""
     content = CONTRIBUTING.read_text()
     assert "pytest" in content.lower(), "CONTRIBUTING should reference pytest"
+
 
 def test_contributing_mentions_coverage_gate():
     """CONTRIBUTING should document the 90% coverage requirement."""
@@ -41,6 +44,7 @@ def test_contributing_mentions_coverage_gate():
     assert re.search(
         r"90%|90 percent|coverage.*90", content, re.IGNORECASE
     ), "CONTRIBUTING should document 90% coverage requirement"
+
 
 def test_readme_pyproject_version_alignment():
     """README should be consistent about alpha/beta status matching pyproject.toml."""
@@ -58,6 +62,7 @@ def test_readme_pyproject_version_alignment():
         assert (
             "alpha" in readme_content.lower() or "development" in readme_content.lower()
         ), "README should indicate alpha/development status for 0.x versions"
+
 
 def test_quickstart_commands_are_executable():
     """Validate that documented quickstart commands can actually run."""
@@ -78,6 +83,7 @@ def test_quickstart_commands_are_executable():
         check=False,
     )
     assert result.returncode == 0, "mypy should be available in dev environment"
+
 
 def test_onboarding_workflow_documents() -> None:
     """Placeholder regression test for T029 - onboarding workflow documentation.
@@ -100,6 +106,7 @@ README = REPO_ROOT / "README.md"
 
 CONTRIBUTING = REPO_ROOT / "CONTRIBUTING.md"
 
+
 def test_readme_includes_venv_setup():
     """README quickstart should document virtual environment creation."""
     content = README.read_text()
@@ -107,15 +114,18 @@ def test_readme_includes_venv_setup():
         "python3 -m venv" in content or "python -m venv" in content
     ), "README should include venv setup instructions"
 
+
 def test_readme_includes_editable_install():
     """README should document the editable install command."""
     content = README.read_text()
     assert "pip install -e" in content, "README should document editable install"
 
+
 def test_contributing_references_pytest():
     """CONTRIBUTING should mention pytest as the test runner."""
     content = CONTRIBUTING.read_text()
     assert "pytest" in content.lower(), "CONTRIBUTING should reference pytest"
+
 
 def test_contributing_mentions_coverage_gate():
     """CONTRIBUTING should document the 90% coverage requirement."""
@@ -124,6 +134,7 @@ def test_contributing_mentions_coverage_gate():
     assert re.search(
         r"90%|90 percent|coverage.*90", content, re.IGNORECASE
     ), "CONTRIBUTING should document 90% coverage requirement"
+
 
 def test_readme_pyproject_version_alignment():
     """README should be consistent about alpha/beta status matching pyproject.toml."""
@@ -141,6 +152,7 @@ def test_readme_pyproject_version_alignment():
         assert (
             "alpha" in readme_content.lower() or "development" in readme_content.lower()
         ), "README should indicate alpha/development status for 0.x versions"
+
 
 def test_quickstart_commands_are_executable():
     """Validate that documented quickstart commands can actually run."""
@@ -161,6 +173,7 @@ def test_quickstart_commands_are_executable():
         check=False,
     )
     assert result.returncode == 0, "mypy should be available in dev environment"
+
 
 def test_onboarding_workflow_documents() -> None:
     """Placeholder regression test for T029 - onboarding workflow documentation.

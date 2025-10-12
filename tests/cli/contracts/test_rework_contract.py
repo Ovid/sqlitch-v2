@@ -278,6 +278,7 @@ def test_rework_unknown_change_errors(runner: CliRunner) -> None:
 # CLI Contract Tests (merged from tests/cli/commands/test_rework_contract.py)
 # =============================================================================
 
+
 class TestReworkHelp:
     """Test CC-REWORK help support (GC-001)."""
 
@@ -296,6 +297,7 @@ class TestReworkHelp:
         result = runner.invoke(main, ["rework", "--help"])
         assert "rework" in result.output.lower()
 
+
 class TestReworkRequiredChangeName:
     """Test CC-REWORK-001: Required change name."""
 
@@ -307,6 +309,7 @@ class TestReworkRequiredChangeName:
         ), f"Expected exit 2 for missing argument, got {result.exit_code}"
         # Error should mention missing argument
         assert "missing" in result.output.lower() or "required" in result.output.lower()
+
 
 class TestReworkValidChangeName:
     """Test CC-REWORK-002: Valid change name."""
@@ -331,6 +334,7 @@ class TestReworkValidChangeName:
         result = runner.invoke(main, ["rework", "my_change", "--requires", "other_change"])
         # Should accept (not a parsing error)
         assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
 
 class TestReworkGlobalOptions:
     """Test GC-002: Global options recognition."""
@@ -362,6 +366,7 @@ class TestReworkGlobalOptions:
         # Should not fail with "no such option" error
         assert "no such option" not in result.output.lower()
         assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
 
 class TestReworkErrorHandling:
     """Test GC-004: Error output and GC-005: Unknown options."""

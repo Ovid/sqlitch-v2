@@ -266,6 +266,7 @@ def test_plan_warns_for_forward_dependencies(runner: CliRunner) -> None:
 # CLI Contract Tests (merged from tests/cli/commands/test_plan_contract.py)
 # =============================================================================
 
+
 class TestPlanHelp:
     """Test CC-PLAN help support (GC-001)."""
 
@@ -283,6 +284,7 @@ class TestPlanHelp:
         """Help output must mention the plan command."""
         result = runner.invoke(main, ["plan", "--help"])
         assert "plan" in result.output.lower()
+
 
 class TestPlanOptionalTarget:
     """Test CC-PLAN-001: Optional target."""
@@ -305,6 +307,7 @@ class TestPlanOptionalTarget:
         result = runner.invoke(main, ["plan", "--target", "db:sqlite:test.db"])
         # Should accept (not a parsing error)
         assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
 
 class TestPlanGlobalOptions:
     """Test GC-002: Global options recognition."""
@@ -336,6 +339,7 @@ class TestPlanGlobalOptions:
         # Should not fail with "no such option" error
         assert "no such option" not in result.output.lower()
         assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
 
 class TestPlanErrorHandling:
     """Test GC-004: Error output and GC-005: Unknown options."""

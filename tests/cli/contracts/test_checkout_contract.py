@@ -102,6 +102,7 @@ def test_checkout_log_only_reports_pipeline(runner: CliRunner) -> None:
 # CLI Contract Tests (merged from tests/cli/commands/test_checkout_contract.py)
 # =============================================================================
 
+
 class TestCheckoutCommandContract:
     """Contract tests for 'sqlitch checkout' command signature and behavior."""
 
@@ -126,6 +127,7 @@ class TestCheckoutCommandContract:
                 f"Should not fail with parsing error. "
                 f"Exit code: {result.exit_code}, Output: {result.output}"
             )
+
 
 class TestCheckoutGlobalContracts:
     """Test global contracts for 'checkout' command."""

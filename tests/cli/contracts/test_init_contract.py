@@ -181,6 +181,7 @@ def test_init_ignores_existing_templates_directory(runner: CliRunner) -> None:
 # CLI Contract Tests (merged from tests/cli/commands/test_init_contract.py)
 # =============================================================================
 
+
 class TestInitHelp:
     """Test CC-INIT help support (GC-001)."""
 
@@ -199,6 +200,7 @@ class TestInitHelp:
         result = runner.invoke(main, ["init", "--help"])
         assert "init" in result.output.lower()
 
+
 class TestInitOptionalProjectName:
     """Test CC-INIT-001: Optional project name."""
 
@@ -209,6 +211,7 @@ class TestInitOptionalProjectName:
             # Should accept (not a parsing error)
             # May exit 0 (success), 1 (not implemented), or fail validation
             assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
 
 class TestInitWithProjectName:
     """Test CC-INIT-002: With project name."""
@@ -226,6 +229,7 @@ class TestInitWithProjectName:
             result = runner.invoke(main, ["init", "myproject", "--engine", "sqlite"])
             # Should accept (not a parsing error)
             assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
 
 class TestInitGlobalOptions:
     """Test GC-002: Global options recognition."""
@@ -260,6 +264,7 @@ class TestInitGlobalOptions:
             # Should not fail with "no such option" error
             assert "no such option" not in result.output.lower()
             assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
 
 class TestInitErrorHandling:
     """Test GC-004: Error output and GC-005: Unknown options."""

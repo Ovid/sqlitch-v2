@@ -374,8 +374,10 @@ def test_registry_state_records_method():
 # Lockdown Tests (merged from test_state_lockdown.py)
 # =============================================================================
 
+
 def _aware(timestamp: datetime) -> datetime:
     return timestamp.replace(tzinfo=timezone.utc)
+
 
 def _entry_kwargs(**overrides: object) -> dict[str, object]:
     attrs: dict[str, object] = {
@@ -391,6 +393,7 @@ def _entry_kwargs(**overrides: object) -> dict[str, object]:
     }
     attrs.update(overrides)
     return attrs
+
 
 def test_deserialize_registry_rows_rejects_missing_required_fields() -> None:
     rows = [
@@ -415,6 +418,7 @@ def test_deserialize_registry_rows_rejects_missing_required_fields() -> None:
     assert "change" in message
     assert "registry row" in message
 
+
 def test_deserialize_registry_rows_rejects_none_values() -> None:
     rows = [
         {
@@ -434,6 +438,7 @@ def test_deserialize_registry_rows_rejects_none_values() -> None:
         deserialize_registry_rows(rows)
 
     assert "project" in str(excinfo.value)
+
 
 def test_registry_state_remove_change_surfaces_missing_key() -> None:
     entry = RegistryEntry(

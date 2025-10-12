@@ -90,6 +90,7 @@ class TestHelpNoArgs:
         result = runner.invoke(main, ["help"])
         assert "usage:" in result.output.lower() or "commands:" in result.output.lower()
 
+
 class TestHelpWithCommand:
     """Test CC-HELP-002: Command name argument."""
 
@@ -108,6 +109,7 @@ class TestHelpWithCommand:
         result = runner.invoke(main, ["help", "add"])
         assert "add" in result.output.lower()
 
+
 class TestHelpOwnHelp:
     """Test GC-001: Help command's own help flag."""
 
@@ -120,6 +122,7 @@ class TestHelpOwnHelp:
         """Help command's help must show usage."""
         result = runner.invoke(main, ["help", "--help"])
         assert "usage:" in result.output.lower()
+
 
 class TestHelpGlobalOptions:
     """Test GC-002: Global options recognition."""
@@ -152,6 +155,7 @@ class TestHelpGlobalOptions:
         assert "no such option" not in result.output.lower()
         assert result.exit_code != 2 or "no such option" not in result.output.lower()
 
+
 class TestHelpErrorHandling:
     """Test GC-005: Unknown options."""
 
@@ -160,6 +164,7 @@ class TestHelpErrorHandling:
         result = runner.invoke(main, ["help", "--nonexistent-option"])
         assert result.exit_code == 2, f"Expected exit 2 for unknown option, got {result.exit_code}"
         assert "no such option" in result.output.lower() or "unrecognized" in result.output.lower()
+
 
 class TestHelpUsageFlag:
     """Tests for --usage flag functionality."""
@@ -185,6 +190,7 @@ class TestHelpUsageFlag:
         assert result.exit_code != 0
         assert "--man and --usage cannot be combined" in result.output
 
+
 class TestHelpManFlag:
     """Tests for --man flag functionality."""
 
@@ -201,6 +207,7 @@ class TestHelpManFlag:
         assert result.exit_code == 0
         assert "init" in result.output.lower()
 
+
 class TestHelpInvalidTopics:
     """Tests for invalid topic handling."""
 
@@ -209,6 +216,7 @@ class TestHelpInvalidTopics:
         result = runner.invoke(main, ["help", "nonexistent_command_xyz"])
         assert result.exit_code != 0
         assert 'No help for "nonexistent_command_xyz"' in result.output
+
 
 class TestHelpQuietMode:
     """Tests for quiet mode interaction."""

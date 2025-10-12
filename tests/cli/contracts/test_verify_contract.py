@@ -47,6 +47,7 @@ def test_verify_log_only_reports_unimplemented(runner: CliRunner) -> None:
 # CLI Contract Tests (merged from tests/cli/commands/test_verify_contract.py)
 # =============================================================================
 
+
 class TestVerifyCommandContract:
     """Contract tests for 'sqlitch verify' command signature and behavior."""
 
@@ -87,6 +88,7 @@ class TestVerifyCommandContract:
                 f"Should accept positional target. "
                 f"Exit code: {result.exit_code}, Output: {result.output}"
             )
+
 
 class TestVerifyGlobalContracts:
     """Test global contracts for 'verify' command."""

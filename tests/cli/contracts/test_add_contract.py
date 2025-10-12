@@ -286,6 +286,7 @@ def test_add_template_override_by_name(monkeypatch: pytest.MonkeyPatch) -> None:
 # CLI Contract Tests (merged from tests/cli/commands/test_add_contract.py)
 # =============================================================================
 
+
 class TestAddCommandContract:
     """Contract tests for 'sqlitch add' command signature and behavior."""
 
@@ -378,6 +379,7 @@ class TestAddCommandContract:
                 f"Should accept --conflicts option. Exit code: {result.exit_code}, "
                 f"Output: {result.output}"
             )
+
 
 class TestAddGlobalContracts:
     """Test global contracts (GC-001, GC-002) for 'add' command."""

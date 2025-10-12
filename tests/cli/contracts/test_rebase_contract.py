@@ -190,6 +190,7 @@ def test_rebase_unknown_reference_fails(runner: CliRunner) -> None:
 # CLI Contract Tests (merged from tests/cli/commands/test_rebase_contract.py)
 # =============================================================================
 
+
 class TestRebaseHelp:
     """Test CC-REBASE help support (GC-001)."""
 
@@ -207,6 +208,7 @@ class TestRebaseHelp:
         """Help output must mention the rebase command."""
         result = runner.invoke(main, ["rebase", "--help"])
         assert "rebase" in result.output.lower()
+
 
 class TestRebaseOptionalTarget:
     """Test CC-REBASE-001: Optional target."""
@@ -229,6 +231,7 @@ class TestRebaseOptionalTarget:
         result = runner.invoke(main, ["rebase", "--target", "db:sqlite:test.db"])
         # Should accept (not a parsing error)
         assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
 
 class TestRebaseGlobalOptions:
     """Test GC-002: Global options recognition."""
@@ -260,6 +263,7 @@ class TestRebaseGlobalOptions:
         # Should not fail with "no such option" error
         assert "no such option" not in result.output.lower()
         assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
 
 class TestRebaseErrorHandling:
     """Test GC-004: Error output and GC-005: Unknown options."""

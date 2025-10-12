@@ -218,6 +218,7 @@ def test_target_suppresses_output_when_quiet(runner: CliRunner) -> None:
 # CLI Contract Tests (merged from tests/cli/commands/test_target_contract.py)
 # =============================================================================
 
+
 class TestTargetHelp:
     """Test CC-TARGET help support (GC-001)."""
 
@@ -235,6 +236,7 @@ class TestTargetHelp:
         """Help output must mention the target command."""
         result = runner.invoke(main, ["target", "--help"])
         assert "target" in result.output.lower()
+
 
 class TestTargetAction:
     """Test CC-TARGET-001: Action handling."""
@@ -269,6 +271,7 @@ class TestTargetAction:
         # Should accept the action structure (not a parsing error)
         assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
 
+
 class TestTargetGlobalOptions:
     """Test GC-002: Global options recognition."""
 
@@ -299,6 +302,7 @@ class TestTargetGlobalOptions:
         # Should not fail with "no such option" error
         assert "no such option" not in result.output.lower()
         assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
 
 class TestTargetErrorHandling:
     """Test GC-004: Error output and GC-005: Unknown options."""

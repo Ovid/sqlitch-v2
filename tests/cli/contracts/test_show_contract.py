@@ -368,6 +368,7 @@ def test_show_unknown_change_errors(runner: CliRunner) -> None:
 # CLI Contract Tests (merged from tests/cli/commands/test_show_contract.py)
 # =============================================================================
 
+
 class TestShowHelp:
     """Test CC-SHOW help support (GC-001)."""
 
@@ -386,6 +387,7 @@ class TestShowHelp:
         result = runner.invoke(main, ["show", "--help"])
         assert "show" in result.output.lower()
 
+
 class TestShowOptionalChangeName:
     """Test CC-SHOW-001: Optional change name."""
 
@@ -395,6 +397,7 @@ class TestShowOptionalChangeName:
         # Should accept (not a parsing error)
         # May exit 0 (success), 1 (not implemented/no plan), or fail validation
         assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
 
 class TestShowWithChangeName:
     """Test CC-SHOW-002: With change name."""
@@ -416,6 +419,7 @@ class TestShowWithChangeName:
         result = runner.invoke(main, ["show", "my_change", "--target", "db:sqlite:test.db"])
         # Should accept (not a parsing error)
         assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
 
 class TestShowGlobalOptions:
     """Test GC-002: Global options recognition."""
@@ -447,6 +451,7 @@ class TestShowGlobalOptions:
         # Should not fail with "no such option" error
         assert "no such option" not in result.output.lower()
         assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
 
 class TestShowErrorHandling:
     """Test GC-004: Error output and GC-005: Unknown options."""

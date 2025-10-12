@@ -414,6 +414,7 @@ def test_status_json_format_matches_fixture(runner: CliRunner) -> None:
 # CLI Contract Tests (merged from tests/cli/commands/test_status_contract.py)
 # =============================================================================
 
+
 class TestStatusHelp:
     """Test CC-STATUS help support (GC-001)."""
 
@@ -432,6 +433,7 @@ class TestStatusHelp:
         result = runner.invoke(main, ["status", "--help"])
         assert "status" in result.output.lower()
 
+
 class TestStatusOptionalTarget:
     """Test CC-STATUS-001: Optional target."""
 
@@ -441,6 +443,7 @@ class TestStatusOptionalTarget:
         # Should accept (not a parsing error)
         # May exit 0 (success), 1 (not implemented/no target), or fail validation
         assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
 
 class TestStatusPositionalTarget:
     """Test CC-STATUS-002: Positional target."""
@@ -462,6 +465,7 @@ class TestStatusPositionalTarget:
         result = runner.invoke(main, ["status", "--show-tags"])
         # Should accept (not a parsing error)
         assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
 
 class TestStatusGlobalOptions:
     """Test GC-002: Global options recognition."""
@@ -493,6 +497,7 @@ class TestStatusGlobalOptions:
         # Should not fail with "no such option" error
         assert "no such option" not in result.output.lower()
         assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
 
 class TestStatusErrorHandling:
     """Test GC-004: Error output and GC-005: Unknown options."""

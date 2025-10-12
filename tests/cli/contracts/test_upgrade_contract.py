@@ -42,6 +42,7 @@ def test_upgrade_log_only_reports_unimplemented(runner: CliRunner) -> None:
 # CLI Contract Tests (merged from tests/cli/commands/test_upgrade_contract.py)
 # =============================================================================
 
+
 class TestUpgradeHelp:
     """Test CC-UPGRADE help support (GC-001)."""
 
@@ -59,6 +60,7 @@ class TestUpgradeHelp:
         """Help output must mention the upgrade command."""
         result = runner.invoke(main, ["upgrade", "--help"])
         assert "upgrade" in result.output.lower()
+
 
 class TestUpgradeOptionalTarget:
     """Test CC-UPGRADE-001: Optional target."""
@@ -81,6 +83,7 @@ class TestUpgradeOptionalTarget:
         result = runner.invoke(main, ["upgrade", "--target", "db:sqlite:test.db"])
         # Should accept (not a parsing error)
         assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
 
 class TestUpgradeGlobalOptions:
     """Test GC-002: Global options recognition."""
@@ -112,6 +115,7 @@ class TestUpgradeGlobalOptions:
         # Should not fail with "no such option" error
         assert "no such option" not in result.output.lower()
         assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
 
 class TestUpgradeErrorHandling:
     """Test GC-004: Error output and GC-005: Unknown options."""

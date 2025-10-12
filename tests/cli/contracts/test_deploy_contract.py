@@ -264,6 +264,7 @@ def test_deploy_executes_scripts_and_updates_registry(
 # CLI Contract Tests (merged from tests/cli/commands/test_deploy_contract.py)
 # =============================================================================
 
+
 class TestDeployCommandContract:
     """Contract tests for 'sqlitch deploy' command signature and behavior."""
 
@@ -318,6 +319,7 @@ class TestDeployCommandContract:
                 f"Should accept --target option. Exit code: {result.exit_code}, "
                 f"Output: {result.output}"
             )
+
 
 class TestDeployGlobalContracts:
     """Test global contracts for 'deploy' command."""

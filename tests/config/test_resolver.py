@@ -358,12 +358,15 @@ def test_config_root_override_isolation() -> None:
 # Lockdown Tests (merged from test_resolver_lockdown.py)
 # =============================================================================
 
+
 def _write_config(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
 
+
 def _env(**values: object) -> Mapping[str, str]:
     return {key: str(value) for key, value in values.items()}
+
 
 def test_resolve_config_rejects_duplicate_local_files(tmp_path: Path) -> None:
     project_dir = tmp_path / "workspace"
@@ -375,6 +378,7 @@ def test_resolve_config_rejects_duplicate_local_files(tmp_path: Path) -> None:
         resolver.resolve_config(root_dir=project_dir)
 
     assert "local" in str(excinfo.value)
+
 
 def test_resolve_config_missing_scopes_defaults(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -400,6 +404,7 @@ def test_resolve_config_missing_scopes_defaults(
         project_dir / "sqitch.conf",
     )
 
+
 def test_determine_config_root_rejects_empty_env_values(tmp_path: Path) -> None:
     env = _env(
         SQLITCH_CONFIG_ROOT="",
@@ -413,6 +418,7 @@ def test_determine_config_root_rejects_empty_env_values(tmp_path: Path) -> None:
     root = resolver.determine_config_root(env=env, home=home)
 
     assert root == home / ".sqitch"
+
 
 def test_resolve_config_ignores_empty_environment_overrides(tmp_path: Path) -> None:
     project_dir = tmp_path / "workspace"
@@ -430,6 +436,7 @@ def test_resolve_config_ignores_empty_environment_overrides(tmp_path: Path) -> N
 
     assert project_dir / "sqitch.conf" in profile.files
     assert profile.files[-1] == project_dir / "sqitch.conf"
+
 
 def test_resolve_config_supports_parent_directory_overrides(tmp_path: Path) -> None:
     project_dir = tmp_path / "workspace"

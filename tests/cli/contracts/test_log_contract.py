@@ -469,6 +469,7 @@ class TestLogHelp:
         result = runner.invoke(main, ["log", "--help"])
         assert "log" in result.output.lower()
 
+
 class TestLogOptionalTarget:
     """Test CC-LOG-001: Optional target."""
 
@@ -490,6 +491,7 @@ class TestLogOptionalTarget:
         result = runner.invoke(main, ["log", "--target", "db:sqlite:test.db"])
         # Should accept (not a parsing error)
         assert result.exit_code != 2, f"Should not be parsing error, got: {result.output}"
+
 
 class TestLogGlobalOptions:
     """Test GC-002: Global options recognition."""
@@ -521,6 +523,7 @@ class TestLogGlobalOptions:
         # Should not fail with "no such option" error
         assert "no such option" not in result.output.lower()
         assert result.exit_code != 2 or "no such option" not in result.output.lower()
+
 
 class TestLogErrorHandling:
     """Test GC-004: Error output and GC-005: Unknown options."""
