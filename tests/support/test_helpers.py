@@ -67,6 +67,13 @@ def isolated_test_context(
         - SQLITCH_SYSTEM_CONFIG: Points to {temp_dir}/etc/sqitch/sqitch.conf
         - SQLITCH_USER_CONFIG: Points to {temp_dir}/.sqitch/sqitch.conf
         - SQLITCH_CONFIG: Points to {temp_dir}/sqitch.conf (local/project config)
+        - SQITCH_SYSTEM_CONFIG: Points to {temp_dir}/etc/sqitch/sqitch.conf
+        - SQITCH_USER_CONFIG: Points to {temp_dir}/.sqitch/sqitch.conf
+        - SQITCH_CONFIG: Points to {temp_dir}/sqitch.conf (local/project config)
+
+    **CRITICAL**: Both SQLITCH_* and SQITCH_* variables are set to prevent
+    UAT tests from polluting the user's actual Sqitch configuration files
+    when running actual `sqitch` commands via subprocess.
 
     These variables take precedence over the default configuration file discovery,
     ensuring all config operations during tests are isolated to the temporary directory.
@@ -121,6 +128,9 @@ def isolated_test_context(
         "SQLITCH_SYSTEM_CONFIG": os.environ.get("SQLITCH_SYSTEM_CONFIG"),
         "SQLITCH_USER_CONFIG": os.environ.get("SQLITCH_USER_CONFIG"),
         "SQLITCH_CONFIG": os.environ.get("SQLITCH_CONFIG"),
+        "SQITCH_SYSTEM_CONFIG": os.environ.get("SQITCH_SYSTEM_CONFIG"),
+        "SQITCH_USER_CONFIG": os.environ.get("SQITCH_USER_CONFIG"),
+        "SQITCH_CONFIG": os.environ.get("SQITCH_CONFIG"),
     }
 
     try:
@@ -141,9 +151,14 @@ def isolated_test_context(
                     user_config_dir.mkdir(parents=True, exist_ok=True)
 
                     # Set environment variables to point to isolated locations
+                    # CRITICAL: Set both SQLITCH_* and SQITCH_* to prevent UAT tests
+                    # from polluting user's real Sqitch config files
                     os.environ["SQLITCH_SYSTEM_CONFIG"] = str(system_config_dir / "sqitch.conf")
                     os.environ["SQLITCH_USER_CONFIG"] = str(user_config_dir / "sqitch.conf")
                     os.environ["SQLITCH_CONFIG"] = str(local_config)
+                    os.environ["SQITCH_SYSTEM_CONFIG"] = str(system_config_dir / "sqitch.conf")
+                    os.environ["SQITCH_USER_CONFIG"] = str(user_config_dir / "sqitch.conf")
+                    os.environ["SQITCH_CONFIG"] = str(local_config)
 
                 # Yield control to the test
                 yield runner, temp_dir
@@ -164,9 +179,14 @@ def isolated_test_context(
                     user_config_dir.mkdir(parents=True, exist_ok=True)
 
                     # Set environment variables to point to isolated locations
+                    # CRITICAL: Set both SQLITCH_* and SQITCH_* to prevent UAT tests
+                    # from polluting user's real Sqitch config files
                     os.environ["SQLITCH_SYSTEM_CONFIG"] = str(system_config_dir / "sqitch.conf")
                     os.environ["SQLITCH_USER_CONFIG"] = str(user_config_dir / "sqitch.conf")
                     os.environ["SQLITCH_CONFIG"] = str(local_config)
+                    os.environ["SQITCH_SYSTEM_CONFIG"] = str(system_config_dir / "sqitch.conf")
+                    os.environ["SQITCH_USER_CONFIG"] = str(user_config_dir / "sqitch.conf")
+                    os.environ["SQITCH_CONFIG"] = str(local_config)
 
                 # Yield control to the test
                 yield runner, temp_dir
