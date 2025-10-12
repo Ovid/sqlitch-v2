@@ -83,8 +83,6 @@ def _prepare_workspace(workspace_db: Path) -> Path:
 def test_log_reports_human_history() -> None:
     """Human output should mirror the Sqitch log for recent events."""
 
-    expected = (GOLDEN_ROOT / "log_users_revert.txt").read_text(encoding="utf-8")
-
     runner = _runner()
     with isolated_test_context(runner) as (runner, temp_dir):
         workspace_db = Path("flipr_test.db")

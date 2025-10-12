@@ -53,7 +53,6 @@ def test_add_appends_change_and_creates_scripts(monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setattr("os.getlogin", lambda: "test")
     try:
         import collections
-        import pwd
 
         MockPwRecord = collections.namedtuple("MockPwRecord", ["pw_name", "pw_gecos"])
         monkeypatch.setattr("pwd.getpwuid", lambda uid: MockPwRecord(pw_name="test", pw_gecos=""))
@@ -187,7 +186,6 @@ def test_add_uses_explicit_plan_override(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setattr("os.getlogin", lambda: "test")
     try:
         import collections
-        import pwd
 
         MockPwRecord = collections.namedtuple("MockPwRecord", ["pw_name", "pw_gecos"])
         monkeypatch.setattr("pwd.getpwuid", lambda uid: MockPwRecord(pw_name="test", pw_gecos=""))

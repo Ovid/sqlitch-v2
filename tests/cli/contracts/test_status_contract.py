@@ -239,8 +239,6 @@ def _seed_registry(db_path: Path, rows: Iterable[RegistryFixtureRow]) -> None:
 def test_status_outputs_in_sync_snapshot(runner: CliRunner) -> None:
     """Human output should match Sqitch when the database is fully deployed."""
 
-    expected = _read_golden("status_after_users.txt")
-
     with isolated_test_context(runner) as (runner, temp_dir):
         plan_path = Path("sqlitch.plan")
         change_time = datetime(2013, 12, 31, 18, 26, 59, tzinfo=timezone.utc)

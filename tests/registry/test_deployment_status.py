@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
 import pytest
 
-from sqlitch.registry.state import DeployedChange, DeploymentStatus
+from sqlitch.registry.state import DeploymentStatus
 
 
 class TestDeploymentStatusProperties:

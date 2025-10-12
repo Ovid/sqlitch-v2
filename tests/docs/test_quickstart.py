@@ -6,8 +6,6 @@ import re
 import subprocess
 from pathlib import Path
 
-import pytest
-
 # =============================================================================
 # Lockdown Tests (merged from test_quickstart_lockdown.py)
 # =============================================================================

@@ -440,7 +440,6 @@ class TestAddHelpers:
         monkeypatch.setattr("os.getlogin", lambda: "fallback")
         try:
             import collections
-            import pwd
 
             MockPwRecord = collections.namedtuple("MockPwRecord", ["pw_name", "pw_gecos"])
             monkeypatch.setattr(
@@ -467,7 +466,6 @@ class TestAddHelpers:
         # Mock pwd module if it exists (Unix/macOS)
         try:
             import collections
-            import pwd
 
             MockPwRecord = collections.namedtuple("MockPwRecord", ["pw_name", "pw_gecos"])
             monkeypatch.setattr(

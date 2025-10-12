@@ -9,7 +9,6 @@ from typing import Mapping
 import pytest
 
 from sqlitch.config import resolver
-from sqlitch.config.loader import ConfigProfile
 
 
 def _env(**values: object) -> Mapping[str, str]:

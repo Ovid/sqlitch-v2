@@ -5,8 +5,6 @@ Includes CLI signature contract tests merged from tests/cli/commands/
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 from click.testing import CliRunner
 

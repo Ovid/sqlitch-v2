@@ -366,10 +366,6 @@ def test_status_output_matches_sqitch(tmp_path: Path) -> None:
 
         assert result.exit_code == 0, result.output
 
-        expected_output = (REGISTRY_GOLDEN_ROOT / "status_after_users.txt").read_text(
-            encoding="utf-8"
-        )
-
         status_lines = result.output.splitlines()
         assert status_lines[0] == "# On database db:sqlite:flipr_test.db"
         assert status_lines[-1] == "Nothing to deploy (up-to-date)"
@@ -483,10 +479,6 @@ def test_log_output_matches_sqitch(tmp_path: Path) -> None:
         result = runner.invoke(main, ["log", "db:sqlite:flipr_test.db"])
 
         assert result.exit_code == 0, result.output
-
-        expected_output = (REGISTRY_GOLDEN_ROOT / "log_users_revert.txt").read_text(
-            encoding="utf-8"
-        )
 
         log_lines = result.output.splitlines()
         assert log_lines[0] == "On database db:sqlite:flipr_test.db"

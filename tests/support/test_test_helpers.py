@@ -9,7 +9,6 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-import pytest
 from click.testing import CliRunner
 
 from tests.support.test_helpers import isolated_test_context
@@ -96,7 +95,6 @@ def test_isolated_test_context_no_pollution_of_user_home():
 
     # Check state before test
     sqlitch_config_before = (home / ".config" / "sqlitch").exists()
-    sqitch_config_before = (home / ".sqitch" / "sqitch.conf").exists()
 
     with isolated_test_context(runner) as (_, temp_dir):
         # Create a config file in the isolated location
@@ -111,7 +109,6 @@ def test_isolated_test_context_no_pollution_of_user_home():
 
     # After context exits, verify state unchanged
     sqlitch_config_after = (home / ".config" / "sqlitch").exists()
-    sqitch_config_after = (home / ".sqitch" / "sqitch.conf").exists()
 
     assert sqlitch_config_after == sqlitch_config_before
     # Can't assert on sqitch_config since it may legitimately exist

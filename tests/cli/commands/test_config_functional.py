@@ -12,7 +12,6 @@ Tests for T028: Config implementation (validation)
 from __future__ import annotations
 
 import os
-from pathlib import Path
 
 import pytest
 from click.testing import CliRunner

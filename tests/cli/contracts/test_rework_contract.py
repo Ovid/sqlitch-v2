@@ -92,7 +92,6 @@ def test_rework_creates_rework_scripts_and_updates_plan(
     monkeypatch.setattr("os.getlogin", lambda: "test")
     try:
         import collections
-        import pwd
 
         MockPwRecord = collections.namedtuple("MockPwRecord", ["pw_name", "pw_gecos"])
         monkeypatch.setattr("pwd.getpwuid", lambda uid: MockPwRecord(pw_name="test", pw_gecos=""))
