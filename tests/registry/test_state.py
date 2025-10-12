@@ -370,15 +370,6 @@ def test_registry_state_records_method():
     assert records[0].change_id == "abc123"
 
 
-# =============================================================================
-# Lockdown Tests (merged from test_state_lockdown.py)
-# =============================================================================
-
-
-def _aware(timestamp: datetime) -> datetime:
-    return timestamp.replace(tzinfo=timezone.utc)
-
-
 def _entry_kwargs(**overrides: object) -> dict[str, object]:
     attrs: dict[str, object] = {
         "project": "widgets",

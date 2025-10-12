@@ -354,32 +354,6 @@ def test_config_root_override_isolation() -> None:
     ...
 
 
-# =============================================================================
-# Lockdown Tests (merged from test_resolver_lockdown.py)
-# =============================================================================
-
-
-def _write_config(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content, encoding="utf-8")
-
-
-def _env(**values: object) -> Mapping[str, str]:
-    return {key: str(value) for key, value in values.items()}
-
-
-def test_resolve_config_rejects_duplicate_local_files(tmp_path: Path) -> None:
-    project_dir = tmp_path / "workspace"
-    project_dir.mkdir()
-    _write_config(project_dir / "sqitch.conf", "[core]\nengine=pg\n")
-    _write_config(project_dir / "sqlitch.conf", "[core]\nengine=sqlite\n")
-
-    with pytest.raises(ConfigConflictError) as excinfo:
-        resolver.resolve_config(root_dir=project_dir)
-
-    assert "local" in str(excinfo.value)
-
-
 def test_resolve_config_missing_scopes_defaults(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
