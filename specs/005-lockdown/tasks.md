@@ -161,10 +161,6 @@ pytest --cov=sqlitch --cov-report=term
 - [X] **T120w [P2]** Fix commands/__init__.py CommandError.show() override at line 66 (1 error)
 
 #### Phase 9: Rework & Revert (8 errors)
-- [ ] **T120x [P2]** Fix rework.py Path | str | None arguments at lines 200, 207, 214, 220, 221, 222 (6 errors)
-- [ ] **T120y [P2]** Fix revert.py type issues at lines 185, 752 (2 errors)
-
-#### Phase 9: Rework & Revert (8 errors)
 - [X] **T120x [P2]** Fix rework.py Path | str | None arguments at lines 200, 207, 214, 220, 221, 222 (6 errors)
 - [X] **T120y [P2]** Fix revert.py type issues at lines 185, 752 (2 errors)
 
