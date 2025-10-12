@@ -197,13 +197,13 @@ Tests functional equivalence by running both tools in parallel:
 ```
 
 #### 2. Forward Compatibility Test (`uat/scripts/forward-compat.py`)
-**Status**: ✅ Stub Implemented (full execution logic pending T060c-T060d)
+**Status**: ✅ Implemented and validated (T060c, T060d complete — 46/46 steps green on 2025-10-11)
 
 Tests sqlitch → sqitch handoff:
 - Run step N with sqlitch
 - Run step N+1 with sqitch
 - Validate sqitch successfully continues from sqlitch state
-- Repeat for all tutorial steps
+- Repeat for all tutorial steps (all steps pass; final log stored at `specs/005-lockdown/artifacts/uat/forward-compat-final.log`)
 
 **Key Validations**:
 - Sqitch reads sqlitch registry correctly
@@ -212,23 +212,23 @@ Tests sqlitch → sqitch handoff:
 - Sqitch status shows correct state
 - Database schema matches expectations
 
-**Implementation Notes**:
-- Use same sanitization as side-by-side test
-- Compare final database state after all steps
-- Log both tools' operations for debugging
-- Test with both tagged and untagged changes
-- Validate plan file parsing compatibility
-- Document manual execution steps within the release checklist and developer guide.
-- Record outcomes in the release pull request with links to relevant logs.
+**Execution Notes**:
+- Shares sanitization helpers with the side-by-side harness
+- Alternates tools through the full tutorial sequence and compares end-state parity
+- Logs both tools' operations; sanitized transcript archived with the release evidence
+- Tested with both tagged and untagged changes, including rework scenarios unlocked by T067
+- Documented in the release checklist and PR evidence template (see `IMPLEMENTATION_REPORT_LOCKDOWN.md`)
+
+**Follow-Up**: Continue running as part of the release checklist; only rerun implementation work if UAT uncovers regressions.
 
 #### 3. Backward Compatibility Test (`uat/scripts/backward-compat.py`)
-**Status**: ✅ Stub Implemented (full execution logic pending T060e-T060f)
+**Status**: ✅ Implemented and validated (T060e, T060f complete — 46/46 steps green on 2025-10-11)
 
 Tests sqitch → sqlitch handoff:
 - Run step N with sqitch
 - Run step N+1 with sqlitch
 - Validate sqlitch successfully continues from sqitch state
-- Repeat for all tutorial steps
+- Repeat for all tutorial steps (all steps pass; final log stored at `specs/005-lockdown/artifacts/uat/backward-compat-final.log`)
 
 **Key Validations**:
 - Sqlitch reads sqitch registry correctly
@@ -237,14 +237,14 @@ Tests sqitch → sqlitch handoff:
 - Sqlitch status shows correct state
 - Database schema matches expectations
 
-**Implementation Notes**:
-- Use same sanitization as side-by-side test
-- Compare final database state after all steps
-- Log both tools' operations for debugging
-- Test with both tagged and untagged changes
-- Validate plan file parsing compatibility
-- Document manual execution steps within the release checklist and developer guide.
-- Record outcomes in the release pull request with links to relevant logs.
+**Execution Notes**:
+- Shares sanitization helpers with the side-by-side harness
+- Alternates tools through the full tutorial sequence and confirms SQLitch resume capability
+- Logs both tools' operations; sanitized transcript archived with the release evidence
+- Covers tagged/untagged changes and rework flows now supported by T067
+- Documented in the release checklist and PR evidence template (see `IMPLEMENTATION_REPORT_LOCKDOWN.md`)
+
+**Follow-Up**: Keep in the manual release gate; investigate and remediate if future runs regress.
 
 #### Shared Infrastructure
 All three scripts should share:

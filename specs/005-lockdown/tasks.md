@@ -181,7 +181,6 @@ pytest --cov=sqlitch --cov-report=term
   - **LOCATION**: `specs/005-lockdown/IMPLEMENTATION_REPORT_LOCKDOWN.md` - Release PR Comment Template section
   - **INCLUDES**: All three log file links, cosmetic differences summary, critical fix description
   - **READY**: Template ready for copy-paste into release PR
-  - **STATUS**: ❌ BLOCKED - cannot prepare evidence until T060g completes
 
 ### Quality Gates & Release Preparation
 > ⚠️ **UAT Execution Protocol**: Tasks T060a-T060h involve iterative debugging. See [`UAT_EXECUTION_PLAN.md`](./UAT_EXECUTION_PLAN.md) for detailed halt state protocols. Each execution failure must trigger: HALT → FIX → COMMIT → END SESSION. Do not mark execution tasks complete until scripts exit with code 0.
