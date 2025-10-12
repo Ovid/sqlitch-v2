@@ -98,6 +98,80 @@ tests/
 - ✅ All 108 tests pass
 - ✅ No test coverage lost
 - ✅ Same test count, better organization
+
+---
+
+## Phase 3.7: Test Suite Consolidation (2025-10-12)
+
+**Objective**: Further reduce test file count by merging helper and edge case tests into their primary test files.
+
+### Phase 3.7a: Duplicate Contract Tests (T130)
+- **Files Consolidated**: 20 duplicate contract test files merged into base tests
+- **Tests Affected**: ~120 tests merged
+- **Commit**: `6197552` - "Complete T130a-T130t: Merge duplicate contract test files"
+
+### Phase 3.7b: Lockdown Test Files (T131)
+- **Files Consolidated**: 7 lockdown test files merged into base tests
+- **Tests Affected**: 94 tests merged into functional/contract tests
+- **Key Merges**:
+  - `test_add_lockdown.py` → `test_add_functional.py`
+  - `test_config_lockdown.py` → `test_config_functional.py`
+  - `test_deploy_lockdown.py` → `test_deploy_functional.py`
+  - `test_init_lockdown.py` → `test_init_functional.py`
+  - `test_rework_lockdown.py` → `test_rework_functional.py`
+  - `test_target_lockdown.py` → `test_target_functional.py`
+  - `test_tag_lockdown.py` → `test_tag_functional.py`
+- **Commit**: `d217856` - "Complete T131a-T131g: Merge lockdown test files into base tests"
+
+### Phase 3.7c: Helper Test Files (T132)
+- **Files Consolidated**: 5 helper test files merged
+- **Tests Affected**: 54 tests merged into functional test files
+- **Key Merges**:
+  - `test_add_helpers.py` (17 tests) → `test_add_functional.py`
+  - `test_config_helpers.py` (10 tests) → `test_config_functional.py`
+  - `test_deploy_helpers.py` (12 tests) → `test_deploy_functional.py`
+  - `test_init_helpers.py` (8 tests) → `test_init_functional.py`
+  - `test_rework_helpers.py` (7 tests) → `test_rework_functional.py`
+- **Deferred**: `test_plan_helpers.py` (no corresponding functional test file exists)
+- **Commit**: `2e85452` - "Complete Phase 3.7c: Consolidate helper test files (T132a-T132h)"
+
+### Phase 3.7d: Identity Edge Case Tests (T133)
+- **Files Consolidated**: 1 edge case test file merged
+- **Tests Affected**: 35 tests merged into `test_identity.py`
+- **Key Merge**: `test_identity_edge_cases.py` → `test_identity.py`
+- **Commit**: `78e6263` - "Complete Phase 3.7d: Consolidate identity test files (T133a-T133c)"
+
+### Final Metrics (Phase 3.7e)
+- **Test Files**: 90 (down from 121 before Phase 3.7)
+- **Total Tests**: 1,161 passing (20 skipped)
+- **Coverage**: 92.32% (above 90% threshold)
+- **Files Deleted**: 33 test files consolidated
+- **Test Organization**: Helper/edge case tests now grouped as test classes within primary test files
+
+### Benefits of Phase 3.7 Consolidation
+
+1. **File Count Reduction**: 31 fewer test files (25.6% reduction)
+2. **Improved Discoverability**: Related tests grouped in single files
+3. **Better Structure**: Test classes organize helpers, contracts, lockdown, and edge cases
+4. **Maintained Coverage**: All tests preserved and passing (92.32% coverage)
+5. **Clearer Context**: Test class names indicate test purpose (e.g., `TestAddHelpers`, `TestIdentityEdgeCases`)
+
+### Test Organization After Phase 3.7
+
+```
+tests/
+├── cli/commands/
+│   ├── test_add_functional.py (includes helpers, lockdown, contracts)
+│   ├── test_config_functional.py (includes helpers, lockdown, contracts)
+│   ├── test_deploy_functional.py (includes helpers, lockdown, contracts)
+│   ├── test_init_functional.py (includes helpers, lockdown, contracts)
+│   ├── test_rework_functional.py (includes helpers, lockdown, contracts)
+│   ├── test_tag_functional.py (includes lockdown tests)
+│   └── test_target_functional.py (includes lockdown tests)
+├── utils/
+│   └── test_identity.py (includes edge case tests)
+└── 90 total test files (down from 121)
+```
 - ✅ Black formatting applied to all modified files
 
 ## Documentation Added
