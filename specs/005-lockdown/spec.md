@@ -263,8 +263,8 @@ uat/
   comparison.py                    # ✅ Implemented (extracted)
   test_steps.py                    # ✅ Implemented (46 tutorial steps)
   scripts/
-    forward-compat.py              # ✅ Stub (full logic pending)
-    backward-compat.py             # ✅ Stub (full logic pending)
+    forward-compat.py              # ✅ Implemented
+    backward-compat.py             # ✅ Implemented
 ```
 
 ---
