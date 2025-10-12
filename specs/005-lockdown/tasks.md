@@ -111,8 +111,8 @@ pytest --cov=sqlitch --cov-report=term
 - [X] **T119 [P1]** Update quickstart automation scripts or Make targets for running new UAT harnesses (align with T016-T017) *(UAT scripts designed for manual execution, usage documented in spec.md, no automation framework to update)*
 
 ### Phase 3.3a · Quality Signal Remediation (added 2025-10-12)
-- [ ] **T120 [P1]** Resolve the current `mypy --strict` backlog (70 reported errors across CLI command modules), refactor signatures or helper types as needed, and add a regression guard (pytest or tox environment) that fails when mypy reports new issues.
-- [ ] **T121 [P1]** Eliminate outstanding `flake8` violations (line length, unused imports, duplicate helper definitions) and integrate flake8 into the lockdown quality gate checklist so formatting regressions fail fast.
+- [X] **T120 [P1]** Resolve the current `mypy --strict` backlog (70 reported errors across CLI command modules), refactor signatures or helper types as needed, and add a regression guard (pytest or tox environment) that fails when mypy reports new issues.
+- [X] **T121 [P1]** Eliminate outstanding `flake8` violations (line length, unused imports, duplicate helper definitions) and integrate flake8 into the lockdown quality gate checklist so formatting regressions fail fast.
 - [X] **T122 [P1]** Update Git-compatible SHA1 usage in `sqlitch/utils/identity.py` to pass Bandit (`usedforsecurity=False`), document Sqitch parity, and verify the Bandit run reports zero high-severity findings. *(Already completed in commit d085737)*
 - [X] **T123 [P1]** Add automated enforcement (pytest plugin or tox environment) for `black --check` and `isort --check-only`, ensuring formatting compliance is tested just like unit tests. *(Completed via tests/test_formatting.py)*
 

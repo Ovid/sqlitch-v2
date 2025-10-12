@@ -168,7 +168,10 @@ def resolve_planner_identity(
         Formatted string: ``Name <email>``
 
     Examples:
-        >>> resolve_planner_identity({"SQITCH_FULLNAME": "Ada", "SQITCH_EMAIL": "ada@example.com"}, None)
+        >>> resolve_planner_identity(
+        ...     {"SQITCH_FULLNAME": "Ada", "SQITCH_EMAIL": "ada@example.com"},
+        ...     None
+        ... )
         'Ada <ada@example.com>'
 
         >>> # With config file containing user.name and user.email

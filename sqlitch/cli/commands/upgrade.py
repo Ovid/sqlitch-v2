@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import click
 
 from sqlitch.registry.migrations import LATEST_REGISTRY_VERSION

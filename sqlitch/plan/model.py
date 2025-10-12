@@ -196,7 +196,8 @@ class Plan:
         for entry in normalized_entries:
             if not isinstance(entry, (Change, Tag)):
                 raise TypeError(
-                    f"Plan.entries must contain Change or Tag instances, got: {type(entry).__name__}"
+                    f"Plan.entries must contain Change or Tag instances, "
+                    f"got: {type(entry).__name__}"
                 )
         object.__setattr__(self, "entries", normalized_entries)
 

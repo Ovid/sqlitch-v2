@@ -39,11 +39,17 @@ def parse_symbolic_reference(ref: str) -> SymbolicReference:
 
     Examples:
         @HEAD -> SymbolicReference(base="@HEAD", offset_type=None, offset_count=0)
-        @HEAD^ -> SymbolicReference(base="@HEAD", offset_type="^", offset_count=1)
-        @HEAD^3 -> SymbolicReference(base="@HEAD", offset_type="^", offset_count=3)
-        users_table@beta1 -> SymbolicReference(base="users_table@beta1", offset_type=None, offset_count=0)
-        @ROOT~ -> SymbolicReference(base="@ROOT", offset_type="~", offset_count=1)
-        @ROOT~4 -> SymbolicReference(base="@ROOT", offset_type="~", offset_count=4)
+        @HEAD^ -> SymbolicReference(base="@HEAD", offset_type="^",
+                                     offset_count=1)
+        @HEAD^3 -> SymbolicReference(base="@HEAD", offset_type="^",
+                                      offset_count=3)
+        users_table@beta1 -> SymbolicReference(base="users_table@beta1",
+                                                offset_type=None,
+                                                offset_count=0)
+        @ROOT~ -> SymbolicReference(base="@ROOT", offset_type="~",
+                                     offset_count=1)
+        @ROOT~4 -> SymbolicReference(base="@ROOT", offset_type="~",
+                                      offset_count=4)
     """
     ref = ref.strip()
 

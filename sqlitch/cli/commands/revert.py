@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import sqlite3
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -15,9 +14,7 @@ import click
 from sqlitch.config import resolver as config_resolver
 from sqlitch.engine import EngineTarget, canonicalize_engine_name
 from sqlitch.engine.sqlite import (
-    derive_sqlite_registry_uri,
     extract_sqlite_statements,
-    resolve_sqlite_filesystem_path,
     script_manages_transactions,
     validate_sqlite_script,
 )
@@ -770,7 +767,8 @@ def _resolve_target(
 
     if not target:
         raise CommandError(
-            "A deployment target must be provided via --target, positional argument, or configuration."
+            "A deployment target must be provided via --target, "
+            "positional argument, or configuration."
         )
 
     return target

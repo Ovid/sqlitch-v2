@@ -137,7 +137,8 @@ def status_command(
         registry_project = registry_rows[-1].project
         if registry_project != resolved_project:
             raise CommandError(
-                f"Registry project '{registry_project}' does not match plan project '{resolved_project}'"
+                f"Registry project '{registry_project}' does not match "
+                f"plan project '{resolved_project}'"
             )
 
     plan_changes = tuple(change.name for change in plan.changes)

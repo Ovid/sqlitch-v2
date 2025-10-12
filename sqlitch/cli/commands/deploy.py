@@ -434,7 +434,8 @@ def _resolve_target(
 
     if not target:
         raise CommandError(
-            "A deployment target must be provided via --target, positional argument, or configuration."
+            "A deployment target must be provided via --target, "
+            "positional argument, or configuration."
         )
 
     return target
@@ -895,7 +896,8 @@ def _compute_change_id_for_change(
         project: Project name
         change: Change object from the plan
         uri: Optional project URI (required for Sqitch compatibility)
-        parent_id: Optional parent change ID (ID of last required change, required for Sqitch compatibility)
+        parent_id: Optional parent change ID (ID of last required change,
+                   required for Sqitch compatibility)
 
     Returns:
         40-character SHA1 hex digest string
@@ -1226,10 +1228,15 @@ def _validate_dependencies(change: Change, deployed_lookup: Mapping[str, str]) -
         return
 
     if len(missing) == 1:
-        message = f"Change '{change.name}' depends on '{missing[0]}' which has not been deployed."
+        message = (
+            f"Change '{change.name}' depends on '{missing[0]}' " f"which has not been deployed."
+        )
     else:
         joined = ", ".join(missing)
-        message = f"Change '{change.name}' depends on the following changes which have not been deployed: {joined}."
+        message = (
+            f"Change '{change.name}' depends on the following changes "
+            f"which have not been deployed: {joined}."
+        )
     raise CommandError(message)
 
 
@@ -1424,13 +1431,16 @@ def _record_deployment_entries(
     )
 
     for dependency in dependencies:
-        # Normalize dependency name by stripping tag suffix if present (e.g., "userflips@v1.0.0-dev2" -> "userflips")
-        # This handles reworked changes where dependencies reference previous versions
+        # Normalize dependency name by stripping tag suffix if present
+        # (e.g., "userflips@v1.0.0-dev2" -> "userflips")
+        # This handles reworked changes where dependencies reference
+        # previous versions
         dependency_name = dependency.split("@", 1)[0] if "@" in dependency else dependency
         dependency_id = dependency_lookup.get(dependency_name)
         if dependency_id is None:
             raise CommandError(
-                f"Dependency '{dependency}' is not recorded in the registry for change '{change.name}'."
+                f"Dependency '{dependency}' is not recorded in the registry "
+                f"for change '{change.name}'."
             )
         cursor.execute(
             f"""

@@ -88,7 +88,8 @@ def show_command(
 
     if project_filter and project_filter != plan.project_name:
         raise CommandError(
-            f"Plan project '{plan.project_name}' does not match requested project '{project_filter}'."
+            f"Plan project '{plan.project_name}' does not match "
+            f"requested project '{project_filter}'."
         )
 
     if not item:
@@ -194,7 +195,7 @@ def _build_human_output(
     lines = [
         f"Change: {change.name}",
         f"Planner: {change.planner}",
-        f"Planned At: {isoformat_utc(change.planned_at, drop_microseconds=True, use_z_suffix=True)}",
+        f"Planned At: {isoformat_utc(change.planned_at, drop_microseconds=True, use_z_suffix=True)}",  # noqa: E501
         f"Dependencies: {_format_list(change.dependencies)}",
         f"Tags: {_format_list(tags)}",
     ]

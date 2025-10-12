@@ -12,7 +12,6 @@ import click
 from sqlitch.plan.formatter import format_plan
 from sqlitch.plan.model import Change, Plan, PlanEntry, Tag
 from sqlitch.plan.parser import PlanParseError, parse_plan
-from sqlitch.utils.fs import ArtifactConflictError, resolve_plan_file
 
 from ..options import global_output_options, global_sqitch_options
 from . import CommandError, register_command
@@ -131,7 +130,8 @@ def plan_command(
 
     if project_filter and project_filter != plan.project_name:
         raise CommandError(
-            f"Plan project '{plan.project_name}' does not match requested project '{project_filter}'"
+            f"Plan project '{plan.project_name}' does not match "
+            f"requested project '{project_filter}'"
         )
 
     filtered_entries = _filter_entries(plan, change_filters, tag_filters)
@@ -308,7 +308,8 @@ def _emit_missing_dependency_warnings(plan: Plan) -> None:
     for spec in plan.missing_dependencies:
         change, dependency = spec.split("->", 1)
         click.secho(
-            f"Warning: change '{change}' references dependency '{dependency}' before it appears in the plan.",
+            f"Warning: change '{change}' references dependency "
+            f"'{dependency}' before it appears in the plan.",
             err=True,
             fg="yellow",
         )

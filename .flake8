@@ -8,4 +8,5 @@ exclude =
   dist
 per-file-ignores =
     # W293: Sqitch SQL schema has intentional trailing whitespace for exact byte parity
-    sqlitch/registry/migrations.py:W293
+    # E501: SQL DDL strings exceed 100 characters for readability
+    sqlitch/registry/migrations.py:W293,E501

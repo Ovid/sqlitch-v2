@@ -281,7 +281,8 @@ def verify_command(
             # Query registry with change_id to match against plan for rework detection
             with closing(
                 connection.execute(
-                    "SELECT change, change_id FROM sqitch.changes WHERE project = ? ORDER BY committed_at",
+                    "SELECT change, change_id FROM sqitch.changes "
+                    "WHERE project = ? ORDER BY committed_at",
                     (plan.project_name,),
                 )
             ) as query_cursor:

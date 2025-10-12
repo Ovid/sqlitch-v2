@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable
 
 import click
 

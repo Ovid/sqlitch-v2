@@ -91,7 +91,7 @@ def load_config(
         ordered_files.append(config_path)
 
         parser = configparser.ConfigParser(interpolation=None)
-        parser.optionxform = str  # preserve case
+        parser.optionxform = str  # type: ignore[method-assign]  # preserve case
         parser.read(config_path, encoding="utf-8")
 
         if parser.defaults():

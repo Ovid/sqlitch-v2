@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Iterable, Sequence
+from typing import Sequence
 
 import click
 

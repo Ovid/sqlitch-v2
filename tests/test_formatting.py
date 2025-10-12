@@ -62,3 +62,27 @@ class TestIsortFormatting:
             f"Isort import order check failed. Run 'isort sqlitch/ tests/' to fix.\n"
             f"Output:\n{result.stdout}\n{result.stderr}"
         )
+
+
+class TestFlake8Compliance:
+    """Test suite to enforce flake8 linting standards."""
+
+    def test_flake8_compliance(self) -> None:
+        """Verify all Python files comply with flake8 linting rules.
+
+        Runs: flake8 sqlitch/
+
+        This ensures code follows PEP 8 and project-specific linting rules.
+        If this test fails, fix the reported violations manually or via automated tools.
+        """
+        result = subprocess.run(
+            ["flake8", "sqlitch/"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+        )
+
+        assert result.returncode == 0, (
+            f"Flake8 linting check failed. Fix violations reported below.\n"
+            f"Output:\n{result.stdout}\n{result.stderr}"
+        )
