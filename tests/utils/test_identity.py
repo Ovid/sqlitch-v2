@@ -498,7 +498,7 @@ class TestGetHostname:
 
 class TestIdentityEdgeCases:
     """Edge case tests for identity module to reach 90%+ coverage.
-    
+
     Merged from tests/utils/test_identity_edge_cases.py during Phase 3.7d consolidation.
     """
 
@@ -716,7 +716,9 @@ class TestIdentityEdgeCases:
         hostname = get_hostname()
         assert hostname == "localhost"
 
-    def test_get_system_fullname_returns_none_when_unavailable(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_get_system_fullname_returns_none_when_unavailable(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test get_system_fullname returns None when system info unavailable."""
         monkeypatch.setattr("sqlitch.utils.identity.pwd", None)
         monkeypatch.setattr("sqlitch.utils.identity.win32net", None, raising=False)
@@ -755,7 +757,9 @@ class TestIdentityEdgeCases:
         result = get_system_fullname("testuser")
         assert result is None
 
-    def test_get_system_fullname_handles_whitespace_gecos(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_get_system_fullname_handles_whitespace_gecos(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test get_system_fullname handles whitespace-only GECOS field."""
         mock_pwd = MagicMock()
         mock_record = MagicMock()
@@ -793,7 +797,9 @@ class TestIdentityEdgeCases:
         result = resolve_username({"LOGNAME": "testuser"})
         assert result == "testuser"
 
-    def test_resolve_username_handles_attribute_error(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_resolve_username_handles_attribute_error(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test resolve_username handles AttributeError from getlogin."""
 
         def raise_attr_error() -> None:
@@ -805,7 +811,9 @@ class TestIdentityEdgeCases:
         result = resolve_username({"USER": "testuser"})
         assert result == "testuser"
 
-    def test_get_system_fullname_handles_attribute_error(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_get_system_fullname_handles_attribute_error(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test get_system_fullname handles AttributeError from pwd."""
         mock_pwd = MagicMock()
         mock_pwd.getpwnam.side_effect = AttributeError("no pw_gecos")
