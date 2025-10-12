@@ -9,7 +9,6 @@ from pathlib import Path
 
 import click
 
-from sqlitch.config import resolver as config_resolver
 from sqlitch.engine import EngineTarget, canonicalize_engine_name
 from sqlitch.engine.scripts import Script
 from sqlitch.plan.model import Plan

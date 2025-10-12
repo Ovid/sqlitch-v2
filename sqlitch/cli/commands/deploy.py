@@ -900,9 +900,6 @@ def _compute_change_id_for_change(
     Returns:
         40-character SHA1 hex digest string
     """
-    from sqlitch.utils.identity import generate_change_id
-    from sqlitch.utils.time import parse_iso_datetime
-
     # Extract planner name and email
     # Change.planner format is "Name <email>"
     planner_match = change.planner.split("<", 1)
