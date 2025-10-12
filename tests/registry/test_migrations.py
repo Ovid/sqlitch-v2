@@ -1,3 +1,13 @@
+"""Test registry migrations against Sqitch reference implementation.
+
+These tests verify that SQLitch's embedded registry migrations match the SQL
+schemas defined in Perl Sqitch. The tests compare against files in the sqitch/
+directory, which is vendored for reference but not included in built distributions.
+
+In CI environments running from a built package, these tests will be automatically
+skipped if the sqitch/ reference directory is not available.
+"""
+
 from __future__ import annotations
 
 import re
@@ -20,6 +30,10 @@ _REFERENCE_FILENAMES = {
 }
 
 _DEPLOY_FAIL_PATTERN = re.compile(r",\s*'deploy_fail'")
+
+# Skip tests if sqitch reference files are not available (e.g., in CI from built distribution)
+_SQITCH_AVAILABLE = _SQITCH_DIR.exists()
+_SKIP_REASON = "Sqitch reference files not available (not included in distribution)"
 
 
 def _normalize_whitespace(text: str) -> str:
@@ -61,6 +75,7 @@ def _index_migrations(migrations: tuple[RegistryMigration, ...]) -> dict[str, Re
     return {migration.target_version: migration for migration in migrations}
 
 
+@pytest.mark.skipif(not _SQITCH_AVAILABLE, reason=_SKIP_REASON)
 def test_sqlite_migrations_match_sqitch_reference() -> None:
     migrations = get_registry_migrations("sqlite")
     baseline = [migration for migration in migrations if migration.is_baseline]
@@ -82,6 +97,7 @@ def test_sqlite_migrations_match_sqitch_reference() -> None:
     assert indexed["1.1"].sql == _load_reference("sqlite", "1.1")
 
 
+@pytest.mark.skipif(not _SQITCH_AVAILABLE, reason=_SKIP_REASON)
 def test_mysql_migrations_match_sqitch_reference() -> None:
     migrations = get_registry_migrations("mysql")
     baseline = [migration for migration in migrations if migration.is_baseline]
@@ -95,6 +111,7 @@ def test_mysql_migrations_match_sqitch_reference() -> None:
     assert indexed["1.1"].sql == _load_reference("mysql", "1.1")
 
 
+@pytest.mark.skipif(not _SQITCH_AVAILABLE, reason=_SKIP_REASON)
 def test_postgres_migrations_match_sqitch_reference() -> None:
     migrations = get_registry_migrations("pg")
     baseline = [migration for migration in migrations if migration.is_baseline]
