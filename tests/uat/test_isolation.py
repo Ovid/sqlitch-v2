@@ -10,8 +10,6 @@ import os
 import tempfile
 from pathlib import Path
 
-import pytest
-
 from uat.isolation import create_isolated_environment
 
 
@@ -90,7 +88,7 @@ def test_create_isolated_environment_sets_all_sqitch_vars(tmp_path: Path):
 
 def test_create_isolated_environment_creates_directories(tmp_path: Path):
     """Verify that isolation directories are created automatically."""
-    env = create_isolated_environment(tmp_path)
+    create_isolated_environment(tmp_path)
 
     isolated_root = tmp_path / ".isolated"
     assert isolated_root.exists()

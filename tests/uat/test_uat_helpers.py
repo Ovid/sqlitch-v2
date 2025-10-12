@@ -11,8 +11,6 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-import pytest
-
 
 def test_sanitization_masks_change_ids_and_timestamps() -> None:
     """Sanitized output should redact change IDs and timestamp seconds."""
