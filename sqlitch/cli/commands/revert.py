@@ -376,7 +376,7 @@ def _load_deployed_changes(
     (same name, different instances), each instance has a unique change_id.
     """
     cursor = connection.execute(
-        f'SELECT "change", change_id, script_hash FROM {registry_schema}.changes '
+        f'SELECT "change", change_id, script_hash FROM {registry_schema}.changes '  # nosec B608
         f"WHERE project = ? ORDER BY committed_at DESC",
         (project,),
     )
@@ -447,26 +447,26 @@ def _revert_change(
     def _record(cursor: sqlite3.Cursor) -> None:
         # Delete tags first (if this change has any tags pointing to it)
         cursor.execute(
-            f"DELETE FROM {registry_schema}.tags WHERE change_id = ?",
+            f"DELETE FROM {registry_schema}.tags WHERE change_id = ?",  # nosec B608
             (registry_change_id,),
         )
 
         # Delete dependencies FROM this change (where this is the source)
         cursor.execute(
-            f"DELETE FROM {registry_schema}.dependencies WHERE change_id = ?",
+            f"DELETE FROM {registry_schema}.dependencies WHERE change_id = ?",  # nosec B608
             (registry_change_id,),
         )
 
         # Delete dependencies TO this change (where this is the target)
         # This is necessary because dependency_id FK doesn't have ON DELETE CASCADE
         cursor.execute(
-            f"DELETE FROM {registry_schema}.dependencies WHERE dependency_id = ?",
+            f"DELETE FROM {registry_schema}.dependencies WHERE dependency_id = ?",  # nosec B608
             (registry_change_id,),
         )
 
         # Delete from changes table
         cursor.execute(
-            f"DELETE FROM {registry_schema}.changes WHERE change_id = ?",
+            f"DELETE FROM {registry_schema}.changes WHERE change_id = ?",  # nosec B608
             (registry_change_id,),
         )
 
@@ -489,7 +489,7 @@ def _revert_change(
                 planner_name,
                 planner_email
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
+            """,  # nosec B608
             (
                 "revert",
                 registry_change_id,

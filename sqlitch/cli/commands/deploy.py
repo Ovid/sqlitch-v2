@@ -783,7 +783,7 @@ def _registry_tables_exist(connection: sqlite3.Connection, registry_schema: str)
     """Return ``True`` if essential registry tables are present."""
 
     cursor = connection.execute(
-        f"SELECT name FROM {registry_schema}.sqlite_master WHERE type = 'table' "
+        f"SELECT name FROM {registry_schema}.sqlite_master WHERE type = 'table' "  # nosec B608
         "AND name IN ('changes', 'projects', 'events')"
     )
     try:
@@ -833,7 +833,7 @@ def _ensure_release_entry(
     """Ensure the registry release version row exists."""
 
     cursor = connection.execute(
-        f"SELECT 1 FROM {registry_schema}.releases WHERE version = ?",
+        f"SELECT 1 FROM {registry_schema}.releases WHERE version = ?",  # nosec B608
         (LATEST_REGISTRY_VERSION,),
     )
     try:
@@ -844,7 +844,7 @@ def _ensure_release_entry(
     if not exists:
         connection.execute(
             f"INSERT INTO {registry_schema}.releases (version, installer_name, installer_email) "
-            "VALUES (?, ?, ?)",
+            "VALUES (?, ?, ?)",  # nosec B608
             (LATEST_REGISTRY_VERSION, committer_name, committer_email),
         )
 
@@ -861,7 +861,7 @@ def _ensure_project_entry(
     """Insert the project metadata if it has not already been registered."""
 
     cursor = connection.execute(
-        f"SELECT 1 FROM {registry_schema}.projects WHERE project = ?",
+        f"SELECT 1 FROM {registry_schema}.projects WHERE project = ?",  # nosec B608
         (project,),
     )
     try:
@@ -872,7 +872,7 @@ def _ensure_project_entry(
     if not exists:
         connection.execute(
             f"INSERT INTO {registry_schema}.projects (project, uri, creator_name, creator_email) "
-            "VALUES (?, ?, ?, ?)",
+            "VALUES (?, ?, ?, ?)",  # nosec B608
             (project, plan_uri, creator_name, creator_email),
         )
 
@@ -967,7 +967,7 @@ def _load_deployed_state(
 
     cursor = connection.execute(
         f'SELECT "change", change_id, script_hash FROM {registry_schema}.changes WHERE project = ? '
-        "ORDER BY committed_at ASC, change_id ASC",
+        "ORDER BY committed_at ASC, change_id ASC",  # nosec B608
         (project,),
     )
     try:
@@ -976,7 +976,7 @@ def _load_deployed_state(
         cursor.close()
 
     tag_cursor = connection.execute(
-        f"SELECT change_id, tag FROM {registry_schema}.tags WHERE project = ?",
+        f"SELECT change_id, tag FROM {registry_schema}.tags WHERE project = ?",  # nosec B608
         (project,),
     )
     try:
@@ -1381,6 +1381,8 @@ def _record_deployment_entries(
 ) -> None:
     """Persist registry entries for a deployed change."""
 
+    # nosec B608: registry_schema is always the constant REGISTRY_ATTACHMENT_ALIAS ("sqitch")
+    # It's never user input, so SQL injection is not possible.
     cursor.execute(
         f"""
         INSERT INTO {registry_schema}.changes (
@@ -1396,7 +1398,7 @@ def _record_deployment_entries(
             planner_name,
             planner_email
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
+        """,  # nosec B608
         (
             change_id,
             script_hash,
@@ -1430,7 +1432,7 @@ def _record_deployment_entries(
             planner_name,
             planner_email
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
+        """,  # nosec B608
         (
             "deploy",
             change_id,
@@ -1465,7 +1467,7 @@ def _record_deployment_entries(
             f"""
             INSERT INTO {registry_schema}.dependencies (change_id, type, dependency, dependency_id)
             VALUES (?, 'require', ?, ?)
-            """,
+            """,  # nosec B608
             (change_id, dependency, dependency_id),
         )
 
@@ -1541,7 +1543,7 @@ def _record_failure_event(
                 planner_name,
                 planner_email
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
+            """,  # nosec B608
             (
                 "deploy_fail",
                 change_id,
@@ -1629,7 +1631,7 @@ def _insert_registry_tags(
                 planner_name,
                 planner_email
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
+            """,  # nosec B608
             (
                 tag_id,
                 tag,
