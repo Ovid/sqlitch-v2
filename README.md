@@ -84,8 +84,9 @@ sqlitch log db:sqlite:flipr.db
 ```
 
 For the complete tutorial workflow with all commands, see:
-- [Tutorial Quick Start](specs/004-sqlitch-tutorial-parity/quickstart.md)
-- [Official Sqitch Tutorial](https://sqitch.org/docs/manual/sqitchtutorial-sqlite/)
+- **[📖 SQLitch SQLite Tutorial](docs/TUTORIAL_SQLITE.md)** - Comprehensive Python-focused guide
+- [Tutorial Quick Start](specs/004-sqlitch-tutorial-parity/quickstart.md) - Spec validation reference
+- [Official Sqitch Tutorial](https://sqitch.org/docs/manual/sqitchtutorial-sqlite/) - Original Perl version
 
 ### Running the Test Suite
 
