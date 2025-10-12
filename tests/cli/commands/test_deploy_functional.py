@@ -784,7 +784,8 @@ class TestDeployWithMultipleChanges:
         (deploy_dir / "comments.sql").write_text(
             "-- Deploy flipr:comments to sqlite\n"
             "BEGIN;\n"
-            "CREATE TABLE comments (id INTEGER PRIMARY KEY, post_id INTEGER REFERENCES posts(id));\n"
+            "CREATE TABLE comments ("
+            "id INTEGER PRIMARY KEY, post_id INTEGER REFERENCES posts(id));\n"
             "COMMIT;\n"
         )
 
@@ -1142,8 +1143,10 @@ class TestDeployDependencyValidation:
             "%project=flipr\n"
             "\n"
             "users 2025-01-01T00:00:00Z Test User <test@example.com> # Add users\n"
-            "posts [users] 2025-01-02T00:00:00Z Test User <test@example.com> # Add posts\n"
-            "comments [posts nonexistent] 2025-01-03T00:00:00Z Test User <test@example.com> # Add comments\n"
+            "posts [users] 2025-01-02T00:00:00Z Test User <test@example.com> "
+            "# Add posts\n"
+            "comments [posts nonexistent] 2025-01-03T00:00:00Z "
+            "Test User <test@example.com> # Add comments\n"
         )
 
         deploy_dir = project_dir / "deploy"

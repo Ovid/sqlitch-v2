@@ -765,7 +765,8 @@ COMMIT;
                 );
 
                 CREATE TABLE dependencies (
-                    change_id       TEXT NOT NULL REFERENCES changes(change_id) ON UPDATE CASCADE ON DELETE CASCADE,
+                    change_id       TEXT NOT NULL
+                        REFERENCES changes(change_id) ON UPDATE CASCADE ON DELETE CASCADE,
                     type            TEXT NOT NULL,
                     dependency      TEXT NOT NULL,
                     dependency_id   TEXT NULL REFERENCES changes(change_id) ON UPDATE CASCADE,

@@ -136,7 +136,9 @@ def test_add_appends_change_and_creates_scripts(monkeypatch: pytest.MonkeyPatch)
         assert verify_path.read_text(encoding="utf-8") == expected_verify
 
         plan_content = plan_path.read_text(encoding="utf-8")
-        # Compact format: widgets [roles users] 2025-01-02T03:04:05Z Ada Lovelace <ada@example.com> # Adds widgets
+        # Compact format:
+        # widgets [roles users] 2025-01-02T03:04:05Z Ada Lovelace <ada@example.com>
+        # # Adds widgets
         assert "widgets" in plan_content
         assert "[roles users]" in plan_content
         assert "2025-01-02T03:04:05Z" in plan_content

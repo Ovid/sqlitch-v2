@@ -60,7 +60,9 @@ class TestScenario10EnvironmentOverrides:
             assert result.exit_code == 0, f"add users failed: {result.output}"
 
             Path("deploy/users.sql").write_text(
-                """-- Deploy flipr:users to sqlite\n\nBEGIN;\n\nCREATE TABLE users (\n    user_id INTEGER PRIMARY KEY,\n    username TEXT NOT NULL UNIQUE\n);\n\nCOMMIT;\n""",
+                "-- Deploy flipr:users to sqlite\n\nBEGIN;\n\n"
+                "CREATE TABLE users (\n    user_id INTEGER PRIMARY KEY,\n"
+                "    username TEXT NOT NULL UNIQUE\n);\n\nCOMMIT;\n",
                 encoding="utf-8",
             )
             Path("revert/users.sql").write_text(
@@ -68,7 +70,8 @@ class TestScenario10EnvironmentOverrides:
                 encoding="utf-8",
             )
             Path("verify/users.sql").write_text(
-                """-- Verify flipr:users on sqlite\n\nSELECT user_id, username FROM users WHERE 0;\n""",
+                "-- Verify flipr:users on sqlite\n\n"
+                "SELECT user_id, username FROM users WHERE 0;\n",
                 encoding="utf-8",
             )
 
@@ -112,11 +115,13 @@ class TestScenario10EnvironmentOverrides:
             assert result.exit_code == 0, f"add broken failed: {result.output}"
 
             Path("deploy/broken.sql").write_text(
-                """-- Deploy flipr:broken to sqlite\n\nBEGIN;\nSELECT RAISE(ABORT, 'forced failure');\nCOMMIT;\n""",
+                "-- Deploy flipr:broken to sqlite\n\nBEGIN;\n"
+                "SELECT RAISE(ABORT, 'forced failure');\nCOMMIT;\n",
                 encoding="utf-8",
             )
             Path("revert/broken.sql").write_text(
-                """-- Revert flipr:broken from sqlite\n\nBEGIN;\nDROP TABLE IF EXISTS broken;\nCOMMIT;\n""",
+                "-- Revert flipr:broken from sqlite\n\nBEGIN;\n"
+                "DROP TABLE IF EXISTS broken;\nCOMMIT;\n",
                 encoding="utf-8",
             )
             Path("verify/broken.sql").write_text(

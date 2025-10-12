@@ -128,9 +128,10 @@ class TestTargetUriParsing:
             # Registry should NOT be written unless explicitly provided via --registry.
             # Sqitch infers the registry location (adjacent sqitch.db) automatically.
             # This matches Sqitch's behavior and ensures forward/backward compatibility.
-            assert not config.has_option(
-                section, "registry"
-            ), "Registry should not be written for SQLite targets without explicit --registry option"
+            assert not config.has_option(section, "registry"), (
+                "Registry should not be written for SQLite targets "
+                "without explicit --registry option"
+            )
 
     def test_target_add_supports_in_memory_database(self, runner: CliRunner) -> None:
         """In-memory SQLite targets should be preserved verbatim and assign a sibling registry."""
@@ -160,9 +161,10 @@ class TestTargetUriParsing:
             # Registry should NOT be written unless explicitly provided via --registry.
             # For :memory: databases, Sqitch uses a project-root registry by default.
             # This matches Sqitch's behavior and ensures forward/backward compatibility.
-            assert not config.has_option(
-                section, "registry"
-            ), "Registry should not be written for in-memory targets without explicit --registry option"
+            assert not config.has_option(section, "registry"), (
+                "Registry should not be written for in-memory targets "
+                "without explicit --registry option"
+            )
 
     def test_status_uses_sqlitch_target_environment_override(self, runner: CliRunner) -> None:
         """Status should honor SQLITCH_TARGET while normalizing filesystem paths."""

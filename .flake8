@@ -10,3 +10,6 @@ per-file-ignores =
     # W293: Sqitch SQL schema has intentional trailing whitespace for exact byte parity
     # E501: SQL DDL strings exceed 100 characters for readability
     sqlitch/registry/migrations.py:W293,E501
+    # E501: Test fixture data (plan files, expected output) should remain intact for clarity
+    tests/plan/test_parser.py:E501
+    tests/plan/test_formatter.py:E501

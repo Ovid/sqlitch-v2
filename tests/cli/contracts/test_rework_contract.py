@@ -127,7 +127,8 @@ def test_rework_creates_rework_scripts_and_updates_plan(
             plan_path=plan_path,
         )
 
-        # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
+        # Create minimal config so commands can find engine
+        # (Sqitch stores engine in config, not plan)
         config_path = plan_path.parent / "sqitch.conf"
         config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
 
@@ -219,7 +220,8 @@ def test_rework_applies_overrides(monkeypatch: pytest.MonkeyPatch, runner: CliRu
             plan_path=plan_path,
         )
 
-        # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
+        # Create minimal config so commands can find engine
+        # (Sqitch stores engine in config, not plan)
         config_path = plan_path.parent / "sqitch.conf"
         config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
 
@@ -263,7 +265,8 @@ def test_rework_unknown_change_errors(runner: CliRunner) -> None:
         plan_path = Path("sqlitch.plan")
         write_plan(project_name="demo", default_engine="sqlite", entries=(), plan_path=plan_path)
 
-        # Create minimal config so commands can find engine (Sqitch stores engine in config, not plan)
+        # Create minimal config so commands can find engine
+        # (Sqitch stores engine in config, not plan)
         config_path = plan_path.parent / "sqitch.conf"
         config_path.write_text("[core]\n\tengine = sqlite\n", encoding="utf-8")
 

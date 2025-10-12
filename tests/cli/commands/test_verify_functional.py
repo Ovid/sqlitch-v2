@@ -49,7 +49,8 @@ def setup_project(
     plan_lines = ["%syntax-version=1.0.0\n", "%project=flipr\n", "\n"]
     for index, change in enumerate(changes, start=1):
         plan_lines.append(
-            f"{change} 2025-01-{index:02d}T00:00:00Z Test User <test@example.com> # {change.capitalize()}\n"
+            f"{change} 2025-01-{index:02d}T00:00:00Z Test User <test@example.com> "
+            f"# {change.capitalize()}\n"
         )
     (project_dir / "sqitch.plan").write_text("".join(plan_lines))
 
@@ -579,7 +580,9 @@ class TestVerifyAdditionalScenarios:
             registry_conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS events (
-                    event TEXT NOT NULL CHECK (event IN ('deploy', 'revert', 'fail', 'merge', 'deploy_fail')),
+                    event TEXT NOT NULL CHECK (
+                        event IN ('deploy', 'revert', 'fail', 'merge', 'deploy_fail')
+                    ),
                     change_id TEXT NOT NULL,
                     change TEXT NOT NULL,
                     project TEXT NOT NULL REFERENCES projects(project) ON UPDATE CASCADE,
