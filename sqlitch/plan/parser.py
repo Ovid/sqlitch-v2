@@ -157,9 +157,9 @@ def _parse_change(tokens: Sequence[str], base_path: Path, line_no: int) -> Chang
     notes = metadata.get("notes")
     depends = _split_csv(metadata.get("depends"))
     tags = _split_csv(metadata.get("tags"))
-    change_id = (
-        _parse_uuid(metadata.get("change_id"), line_no) if metadata.get("change_id") else None
-    )
+    
+    change_id_str = metadata.get("change_id")
+    change_id = _parse_uuid(change_id_str, line_no) if change_id_str else None
 
     script_paths: dict[str, str | None] = {
         "deploy": deploy,
@@ -209,7 +209,7 @@ def _parse_compact_entry(
     raw_line: str,
     base_dir: Path,
     line_no: int,
-    last_change: Change | None,
+    last_change: Change | Tag | None,
 ) -> PlanEntry:
     body, note = _split_note(raw_line)
     entry = body.strip()
@@ -315,7 +315,11 @@ def _apply_rework_metadata(
         # Check if this specific instance was reworked
         rework_tag = rework_tags.get((entry.name, instance_index))
 
-        script_paths = dict(entry.script_paths)
+        # At this point in parsing, script_paths are already resolved to Path | None
+        script_paths: dict[str, Path | None] = {
+            k: v if not isinstance(v, str) else Path(v)
+            for k, v in entry.script_paths.items()
+        }
         # If this change was reworked (has a later instance that references it with @tag),
         # use the @tag suffixed scripts
         if rework_tag:
@@ -389,9 +393,11 @@ def _resolve_reworked_script_paths(
 
 
 def _parse_compact_tag(
-    line: str, note: str | None, line_no: int, last_change: Change | None
+    line: str, note: str | None, line_no: int, last_change: Change | Tag | None
 ) -> Tag:
-    if last_change is None:
+    # Extract the last actual Change (skip Tags)
+    last_actual_change = last_change if isinstance(last_change, Change) else None
+    if last_actual_change is None:
         raise PlanParseError(f"Tag on line {line_no} has no preceding change to reference")
 
     match = _TAG_PATTERN.match(line)
@@ -404,7 +410,7 @@ def _parse_compact_tag(
 
     return Tag(
         name=name,
-        change_ref=last_change.name,
+        change_ref=last_actual_change.name,
         planner=planner,
         tagged_at=tagged_at,
         note=_clean_note(note),

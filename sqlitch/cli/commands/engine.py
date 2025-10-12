@@ -262,7 +262,7 @@ def _section_name(name: str) -> str:
 
 def _load_parser(path: Path) -> configparser.ConfigParser:
     parser = configparser.ConfigParser(interpolation=None)
-    parser.optionxform = str  # type: ignore[method-assign]
+    parser.optionxform = str  # type: ignore[assignment,method-assign]
     if path.exists():
         parser.read(path, encoding="utf-8")
     return parser

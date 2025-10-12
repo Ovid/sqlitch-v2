@@ -61,7 +61,7 @@ def target_add(
     )
 
     config = configparser.ConfigParser(interpolation=None)
-    config.optionxform = str  # type: ignore[method-assign]
+    config.optionxform = str  # type: ignore[assignment,method-assign]
     if config_path.exists():
         config.read(config_path, encoding="utf-8")
 
@@ -165,7 +165,7 @@ def target_show(ctx: click.Context, name: str) -> None:
     )
 
     config = configparser.ConfigParser(interpolation=None)
-    config.optionxform = str  # type: ignore[method-assign]
+    config.optionxform = str  # type: ignore[assignment,method-assign]
     if config_path.exists():
         config.read(config_path, encoding="utf-8")
 
@@ -199,7 +199,7 @@ def target_remove(ctx: click.Context, name: str) -> None:
     )
 
     config = configparser.ConfigParser(interpolation=None)
-    config.optionxform = str  # type: ignore[method-assign]
+    config.optionxform = str  # type: ignore[assignment,method-assign]
     if config_path.exists():
         config.read(config_path, encoding="utf-8")
 
@@ -229,7 +229,7 @@ def target_list(ctx: click.Context) -> None:
     )
 
     config = configparser.ConfigParser(interpolation=None)
-    config.optionxform = str  # type: ignore[method-assign]
+    config.optionxform = str  # type: ignore[assignment,method-assign]
     if config_path.exists():
         config.read(config_path, encoding="utf-8")
 

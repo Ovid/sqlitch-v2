@@ -122,18 +122,18 @@ pytest --cov=sqlitch --cov-report=term
 **Goal**: Achieve 100% mypy --strict compliance (0 errors)
 
 #### Phase 1: Quick Wins (7 errors)
-- [ ] **T120a [P1]** Fix unused type:ignore comment in `cli/main.py:132` - Remove unnecessary comment (1 error)
-- [ ] **T120b [P1]** Fix redundant casts in `cli/options.py:153, 179` - Remove unnecessary cast() calls (2 errors)
-- [ ] **T120c [P1]** Fix optionxform type:ignore to use `# type: ignore[assignment,method-assign]` in loader.py, target.py (5x), engine.py, config.py (4 errors with "not covered" notes)
+- [X] **T120a [P1]** Fix unused type:ignore comment in `cli/main.py:132` - Remove unnecessary comment (1 error)
+- [X] **T120b [P1]** Fix redundant casts in `cli/options.py:153, 179` - Remove unnecessary cast() calls (2 errors)
+- [X] **T120c [P1]** Fix optionxform type:ignore to use `# type: ignore[assignment,method-assign]` in loader.py, target.py (5x), engine.py, config.py (4 errors with "not covered" notes)
 
 #### Phase 2: Registry State (4 errors)
-- [ ] **T120d [P1]** Add tuple type parameters in `registry/state.py:45, 104` - Change `tuple` to `tuple[...]` (2 errors)
-- [ ] **T120e [P1]** Fix datetime type casts in `registry/state.py:304, 311` - Add proper type assertion (2 errors)
+- [X] **T120d [P1]** Add tuple type parameters in `registry/state.py:45, 104` - Change `tuple` to `tuple[...]` (2 errors)
+- [X] **T120e [P1]** Fix datetime type casts in `registry/state.py:304, 311` - Add proper type assertion (2 errors)
 
 #### Phase 3: Plan Parser (6 errors)
-- [ ] **T120f [P1]** Fix `_parse_compact_entry` last_entry type in `plan/parser.py:72, 81, 95` - Accept `Change | Tag | None` (3 errors)
-- [ ] **T120g [P1]** Fix `_parse_uuid` None argument in `plan/parser.py:161` - Add None check (1 error)
-- [ ] **T120h [P1]** Fix script_paths dict type variance in `plan/parser.py:322, 324` - Align dict types (2 errors)
+- [X] **T120f [P1]** Fix `_parse_compact_entry` last_entry type in `plan/parser.py:72, 81, 95` - Accept `Change | Tag | None` (3 errors)
+- [X] **T120g [P1]** Fix `_parse_uuid` None argument in `plan/parser.py:161` - Add None check (1 error)
+- [X] **T120h [P1]** Fix script_paths dict type variance in `plan/parser.py:322, 324` - Align dict types (2 errors)
 
 #### Phase 4: SQLite Engine (2 errors)
 - [ ] **T120i [P2]** Fix `SQLiteEngine._build_connect_arguments` None handling in `engine/sqlite.py:44` (1 error)

@@ -6,6 +6,7 @@ from bisect import bisect_right
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any, cast
 
 from sqlitch.utils.time import coerce_datetime, isoformat_utc, parse_iso_datetime
 
@@ -42,7 +43,7 @@ class DeployedChange:
     planner_email: str
 
     @classmethod
-    def from_registry_row(cls, row: tuple) -> DeployedChange:
+    def from_registry_row(cls, row: tuple[Any, ...]) -> DeployedChange:
         """Create DeployedChange from database row.
 
         Args:
@@ -101,7 +102,7 @@ class DeploymentEvent:
     planner_email: str
 
     @classmethod
-    def from_registry_row(cls, row: tuple) -> DeploymentEvent:
+    def from_registry_row(cls, row: tuple[Any, ...]) -> DeploymentEvent:
         """Create DeploymentEvent from database row.
 
         Args:
@@ -301,14 +302,20 @@ def deserialize_registry_rows(rows: Iterable[Mapping[str, object]]) -> Sequence[
             change_name=_coerce_required_text(
                 _require_registry_value(row, "change", "change_name"), field="change"
             ),
-            committed_at=_require_registry_value(row, "committed_at"),
+            committed_at=coerce_datetime(
+                cast("datetime | str", _require_registry_value(row, "committed_at")),
+                label="committed_at",
+            ),
             committer_name=_coerce_required_text(
                 _require_registry_value(row, "committer_name"), field="committer_name"
             ),
             committer_email=_coerce_required_text(
                 _require_registry_value(row, "committer_email"), field="committer_email"
             ),
-            planned_at=_require_registry_value(row, "planned_at"),
+            planned_at=coerce_datetime(
+                cast("datetime | str", _require_registry_value(row, "planned_at")),
+                label="planned_at",
+            ),
             planner_name=_coerce_required_text(
                 _require_registry_value(row, "planner_name"), field="planner_name"
             ),

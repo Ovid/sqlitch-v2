@@ -129,7 +129,7 @@ def _build_cli_context(
 class SqlitchGroup(click.Group):
     """Custom Click group that emits structured logging events."""
 
-    def invoke(self, ctx: click.Context) -> Any:  # type: ignore[override]
+    def invoke(self, ctx: click.Context) -> Any:
         error: BaseException | None = None
         try:
             return super().invoke(ctx)
