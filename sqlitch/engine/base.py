@@ -133,7 +133,8 @@ def connection_factory_for_engine(engine: str) -> ConnectionFactory:
     return ConnectionFactory(canonical, module_name, connect_attribute)
 
 
-EngineType = TypeVar("EngineType", bound="Engine")
+# TypeVar follows PEP 484 naming: PascalCase for type variables
+EngineType = TypeVar("EngineType", bound="Engine")  # pylint: disable=invalid-name
 
 
 class Engine(ABC):

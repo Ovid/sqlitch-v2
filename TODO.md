@@ -253,6 +253,37 @@ def function_name(arg1: Type1, arg2: Type2) -> ReturnType:
 - **Upgrade command**: Verify registry migration edge cases
 - **Rebase edge cases**: Review complex rebase scenarios
 
+## Code Architecture Improvements
+
+### Deploy Command Refactoring (Pylint T130b)
+**Issue**: `sqlitch/cli/commands/deploy.py` exceeds 1000 lines (1766 total), violating maintainability best practices.
+
+**Context**: The deploy module is the core deployment orchestration logic, handling:
+- Change plan resolution and sequencing
+- Dependency validation and topological sorting
+- Script execution and transaction management
+- Registry state tracking
+- Error handling and rollback scenarios
+- Progress reporting and logging
+
+**Recommendation**: Post-lockdown refactoring to improve maintainability:
+1. Extract helper modules:
+   - `deploy_planner.py` - Change resolution and dependency sorting
+   - `deploy_executor.py` - Script execution and transaction handling
+   - `deploy_validator.py` - Pre-deployment validation checks
+   - `deploy_reporter.py` - Progress and status output formatting
+2. Consider state machine pattern for deployment flow
+3. Extract data structures into typed dataclasses for parameter passing
+4. Keep main CLI handler as thin orchestrator
+
+**Effort**: 8-12 hours (requires careful testing to maintain behavioral parity)
+
+**Priority**: P3 (post-lockdown, post-alpha)
+
+**Rationale**: Splitting requires careful design to maintain Sqitch behavioral parity and avoid breaking existing tests. Current structure is complex but functional and well-tested.
+
+---
+
 ## Community & Adoption
 - **Example projects**: Create sample repositories demonstrating:
   - SQLite → PostgreSQL migration

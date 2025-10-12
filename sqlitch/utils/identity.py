@@ -17,11 +17,11 @@ if TYPE_CHECKING:  # pragma: no cover
 # Platform-specific imports
 if sys.platform != "win32":
     try:
-        import pwd
+        import pwd  # pylint: disable=invalid-name  # Module name, not constant
     except ImportError:  # pragma: no cover
-        pwd = None  # type: ignore[assignment]
+        pwd = None  # type: ignore[assignment]  # pylint: disable=invalid-name
 else:
-    pwd = None  # type: ignore[assignment]
+    pwd = None  # type: ignore[assignment]  # pylint: disable=invalid-name
     try:
         import win32api  # type: ignore[import-not-found]
         import win32net  # type: ignore[import-not-found]
