@@ -257,9 +257,7 @@ class TestStatusWithPendingChanges:
             os.chdir(original_cwd)
 
         # Verify: Exit code should be 0 (Sqitch parity: pending changes still exit 0)
-        assert (
-            status_result.exit_code == 0
-        ), (
+        assert status_result.exit_code == 0, (
             "Status should exit 0 when pending changes exist, matching Sqitch behavior\n"
             f"Output: {status_result.output}"
         )
@@ -417,9 +415,7 @@ class TestStatusFailureMetadata:
         finally:
             os.chdir(original_cwd)
 
-        assert (
-            status_result.exit_code == 1
-        ), "Status should exit 1 when no changes were deployed"
+        assert status_result.exit_code == 1, "Status should exit 1 when no changes were deployed"
 
         output_lower = status_result.output.lower()
         assert "last failure" in output_lower
