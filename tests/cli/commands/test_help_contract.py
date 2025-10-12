@@ -115,3 +115,76 @@ class TestHelpErrorHandling:
         result = runner.invoke(main, ["help", "--nonexistent-option"])
         assert result.exit_code == 2, f"Expected exit 2 for unknown option, got {result.exit_code}"
         assert "no such option" in result.output.lower() or "unrecognized" in result.output.lower()
+
+
+class TestHelpUsageFlag:
+    """Tests for --usage flag functionality."""
+
+    def test_help_usage_flag_shows_only_usage_line(self, runner):
+        """Verify --usage flag shows only the usage line, not full help."""
+        result = runner.invoke(main, ["help", "--usage"])
+        assert result.exit_code == 0
+        # Usage output should be shorter than full help
+        assert len(result.output) < 500
+        # Should contain usage pattern
+        assert "sqlitch" in result.output.lower() or "usage:" in result.output.lower()
+
+    def test_help_usage_with_topic_shows_command_usage(self, runner):
+        """Verify --usage with topic shows command-specific usage."""
+        result = runner.invoke(main, ["help", "--usage", "deploy"])
+        assert result.exit_code == 0
+        assert "deploy" in result.output.lower()
+
+    def test_help_usage_and_man_flags_conflict(self, runner):
+        """Verify --usage and --man cannot be combined."""
+        result = runner.invoke(main, ["help", "--usage", "--man"])
+        assert result.exit_code != 0
+        assert "--man and --usage cannot be combined" in result.output
+
+
+class TestHelpManFlag:
+    """Tests for --man flag functionality."""
+
+    def test_help_man_flag_accepted(self, runner):
+        """Verify --man flag is accepted (fallback to stdout)."""
+        result = runner.invoke(main, ["help", "--man"])
+        # Should succeed (fallback to stdout until pager is implemented)
+        assert result.exit_code == 0
+        assert len(result.output) > 0
+
+    def test_help_man_with_topic(self, runner):
+        """Verify --man flag works with a specific topic."""
+        result = runner.invoke(main, ["help", "--man", "init"])
+        assert result.exit_code == 0
+        assert "init" in result.output.lower()
+
+
+class TestHelpInvalidTopics:
+    """Tests for invalid topic handling."""
+
+    def test_help_nonexistent_topic_errors(self, runner):
+        """Verify help for nonexistent topic returns an error."""
+        result = runner.invoke(main, ["help", "nonexistent_command_xyz"])
+        assert result.exit_code != 0
+        assert 'No help for "nonexistent_command_xyz"' in result.output
+
+
+class TestHelpQuietMode:
+    """Tests for quiet mode interaction."""
+
+    def test_help_quiet_mode_still_shows_output(self, runner):
+        """Verify --quiet doesn't suppress help output (help is informational)."""
+        result = runner.invoke(main, ["help", "--quiet"])
+        # Help is informational, so quiet mode doesn't suppress it
+        assert result.exit_code == 0
+        # Output should still be present
+        assert len(result.output.strip()) > 0
+        assert "usage:" in result.output.lower() or "commands:" in result.output.lower()
+
+    def test_help_topic_quiet_mode_still_shows_output(self, runner):
+        """Verify --quiet doesn't suppress help output for specific topics."""
+        result = runner.invoke(main, ["help", "--quiet", "deploy"])
+        assert result.exit_code == 0
+        # Help output should still be present
+        assert len(result.output.strip()) > 0
+        assert "deploy" in result.output.lower()

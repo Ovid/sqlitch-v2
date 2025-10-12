@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 import pytest
 
@@ -169,3 +169,202 @@ def test_sort_registry_entries_by_deployment_orders_deterministically() -> None:
 
     reversed_order = sort_registry_entries_by_deployment(entries, reverse=True)
     assert [entry.change_name for entry in reversed_order] == ["bravo", "charlie", "alpha"]
+
+
+def test_registry_entry_requires_project():
+    """Verify RegistryEntry raises ValueError when project is empty."""
+    with pytest.raises(ValueError, match="project is required"):
+        RegistryEntry(
+            project="",
+            change_id="abc123",
+            change_name="test_change",
+            committed_at=datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC),
+            committer_name="Test User",
+            committer_email="test@example.com",
+            planned_at=datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC),
+            planner_name="Test User",
+            planner_email="test@example.com",
+        )
+
+
+def test_registry_entry_requires_change_id():
+    """Verify RegistryEntry raises ValueError when change_id is empty."""
+    with pytest.raises(ValueError, match="change_id is required"):
+        RegistryEntry(
+            project="test",
+            change_id="",
+            change_name="test_change",
+            committed_at=datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC),
+            committer_name="Test User",
+            committer_email="test@example.com",
+            planned_at=datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC),
+            planner_name="Test User",
+            planner_email="test@example.com",
+        )
+
+
+def test_registry_entry_requires_change_name():
+    """Verify RegistryEntry raises ValueError when change_name is empty."""
+    with pytest.raises(ValueError, match="change_name is required"):
+        RegistryEntry(
+            project="test",
+            change_id="abc123",
+            change_name="",
+            committed_at=datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC),
+            committer_name="Test User",
+            committer_email="test@example.com",
+            planned_at=datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC),
+            planner_name="Test User",
+            planner_email="test@example.com",
+        )
+
+
+def test_registry_entry_requires_committer_name():
+    """Verify RegistryEntry raises ValueError when committer_name is empty."""
+    with pytest.raises(ValueError, match="committer_name is required"):
+        RegistryEntry(
+            project="test",
+            change_id="abc123",
+            change_name="test_change",
+            committed_at=datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC),
+            committer_name="",
+            committer_email="test@example.com",
+            planned_at=datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC),
+            planner_name="Test User",
+            planner_email="test@example.com",
+        )
+
+
+def test_registry_entry_requires_committer_email():
+    """Verify RegistryEntry raises ValueError when committer_email is empty."""
+    with pytest.raises(ValueError, match="committer_email is required"):
+        RegistryEntry(
+            project="test",
+            change_id="abc123",
+            change_name="test_change",
+            committed_at=datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC),
+            committer_name="Test User",
+            committer_email="",
+            planned_at=datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC),
+            planner_name="Test User",
+            planner_email="test@example.com",
+        )
+
+
+def test_registry_entry_requires_planner_name():
+    """Verify RegistryEntry raises ValueError when planner_name is empty."""
+    with pytest.raises(ValueError, match="planner_name is required"):
+        RegistryEntry(
+            project="test",
+            change_id="abc123",
+            change_name="test_change",
+            committed_at=datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC),
+            committer_name="Test User",
+            committer_email="test@example.com",
+            planned_at=datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC),
+            planner_name="",
+            planner_email="test@example.com",
+        )
+
+
+def test_registry_entry_requires_planner_email():
+    """Verify RegistryEntry raises ValueError when planner_email is empty."""
+    with pytest.raises(ValueError, match="planner_email is required"):
+        RegistryEntry(
+            project="test",
+            change_id="abc123",
+            change_name="test_change",
+            committed_at=datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC),
+            committer_name="Test User",
+            committer_email="test@example.com",
+            planned_at=datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC),
+            planner_name="Test User",
+            planner_email="",
+        )
+
+
+def test_registry_state_length():
+    """Verify __len__ returns the correct number of entries."""
+    entry1 = RegistryEntry(
+        project="test",
+        change_id="abc123",
+        change_name="change1",
+        committed_at=datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC),
+        committer_name="Test User",
+        committer_email="test@example.com",
+        planned_at=datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC),
+        planner_name="Test User",
+        planner_email="test@example.com",
+    )
+
+    entry2 = RegistryEntry(
+        project="test",
+        change_id="def456",
+        change_name="change2",
+        committed_at=datetime(2025, 1, 2, 0, 0, 0, tzinfo=UTC),
+        committer_name="Test User",
+        committer_email="test@example.com",
+        planned_at=datetime(2025, 1, 2, 0, 0, 0, tzinfo=UTC),
+        planner_name="Test User",
+        planner_email="test@example.com",
+    )
+
+    state = RegistryState(entries=(entry1, entry2))
+
+    assert len(state) == 2
+
+
+def test_registry_state_iteration():
+    """Verify __iter__ returns entries in deployment order."""
+    entry1 = RegistryEntry(
+        project="test",
+        change_id="abc123",
+        change_name="change1",
+        committed_at=datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC),
+        committer_name="Test User",
+        committer_email="test@example.com",
+        planned_at=datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC),
+        planner_name="Test User",
+        planner_email="test@example.com",
+    )
+
+    entry2 = RegistryEntry(
+        project="test",
+        change_id="def456",
+        change_name="change2",
+        committed_at=datetime(2025, 1, 2, 0, 0, 0, tzinfo=UTC),
+        committer_name="Test User",
+        committer_email="test@example.com",
+        planned_at=datetime(2025, 1, 2, 0, 0, 0, tzinfo=UTC),
+        planner_name="Test User",
+        planner_email="test@example.com",
+    )
+
+    state = RegistryState(entries=(entry1, entry2))
+
+    entries = list(state)
+    assert len(entries) == 2
+    assert entries[0].change_id == "abc123"
+    assert entries[1].change_id == "def456"
+
+
+def test_registry_state_records_method():
+    """Verify records() returns all entries as a tuple."""
+    entry1 = RegistryEntry(
+        project="test",
+        change_id="abc123",
+        change_name="change1",
+        committed_at=datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC),
+        committer_name="Test User",
+        committer_email="test@example.com",
+        planned_at=datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC),
+        planner_name="Test User",
+        planner_email="test@example.com",
+    )
+
+    state = RegistryState(entries=(entry1,))
+
+    records = state.records()
+    assert isinstance(records, tuple)
+    assert len(records) == 1
+    assert records[0].change_id == "abc123"
