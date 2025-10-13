@@ -114,9 +114,10 @@ def plan_command(
 
     try:
         plan = _parse_plan_model(plan_path, default_engine)
-    except CommandError:
+    except CommandError as parse_error:
         if default_engine is None and engine_error is not None:
-            raise engine_error
+            # Re-raise the engine resolution error with the parse error as context
+            raise engine_error from parse_error
         raise
 
     _emit_missing_dependency_warnings(plan)
