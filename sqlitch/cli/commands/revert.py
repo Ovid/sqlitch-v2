@@ -767,8 +767,6 @@ def _resolve_target(
 
     # If no target from CLI/env, check if the default engine has a target configured
     if not target and default_engine:
-        from sqlitch.config import resolver as config_resolver
-
         config_profile = config_resolver.resolve_config(
             root_dir=project_root,
             config_root=config_root,
