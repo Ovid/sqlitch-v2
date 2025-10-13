@@ -107,9 +107,9 @@
   - Validation: Full CLI test suite after each change
 
 ### Phase 3.8c: Reporting & Gate Validation (P1)
-- [ ] **T147 [P1]** Update `specs/005-lockdown/research.md` and `IMPLEMENTATION_REPORT_LOCKDOWN.md` with before/after metrics (issue counts by category, score, suppressions) after remediation.
-- [ ] **T148 [P1]** Capture final lint gate results in `IMPLEMENTATION_REPORT_LOCKDOWN.md` alongside pytest/mypy/flake8 outcomes.
-- [ ] **T149 [P1]** Add follow-up tickets in `TODO.md` for any remaining warnings/refactors not resolved within lockdown, marked with owners and timelines.
+- [X] **T147 [P1]** Update `specs/005-lockdown/research.md` and `IMPLEMENTATION_REPORT_LOCKDOWN.md` with before/after metrics (issue counts by category, score, suppressions) after remediation.
+- [X] **T148 [P1]** Capture final lint gate results in `IMPLEMENTATION_REPORT_LOCKDOWN.md` alongside pytest/mypy/flake8 outcomes.
+- [X] **T149 [P1]** Add follow-up tickets in `TODO.md` for any remaining warnings/refactors not resolved within lockdown, marked with owners and timelines.
 # Tasks: Quality Lockdown and Stabilization
 
 **Status**: 🆕 Ready for execution (2025-10-10)  
