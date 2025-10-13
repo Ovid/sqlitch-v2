@@ -103,25 +103,6 @@ class Change:
                     return tag
         return None
 
-    def __post_init__(self) -> None:
-        normalized = _normalize_change_fields(
-            name=self.name,
-            planner=self.planner,
-            planned_at=self.planned_at,
-            script_paths=self.script_paths,
-            change_id=self.change_id,
-            dependencies=self.dependencies,
-            conflicts=self.conflicts,
-            tags=self.tags,
-        )
-
-        object.__setattr__(self, "planned_at", normalized.planned_at)
-        object.__setattr__(self, "change_id", normalized.change_id)
-        object.__setattr__(self, "script_paths", MappingProxyType(normalized.script_paths))
-        object.__setattr__(self, "dependencies", normalized.dependencies)
-        object.__setattr__(self, "conflicts", normalized.conflicts)
-        object.__setattr__(self, "tags", normalized.tags)
-
     @classmethod
     def create(
         cls,
@@ -152,7 +133,7 @@ class Change:
 
         return cls(
             name=name,
-            script_paths=normalized.script_paths,
+            script_paths=MappingProxyType(normalized.script_paths),
             planner=planner,
             planned_at=normalized.planned_at,
             notes=notes,

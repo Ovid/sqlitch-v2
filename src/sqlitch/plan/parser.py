@@ -174,7 +174,7 @@ def _parse_change(tokens: Sequence[str], base_path: Path, line_no: int) -> Chang
         for key, value in script_paths.items()
     }
 
-    return Change(
+    return Change.create(
         name=name,
         script_paths=resolved_paths,
         planner=planner,

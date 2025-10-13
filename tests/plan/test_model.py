@@ -23,7 +23,7 @@ def _make_change(**overrides):
         "notes": "Add widgets table.",
     }
     defaults.update(overrides)
-    return model.Change(**defaults)  # type: ignore[arg-type]
+    return model.Change.create(**defaults)  # type: ignore[arg-type]
 
 
 def _make_tag(**overrides) -> model.Tag:
