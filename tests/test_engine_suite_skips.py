@@ -67,4 +67,3 @@ def test_docker_unavailable_skip_behaviour() -> None:
     skipped with appropriate messaging when Docker is not available, similar to
     how engine stub tests are skipped.
     """
-    pass
