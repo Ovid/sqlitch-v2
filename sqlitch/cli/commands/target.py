@@ -72,7 +72,7 @@ def target_add(
     if not config.has_section(section):
         config.add_section(section)
 
-    normalised_uri, inferred_registry = _normalise_target_entry(
+    normalised_uri, _ = _normalise_target_entry(
         project_root=cli_context.project_root,
         uri=uri,
         registry_override=registry,
@@ -129,7 +129,7 @@ def target_alter(
     if not config.has_section(section):
         raise CommandError(f'Unknown target "{name}"')
 
-    normalised_uri, inferred_registry = _normalise_target_entry(
+    normalised_uri, _ = _normalise_target_entry(
         project_root=cli_context.project_root,
         uri=uri,
         registry_override=registry,

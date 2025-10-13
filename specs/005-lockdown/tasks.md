@@ -45,15 +45,17 @@
   - Fix: Used `_` to indicate intentionally unused second return value (may be implemented later)
   - Validation: ✅ `pytest tests/cli/commands/test_revert*.py -x` - All 15 tests pass
 
-- [ ] **T154 [P2]** Fix W0612 in `sqlitch/cli/commands/target.py:75` - Remove unused variable `inferred_registry`
-  - ⚠️ Assessment: Variable computed but not used - may be leftover from refactor
-  - Options: (1) Remove (2) Use in validation/logging (3) Document purpose
-  - Validation: `pytest tests/cli/commands/test_target*.py -xvs`
+- [X] **T154 [P2]** Fix W0612 in `sqlitch/cli/commands/target.py:75` - Remove unused variable `inferred_registry`
+  - ✅ COMPLETE: Already fixed by T060d refactor (Sqitch compatibility fix)
+  - Assessment: Variable was removed when registry writing logic was changed to only write if explicitly provided
+  - Fix: Changed `normalised_uri, inferred_registry = _normalise_target_entry(...)` to `normalised_uri, _ = _normalise_target_entry(...)`
+  - Validation: ✅ `pylint sqlitch/cli/commands/target.py` - No W0612 warnings, `pytest tests/cli/commands/test_target*.py -xvs` - All tests pass
 
-- [ ] **T155 [P2]** Fix W0612 in `sqlitch/cli/commands/target.py:132` - Remove unused variable `inferred_registry`
-  - ⚠️ Assessment: Same as T154, different location in same file
-  - Options: (1) Remove (2) Use in validation/logging (3) Document purpose
-  - Validation: `pytest tests/cli/commands/test_target*.py -xvs`
+- [X] **T155 [P2]** Fix W0612 in `sqlitch/cli/commands/target.py:132` - Remove unused variable `inferred_registry`
+  - ✅ COMPLETE: Already fixed by T060d refactor (Sqitch compatibility fix)
+  - Assessment: Same as T154 - second occurrence in target_alter function
+  - Fix: Changed `normalised_uri, inferred_registry = _normalise_target_entry(...)` to `normalised_uri, _ = _normalise_target_entry(...)`
+  - Validation: ✅ `pylint sqlitch/cli/commands/target.py` - No W0612 warnings, `pytest tests/cli/commands/test_target*.py -xvs` - All tests pass
 
 #### Category 2: TODO Comments (Easy - 1 issue)
 - [ ] **T156 [P3]** Review W0511 in codebase - Address or document TODO/FIXME comments
