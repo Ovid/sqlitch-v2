@@ -178,7 +178,11 @@ def _ordering_key(entry: "RegistryEntry") -> tuple[datetime, str, str]:
 
 @dataclass(frozen=True)
 class RegistryEntry:
-    """Represents the latest deployment state recorded in the Sqitch registry."""
+    """Represents the latest deployment state recorded in the Sqitch registry.
+
+    Note: Construct instances using from_validated() classmethod to ensure
+    proper validation and datetime normalization.
+    """
 
     project: str
     change_id: str
@@ -192,28 +196,67 @@ class RegistryEntry:
     script_hash: str | None = None
     note: str = ""
 
-    def __post_init__(self) -> None:
-        """Validate required fields and normalize datetime values."""
-        if not self.project:
+    @classmethod
+    def from_validated(
+        cls,
+        project: str,
+        change_id: str,
+        change_name: str,
+        committed_at: datetime | str,
+        committer_name: str,
+        committer_email: str,
+        planned_at: datetime | str,
+        planner_name: str,
+        planner_email: str,
+        script_hash: str | None = None,
+        note: str = "",
+    ) -> RegistryEntry:
+        """Create a RegistryEntry with validation and datetime normalization.
+
+        This is the preferred way to construct RegistryEntry instances.
+
+        Args:
+            All fields matching the dataclass attributes.
+
+        Returns:
+            Validated RegistryEntry with timezone-aware datetimes.
+
+        Raises:
+            ValueError: If required fields are empty or datetimes are invalid.
+        """
+        # Validate required fields
+        if not project:
             raise ValueError("RegistryEntry.project is required")
-        if not self.change_id:
+        if not change_id:
             raise ValueError("RegistryEntry.change_id is required")
-        if not self.change_name:
+        if not change_name:
             raise ValueError("RegistryEntry.change_name is required")
-        if not self.committer_name:
+        if not committer_name:
             raise ValueError("RegistryEntry.committer_name is required")
-        if not self.committer_email:
+        if not committer_email:
             raise ValueError("RegistryEntry.committer_email is required")
-        if not self.planner_name:
+        if not planner_name:
             raise ValueError("RegistryEntry.planner_name is required")
-        if not self.planner_email:
+        if not planner_email:
             raise ValueError("RegistryEntry.planner_email is required")
 
-        normalized_committed = coerce_datetime(self.committed_at, "RegistryEntry committed_at")
-        normalized_planned = coerce_datetime(self.planned_at, "RegistryEntry planned_at")
+        # Normalize datetimes
+        normalized_committed = coerce_datetime(committed_at, "RegistryEntry committed_at")
+        normalized_planned = coerce_datetime(planned_at, "RegistryEntry planned_at")
 
-        object.__setattr__(self, "committed_at", normalized_committed)
-        object.__setattr__(self, "planned_at", normalized_planned)
+        return cls(
+            project=project,
+            change_id=change_id,
+            change_name=change_name,
+            committed_at=normalized_committed,
+            committer_name=committer_name,
+            committer_email=committer_email,
+            planned_at=normalized_planned,
+            planner_name=planner_name,
+            planner_email=planner_email,
+            script_hash=script_hash,
+            note=note,
+        )
 
 
 class RegistryState:
