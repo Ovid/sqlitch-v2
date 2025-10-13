@@ -43,7 +43,7 @@ pyproject.toml         # Config at root
 ### Phase 1: Directory Restructuring
 1. Create `src/` directory
 2. Move `sqlitch/` package into `src/sqlitch/`
-3. Update `bin/sqlitch` to handle src layout
+3. Create `src/sqlitch/__main__.py` for direct Python execution
 4. Verify no files left behind
 
 ### Phase 2: Configuration Updates
@@ -62,7 +62,7 @@ pyproject.toml         # Config at root
 ### Phase 3: Import Path Updates
 1. Tests remain unchanged (import from installed package)
 2. UAT scripts may need PYTHONPATH adjustments
-3. CLI shim (`bin/sqlitch`) needs __main__.py pattern
+3. Entry point configured in `pyproject.toml` [project.scripts]
 
 ### Phase 4: Documentation Updates
 1. Update README.md installation instructions
@@ -85,10 +85,9 @@ pyproject.toml         # Config at root
 - `src/sqlitch/__main__.py` (CLI entry point with sys.path workaround)
 
 ### Modified Files
-- `pyproject.toml` (packaging config)
+- `pyproject.toml` (packaging config, entry points)
 - `tox.ini` (PYTHONPATH)
 - `mypy.ini` (paths)
-- `bin/sqlitch` (optional - may become obsolete)
 - `specs/005-lockdown/plan.md` (project structure section)
 - `specs/005-lockdown/quickstart.md` (setup instructions)
 - `README.md` (installation/development)

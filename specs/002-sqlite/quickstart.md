@@ -48,7 +48,7 @@ Provisioned services (used for future milestones and to confirm skipped suites s
 	sqlitch init myapp --engine pg
 	```
 
-	- `sqlitch` installs as a console script (plus a compatibility shim in `bin/sqlitch` for direct invocation).
+	- `sqlitch` installs as a console script via setuptools entry points in `pyproject.toml`.
 	- Detects existing `sqitch.*` files if copying samples; tool aborts if conflicting `sqlitch.*` detected.
 	- Generated plan/scripts mirror Sqitch layout.
 	- Deploying a SQLite workspace automatically creates a sibling `sqitch.db` registry, attaches it under the `sqitch` alias, and executes workspace + registry mutations inside a single transaction. Expect `sqitch.db` to appear alongside `workspace.db` after the first successful `sqlitch deploy`.
@@ -75,7 +75,7 @@ pytest --maxfail=1 --disable-warnings --cov=sqlitch --cov-report=term-missing
 ## 7. Parity Smoke Test
 ```bash
 # In comparisons/basic fixture
-bin/sqlitch plan --json > sqlitch.json
+sqlitch plan --json > sqlitch.json
 sqitch plan --json > sqitch.json
 diff -u sqitch.json sqlitch.json
 ```
