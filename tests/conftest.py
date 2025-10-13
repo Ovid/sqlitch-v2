@@ -78,7 +78,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
             error_message = f"""
 
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                   ❌ CONSTITUTION VIOLATION DETECTED                          ║
+║                   ❌ CONSTITUTION VIOLATION DETECTED                         ║
 ║                   TEST SESSION ABORTED                                       ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
