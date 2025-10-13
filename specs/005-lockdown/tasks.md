@@ -33,15 +33,17 @@
   - Fix: Prefixed with `_` to signal intentionally unused value
   - Validation: ✅ `pytest tests/cli/commands/test_verify*.py -xvs` - All 33 tests pass
 
-- [ ] **T152 [P2]** Fix W0612 in `sqlitch/cli/commands/config.py:442` - Remove unused variable `header_index`
-  - ⚠️ Assessment: Check context - may be needed for table formatting
-  - Options: (1) Remove if unused (2) Use in header logic (3) Prefix with `_`
-  - Validation: `pytest tests/cli/commands/test_config*.py -xvs`
+- [X] **T152 [P2]** Fix W0612 in `sqlitch/cli/commands/config.py:442` - Remove unused variable `header_index`
+  - ✅ COMPLETE: Changed `start, end, header_index = _find_section_bounds(new_lines, section)` to `start, end, _ = _find_section_bounds(new_lines, section)`
+  - Assessment: Genuinely unused - header_index only needed in _unset_config_value, not _set_config_value
+  - Fix: Used `_` to indicate intentionally unused third return value
+  - Validation: ✅ `pytest tests/cli/commands/test_config*.py -xvs` - 30 tests pass, 1 skipped
 
-- [ ] **T153 [P2]** Fix W0612 in `sqlitch/cli/commands/revert.py:239` - Remove unused variable `display_target`
-  - ⚠️ Assessment: May be needed for display/logging - verify intent
-  - Options: (1) Use in display logic (2) Remove if obsolete (3) Document with `_`
-  - Validation: `pytest tests/cli/commands/test_revert*.py -xvs`
+- [X] **T153 [P2]** Fix W0612 in `sqlitch/cli/commands/revert.py:239` - Remove unused variable `display_target`
+  - ✅ COMPLETE: Changed `engine_target, display_target = _resolve_engine_target(...)` to `engine_target, _ = _resolve_engine_target(...)`
+  - Assessment: Intentionally unused - display_target used in deploy.py but not yet implemented in revert.py
+  - Fix: Used `_` to indicate intentionally unused second return value (may be implemented later)
+  - Validation: ✅ `pytest tests/cli/commands/test_revert*.py -x` - All 15 tests pass
 
 - [ ] **T154 [P2]** Fix W0612 in `sqlitch/cli/commands/target.py:75` - Remove unused variable `inferred_registry`
   - ⚠️ Assessment: Variable computed but not used - may be leftover from refactor

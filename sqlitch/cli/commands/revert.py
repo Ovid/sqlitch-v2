@@ -236,7 +236,7 @@ def _execute_revert(request: _RevertRequest) -> None:
     # Resolve engine target
     from sqlitch.engine.sqlite import SQLiteEngine
 
-    engine_target, display_target = _resolve_engine_target(
+    engine_target, _ = _resolve_engine_target(
         target=request.target,
         project_root=request.project_root,
         config_root=request.config_root,

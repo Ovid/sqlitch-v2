@@ -439,7 +439,7 @@ def _write_config_lines(path: Path, lines: list[str]) -> None:
 
 def _set_config_value(lines: list[str], section: str, option: str, value: str) -> list[str]:
     new_lines = list(lines)
-    start, end, header_index = _find_section_bounds(new_lines, section)
+    start, end, _ = _find_section_bounds(new_lines, section)
 
     if start is None:
         if section != "DEFAULT":
