@@ -198,7 +198,7 @@ def _parse_tag(tokens: Sequence[str], line_no: int) -> Tag:
         raise PlanParseError(f"Tag entry on line {line_no} requires planner metadata")
     tagged_at = _parse_timestamp(metadata.get("tagged_at"), line_no, "tagged_at")
 
-    return Tag(
+    return Tag.from_validated(
         name=name,
         change_ref=change_ref,
         planner=planner,
@@ -409,7 +409,7 @@ def _parse_compact_tag(
     tagged_at = _parse_timestamp(match.group("timestamp"), line_no, "tagged_at")
     planner = match.group("planner").strip()
 
-    return Tag(
+    return Tag.from_validated(
         name=name,
         change_ref=last_actual_change.name,
         planner=planner,

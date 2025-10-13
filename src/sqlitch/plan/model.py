@@ -28,7 +28,11 @@ def _ensure_path(value: Path | str) -> Path:
 
 @dataclass(frozen=True)
 class Tag:
-    """Represents a tag entry within a plan."""
+    """Represents a tag entry within a plan.
+
+    Note: Construct instances using from_validated() classmethod to ensure
+    proper validation and datetime normalization.
+    """
 
     name: str
     change_ref: str
@@ -36,15 +40,47 @@ class Tag:
     tagged_at: datetime
     note: str | None = None
 
-    def __post_init__(self) -> None:
-        if not self.name:
+    @classmethod
+    def from_validated(
+        cls,
+        *,
+        name: str,
+        change_ref: str,
+        planner: str,
+        tagged_at: datetime,
+        note: str | None = None,
+    ) -> "Tag":
+        """Create a Tag with validation and datetime normalization.
+
+        Args:
+            name: Tag name (required)
+            change_ref: Reference to the change being tagged (required)
+            planner: Person who created the tag (required)
+            tagged_at: When the tag was created (will be normalized to timezone-aware)
+            note: Optional note about the tag
+
+        Returns:
+            A validated Tag instance
+
+        Raises:
+            ValueError: If required fields are missing or invalid
+        """
+        if not name:
             raise ValueError("Tag.name is required")
-        if not self.change_ref:
+        if not change_ref:
             raise ValueError("Tag.change_ref is required")
-        if not self.planner:
+        if not planner:
             raise ValueError("Tag.planner is required")
-        normalized = ensure_timezone(self.tagged_at, "Tag tagged_at")
-        object.__setattr__(self, "tagged_at", normalized)
+
+        normalized_tagged_at = ensure_timezone(tagged_at, "Tag tagged_at")
+
+        return cls(
+            name=name,
+            change_ref=change_ref,
+            planner=planner,
+            tagged_at=normalized_tagged_at,
+            note=note,
+        )
 
 
 @dataclass(frozen=True)

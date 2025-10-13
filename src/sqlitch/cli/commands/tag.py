@@ -164,7 +164,7 @@ def _add_tag(
         target_change = changes[-1].name
 
     # Create the tag
-    tag = Tag(
+    tag = Tag.from_validated(
         name=tag_name,
         change_ref=target_change,
         planner=resolve_planner_identity(environment, config),

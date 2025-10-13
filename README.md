@@ -278,6 +278,15 @@ reviewing:
 - `specs/001-we-re-going/quickstart.md`
 - `specs/001-we-re-going/data-model.md`
 
+## Thank You!
+
+Thank you very much to David Wheeler for creating sqitch. It's a fantastic
+tool.
+
+Thanks to Glyph Lefkowitz, creator of Python's "Twisted" framework, for
+[offering some great feedback on code
+quality](https://fosstodon.org/deck/@ovid/115365657494405806).
+
 ## License
 
 SQLitch is a community-maintained fork inspired by the original
