@@ -121,6 +121,12 @@
 - Total issues reduced by 104 (-36%)
 - False positive noise eliminated
 
+#### Pylint Error Suppression Summary (updated 2025-10-13)
+| File | Location | Symbol | Rationale |
+|------|----------|--------|-----------|
+| `sqlitch/cli/main.py` | Entry point guard | `missing-kwoa`, `no-value-for-parameter` | Click injects parameters via decorators at runtime; documented per constitution to avoid misleading Pylint errors |
+| `sqlitch/cli/__main__.py` | Entry point guard | `missing-kwoa`, `no-value-for-parameter` | Module re-exports CLI entry point for `python -m sqlitch.cli`; Click supplies parameters dynamically |
+
 **Commits**: 
 - `f4182d9` - "Complete Phase 3.8 pylint improvements (T142-T146)"
 - `1951e20` - "Document Phase 3.8 completion in session and implementation reports"

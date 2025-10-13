@@ -5,11 +5,11 @@
 **Exit Criteria**: No unresolved pylint errors, documented plan for remaining warnings/refactors, and CI guard in place (`tox -e lint` or equivalent)
 
 ### Phase 3.8a: Error & Fatal Remediation (P1)
-- [ ] **T140 [P1]** Resolve all pylint `fatal`/`error` diagnostics across `sqlitch/` and `tests/`.
+- [X] **T140 [P1]** Resolve all pylint `fatal`/`error` diagnostics across `sqlitch/` and `tests/`.
   - Deliverables: zero remaining `fatal`/`error` entries in `pylint_report.json`; suppressions require inline justification and entry in `IMPLEMENTATION_REPORT_LOCKDOWN.md`.
   - Validation: `pylint sqlitch tests --output-format=json` reports 0 items with `type` in {"fatal", "error"}.
-- [ ] **T141 [P1]** Ensure every suppression for unavoidable errors includes rationale in code comments and a summary table in `IMPLEMENTATION_REPORT_LOCKDOWN.md`.
-- [ ] **T142 [P1]** Add or update `tox -e lint` (or pytest equivalent) to run pylint with `--fail-under=9.00` and fail on new `fatal`/`error` diagnostics; wire into quality gate checklist.
+- [X] **T141 [P1]** Ensure every suppression for unavoidable errors includes rationale in code comments and a summary table in `IMPLEMENTATION_REPORT_LOCKDOWN.md`.
+- [X] **T142 [P1]** Add or update `tox -e lint` (or pytest equivalent) to run pylint with `--fail-under=9.00` and fail on new `fatal`/`error` diagnostics; wire into quality gate checklist.
 
 ### Phase 3.8b: Warning & Refactor Reduction (P2)
 - [ ] **T143 [P2]** Reduce `unused-argument` diagnostics in CLI commands from 67 → ≤25 by refactoring signatures or documenting intentional Click injections.
@@ -120,7 +120,7 @@ pytest --cov=sqlitch --cov-report=term
 - [X] **T032 [P1][P]** Add CLI contract test for `sqlitch target` in `tests/cli/commands/test_target_lockdown.py` *(satisfied by existing test_target_contract.py)*
 - [X] **T033 [P1][P]** Add CLI contract test for `sqlitch upgrade` in `tests/cli/commands/test_upgrade_lockdown.py` *(satisfied by existing test_upgrade_contract.py)*
 - [X] **T034 [P1][P]** Add CLI contract test for `sqlitch verify` in `tests/cli/commands/test_verify_lockdown.py` *(satisfied by existing test_verify_contract.py)*
-- [ ] **T035 [P1]** Add regression test in `tests/support/test_test_helpers.py` ensuring `tests/support/test_helpers.py` clears Sqitch/SQLitch environment variables (`SQITCH_*`, `SQLITCH_*`, `SQLITCH_CONFIG`, `SQLITCH_TARGET`) on import; seed variables, import the module, assert they are removed.
+- [X] **T035 [P1]** Added regression test `tests/support/test_test_helpers.py::test_test_helpers_sanitizes_environment_on_import` to seed representative `SQITCH_*`/`SQLITCH_*` variables, reload the helper module, and assert they are removed. Validated with `pytest --no-cov tests/support/test_test_helpers.py tests/test_test_isolation_enforcement.py`.
 
 ## Phase 3.3 · Implementation & Coverage (execute only after corresponding tests are red)
 - [X] **T110 [P1]** Raise `sqlitch/config/resolver.py` coverage ≥90% by implementing edge cases and error messaging referenced by T010
@@ -135,7 +135,7 @@ pytest --cov=sqlitch --cov-report=term
 - [X] **T119 [P1]** Update quickstart automation scripts or Make targets for running new UAT harnesses (align with T016-T017) *(UAT scripts designed for manual execution, usage documented in spec.md, no automation framework to update)*
 
 ### Phase 3.3c · Test Safety Hardening (added 2025-10-13)
-- [ ] **T124 [P1]** Update `tests/support/test_helpers.py` to scrub the full list of Sqitch/SQLitch environment variables on import, document the allowlist/denylist mapping, and expose a helper for adding future variables. Validation: `pytest tests/support/test_test_helpers.py -k "test_environment_scrubbed_on_import"` (from T035) passes and `env` snapshot confirms variables removed.
+- [X] **T124 [P1]** Updated `tests/support/test_helpers.py` with `sanitize_sqlitch_environment()` executed on import, published `SANITIZED_ENVIRONMENT_PREFIXES`/`SANITIZED_ENVIRONMENT_VARIABLES`, and added enforcement via `tests/test_test_isolation_enforcement.py::test_test_helpers_meets_test_safety_objectives`.
 
 ### Phase 3.3a · Quality Signal Remediation (added 2025-10-12)
 - [X] **T120 [P1]** Resolve the current `mypy --strict` backlog (70 reported errors across CLI command modules), refactor signatures or helper types as needed, and add a regression guard (pytest or tox environment) that fails when mypy reports new issues.
