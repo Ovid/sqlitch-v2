@@ -55,16 +55,22 @@ def create_isolated_environment(work_dir: Path) -> dict[str, Any]:
     # Both tools need to read/write the SAME config file for interoperability
     local_config = work_dir / "sqitch.conf"
 
+    # Create config files with descriptive names for easier debugging
+    # These won't be used in practice since we point to sqitch.conf, but
+    # having them with clear names makes the isolated directory more navigable
+    system_config = system_dir / "system.conf"
+    user_config = user_dir / "user.conf"
+
     # Set SQLITCH_* environment variables (SQLitch config isolation)
     env["SQLITCH_CONFIG"] = str(local_config)
-    env["SQLITCH_SYSTEM_CONFIG"] = str(system_dir / "sqlitch.conf")
-    env["SQLITCH_USER_CONFIG"] = str(user_dir / "sqlitch.conf")
+    env["SQLITCH_SYSTEM_CONFIG"] = str(system_config)
+    env["SQLITCH_USER_CONFIG"] = str(user_config)
 
     # Set SQITCH_* environment variables (Sqitch config isolation)
     # This prevents pollution of ~/.sqitch/sqitch.conf and /etc/sqitch/sqitch.conf
     # BUT allows both tools to share the project config file
     env["SQITCH_CONFIG"] = str(local_config)
-    env["SQITCH_SYSTEM_CONFIG"] = str(system_dir / "sqitch.conf")
-    env["SQITCH_USER_CONFIG"] = str(user_dir / "sqitch.conf")
+    env["SQITCH_SYSTEM_CONFIG"] = str(system_config)
+    env["SQITCH_USER_CONFIG"] = str(user_config)
 
     return env

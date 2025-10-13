@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from . import comparison, sanitization
-from .test_steps import Step, TUTORIAL_STEPS
+from .lib import comparison, sanitization
+from .lib.test_steps import Step, TUTORIAL_STEPS
 
 __all__ = [
     "comparison",

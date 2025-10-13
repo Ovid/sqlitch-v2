@@ -10,7 +10,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from uat.isolation import create_isolated_environment
+from uat.lib.isolation import create_isolated_environment
 
 
 def test_create_isolated_environment_returns_copy_of_parent_env(tmp_path: Path):
@@ -53,10 +53,10 @@ def test_create_isolated_environment_sets_all_sqlitch_vars(tmp_path: Path):
     assert system_path.parent == isolated_root / "system"
     assert user_path.parent == isolated_root / "user"
 
-    # Verify filenames
+    # Verify filenames (with descriptive names for debugging)
     assert config_path.name == "sqitch.conf"
-    assert system_path.name == "sqlitch.conf"
-    assert user_path.name == "sqlitch.conf"
+    assert system_path.name == "system.conf"
+    assert user_path.name == "user.conf"
 
 
 def test_create_isolated_environment_sets_all_sqitch_vars(tmp_path: Path):
@@ -86,10 +86,10 @@ def test_create_isolated_environment_sets_all_sqitch_vars(tmp_path: Path):
     assert system_path.parent == isolated_root / "system"
     assert user_path.parent == isolated_root / "user"
 
-    # Verify filenames
+    # Verify filenames (with descriptive names for debugging)
     assert config_path.name == "sqitch.conf"
-    assert system_path.name == "sqitch.conf"
-    assert user_path.name == "sqitch.conf"
+    assert system_path.name == "system.conf"
+    assert user_path.name == "user.conf"
 
 
 def test_create_isolated_environment_creates_directories(tmp_path: Path):

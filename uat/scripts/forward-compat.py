@@ -28,13 +28,13 @@ if __package__ in {None, ""}:
     PACKAGE_ROOT = Path(__file__).resolve().parent.parent.parent
     if str(PACKAGE_ROOT) not in sys.path:
         sys.path.insert(0, str(PACKAGE_ROOT))
-    from uat import comparison, sanitization
-    from uat.isolation import create_isolated_environment
-    from uat.test_steps import TUTORIAL_STEPS, Step
+    from uat.lib import comparison, sanitization
+    from uat.lib.isolation import create_isolated_environment
+    from uat.lib.test_steps import TUTORIAL_STEPS, Step
 else:
-    from .. import comparison, sanitization
-    from ..isolation import create_isolated_environment
-    from ..test_steps import TUTORIAL_STEPS, Step
+    from ..lib import comparison, sanitization
+    from ..lib.isolation import create_isolated_environment
+    from ..lib.test_steps import TUTORIAL_STEPS, Step
 
 _SKIP_ENV = "SQLITCH_UAT_SKIP_EXECUTION"
 

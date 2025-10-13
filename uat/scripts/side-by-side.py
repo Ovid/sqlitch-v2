@@ -32,19 +32,19 @@ from typing import List, Set, Tuple, Optional
 # Allow running as script or module
 if __name__ == "__main__":
     # Add project root to path when running as script
-    project_root = Path(__file__).parent.parent
+    project_root = Path(__file__).parent.parent.parent
     if str(project_root) not in sys.path:
         sys.path.insert(0, str(project_root))
 
-from uat import comparison, sanitization
-from uat.isolation import create_isolated_environment
-from uat.test_steps import TUTORIAL_STEPS
+from uat.lib import comparison, sanitization
+from uat.lib.isolation import create_isolated_environment
+from uat.lib.test_steps import TUTORIAL_STEPS
 
 # ---------------- Configuration ----------------
 UAT_LOG = "uat.log"
-SQITCH_DIR = Path("uat/sqitch_results")
+SQITCH_DIR = Path("uat/artifacts/sqitch_results")
 SQITCH_LOG = SQITCH_DIR.joinpath(UAT_LOG)
-SQLITCH_DIR = Path("uat/sqlitch_results")
+SQLITCH_DIR = Path("uat/artifacts/sqlitch_results")
 SQLITCH_LOG = SQLITCH_DIR.joinpath(UAT_LOG)
 KEEP_DIRS_ON_FAIL = True
 STEP_COUNTER = 0
