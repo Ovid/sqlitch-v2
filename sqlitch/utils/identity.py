@@ -399,10 +399,8 @@ def get_system_fullname(username: str) -> str | None:
             full_name = str(user_info.get("full_name", "")).strip()
             if full_name:
                 return full_name
-        except Exception as exc:  # pragma: no cover - Windows-specific
-            # pylint: disable=broad-exception-caught
-            # Win32Net API can raise various Windows-specific exceptions
-            # Win32 API call failed; fall back to other methods
+        except Exception as exc:  # pylint: disable=broad-exception-caught # pragma: no cover
+            # Win32Net API can raise various Windows-specific exceptions; graceful fallback required
             logger.debug(
                 "Failed to get Windows full name via NetUserGetInfo: %s",
                 exc,
@@ -435,7 +433,6 @@ def get_hostname() -> str:
     """
     try:
         return socket.gethostname()
-    except Exception:  # pragma: no cover
-        # pylint: disable=broad-exception-caught
-        # socket operations can raise various network exceptions
+    except Exception:  # pylint: disable=broad-exception-caught # pragma: no cover
+        # socket operations can raise various network exceptions; graceful fallback required
         return "localhost"
