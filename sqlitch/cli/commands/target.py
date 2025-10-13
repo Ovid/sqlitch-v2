@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import configparser
+import os
 from pathlib import Path
 
 import click
@@ -307,7 +308,24 @@ def _resolve_config_path(
     config_root: Path | None,
     config_override: bool,
 ) -> Path:
-    """Resolve the config file path for targets."""
+    """Resolve the config file path for targets.
+
+    Priority order:
+    1. Explicit --config-root flag takes highest priority
+    2. SQLITCH_CONFIG/SQITCH_CONFIG environment variables (for test isolation)
+    3. Existing config file discovery
+    4. Fallback to sqitch.conf in project root
+    """
+
+    # If --config-root is explicitly provided, prioritize it
+    if config_override and config_root is not None:
+        # Use config_root as the search location
+        pass  # Will be handled below
+    else:
+        # No explicit --config-root, check for environment variable override
+        env_config = os.environ.get("SQLITCH_CONFIG") or os.environ.get("SQITCH_CONFIG")
+        if env_config:
+            return Path(env_config)
 
     search_roots: list[Path] = [project_root]
     if config_override and config_root is not None and config_root != project_root:

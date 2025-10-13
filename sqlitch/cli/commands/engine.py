@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import configparser
+import os
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
@@ -243,7 +244,20 @@ def _engine_config_path(cli_context: CLIContext) -> Path:
     """
     Resolve the config file path for engines.
     Prefers project-level config over user config (Sqitch parity).
+
+    Priority order:
+    1. Explicit --config-root flag (if config_root_overridden)
+    2. SQLITCH_CONFIG/SQITCH_CONFIG environment variables (for test isolation)
+    3. Existing config file discovery in project root
+    4. Fallback to sqitch.conf in project root
     """
+    # If --config-root is explicitly provided, don't use env var override
+    if not cli_context.config_root_overridden:
+        # No explicit --config-root, check for environment variable override
+        env_config = os.environ.get("SQLITCH_CONFIG") or os.environ.get("SQITCH_CONFIG")
+        if env_config:
+            return Path(env_config)
+
     # Always prefer project-level config for engine definitions
     try:
         resolution = resolve_config_file(cli_context.project_root)
