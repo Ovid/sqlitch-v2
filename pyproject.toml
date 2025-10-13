@@ -10,15 +10,15 @@ requires-python = ">=3.11"
 authors = [{name = "SQLitch Contributors"}]
 license = "MIT"
 dependencies = [
-  "click>=8.1,<9",
-  "rich>=13,<14",
-  "sqlalchemy>=2.0,<3",
-  "psycopg[binary]>=3.1,<4",
-  "PyMySQL>=1.1,<2",
-  "python-dateutil>=2.8,<3",
-  "tomli>=2.0,<3",
-  "pydantic>=2.4,<3",
-  "docker>=7.0,<8",
+  "click>=8.1",
+  "rich>=13",
+  "sqlalchemy>=2.0",
+  "psycopg[binary]>=3.1",
+  "PyMySQL>=1.1",
+  "python-dateutil>=2.8",
+  "tomli>=2.0",
+  "pydantic>=2.4",
+  "docker>=7.0",
 ]
 
 [project.scripts]
@@ -41,7 +41,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["sqlitch*"]
 
 [tool.black]
@@ -64,11 +64,11 @@ warn_unused_ignores = true
 strict = true
 
 [tool.bandit]
-target = ["sqlitch"]
+target = ["src/sqlitch"]
 
 [tool.coverage.run]
 branch = true
-source = ["sqlitch"]
+source = ["src/sqlitch"]
 
 [tool.coverage.report]
 fail_under = 90

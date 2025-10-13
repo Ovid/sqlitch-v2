@@ -23,7 +23,7 @@ def _make_change(**overrides):
         "notes": "Add widgets table.",
     }
     defaults.update(overrides)
-    return model.Change(**defaults)  # type: ignore[arg-type]
+    return model.Change.create(**defaults)  # type: ignore[arg-type]
 
 
 def _make_tag(**overrides) -> model.Tag:
@@ -34,7 +34,7 @@ def _make_tag(**overrides) -> model.Tag:
         "tagged_at": datetime(2025, 10, 3, 12, 34, 56, tzinfo=timezone.utc),
     }
     defaults.update(overrides)
-    return model.Tag(**defaults)  # type: ignore[arg-type]
+    return model.Tag.from_validated(**defaults)  # type: ignore[arg-type]
 
 
 def test_change_requires_deploy_and_revert_scripts():

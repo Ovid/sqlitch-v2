@@ -32,7 +32,7 @@ def _entry(**overrides: object) -> RegistryEntry:
         note="Initial deploy",
     )
     baseline.update(overrides)
-    return RegistryEntry(**baseline)  # type: ignore[arg-type]
+    return RegistryEntry.from_validated(**baseline)  # type: ignore[arg-type]
 
 
 def test_registry_entry_requires_timezone_aware_datetimes() -> None:
@@ -174,7 +174,7 @@ def test_sort_registry_entries_by_deployment_orders_deterministically() -> None:
 def test_registry_entry_requires_project():
     """Verify RegistryEntry raises ValueError when project is empty."""
     with pytest.raises(ValueError, match="project is required"):
-        RegistryEntry(
+        RegistryEntry.from_validated(
             project="",
             change_id="abc123",
             change_name="test_change",
@@ -190,7 +190,7 @@ def test_registry_entry_requires_project():
 def test_registry_entry_requires_change_id():
     """Verify RegistryEntry raises ValueError when change_id is empty."""
     with pytest.raises(ValueError, match="change_id is required"):
-        RegistryEntry(
+        RegistryEntry.from_validated(
             project="test",
             change_id="",
             change_name="test_change",
@@ -206,7 +206,7 @@ def test_registry_entry_requires_change_id():
 def test_registry_entry_requires_change_name():
     """Verify RegistryEntry raises ValueError when change_name is empty."""
     with pytest.raises(ValueError, match="change_name is required"):
-        RegistryEntry(
+        RegistryEntry.from_validated(
             project="test",
             change_id="abc123",
             change_name="",
@@ -222,7 +222,7 @@ def test_registry_entry_requires_change_name():
 def test_registry_entry_requires_committer_name():
     """Verify RegistryEntry raises ValueError when committer_name is empty."""
     with pytest.raises(ValueError, match="committer_name is required"):
-        RegistryEntry(
+        RegistryEntry.from_validated(
             project="test",
             change_id="abc123",
             change_name="test_change",
@@ -238,7 +238,7 @@ def test_registry_entry_requires_committer_name():
 def test_registry_entry_requires_committer_email():
     """Verify RegistryEntry raises ValueError when committer_email is empty."""
     with pytest.raises(ValueError, match="committer_email is required"):
-        RegistryEntry(
+        RegistryEntry.from_validated(
             project="test",
             change_id="abc123",
             change_name="test_change",
@@ -254,7 +254,7 @@ def test_registry_entry_requires_committer_email():
 def test_registry_entry_requires_planner_name():
     """Verify RegistryEntry raises ValueError when planner_name is empty."""
     with pytest.raises(ValueError, match="planner_name is required"):
-        RegistryEntry(
+        RegistryEntry.from_validated(
             project="test",
             change_id="abc123",
             change_name="test_change",
@@ -270,7 +270,7 @@ def test_registry_entry_requires_planner_name():
 def test_registry_entry_requires_planner_email():
     """Verify RegistryEntry raises ValueError when planner_email is empty."""
     with pytest.raises(ValueError, match="planner_email is required"):
-        RegistryEntry(
+        RegistryEntry.from_validated(
             project="test",
             change_id="abc123",
             change_name="test_change",
@@ -285,7 +285,7 @@ def test_registry_entry_requires_planner_email():
 
 def test_registry_state_length():
     """Verify __len__ returns the correct number of entries."""
-    entry1 = RegistryEntry(
+    entry1 = RegistryEntry.from_validated(
         project="test",
         change_id="abc123",
         change_name="change1",
@@ -297,7 +297,7 @@ def test_registry_state_length():
         planner_email="test@example.com",
     )
 
-    entry2 = RegistryEntry(
+    entry2 = RegistryEntry.from_validated(
         project="test",
         change_id="def456",
         change_name="change2",
@@ -316,7 +316,7 @@ def test_registry_state_length():
 
 def test_registry_state_iteration():
     """Verify __iter__ returns entries in deployment order."""
-    entry1 = RegistryEntry(
+    entry1 = RegistryEntry.from_validated(
         project="test",
         change_id="abc123",
         change_name="change1",
@@ -328,7 +328,7 @@ def test_registry_state_iteration():
         planner_email="test@example.com",
     )
 
-    entry2 = RegistryEntry(
+    entry2 = RegistryEntry.from_validated(
         project="test",
         change_id="def456",
         change_name="change2",
@@ -350,7 +350,7 @@ def test_registry_state_iteration():
 
 def test_registry_state_records_method():
     """Verify records() returns all entries as a tuple."""
-    entry1 = RegistryEntry(
+    entry1 = RegistryEntry.from_validated(
         project="test",
         change_id="abc123",
         change_name="change1",
@@ -432,7 +432,7 @@ def test_deserialize_registry_rows_rejects_none_values() -> None:
 
 
 def test_registry_state_remove_change_surfaces_missing_key() -> None:
-    entry = RegistryEntry(
+    entry = RegistryEntry.from_validated(
         **_entry_kwargs(
             change_id="alpha",
             change_name="alpha",

@@ -242,26 +242,5 @@ class TestDeploymentEventValidation:
         with pytest.raises(Exception):  # FrozenInstanceError or AttributeError
             event.event = "revert"  # type: ignore
 
-    def test_has_slots(self):
-        """Should use __slots__ for memory efficiency."""
-        row = (
-            "deploy",
-            "abc123",
-            "users",
-            "flipr",
-            "",
-            "",
-            "",
-            "",
-            "2025-01-15T10:30:00Z",
-            "Ada",
-            "ada@example.com",
-            "2025-01-14T18:00:00Z",
-            "Ada",
-            "ada@example.com",
-        )
-        event = DeploymentEvent.from_registry_row(row)
-
-        # Should have __slots__, not __dict__
-        assert not hasattr(event, "__dict__")
-        assert hasattr(event, "__slots__")
+    # Note: slots=True removed from dataclasses for flexibility (weakrefs, etc.)
+    # Memory optimization is not needed for the small number of objects created.

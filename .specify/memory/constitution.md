@@ -1,26 +1,30 @@
 <!--
 - Sync Impact Report
-- Version change: 1.10.1 → 1.11.0 (MINOR bump)
+- Version change: 1.11.0 → 1.12.0 (MINOR bump)
 - Modified sections:
+  • Additional Constraints — Expanded "Validation Patterns" into full subsection
+    "Data Model Construction Pattern (Frozen Dataclasses)"
+  • Added mandatory pattern: frozen dataclasses MUST use factory classmethods
+    (e.g., .from_validated(), .create()) instead of __post_init__ with
+    object.__setattr__() mutations
+  • Added detailed DO/DON'T guidelines with rationale and examples
+- Added sections: "Data Model Construction Pattern (Frozen Dataclasses)"
+- Removed sections: None
+- Rationale: Codified the architectural pattern for frozen dataclass validation
+  based on recent refactoring of RegistryEntry, Change, and Tag models. This
+  establishes a mandatory pattern to prevent future introduction of the
+  object.__setattr__() anti-pattern in __post_init__ methods. This is a material
+  expansion of coding standards that affects how domain models are designed,
+  warranting a MINOR version bump.
+- Templates requiring updates: None (this is an internal coding standard)
+- Follow-up TODOs: Consider refactoring Plan.__post_init__ to follow this pattern
+- Previous sync report (v1.10.1 → v1.11.0):
+  Modified sections:
   • VI. Behavioral Parity with Sqitch — Added "Implementation Verification Protocol"
     requiring consultation of sqitch/ directory before implementing features
-  • Added mandatory 5-step verification workflow
-  • Added examples of syntax requiring verification (e.g., @HEAD^, @ROOT)
-- Added sections: None
-- Removed sections: None
-- Rationale: Codified the critical requirement that all SQLitch implementation work
+  Rationale: Codified the critical requirement that all SQLitch implementation work
   must verify behavior against the Perl Sqitch source code in sqitch/ directory, not
-  just documentation. This is a material expansion of the behavioral parity principle,
-  adding concrete verification steps that must be followed. This is a substantive
-  addition to governance workflow, warranting a MINOR version bump.
-- Templates requiring updates: All future spec/plan/tasks documents should reference
-  this verification protocol when describing implementation work
-- Follow-up TODOs: None
-- Previous sync report (v1.10.0 → v1.10.1):
-  Modified sections:
-  • Development Workflow & Quality Gates — Added "Terminal Command Decomposition" requirement
-  Rationale: Added workflow principle requiring AI agents to decompose compound shell commands
-  into separate sequential steps.
+  just documentation.
 -->
 
 # SQLitch Constitution
@@ -212,9 +216,34 @@ by making behavior discoverable without reverse-engineering the implementation.
   documentation. Prefer dependency injection over global lookups where feasible.
 - Abstract Interfaces: Classes designed for subclassing MUST use `abc.ABC` and
   `@abstractmethod` to declare their contract explicitly.
-- Validation Patterns: Complex validation logic SHOULD be extracted from
-  `__post_init__` methods into separate, testable factory methods or validators
-  to improve clarity and testability.
+
+### Data Model Construction Pattern (Frozen Dataclasses)
+
+**Frozen dataclasses MUST use factory classmethods for validation, not `__post_init__`.**
+
+When a frozen dataclass requires validation, normalization, or transformation:
+- ✅ **DO**: Create a `@classmethod` factory (e.g., `.from_validated()`, `.create()`)
+  that validates and normalizes data, then constructs the instance with clean values.
+- ✅ **DO**: Name the factory method to indicate its validation role.
+- ✅ **DO**: Document the factory method as the canonical construction path.
+- ❌ **DON'T**: Use `__post_init__` with `object.__setattr__()` to mutate frozen instances.
+- ❌ **DON'T**: Make validation implicit through `__post_init__`.
+- ❌ **DON'T**: Provide multiple validation paths (factory AND `__post_init__`).
+
+**Rationale**: 
+Factory methods make validation explicit rather than implicit. Using `object.__setattr__()`
+in `__post_init__` violates the frozen dataclass contract and creates "magical" behavior
+where validation happens automatically during construction. Explicit factory methods provide
+a single, clear construction path, improve testability by separating validation from data
+structure, and align with "explicit is better than implicit" (Zen of Python).
+
+**Applies to**: Domain models like `RegistryEntry`, `Change`, `Tag`, and similar
+value objects that require validated construction.
+
+**Exception**: Non-frozen dataclasses MAY use `__post_init__` since they don't require
+`object.__setattr__()` workarounds. However, factory classmethods are still preferred
+when validation is complex or when multiple construction patterns exist.
+
 - Skip Lifecycle Discipline: Tests for unimplemented features MAY be committed
   with skip markers, but removing those skips is a mandatory pre-implementation
   gate. Before any implementation task begins, the responsible engineer MUST
@@ -276,6 +305,6 @@ by making behavior discoverable without reverse-engineering the implementation.
 - Compliance: All specs, plans, tasks, and PRs MUST reference and adhere to this
   document. Non-compliance is a change request, not a discretionary choice.
 
-**Version**: 1.11.0 | **Ratified**: 2025-10-03 | **Last Amended**: 2025-10-11
+**Version**: 1.12.0 | **Ratified**: 2025-10-03 | **Last Amended**: 2025-10-13
 
 ```

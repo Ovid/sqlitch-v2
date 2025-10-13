@@ -1,26 +1,12 @@
-# Include Sqitch reference implementation files for tests
-recursive-include sqitch *.sql *.pm *.pod
-include sqitch/README.md
+# Include tests so users can run the test suite from source distribution
+recursive-include tests *
 
-# Include test support files
-recursive-include tests/support *
-include tests/support/README.md
-
-# Include specification documents
-recursive-include specs *
-
-# Include UAT scripts and helpers
-recursive-include uat *.py
-
-# Include documentation
-include README.md
+# Include additional documentation (beyond auto-included README.md, LICENSE)
 include CONTRIBUTING.md
 include CHANGELOG.md
-include LICENSE
 include TODO.md
 
-# Include configuration files
-include pyproject.toml
+# Include test/dev tool configs (allows users to run tests/linters from sdist)
 include tox.ini
 include pytest.ini
 include mypy.ini

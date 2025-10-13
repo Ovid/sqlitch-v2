@@ -124,6 +124,8 @@ source .venv/bin/activate
 pip install -e .[dev]
 ```
 
+**Note**: SQLitch uses [src layout](https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/) (`src/sqlitch/`). The editable install (`-e`) makes this transparent—all imports remain `from sqlitch...` regardless of the source location. This layout prevents accidental imports from the source tree and enforces proper installation workflows.
+
 ### Complete the SQLite Tutorial
 
 SQLitch now supports completing the full [Sqitch SQLite Tutorial](https://sqitch.org/docs/manual/sqitchtutorial-sqlite/)! 
@@ -275,6 +277,15 @@ reviewing:
 - `CONTRIBUTING.md`
 - `specs/001-we-re-going/quickstart.md`
 - `specs/001-we-re-going/data-model.md`
+
+## Thank You!
+
+Thank you very much to David Wheeler for creating sqitch. It's a fantastic
+tool.
+
+Thanks to Glyph Lefkowitz, creator of Python's "Twisted" framework, for
+[offering some great feedback on code
+quality](https://fosstodon.org/deck/@ovid/115365657494405806).
 
 ## License
 

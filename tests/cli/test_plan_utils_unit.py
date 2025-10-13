@@ -9,7 +9,6 @@ import pytest
 from sqlitch.cli.commands import CommandError
 from sqlitch.cli.commands import _plan_utils as plan_utils
 from sqlitch.config.loader import ConfigProfile
-from sqlitch.plan.parser import PlanParseError
 
 
 @pytest.fixture()
@@ -77,24 +76,18 @@ def test_resolve_default_engine_reads_plan_header(
     assert engine == "sqlite"
 
 
-def test_resolve_default_engine_propagates_parse_errors(
+def test_resolve_default_engine_without_any_engine_source_errors(
     tmp_path: Path,
     empty_profile: ConfigProfile,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Test that resolve_default_engine raises an error when no engine is found."""
     plan_path = tmp_path / "sqlitch.plan"
     plan_path.write_text("%project=widgets\n", encoding="utf-8")
 
     monkeypatch.setattr(plan_utils.config_resolver, "resolve_config", lambda **_: empty_profile)
 
-    def fake_parse(_: Path, **__: object) -> None:
-        raise PlanParseError("boom")
-
-    import sqlitch.plan.parser as parser_module
-
-    monkeypatch.setattr(parser_module, "parse_plan", fake_parse)
-
-    with pytest.raises(CommandError, match="boom"):
+    with pytest.raises(CommandError, match="No default engine configured"):
         plan_utils.resolve_default_engine(
             project_root=tmp_path,
             config_root=tmp_path / "cfg",

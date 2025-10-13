@@ -11,17 +11,19 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .[dev]
 ```
+**Note**: SQLitch uses src layout (`src/sqlitch/`). The editable install makes imports transparent, so all code continues to use `from sqlitch...` regardless of the source location.
 
 ## 2. Baseline Quality Gates
 ```bash
 pytest --cov=sqlitch --cov-report=term --cov-report=html
-mypy --strict sqlitch/
-pydocstyle sqlitch/
+mypy --strict src/sqlitch/
+pydocstyle src/sqlitch/
 pip-audit
-bandit -r sqlitch/
+bandit -r src/sqlitch/
 ```
 - Inspect `htmlcov/index.html` for modules below 90% coverage (focus on resolver, registry state, identity helpers).
 - Log outputs for auditing include `coverage.xml` and `bandit.json` (if generated).
+- **src layout benefits**: Prevents accidental imports from source tree, enforces proper installation workflows.
 
 ## 3. Manual UAT Compatibility Scripts (SQLite Tutorial)
 ```bash

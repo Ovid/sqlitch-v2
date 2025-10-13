@@ -80,8 +80,11 @@ def config_snapshot():
             )
 
 
-# pylint: disable=redefined-outer-name  # pytest fixture injection requires parameter name to match fixture name
-def test_no_sqlitch_config_directory_created(config_snapshot):
+# pylint: disable=redefined-outer-name
+# pytest fixture injection requires parameter name to match fixture name
+def test_no_sqlitch_config_directory_created(  # pylint: disable=unused-argument
+    config_snapshot,  # Pytest fixture - parameter name must match fixture name
+):
     """Verify that ~/.config/sqlitch/ is NEVER created by tests.
 
     This is a CRITICAL requirement for FR-001b: 100% Configuration Compatibility.

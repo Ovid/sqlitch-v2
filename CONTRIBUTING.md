@@ -42,8 +42,10 @@ docker run -v $(pwd):/workspace -w /workspace python:3.11 bash -c "
 2. Install runtime and tooling dependencies (includes pytest, coverage plugins, linters, tox, etc.).
 
 ```bash
-pip install ".[dev]"
+pip install -e .[dev]
 ```
+
+**Note**: SQLitch uses [src layout](https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/) (`src/sqlitch/`). The editable install (`-e`) is **required** for development—it makes imports work correctly while preventing accidental imports from the source tree. All code continues to use `from sqlitch...` imports regardless of the physical location under `src/`.
 
 3. All commands below assume the virtual environment remains active.
 

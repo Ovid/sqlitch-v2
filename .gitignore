@@ -46,10 +46,15 @@ REPORT-TASKS.md
 /deploy/
 /revert/
 /verify/
-uat/sqitch_results/
-uat/sqlitch_results/
+
+# UAT artifacts (test execution results)
+uat/artifacts/
 uat/backward_compat_results/
 uat/forward_compat_results/
+
 *.out
 pylint_report.json
 pylint-report.json
+
+# let ci pick this up
+coverage.xml

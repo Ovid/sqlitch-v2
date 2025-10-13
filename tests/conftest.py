@@ -23,7 +23,9 @@ def pytest_configure(config: pytest.Config) -> None:
     )
 
 
-def pytest_sessionstart(session: pytest.Session) -> None:
+def pytest_sessionstart(  # pylint: disable=unused-argument
+    session: pytest.Session,  # Required by pytest hook signature
+) -> None:
     """
     Run critical sanity checks before test session begins.
 
@@ -133,7 +135,10 @@ stderr: {result.stderr}
         pytest.exit(error_message, returncode=1)
 
 
-def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+def pytest_collection_modifyitems(  # pylint: disable=unused-argument
+    config: pytest.Config,  # Required by pytest hook signature
+    items: list[pytest.Item],
+) -> None:
     for item in items:
         marker = item.get_closest_marker("requires_engine")
         if marker is None:

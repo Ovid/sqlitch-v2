@@ -36,15 +36,6 @@ class TestUserIdentity:
         with pytest.raises(AttributeError):
             identity.name = "Changed"  # type: ignore[misc]
 
-    def test_has_slots(self) -> None:
-        """UserIdentity should use __slots__ for memory efficiency."""
-        identity = UserIdentity(name="Carol", email="carol@example.com")
-        assert not hasattr(identity, "__dict__")
-
-
-class TestGenerateChangeId:
-    """Test generate_change_id function."""
-
     def test_generates_sha1_hash(self) -> None:
         """Should return SHA1 hash hex digest."""
         change_id = generate_change_id(
