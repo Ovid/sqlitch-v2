@@ -408,10 +408,8 @@ def _execute_deploy(request: _DeployRequest) -> None:
     finally:
         try:
             connection.close()
-        except Exception as exc:  # pragma: no cover - best effort cleanup
-            # pylint: disable=broad-exception-caught
-            # Cleanup must never fail the operation
-            # Log connection cleanup failure but don't mask the original exception
+        except Exception as exc:  # pylint: disable=broad-exception-caught # pragma: no cover
+            # Cleanup must never fail the operation; log but don't mask original exception
             _module_logger.warning(
                 "Failed to close database connection during cleanup: %s",
                 exc,
