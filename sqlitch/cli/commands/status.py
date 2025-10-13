@@ -350,9 +350,8 @@ def _load_registry_state(
         columns = [column[0] for column in description] if description else []
 
         failure_row = _load_last_failure_event(connection, expected_project)
-    except Exception as exc:  # pragma: no cover - query failures propagated
-        # pylint: disable=broad-exception-caught
-        # Catch all DB errors to check for missing registry
+    except Exception as exc:  # pylint: disable=broad-exception-caught # pragma: no cover
+        # Catch all DB errors to check for missing registry schema
         if _registry_schema_missing(exc):
             rows = []
             columns = []
@@ -365,8 +364,7 @@ def _load_registry_state(
         if cursor is not None:
             try:
                 cursor.close()
-            except Exception as exc:  # pragma: no cover - best effort cleanup
-                # pylint: disable=broad-exception-caught
+            except Exception as exc:  # pylint: disable=broad-exception-caught # pragma: no cover
                 # Cleanup must never fail the operation
                 logger.warning(
                     "Failed to close cursor during cleanup: %s",
@@ -375,8 +373,7 @@ def _load_registry_state(
                 )
         try:
             connection.close()
-        except Exception as exc:  # pragma: no cover - best effort cleanup
-            # pylint: disable=broad-exception-caught
+        except Exception as exc:  # pylint: disable=broad-exception-caught # pragma: no cover
             # Cleanup must never fail the operation
             logger.warning(
                 "Failed to close database connection during cleanup: %s",
@@ -472,8 +469,7 @@ def _load_last_failure_event(
         if failure_cursor is not None:
             try:
                 failure_cursor.close()
-            except Exception as exc:  # pragma: no cover - best effort cleanup
-                # pylint: disable=broad-exception-caught
+            except Exception as exc:  # pylint: disable=broad-exception-caught # pragma: no cover
                 # Cleanup must never fail the operation
                 logger.warning(
                     "Failed to close failure cursor during cleanup: %s",
