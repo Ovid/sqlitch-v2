@@ -43,12 +43,57 @@ import os
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING, Final, Generator
 
 if TYPE_CHECKING:
     from click.testing import CliRunner
 
-__all__ = ["isolated_test_context", "IsolatedContext"]
+__all__ = [
+    "isolated_test_context",
+    "IsolatedContext",
+    "sanitize_sqlitch_environment",
+    "SANITIZED_ENVIRONMENT_PREFIXES",
+    "SANITIZED_ENVIRONMENT_VARIABLES",
+]
+
+
+SANITIZED_ENVIRONMENT_PREFIXES: Final[tuple[str, ...]] = ("SQLITCH_", "SQITCH_")
+SANITIZED_ENVIRONMENT_VARIABLES: Final[tuple[str, ...]] = (
+    "SQLITCH_TARGET",
+    "SQITCH_TARGET",
+)
+
+
+def sanitize_sqlitch_environment() -> set[str]:
+    """Remove Sqitch/SQLitch environment variables to enforce test safety.
+
+    This function enforces the Test Safety requirement by clearing any environment
+    variables that could point to a caller's real Sqitch/SQLitch configuration or
+    runtime state. It is executed on module import so the test suite always starts
+    from a hermetic baseline.
+
+    Returns:
+        set[str]: The names of environment variables that were removed. Returned
+        primarily for debugging and unit testing.
+    """
+
+    removed: set[str] = set()
+
+    for key in list(os.environ):
+        if key.startswith(SANITIZED_ENVIRONMENT_PREFIXES):
+            removed.add(key)
+            os.environ.pop(key, None)
+
+    for key in SANITIZED_ENVIRONMENT_VARIABLES:
+        if key in os.environ:
+            removed.add(key)
+            os.environ.pop(key, None)
+
+    return removed
+
+
+# Enforce sanitized environment immediately upon import.
+sanitize_sqlitch_environment()
 
 
 class IsolatedContext:

@@ -6,19 +6,20 @@ configuration environments and restores state correctly.
 
 from __future__ import annotations
 
+import importlib
 import os
 from pathlib import Path
 
 from click.testing import CliRunner
 
-from tests.support.test_helpers import isolated_test_context
+import tests.support.test_helpers as test_helpers
 
 
 def test_isolated_test_context_sets_environment_variables():
     """Test that environment variables are set within the context."""
     runner = CliRunner()
 
-    with isolated_test_context(runner) as (runner_out, temp_dir):
+    with test_helpers.isolated_test_context(runner) as (runner_out, temp_dir):
         # Verify environment variables are set
         assert "SQLITCH_SYSTEM_CONFIG" in os.environ
         assert "SQLITCH_USER_CONFIG" in os.environ
@@ -41,7 +42,7 @@ def test_isolated_test_context_creates_directories():
     """Test that required directories are created."""
     runner = CliRunner()
 
-    with isolated_test_context(runner) as (_, temp_dir):
+    with test_helpers.isolated_test_context(runner) as (_, temp_dir):
         # Verify directories exist
         assert (temp_dir / "etc" / "sqitch").exists()
         assert (temp_dir / "etc" / "sqitch").is_dir()
@@ -53,7 +54,7 @@ def test_isolated_test_context_points_inside_temp_dir():
     """Test that all config paths point inside the isolated temp directory."""
     runner = CliRunner()
 
-    with isolated_test_context(runner) as (_, temp_dir):
+    with test_helpers.isolated_test_context(runner) as (_, temp_dir):
         system_config = Path(os.environ["SQLITCH_SYSTEM_CONFIG"])
         user_config = Path(os.environ["SQLITCH_USER_CONFIG"])
         local_config = Path(os.environ["SQLITCH_CONFIG"])
@@ -78,7 +79,7 @@ def test_isolated_test_context_restores_environment():
     original_user = os.environ.get("SQLITCH_USER_CONFIG")
     original_local = os.environ.get("SQLITCH_CONFIG")
 
-    with isolated_test_context(runner) as (_, temp_dir):
+    with test_helpers.isolated_test_context(runner) as (_, temp_dir):
         # Modify environment within context
         os.environ["SQLITCH_SYSTEM_CONFIG"] = "/some/other/path"
 
@@ -96,7 +97,7 @@ def test_isolated_test_context_no_pollution_of_user_home():
     # Check state before test
     sqlitch_config_before = (home / ".config" / "sqlitch").exists()
 
-    with isolated_test_context(runner) as (_, temp_dir):
+    with test_helpers.isolated_test_context(runner) as (_, temp_dir):
         # Create a config file in the isolated location
         user_config = temp_dir / ".sqitch" / "sqitch.conf"
         user_config.write_text("[user]\nname = Test User\n")
@@ -124,7 +125,7 @@ def test_isolated_test_context_with_existing_environment():
     os.environ["SQLITCH_CONFIG"] = "/original/local/config"
 
     try:
-        with isolated_test_context(runner) as (_, temp_dir):
+        with test_helpers.isolated_test_context(runner) as (_, temp_dir):
             # Within context, should point to temp directory
             assert os.environ["SQLITCH_SYSTEM_CONFIG"] != "/original/system/config"
             assert temp_dir.as_posix() in os.environ["SQLITCH_SYSTEM_CONFIG"]
@@ -144,11 +145,11 @@ def test_isolated_test_context_nested_calls():
     """Test that context can be nested (though not typically needed)."""
     runner = CliRunner()
 
-    with isolated_test_context(runner) as (_, temp_dir1):
+    with test_helpers.isolated_test_context(runner) as (_, temp_dir1):
         config1 = os.environ["SQLITCH_USER_CONFIG"]
 
         # Nest another context (unusual but should work)
-        with isolated_test_context(runner) as (_, temp_dir2):
+        with test_helpers.isolated_test_context(runner) as (_, temp_dir2):
             config2 = os.environ["SQLITCH_USER_CONFIG"]
 
             # Inner context should have different temp dir
@@ -168,7 +169,7 @@ def test_isolated_test_context_exception_handling():
     os.environ["SQLITCH_USER_CONFIG"] = "/original/config"
 
     try:
-        with isolated_test_context(runner) as (_, temp_dir):
+        with test_helpers.isolated_test_context(runner) as (_, temp_dir):
             # Verify changed
             assert os.environ["SQLITCH_USER_CONFIG"] != "/original/config"
 
@@ -189,7 +190,7 @@ def test_isolated_test_context_config_file_creation():
     """Test that config files created within context are isolated."""
     runner = CliRunner()
 
-    with isolated_test_context(runner) as (_, temp_dir):
+    with test_helpers.isolated_test_context(runner) as (_, temp_dir):
         # Create a config file at the user config location
         user_config_path = Path(os.environ["SQLITCH_USER_CONFIG"])
         user_config_path.write_text("[user]\nname = Test\nemail = test@example.com\n")
@@ -207,7 +208,7 @@ def test_isolated_test_context_system_user_local_hierarchy():
     """Test that all three config levels are properly set up."""
     runner = CliRunner()
 
-    with isolated_test_context(runner) as (_, temp_dir):
+    with test_helpers.isolated_test_context(runner) as (_, temp_dir):
         system_config = Path(os.environ["SQLITCH_SYSTEM_CONFIG"])
         user_config = Path(os.environ["SQLITCH_USER_CONFIG"])
         local_config = Path(os.environ["SQLITCH_CONFIG"])
@@ -244,7 +245,7 @@ def test_isolated_test_context_sets_sqitch_environment_variables():
     """
     runner = CliRunner()
 
-    with isolated_test_context(runner) as (runner_out, temp_dir):
+    with test_helpers.isolated_test_context(runner) as (runner_out, temp_dir):
         # Verify SQITCH_* environment variables are set (not just SQLITCH_*)
         assert "SQITCH_SYSTEM_CONFIG" in os.environ, "SQITCH_SYSTEM_CONFIG must be set"
         assert "SQITCH_USER_CONFIG" in os.environ, "SQITCH_USER_CONFIG must be set"
@@ -271,3 +272,24 @@ def test_isolated_test_context_sets_sqitch_environment_variables():
 
         # Verify runner is returned
         assert runner_out is runner
+
+
+def test_test_helpers_sanitizes_environment_on_import(monkeypatch):
+    """Ensure importing the helper clears Sqitch/SQLitch environment variables."""
+
+    sample_keys: list[str] = []
+
+    for prefix in test_helpers.SANITIZED_ENVIRONMENT_PREFIXES:
+        key = f"{prefix}TEST_SAFETY"
+        sample_keys.append(key)
+        monkeypatch.setenv(key, "value")
+
+    for key in test_helpers.SANITIZED_ENVIRONMENT_VARIABLES:
+        sample_keys.append(key)
+        monkeypatch.setenv(key, "value")
+
+    reloaded = importlib.reload(test_helpers)
+    globals()["test_helpers"] = reloaded
+
+    for key in sample_keys:
+        assert key not in os.environ, f"Environment variable {key} must be cleared on import"

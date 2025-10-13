@@ -236,13 +236,14 @@ def _execute_revert(request: _RevertRequest) -> None:
     # Resolve engine target
     from sqlitch.engine.sqlite import SQLiteEngine
 
-    engine_target, display_target = _resolve_engine_target(
+    engine_target, _ = _resolve_engine_target(
         target=request.target,
         project_root=request.project_root,
         config_root=request.config_root,
         env=request.env,
         default_engine=request.plan.default_engine,
-        registry_override=None,  # TODO: support registry override
+        # pylint: disable=fixme  # Tracked in TODO.md - Registry Override Support (post-lockdown)
+        registry_override=None,  # TODO: support registry override (see TODO.md)
     )
     engine = SQLiteEngine(engine_target)
 
@@ -766,8 +767,6 @@ def _resolve_target(
 
     # If no target from CLI/env, check if the default engine has a target configured
     if not target and default_engine:
-        from sqlitch.config import resolver as config_resolver
-
         config_profile = config_resolver.resolve_config(
             root_dir=project_root,
             config_root=config_root,

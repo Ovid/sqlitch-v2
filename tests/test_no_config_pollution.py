@@ -80,6 +80,7 @@ def config_snapshot():
             )
 
 
+# pylint: disable=redefined-outer-name  # pytest fixture injection requires parameter name to match fixture name
 def test_no_sqlitch_config_directory_created(config_snapshot):
     """Verify that ~/.config/sqlitch/ is NEVER created by tests.
 
@@ -120,6 +121,7 @@ def test_config_functional_tests_are_isolated():
         capture_output=True,
         text=True,
         cwd=repo_root,  # Ensure we run from repo root
+        check=False,  # Intentionally allow test failures; we check pollution regardless
     )
 
     # Tests should pass (or at least not crash)
@@ -151,7 +153,7 @@ def test_sample_tests_from_each_directory():
     This is a smoke test to catch any non-migrated tests that might
     still be polluting the filesystem.
     """
-    sqlitch_dir, sqitch_dir = get_config_dirs()
+    sqlitch_dir, _ = get_config_dirs()
 
     # Get repo root from this test file's location
     repo_root = Path(__file__).parent.parent
@@ -175,6 +177,7 @@ def test_sample_tests_from_each_directory():
             capture_output=True,
             text=True,
             cwd=repo_root,  # Ensure we run from repo root
+            check=False,  # Intentionally allow test failures; we check pollution regardless
         )
 
         # Check for pollution after each test file

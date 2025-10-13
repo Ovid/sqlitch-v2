@@ -38,16 +38,18 @@ your files.
 
 # Registry Override Support
 
-Currently, the `revert` command does not support registry override (line 217 in `sqlitch/cli/commands/revert.py`). This is a low-priority enhancement for post-1.0:
+Currently, the `revert` command does not support registry override (line 245 in `sqlitch/cli/commands/revert.py`). This is a low-priority enhancement for post-lockdown release:
 
 ```python
-registry_override=None,  # TODO: support registry override
+registry_override=None,  # TODO: support registry override (see TODO.md)
 ```
 
 **Impact**: Users cannot override registry location for revert operations
 **Workaround**: Use default registry resolution
-**Priority**: Low (post-1.0 enhancement)
-**Tracked**: T064 audit (lockdown phase)
+**Priority**: Low (post-lockdown enhancement)
+**Tracked**: T156 (lockdown phase - documented and suppressed)
+**Owner**: TBD
+**Timeline**: Post-lockdown feature work
 
 # Dups in _seed tests
 

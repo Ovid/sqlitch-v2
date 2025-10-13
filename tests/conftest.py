@@ -59,6 +59,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
         cwd=repo_root,
         capture_output=True,
         text=True,
+        check=False,  # Intentionally check returncode manually to handle git grep exit codes
     )
 
     # If git grep returns 1, no matches found (which is what we want)
@@ -78,7 +79,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
             error_message = f"""
 
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                   ❌ CONSTITUTION VIOLATION DETECTED                          ║
+║                   ❌ CONSTITUTION VIOLATION DETECTED                         ║
 ║                   TEST SESSION ABORTED                                       ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 

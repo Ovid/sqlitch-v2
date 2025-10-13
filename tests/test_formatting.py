@@ -30,6 +30,7 @@ class TestBlackFormatting:
             cwd=PROJECT_ROOT,
             capture_output=True,
             text=True,
+            check=False,  # Intentionally check returncode in assertion to provide helpful message
         )
 
         assert result.returncode == 0, (
@@ -54,6 +55,7 @@ class TestIsortFormatting:
             cwd=PROJECT_ROOT,
             capture_output=True,
             text=True,
+            check=False,  # Intentionally check returncode in assertion to provide helpful message
         )
 
         assert result.returncode == 0, (
@@ -78,6 +80,7 @@ class TestFlake8Compliance:
             cwd=PROJECT_ROOT,
             capture_output=True,
             text=True,
+            check=False,  # Intentionally check returncode in assertion to provide helpful message
         )
 
         assert result.returncode == 0, (

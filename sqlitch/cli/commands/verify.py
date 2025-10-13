@@ -307,7 +307,7 @@ def verify_command(
         change_occurrence_index: dict[str, int] = {}
 
         with closing(connection.cursor()) as cursor:
-            for change_name, change_id in deployed_changes:
+            for change_name, _ in deployed_changes:
                 processed_changes += 1
 
                 # Track occurrence count for this change name

@@ -13,12 +13,19 @@ Constitutional References:
 
 from __future__ import annotations
 
+import importlib
+import os
 import subprocess
 from pathlib import Path
 
 import pytest
 
-__all__ = ["test_no_direct_isolated_filesystem_usage"]
+import tests.support.test_helpers as test_helpers
+
+__all__ = [
+    "test_no_direct_isolated_filesystem_usage",
+    "test_test_helpers_meets_test_safety_objectives",
+]
 
 
 def test_no_direct_isolated_filesystem_usage() -> None:
@@ -90,6 +97,7 @@ def test_no_direct_isolated_filesystem_usage() -> None:
         cwd=repo_root,
         capture_output=True,
         text=True,
+        check=False,  # Intentionally check returncode manually to handle git grep exit codes
     )
 
     # If git grep returns 1, no matches found (which is what we want)
@@ -155,3 +163,31 @@ See tests/support/README.md for detailed migration guide.
             f"stdout: {result.stdout}\n"
             f"stderr: {result.stderr}"
         )
+
+
+def test_test_helpers_meets_test_safety_objectives(monkeypatch):
+    """Ensure helper import scrubs Sqitch/SQLitch environment variables."""
+
+    sample_keys: list[str] = []
+
+    for prefix in test_helpers.SANITIZED_ENVIRONMENT_PREFIXES:
+        key = f"{prefix}TEST_SAFETY_ENFORCEMENT"
+        sample_keys.append(key)
+        monkeypatch.setenv(key, "value")
+
+    for key in test_helpers.SANITIZED_ENVIRONMENT_VARIABLES:
+        sample_keys.append(key)
+        monkeypatch.setenv(key, "value")
+
+    reloaded = importlib.reload(test_helpers)
+    globals()["test_helpers"] = reloaded
+
+    for key in sample_keys:
+        assert key not in os.environ, f"Environment variable {key} must be cleared on import"
+
+    for existing in list(os.environ):
+        if existing.startswith(reloaded.SANITIZED_ENVIRONMENT_PREFIXES):
+            pytest.fail(
+                "tests.support.test_helpers must remove all SQITCH_/SQLITCH_ variables on import; "
+                f"found lingering {existing}"
+            )
