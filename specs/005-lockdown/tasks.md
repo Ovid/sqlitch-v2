@@ -833,17 +833,17 @@ pytest
   - Ensure build artifacts in src/ are ignored
   - Validation: ✅ Existing `*.egg-info/` pattern already covers src/sqlitch.egg-info/, no changes needed
 
-- [ ] **T190 [P1]** Create atomic commit for src layout migration
+- [X] **T190 [P1]** Create atomic commit for src layout migration
   - **IMPORTANT**: Single commit with all changes together
   - Commit message: "Migrate to src layout per Python packaging guidelines"
   - Include detailed body explaining benefits and changes
-  - Validation: `git show HEAD` shows comprehensive src layout migration
+  - Validation: ✅ Atomic commit 24240ff created with 65 files changed, comprehensive message documenting migration
 
-- [ ] **T191 [P1]** Update `IMPLEMENTATION_REPORT_LOCKDOWN.md` with migration details
+- [X] **T191 [P1]** Update `IMPLEMENTATION_REPORT_LOCKDOWN.md` with migration details
   - Document src layout migration completion
   - Note any issues encountered and resolutions
   - Confirm all quality gates still pass
-  - Validation: Report includes src layout section
+  - Validation: ✅ Added comprehensive Phase 3.10 section with all validation results, benefits, and rollback plan
 
 ### Dependencies
 - T170 → T171 → T172 (directory structure must be in place)
