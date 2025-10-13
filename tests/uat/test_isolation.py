@@ -44,14 +44,17 @@ def test_create_isolated_environment_sets_all_sqlitch_vars(tmp_path: Path):
     system_path = Path(env["SQLITCH_SYSTEM_CONFIG"])
     user_path = Path(env["SQLITCH_USER_CONFIG"])
 
-    # Verify they're under the work directory's .isolated subdirectory
+    # SQLITCH_CONFIG points to work_dir/sqitch.conf (shared with Sqitch)
+    # This allows Sqitch and SQLitch to interoperate on the same project config
+    assert config_path == tmp_path / "sqitch.conf"
+
+    # System and user configs remain isolated
     isolated_root = tmp_path / ".isolated"
-    assert config_path.parent == isolated_root / "config"
     assert system_path.parent == isolated_root / "system"
     assert user_path.parent == isolated_root / "user"
 
     # Verify filenames
-    assert config_path.name == "sqlitch.conf"
+    assert config_path.name == "sqitch.conf"
     assert system_path.name == "sqlitch.conf"
     assert user_path.name == "sqlitch.conf"
 
@@ -74,9 +77,12 @@ def test_create_isolated_environment_sets_all_sqitch_vars(tmp_path: Path):
     system_path = Path(env["SQITCH_SYSTEM_CONFIG"])
     user_path = Path(env["SQITCH_USER_CONFIG"])
 
-    # Verify they're under the work directory's .isolated subdirectory
+    # SQITCH_CONFIG points to work_dir/sqitch.conf (shared with SQLitch)
+    # This allows Sqitch and SQLitch to interoperate on the same project config
+    assert config_path == tmp_path / "sqitch.conf"
+
+    # System and user configs remain isolated
     isolated_root = tmp_path / ".isolated"
-    assert config_path.parent == isolated_root / "config"
     assert system_path.parent == isolated_root / "system"
     assert user_path.parent == isolated_root / "user"
 

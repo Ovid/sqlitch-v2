@@ -51,14 +51,19 @@ def create_isolated_environment(work_dir: Path) -> dict[str, Any]:
     system_dir.mkdir(exist_ok=True)
     user_dir.mkdir(exist_ok=True)
 
+    # CRITICAL: Point to the actual sqitch.conf in work_dir, NOT isolated directory
+    # Both tools need to read/write the SAME config file for interoperability
+    local_config = work_dir / "sqitch.conf"
+
     # Set SQLITCH_* environment variables (SQLitch config isolation)
-    env["SQLITCH_CONFIG"] = str(config_dir / "sqlitch.conf")
+    env["SQLITCH_CONFIG"] = str(local_config)
     env["SQLITCH_SYSTEM_CONFIG"] = str(system_dir / "sqlitch.conf")
     env["SQLITCH_USER_CONFIG"] = str(user_dir / "sqlitch.conf")
 
     # Set SQITCH_* environment variables (Sqitch config isolation)
     # This prevents pollution of ~/.sqitch/sqitch.conf and /etc/sqitch/sqitch.conf
-    env["SQITCH_CONFIG"] = str(config_dir / "sqitch.conf")
+    # BUT allows both tools to share the project config file
+    env["SQITCH_CONFIG"] = str(local_config)
     env["SQITCH_SYSTEM_CONFIG"] = str(system_dir / "sqitch.conf")
     env["SQITCH_USER_CONFIG"] = str(user_dir / "sqitch.conf")
 
