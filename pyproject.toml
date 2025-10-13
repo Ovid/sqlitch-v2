@@ -41,7 +41,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["sqlitch*"]
 
 [tool.black]
@@ -64,11 +64,11 @@ warn_unused_ignores = true
 strict = true
 
 [tool.bandit]
-target = ["sqlitch"]
+target = ["src/sqlitch"]
 
 [tool.coverage.run]
 branch = true
-source = ["sqlitch"]
+source = ["src/sqlitch"]
 
 [tool.coverage.report]
 fail_under = 90

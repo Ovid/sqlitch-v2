@@ -52,14 +52,19 @@ This constitutional requirement means:
 This principle applies to lockdown work and all future development.
 
 ## Project Structure
+
+**Layout**: Src layout (migrated 2025-10-13 per Python Packaging Authority guidelines)
+
 ```
-sqlitch/
-├── cli/                # Click command bootstrap and context
-├── config/             # Loader/resolver modules targeted for coverage
-├── engine/             # Database engines (sqlite, postgres, mysql, etc.)
-├── plan/               # Plan parser/model utilities
-├── utils/              # Shared helpers (time, templates, logging, identity)
-└── __init__.py
+src/
+└── sqlitch/            # Main package under src/ (prevents accidental imports)
+    ├── cli/            # Click command bootstrap and context
+    ├── config/         # Loader/resolver modules targeted for coverage
+    ├── engine/         # Database engines (sqlite, postgres, mysql, etc.)
+    ├── plan/           # Plan parser/model utilities
+    ├── utils/          # Shared helpers (time, templates, logging, identity)
+    ├── __init__.py
+    └── __main__.py     # CLI entry point with sys.path workaround
 
 tests/
 ├── cli/
@@ -70,9 +75,10 @@ tests/
 
 uat/
 ├── side-by-side.py     # Existing parity harness
-├── forward-compat.py   # (Planned) sqlitch→sqitch validation
-├── backward-compat.py  # (Planned) sqitch→sqlitch validation
-└── shared helpers      # sanitization.py, comparison.py, test_steps.py (planned)
+├── scripts/
+│   ├── forward-compat.py   # sqlitch→sqitch validation
+│   └── backward-compat.py  # sqitch→sqlitch validation
+└── shared helpers      # sanitization.py, comparison.py, test_steps.py
 
 specs/005-lockdown/
 ├── spec.md
@@ -80,10 +86,17 @@ specs/005-lockdown/
 ├── research.md
 ├── data-model.md
 ├── quickstart.md
+├── SRC_LAYOUT_MIGRATION.md
 └── contracts/
 ```
 
-**Structure Decision**: Single Python CLI/library repository; enhancements span `sqlitch/*`, `tests/*`, `uat/`, and documentation assets.
+**Structure Decisions**:
+- **Src Layout** (Phase 3.10): Adopted Python Packaging Authority best practice
+  - Import package lives under `src/sqlitch/` (not root `sqlitch/`)
+  - Prevents accidental imports from source tree instead of installed package
+  - Enforces proper editable installation for development
+  - Ensures tests import from installed package, catching packaging issues
+- **Single Repository**: CLI and library in one; enhancements span `src/sqlitch/*`, `tests/*`, `uat/`, and documentation assets.
 
 ## Phase 0: Outline & Research
 - Captured clarifications on UAT scope (SQLite-only), manual execution cadence, and evidence capture in [`research.md`](./research.md).
