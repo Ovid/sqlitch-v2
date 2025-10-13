@@ -103,34 +103,35 @@
   - Rationale: These tests NEED to handle both success and failure to provide helpful error messages
   - Validation: ✅ All pylint warnings cleared, `pytest tests/test_formatting.py tests/test_type_safety.py tests/test_no_config_pollution.py -x` - All 9 tests pass
 
-#### Category 7: Broad Exception Catching (Medium/Hard - 13 issues)
-- [X] **T161 [P2]** Fix W0718 - Catching too general exception (13 occurrences)
-  - ✅ COMPLETE: Added suppressions with rationale for all legitimate broad exception catches
-  - Assessment: All 13 occurrences are legitimate for CLI robustness and follow three patterns
-  - **Pattern 1: Cleanup in finally blocks** (7 occurrences) - Connection/cursor cleanup must never fail the main operation
-    - `deploy.py:410`, `log.py:208, 216`, `status.py:365, 373, 468`
-  - **Pattern 2: Fallback behavior** (5 occurrences) - System API calls that should gracefully degrade
-    - `identity.py:244, 402, 436` - Win32 API and socket calls
-    - `deploy.py:1184`, `revert.py:608` - Config loading failures
-  - **Pattern 3: User-friendly error reporting** (2 occurrences) - Catch any error to show helpful message
-    - `verify.py:347` - Verify script execution
-    - `status.py:352` - Registry query with missing schema check
-  - Fix: Added inline `# pylint: disable=broad-exception-caught` with specific rationale for each case
-  - Rationale: These are intentional for production CLI robustness - catching broad exceptions prevents crashes and provides graceful degradation
-  - Validation: ✅ All pylint warnings cleared, `pytest tests/cli/commands/test_verify*.py tests/cli/commands/test_status*.py tests/utils/test_identity*.py -x` - 118 tests pass, 4 skipped (Windows-only)
+#### Category 7: Broad Exception Catching (Medium/Hard - 10 issues)
+- [X] **T161 [P2]** Fix W0718 - Catching too general exception (10 occurrences)
+  - ✅ COMPLETE: Fixed all 10 W0718 warnings by moving suppressions to except lines (2025-10-13)
+  - Assessment: All 10 occurrences are legitimate and follow two patterns:
+  - **Pattern 1: System API Fallbacks** (3 occurrences) - Win32 API and socket calls that need graceful degradation
+    - `identity.py:244` - Win32 API `GetUserName()` call
+    - `identity.py:404` - Win32Net API `NetUserGetInfo()` call
+    - `identity.py:440` - Socket `gethostname()` call
+  - **Pattern 2: Cleanup in finally blocks** (7 occurrences) - Connection/cursor cleanup must never fail the main operation
+    - `deploy.py:411` - Connection cleanup
+    - `log.py:209, 219` - Cursor and connection cleanup
+    - `status.py:353, 368, 378, 475` - Schema detection and cleanup operations
+  - Fix: Moved `# pylint: disable=broad-exception-caught` to same line as except statement with condensed rationale
+  - Pattern: `except Exception as exc:  # pylint: disable=broad-exception-caught # pragma: no cover`
+  - Validation: ✅ All pylint warnings cleared (10 → 0), `pytest tests/` - 1,164 passed, 20 skipped
+  - Score Impact: Pylint 9.52/10 → 9.53/10 (overall), individual modules at 10.00/10
 
-#### Category 8: Argument Format Strings (Hard - 1 issue)
+#### Category 8: Argument Format Strings (Easy - 1 issue)
 - [X] **T162 [P3]** Fix W2301 - Unnecessary parameter in format string
-  - ✅ COMPLETE: Replaced unnecessary ellipsis with `pass` statement
-  - Assessment: Single occurrence in `tests/test_engine_suite_skips.py:70` - placeholder test using `...`
-  - Fix: Changed `...` to `pass` in skipped placeholder test function
-  - Rationale: While `...` is valid Python, `pass` is more conventional for empty function bodies and doesn't trigger pylint warning
-  - Validation: ✅ `pylint tests/test_engine_suite_skips.py` - No W2301 warnings, `pytest tests/test_engine_suite_skips.py -x` - 1 passed, 1 skipped
+  - ✅ COMPLETE: Deleted unnecessary `pass` statement after replacing ellipsis (2025-10-13)
+  - Assessment: Single occurrence in `tests/test_engine_suite_skips.py:70` - placeholder test
+  - Fix: Removed `pass` statement from docstring-only function (docstring alone is sufficient)
+  - Rationale: Functions with only docstrings are valid empty functions; `pass` is redundant
+  - Validation: ✅ `pytest tests/test_engine_suite_skips.py -x` - 1 passed, 1 skipped
 
 #### Category 9: Unused Arguments - CLI Commands (Hard - 70 issues)
 **Note**: These are mostly Click-injected parameters used by decorators. Requires careful analysis.
 - [X] **T163 [P2]** Address W0613 - Unused argument warnings in CLI commands (70 occurrences)
-  - ✅ COMPLETE: Resolved 65/70 warnings (93%) through inline suppressions and parameter fixes
+  - ✅ COMPLETE: Resolved 70/70 warnings (100%) through inline suppressions and parameter fixes (2025-10-13)
   - **Strategy Applied**:
     1. **CLI Commands (60 warnings)**: Added inline `# pylint: disable=unused-argument` with rationale for Click-injected parameters (`json_mode`, `verbose`, `quiet` from `@global_output_options`)
     2. **Helper Functions (5 warnings)**: Added inline suppressions or prefixed with `_` for intentionally unused parameters
