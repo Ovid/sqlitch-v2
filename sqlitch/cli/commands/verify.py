@@ -167,7 +167,8 @@ def _strip_sqlite_uri_prefix(uri: str) -> str:
 @global_sqitch_options
 @global_output_options
 @click.pass_context
-def verify_command(
+def verify_command(  # pylint: disable=unused-argument
+    # json_mode/verbose/quiet injected by @global_output_options
     ctx: click.Context,
     target_args: tuple[str, ...],
     target_option: str | None,

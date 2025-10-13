@@ -51,7 +51,8 @@ __all__ = ["show_command"]
 @global_sqitch_options
 @global_output_options
 @click.pass_context
-def show_command(
+def show_command(  # pylint: disable=unused-argument
+    # json_mode/verbose/quiet injected by @global_output_options
     ctx: click.Context,
     item: str | None,
     target_option: str | None,

@@ -51,7 +51,8 @@ _ENGINE_DEFAULTS: dict[str, dict[str, str]] = {
 @global_sqitch_options
 @global_output_options
 @click.pass_context
-def init_command(
+def init_command(  # pylint: disable=unused-argument
+    # json_mode/verbose injected by @global_output_options
     ctx: click.Context,
     project_name: str | None,
     engine_option: str | None,

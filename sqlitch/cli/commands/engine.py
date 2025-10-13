@@ -43,7 +43,8 @@ class EngineDefinition:
 @global_sqitch_options
 @global_output_options
 @click.pass_context
-def engine_group(
+def engine_group(  # pylint: disable=unused-argument
+    # json_mode/verbose/quiet injected by @global_output_options
     ctx: click.Context,
     json_mode: bool,
     verbose: int,

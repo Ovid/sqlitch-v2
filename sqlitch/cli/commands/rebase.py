@@ -68,7 +68,8 @@ class _RebaseRequest:
 @global_sqitch_options
 @global_output_options
 @click.pass_context
-def rebase_command(
+def rebase_command(  # pylint: disable=unused-argument
+    # json_mode/verbose/quiet injected by @global_output_options
     ctx: click.Context,
     *,
     target_args: tuple[str, ...],

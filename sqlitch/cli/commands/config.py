@@ -61,7 +61,8 @@ _ENV_SQITCH_USER_CONFIG = "SQITCH_USER_CONFIG"
 @click.argument("value", required=False)
 @global_sqitch_options
 @click.pass_context
-def config_command(
+def config_command(  # pylint: disable=unused-argument
+    # verbose from custom --verbose option, not @global_output_options
     ctx: click.Context,
     *,
     global_scope: bool,

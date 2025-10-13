@@ -96,7 +96,8 @@ class _DeployRequest:
 @global_sqitch_options
 @global_output_options
 @click.pass_context
-def deploy_command(
+def deploy_command(  # pylint: disable=unused-argument
+    # json_mode/verbose/quiet injected by @global_output_options
     ctx: click.Context,
     *,
     target_args: tuple[str, ...],
@@ -880,7 +881,7 @@ def _ensure_project_entry(
 
 
 def _resolve_parent_id_for_change(
-    plan: Plan,
+    _plan: Plan,  # Reserved for future dependency graph validation
     change_index: int,
     change_id_cache: dict[int, str],
 ) -> str | None:

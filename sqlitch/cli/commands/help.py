@@ -20,7 +20,8 @@ __all__ = ["help_command"]
 @global_sqitch_options
 @global_output_options
 @click.pass_context
-def help_command(
+def help_command(  # pylint: disable=unused-argument
+    # json_mode/verbose/quiet injected by @global_output_options
     ctx: click.Context,
     *,
     usage_only: bool,
@@ -79,7 +80,7 @@ def help_command(
     _emit(ctx, text.rstrip("\n"))
 
 
-def _render_help(
+def _render_help(  # pylint: disable=unused-argument  # ctx reserved for future use
     *,
     ctx: click.Context,
     root_ctx: click.Context,

@@ -124,7 +124,8 @@ def _append_rework_change(
 @global_sqitch_options
 @global_output_options
 @click.pass_context
-def rework_command(
+def rework_command(  # pylint: disable=unused-argument
+    # json_mode/verbose injected by @global_output_options
     ctx: click.Context,
     change_name: str,
     requires: Sequence[str],

@@ -74,7 +74,8 @@ class _RevertRequest:
 @global_sqitch_options
 @global_output_options
 @click.pass_context
-def revert_command(
+def revert_command(  # pylint: disable=unused-argument
+    # json_mode/verbose/quiet injected by @global_output_options
     ctx: click.Context,
     *,
     target_args: tuple[str, ...],
@@ -352,8 +353,8 @@ def _execute_revert(request: _RevertRequest) -> None:
                     committer_email=committer_email,
                     deployed=deployed,
                     registry_schema=registry_schema,
-                    emitter=emitter,
-                    uri=request.plan.uri,
+                    _emitter=emitter,
+                    _uri=request.plan.uri,
                 )
             except CommandError:
                 emitter(f"  - {change.name} .. not ok")
@@ -410,8 +411,8 @@ def _revert_change(
     committer_email: str,
     deployed: dict[str, dict[str, str]],
     registry_schema: str,
-    emitter: Callable[[str], None],
-    uri: str | None = None,
+    _emitter: Callable[[str], None],  # Reserved for progress reporting
+    _uri: str | None = None,  # Reserved for future registry override support
 ) -> None:
     """Execute a revert script and update registry state for a change."""
     # Load revert script using the script_paths from the parser
@@ -645,7 +646,10 @@ def _resolve_committer_identity(
 
 
 def _resolve_planner_identity(
-    planner: str, env: Mapping[str, str], fallback_email: str
+    planner: str,
+    env: Mapping[str, str],
+    fallback_email: str,  # pylint: disable=unused-argument
+    # env reserved for future environment-based identity resolution
 ) -> tuple[str, str]:
     """Parse planner identity string into name and email components."""
     name, email = _parse_identity(planner)

@@ -68,7 +68,8 @@ class FailureMetadata:
 @global_sqitch_options
 @global_output_options
 @click.pass_context
-def status_command(
+def status_command(  # pylint: disable=unused-argument
+    # json_mode/verbose/quiet injected by @global_output_options
     ctx: click.Context,
     *,
     target_args: tuple[str, ...],

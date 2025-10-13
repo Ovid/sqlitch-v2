@@ -38,7 +38,8 @@ def _utcnow() -> datetime:
 @global_sqitch_options
 @global_output_options
 @click.pass_context
-def tag_command(
+def tag_command(  # pylint: disable=unused-argument
+    # json_mode/verbose/quiet injected by @global_output_options
     ctx: click.Context,
     tag_name: str | None,
     change_name_arg: str | None,
