@@ -58,10 +58,11 @@
   - Validation: ✅ `pylint sqlitch/cli/commands/target.py` - No W0612 warnings, `pytest tests/cli/commands/test_target*.py -xvs` - All tests pass
 
 #### Category 2: TODO Comments (Easy - 1 issue)
-- [ ] **T156 [P3]** Review W0511 in codebase - Address or document TODO/FIXME comments
-  - ⚠️ Assessment: Not a code issue, just flagging developer notes
-  - Options: (1) Complete the TODO (2) Create ticket and remove comment (3) Suppress if intentional
-  - Validation: Review comment context
+- [X] **T156 [P3]** Review W0511 in codebase - Address or document TODO/FIXME comments
+  - ✅ COMPLETE: Documented and suppressed TODO in revert.py
+  - Assessment: Single TODO comment tracking post-lockdown feature (registry override for revert command)
+  - Fix: Added pylint suppression with rationale, updated TODO.md with T156 reference, owner, and timeline
+  - Validation: ✅ `pylint sqlitch/cli/commands/revert.py` - No W0511 warnings, `pytest tests/cli/commands/test_revert*.py -x` - All 15 tests pass
 
 #### Category 3: Reimported Modules (Easy - 1 issue)
 - [ ] **T157 [P2]** Fix W0404 - Module reimported issue

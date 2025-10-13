@@ -242,7 +242,8 @@ def _execute_revert(request: _RevertRequest) -> None:
         config_root=request.config_root,
         env=request.env,
         default_engine=request.plan.default_engine,
-        registry_override=None,  # TODO: support registry override
+        # pylint: disable=fixme  # Tracked in TODO.md - Registry Override Support (post-lockdown)
+        registry_override=None,  # TODO: support registry override (see TODO.md)
     )
     engine = SQLiteEngine(engine_target)
 
