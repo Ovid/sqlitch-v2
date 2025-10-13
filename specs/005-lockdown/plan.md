@@ -107,10 +107,10 @@ Post-design constitution check: ✅ unchanged (still compliant).
   - **Security**: `bandit` flags SHA1 usage in `sqlitch/utils/identity.py`; mitigation is to mark `usedforsecurity=False` while keeping Sqitch-compatible change IDs.
 - Action: escalate these items into Phase 3 tasks (see new T120–T123) and document black/mypy regression tests to ensure future runs fail fast.
 
-## Phase 1.2: Pylint Analysis Workflow (2025-10-12)
-**Objective**: Use pylint as an additional code quality tool to systematically identify and address code issues.
+## Phase 1.2: Pylint Remediation Workflow (2025-10-12)
+**Objective**: Treat pylint as a constitutional quality gate by driving issues to closure, not simply documenting them.
 
-**Status**: ✅ **ANALYSIS COMPLETE - CONVENTION FIXES APPLIED** (2025-10-12)
+**Status**: ▶️ **IN PROGRESS — ANALYSIS COMPLETE, REMEDIATION REQUIRED**
 
 ### Execution Summary
 
@@ -128,60 +128,42 @@ Post-design constitution check: ✅ unchanged (still compliant).
    - Identified top issue symbols and file hotspots
    - **Key Finding**: 0 issues in test files (tests/ directory 100% clean)
 
-3. **Tasks Created in tasks.md**: ✅
-   - **Phase 3.9** added with 10 tasks (T130-T136)
-   - Tasks categorized by issue type:
-     - T130 series: Convention fixes (4 issues) - ✅ COMPLETED
-     - T131: Unused arguments (67 issues) - ⏸️ DEFERRED
-     - T132: Argument count reduction (37 issues) - ⏸️ DEFERRED
-     - T133: Local variable reduction (18 issues) - ⏸️ DEFERRED
-     - T134: Exception handling (13 issues) - ⏸️ DEFERRED
-     - T135-T136: Validation and documentation - ✅ COMPLETED
-   - Each task includes file locations, validation commands, and success targets
+3. **Remediation Plan Established**: ✅
+   - New Phase 3.8 tasks (see `tasks.md`) elevate pylint remediation to P1/P2 work
+   - Gate requirements:
+     - Zero `fatal`/`error` diagnostics before lockdown completion
+     - Warnings/refactors reduced or scheduled with explicit owners and deadlines
+     - `tox -e lint` (or equivalent) enforced in CI with `--fail-under` guard
 
 4. **Convention Fixes Applied**: ✅ (2025-10-12)
-   - T130: `pwd` module import in `identity.py` - Added suppression with justification
-   - T130a: Long line in `show.py:198` - Added suppression (readability priority)
-   - T130b: Large module `deploy.py` - Documented refactoring plan in TODO.md
-   - T130c: TypeVar naming in `base.py` - Added suppression (PEP 484 compliant)
-   - **Result**: Convention issues reduced from 4 to 1 (75% reduction)
+   - T130 series hardened unavoidable suppressions with rationale
+   - Remaining conventions tracked for follow-up as part of new remediation phase
 
-5. **Final Validation Completed**: ✅ (2025-10-12)
-   - Score: **9.66/10** (up from 9.65 - **+0.01 improvement**)
-   - Total issues: **179** (down from 182 - **2% reduction**)
+5. **Remediation Execution**: 🚧
+   - Current score: **9.66/10** (downstream work must maintain or raise)
+   - Total issues: **179** (target is active reduction, not deferral)
    - Report: `specs/005-lockdown/artifacts/final/pylint_report.json`
+   - Error backlog must be cleared as part of Phase 3.8 remediation tasks
 
 6. **Documentation Updated in research.md**: ✅
-   - Added comprehensive final pylint results section
-   - Documented decision to defer T131-T134 (code quality improvements)
-   - **Rationale for Deferral**:
-     - High risk of breaking tests for P2 priority improvements
-     - Current score 9.66/10 acceptable for alpha release
-     - Constitutional principle: Don't break tests for non-critical changes
-     - Better suited for post-alpha when behavioral contracts proven in production
+   - Captures baseline, remediation scope, and outstanding work
 
-### Final Pylint Outcomes
+### Pylint Gate Outcomes
 
-**Achievements**:
-- ✅ Convention fixes completed successfully (4 → 1 issues, 75% reduction)
-- ✅ Pylint score improved: 9.65 → 9.66 (+0.01)
-- ✅ Total issue reduction: 182 → 179 (2% decrease)
-- ✅ Zero regressions introduced
-- ✅ All tests passing (constitutional requirement maintained)
+**Mandatory Deliverables**:
+- ✅ Baseline captured and analyzed
+- 🔄 Remediation plan in progress with tracked tasks and owners
+- 🔄 Automated lint gate required before declaring lockdown complete
 
-**Deferred Issues** (P2 Priority - Post-Alpha):
-- T131: 67 unused argument warnings (primarily Click-injected params)
-- T132: 37 functions with excessive arguments (refactoring required)
-- T133: 18 functions with too many locals (complexity improvements)
-- T134: 13 broad exception handlers (error handling patterns)
+**Deferred Items (Require Explicit Scheduling)**:
+- Unused argument warnings (67) — tracked under new Phase 3.8 tasks
+- Complexity metrics (too-many-arguments/locals, duplicate-code) — assigned as follow-up with remediation timeline
+- Broad exception handling review — targeted refactor tasks opened
 
-**Constitutional Compliance**: ✅
-- Code quality work did not break any existing tests
-- Behavioral parity maintained
-- Low-risk improvements applied, high-risk improvements documented for future work
-- Satisfies quality gate expectations for alpha release
-
-**Conclusion**: Pylint gate meets constitutional requirements for lockdown milestone. Score of 9.66/10 with 179 issues (mostly code complexity patterns) is acceptable for alpha release. Remaining P2 improvements documented in TODO.md for post-alpha iteration.
+**Constitutional Alignment**: 🔒 Enforced
+- Analysis alone no longer sufficient; remediation tied to quality gate checklist
+- Deviations require documented suppressions and reviewer visibility
+- Prevents regression by wiring lint gate into CI workflows
 
 ### Execution Summary
 
@@ -217,64 +199,27 @@ Post-design constitution check: ✅ unchanged (still compliant).
    - Detailed breakdown by type, symbol, and file
    - Implementation strategy and validation protocol documented
 
-### Key Findings
+### Remediation Milestones
 
-**Progress Since Baseline**:
-- **Errors**: 92% reduction (25 → 2, both documented false positives)
-- **Conventions**: 87% reduction (30 → 4)
-- **Refactors**: 39% reduction (141 → 86)
-- **Test Quality**: 100% clean (0 issues in tests/)
+**Baseline Snapshot (2025-10-12)**:
+- Initial pylint run produced **182 total diagnostics** (2 errors, 90 warnings, 86 refactors, 4 conventions) with a score of **9.65/10**.
+- Results captured in `specs/005-lockdown/artifacts/baseline/pylint_report.json` and summarized in `research.md`.
 
-**Remaining Issues**:
-- 2 error-level (both false positives from Windows conditional imports, already suppressed)
-- 4 convention-level (naming, line length, module size)
-- 90 warning-level (primarily unused arguments in Click handlers)
-- 86 refactor-level (complexity metrics in deployment commands)
+**Active Remediation Tasks (Phase 3.8 · T140–T149)**:
+- **T140 & T141 (P1)**: Eliminate all remaining `fatal`/`error` diagnostics and document any unavoidable suppressions.
+- **T142 (P1)**: Enforce the lint gate via `tox -e lint --fail-under=9.00`, failing on new errors or regressions.
+- **T143–T146 (P2)**: Drive down high-volume warnings (unused arguments, complexity metrics, duplicate code) or schedule documented follow-ups.
+- **T147–T149 (P1)**: Record before/after metrics, capture final lint gate evidence, and log deferred items in `TODO.md` with owners and timelines.
 
-**Files Requiring Attention**:
-1. `cli/commands/deploy.py` - 26 issues (complexity, arguments)
-2. `cli/commands/revert.py` - 20 issues (unused args, complexity)
-3. `cli/commands/verify.py` - 11 issues
-4. `cli/commands/status.py` - 12 issues
+**Legacy Analysis (T237–T243)**:
+- Earlier documentation-only findings remain archived for context but no longer represent the active remediation scope.
 
-### Implementation Protocol Defined
+### Validation Plan
 
-**Batch Processing Strategy**:
-- Group similar issues for efficient fixes
-- Rerun pylint after each batch
-- Track progress via issue count reduction
-- Add suppressions only with clear justification
-
-**Priorities**:
-- P2: Convention fixes (quick wins, visible improvement)
-- P2: Unused arguments audit (high volume, code clarity)
-- P2: Complexity refactoring where beneficial
-- P3: Large-scale refactoring deferred to post-lockdown
-
-### Success Metrics
-
-**Current Baseline**: 182 issues, 9.65/10 score
-**Phase 3.9 Targets**:
-- Convention issues: 4 → 0 (100% reduction)
-- Unused arguments: 67 → <50 (25% reduction)
-- Total issues: 182 → <150 (18% reduction)
-- Score: Maintain ≥9.65 or improve
-
-**Constitutional Compliance**: ✅
-- No code modifications made (analysis phase only)
-- All findings documented in spec system
-- Tasks prioritized and tracked
-- Validation protocol established
-
-### Next Steps
-
-Execute Phase 3.9 tasks (T130-T136) in the following order:
-1. T130 series: Quick convention fixes (P2)
-2. T131-T134: Systematic issue reduction by category (P2)
-3. T135: Validation run after fixes (P1)
-4. T136: Final documentation update (P1)
-
-**Note**: Phase 3.9 execution deferred until after core lockdown tasks complete (T060-T066). Pylint improvements are quality enhancements, not blockers for release.
+- Re-run `pylint sqlitch tests --output-format=json` after each remediation wave and store updated reports under `specs/005-lockdown/artifacts/`.
+- Maintain a running metrics table in `research.md` and `IMPLEMENTATION_REPORT_LOCKDOWN.md`, highlighting score trends and issue counts.
+- Confirm CI executes `tox -e lint` with the 9.00 threshold before declaring the lockdown complete.
+- Any unresolved warnings/refactors at release time must have dated follow-up tickets per T149.
 
 ## Phase 2: Task Planning Approach (preview)
 - `/tasks` will transform design artifacts into actionable steps:

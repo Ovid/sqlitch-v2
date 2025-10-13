@@ -1,3 +1,26 @@
+## Phase 3.8 · Pylint Remediation & Gate Enforcement (updated 2025-10-13)
+**Reference**: Baseline analysis captured in `specs/005-lockdown/research.md` - Pylint section  
+**Goal**: Eliminate pylint `fatal`/`error` diagnostics, drive down warnings/refactors, and wire an automated lint gate that fails on regressions  
+**Baseline**: 182 issues total (2E, 90W, 86R, 4C) with score 9.65/10  
+**Exit Criteria**: No unresolved pylint errors, documented plan for remaining warnings/refactors, and CI guard in place (`tox -e lint` or equivalent)
+
+### Phase 3.8a: Error & Fatal Remediation (P1)
+- [ ] **T140 [P1]** Resolve all pylint `fatal`/`error` diagnostics across `sqlitch/` and `tests/`.
+  - Deliverables: zero remaining `fatal`/`error` entries in `pylint_report.json`; suppressions require inline justification and entry in `IMPLEMENTATION_REPORT_LOCKDOWN.md`.
+  - Validation: `pylint sqlitch tests --output-format=json` reports 0 items with `type` in {"fatal", "error"}.
+- [ ] **T141 [P1]** Ensure every suppression for unavoidable errors includes rationale in code comments and a summary table in `IMPLEMENTATION_REPORT_LOCKDOWN.md`.
+- [ ] **T142 [P1]** Add or update `tox -e lint` (or pytest equivalent) to run pylint with `--fail-under=9.00` and fail on new `fatal`/`error` diagnostics; wire into quality gate checklist.
+
+### Phase 3.8b: Warning & Refactor Reduction (P2)
+- [ ] **T143 [P2]** Reduce `unused-argument` diagnostics in CLI commands from 67 → ≤25 by refactoring signatures or documenting intentional Click injections.
+- [ ] **T144 [P2]** Reduce `too-many-arguments` and `too-many-locals` diagnostics by extracting helpers or dataclasses; target 37 → ≤20 combined occurrences.
+- [ ] **T145 [P2]** Review all `broad-exception-caught` findings (13) and replace with specific exceptions or documented suppressions.
+- [ ] **T146 [P2]** Address top duplicate-code hot spots (mysql/postgres engines, deploy/revert helpers); reduce 56 duplicate-code warnings by at least 50% or document remediation timeline.
+
+### Phase 3.8c: Reporting & Gate Validation (P1)
+- [ ] **T147 [P1]** Update `specs/005-lockdown/research.md` and `IMPLEMENTATION_REPORT_LOCKDOWN.md` with before/after metrics (issue counts by category, score, suppressions) after remediation.
+- [ ] **T148 [P1]** Capture final lint gate results in `IMPLEMENTATION_REPORT_LOCKDOWN.md` alongside pytest/mypy/flake8 outcomes.
+- [ ] **T149 [P1]** Add follow-up tickets in `TODO.md` for any remaining warnings/refactors not resolved within lockdown, marked with owners and timelines.
 # Tasks: Quality Lockdown and Stabilization
 
 **Status**: 🆕 Ready for execution (2025-10-10)  
@@ -367,37 +390,6 @@ pytest --cov=sqlitch --cov-report=term
 
 ---
 
-## Phase 3.8 · Pylint Code Quality Analysis (added 2025-10-12)
-**Reference**: Baseline analysis captured in `specs/005-lockdown/research.md` - Pylint section  
-**Goal**: Document and track pylint-identified issues for future resolution (NO CODE CHANGES in this phase)  
-**Baseline**: 286 issues total, 9.29/10 score, pylint_report.json saved to repo root  
-**Note**: This is a **documentation-only phase** - issues are tracked for post-alpha resolution
-
-### Phase 3.8a: Baseline Documentation & Configuration
-- [X] **T140 [P3]** Run pylint analysis and generate baseline report:
-  - Command: `source .venv/bin/activate && pylint sqlitch tests --output-format=json > pylint_report.json`
-  - Score: 9.29/10 (286 issues: 25E, 90W, 141R, 30C)
-  - Report moved to: `specs/005-lockdown/artifacts/baseline/pylint_report.json`
-  - Comprehensive analysis: `specs/005-lockdown/PYLINT_ANALYSIS_2025-10-12.md`
-- [X] **T141 [P3]** Document pylint findings in research.md with categorization and priority assessment
-- [X] **T142 [P3]** Create `.pylintrc` configuration file with recommended settings from PYLINT_ANALYSIS:
-  - Disable `missing-kwoa` and `no-value-for-parameter` for Click false positives
-  - Increase `max-locals` to 20, `max-args` to 7
-  - Configure `duplicate-code` minimum lines to 10
-  - Document rationale for each suppression in comments
-- [X] **T143 [P3]** Add pylint score tracking to `IMPLEMENTATION_REPORT_LOCKDOWN.md` baseline section
-
-### Phase 3.8b: Critical Error Fixes (1 legitimate error)
-- [X] **T143 [P2]** Fix type safety error in `sqlitch/plan/parser.py:70` - Add proper index validation for `entries[last_change_index]`
-  - **Context**: `invalid-sequence-index` error where type checker cannot verify index safety
-  - **Fix**: Add `assert last_change_index is not None` or proper type guard before index access
-  - **Test**: Verify with `pytest tests/plan/test_parser.py` and `mypy --strict sqlitch/plan/parser.py`
-  - **STATUS**: ✅ COMPLETE - Added pylint suppression comment explaining the guard
-
-### Phase 3.8c: False Positive Suppressions (23 errors)
-- [X] **T144 [P3]** Add inline pylint suppressions for Click decorator false positives in `sqlitch/cli/main.py:307`:
-  - Comment: `# pylint: disable=missing-kwoa,no-value-for-parameter  # Click decorator injects parameters`
-  - Affects: 11 false positive errors about missing kwargs in main() call
 - [X] **T145 [P3]** Add inline pylint suppressions for Click decorator false positives in `sqlitch/cli/__main__.py:8`:
   - Comment: `# pylint: disable=missing-kwoa,no-value-for-parameter  # Click decorator injects parameters`
   - Affects: 11 false positive errors about missing kwargs in main() call
@@ -405,46 +397,45 @@ pytest --cov=sqlitch --cov-report=term
   - Line 237: `# pylint: disable=possibly-used-before-assignment  # Guarded by sys.platform check`
   - Line 384: `# pylint: disable=possibly-used-before-assignment  # Guarded by sys.platform check`
 
-### Phase 3.8d: High-Impact Warnings (duplicate code - 56 issues)
-- [X] **T147 [P3]** Document duplicate code between `sqlitch/engine/mysql.py` and `sqlitch/engine/postgres.py`:
+### Phase 3.8 Legacy Documentation (pre-2025-10-13)
+
+> **Note**: Tasks in this section record the earlier documentation-only analysis and retain their original completion status. New remediation work lives under T140–T149 above.
+
+- [X] **T237 [P3]** Document duplicate code between `sqlitch/engine/mysql.py` and `sqlitch/engine/postgres.py`:
   - **Issue**: 56 duplicate-code violations indicate significant similarity between MySQL and PostgreSQL engines
   - **Analysis**: Review both files to identify common patterns that could be extracted
   - **Recommendation**: Create shared base class or helper module for common SQL operations
   - **Documentation**: Added comprehensive analysis to `TODO.md` with refactoring recommendations
   - **STATUS**: ✅ COMPLETE - Documented in TODO.md
 
-### Phase 3.8e: Code Complexity Refactoring (141 refactor issues)
-
-- [X] **T148 [P3]** Document `too-many-locals` violations (33 issues) in `TODO.md`:
+- [X] **T238 [P3]** Document `too-many-locals` violations (33 issues) in `TODO.md`:
   - Primary offender: `sqlitch/config/loader.py` load_config() with 24 local variables
   - Consider extracting sub-functions for logical groupings (system/user/local config sections)
   - **STATUS**: ✅ COMPLETE - Documented in TODO.md with extraction recommendations
   
-- [X] **T149 [P3]** Document `too-many-arguments` violations (16 issues) in `TODO.md`:
+- [X] **T239 [P3]** Document `too-many-arguments` violations (16 issues) in `TODO.md`:
   - Primarily in CLI command handlers with many options
   - Consider using dataclasses or TypedDict for parameter grouping
   - **STATUS**: ✅ COMPLETE - Documented in TODO.md with dataclass approach
   
-- [X] **T150 [P3]** Document `unused-argument` violations (67 issues) in `TODO.md`:
+- [X] **T240 [P3]** Document `unused-argument` violations (67 issues) in `TODO.md`:
   - Many in CLI command handlers where Click/context provides parameters
   - Consider `_` prefix for intentionally unused parameters to signal intent
   - **STATUS**: ✅ COMPLETE - Documented in TODO.md with categorization
 
-### Phase 3.8f: Documentation Gaps (11 missing docstrings)
-- [X] **T151 [P3]** Add function docstrings for 11 missing docstrings identified by pylint:
+- [X] **T241 [P3]** Add function docstrings for 11 missing docstrings identified by pylint:
   - Run `pylint sqlitch --disable=all --enable=missing-function-docstring` to get list
   - Add standard docstring format: brief description, Args, Returns, Raises
   - Coordinate with pydocstyle gate (T003 baseline) to avoid duplication
   - **STATUS**: ✅ COMPLETE - Documented in TODO.md with standard format template
 
-### Phase 3.8g: Validation & Tracking
-- [X] **T152 [P3]** Re-run pylint after T143-T146 fixes and suppressions:
+- [X] **T242 [P3]** Re-run pylint after T143-T146 fixes and suppressions:
   - Command: `source .venv/bin/activate && pylint sqlitch tests --output-format=json > specs/005-lockdown/artifacts/post-fixes/pylint_report.json`
   - **RESULTS**: Error count dropped from 25 to 2 (-92%), score improved from 9.29 to 9.65 (+0.36)
   - **TOTAL REDUCTION**: 286 → 182 issues (-104, -36%)
   - **STATUS**: ✅ COMPLETE - Documented improvement in research.md
   
-- [X] **T153 [P3]** Create `TODO.md` entries for all deferred issues (T147-T151):
+- [X] **T243 [P3]** Create `TODO.md` entries for all deferred issues (T237-T241):
   - Group by category: duplicate code, complexity, unused arguments, docstrings
   - Link each TODO item back to specific pylint task ID
   - Set priority based on impact: duplicate code > complexity > documentation > unused arguments

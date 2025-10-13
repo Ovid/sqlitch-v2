@@ -27,6 +27,9 @@
 - Q: How should the three compatibility scripts integrate into our workflows once implemented? → A: Manual runs only (documented checklist)
 - Q: Where must results from each manual UAT run be recorded? → A: Post a comment in the release pull request summarizing the outcomes
 
+### Session 2025-10-13
+- Q: What pylint score threshold should `tox -e lint` enforce before the gate passes? → A: Fail below 9.00
+
 ---
 
 ## ⚡ Quick Guidelines
@@ -69,11 +72,12 @@ This principle applies to ALL future work, not just lockdown tasks.
 - **Documentation**: Complete docstrings for all public APIs
 - **Code Style**: Enforce consistent formatting (Black, isort) and ensure linting (flake8) runs clean via an automated check.
 - **Formatting Gates**: Add regression tests/automation that assert `black --check` and `isort --check-only` remain compliant.
-- **Pylint Analysis**: Use pylint as an additional code quality tool to identify potential issues:
-  - Generate pylint report: `pylint sqlitch --output-format=json > pylint_report.json`
-  - Each issue in the JSON report should be evaluated and added as a separate task
-  - Issues should be categorized (fix, suppress with justification, or defer with ticket)
-  - Target: Eliminate pylint errors
+- **Pylint Remediation**: Use pylint as an enforceable gate, not just an informational report:
+  - Generate and continuously update pylint reports: `pylint sqlitch tests --output-format=json > pylint_report.json`
+  - Resolve every `fatal` and `error` item; suppressions require explicit justification in-code and in the implementation report.
+  - Reduce or document `warning`, `refactor`, and `convention` findings with assigned follow-up tasks and deadlines.
+  - Add an automated guard (tox or pytest) that fails when pylint introduces new `fatal`/`error` entries or the score drops below **9.00**.
+  - Target: Zero unhandled pylint errors with remediation evidence captured alongside other quality gates.
 
 ### 2. Stability
 - **Bug Fixes**: Address all known bugs and edge cases
@@ -126,10 +130,10 @@ This principle applies to ALL future work, not just lockdown tasks.
 - mypy --strict passes with zero errors
 - Black and isort formatting enforced with automated regression tests
 - flake8 linting passes with zero violations (no ignored errors)
-- Pylint report generated and all issues triaged:
-  - Each issue evaluated: fix, suppress with justification, or defer with ticket
-  - Baseline score documented in `specs/005-lockdown/artifacts/baseline/pylint_report.json`
-  - Improvement goals documented with rationale for any deferred issues
+- Pylint remediation complete and enforced via automation:
+  - No remaining `fatal` or `error` diagnostics; any suppression is documented with rationale in code and in `IMPLEMENTATION_REPORT_LOCKDOWN.md`.
+  - Warnings/refactors either resolved or tracked with dated follow-up tasks and ownership in `tasks.md`.
+  - Lint gate (`tox -e lint` or equivalent) runs in CI and fails the build on new pylint regressions or score < **9.00**.
 - All TODO comments addressed or ticketed
 
 ### Functional Gates
