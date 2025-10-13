@@ -27,10 +27,11 @@
   - Fix: Used underscore to indicate intentionally unused second return value
   - Validation: ✅ `pytest tests/test_no_config_pollution.py -xvs` - All 5 tests pass
 
-- [ ] **T151 [P2]** Fix W0612 in `sqlitch/cli/commands/verify.py:310` - Remove unused variable `change_id`
-  - ⚠️ Assessment: Likely genuine - check if variable is needed for future logic
-  - Options: (1) Remove if truly unused (2) Prefix with `_` if intentionally unused (3) Use in logic
-  - Validation: `pytest tests/cli/commands/test_verify*.py -xvs`
+- [X] **T151 [P2]** Fix W0612 in `sqlitch/cli/commands/verify.py:310` - Remove unused variable `change_id`
+  - ✅ COMPLETE: Changed `for change_name, change_id in deployed_changes:` to `for change_name, _ in deployed_changes:`
+  - Assessment: Intentionally unused - only change_name needed in loop
+  - Fix: Prefixed with `_` to signal intentionally unused value
+  - Validation: ✅ `pytest tests/cli/commands/test_verify*.py -xvs` - All 33 tests pass
 
 - [ ] **T152 [P2]** Fix W0612 in `sqlitch/cli/commands/config.py:442` - Remove unused variable `header_index`
   - ⚠️ Assessment: Check context - may be needed for table formatting
