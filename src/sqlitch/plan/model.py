@@ -26,7 +26,7 @@ def _ensure_path(value: Path | str) -> Path:
     return Path(value)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class Tag:
     """Represents a tag entry within a plan."""
 
@@ -47,7 +47,7 @@ class Tag:
         object.__setattr__(self, "tagged_at", normalized)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class Change:
     """Represents a deployable change entry within a plan."""
 
@@ -167,7 +167,7 @@ class Change:
 PlanEntry: TypeAlias = Change | Tag
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class Plan:
     """Aggregates ordered plan entries (changes and tags)."""
 

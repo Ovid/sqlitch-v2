@@ -41,7 +41,7 @@ _CONFIG_FIELD_ALIASES: dict[str, tuple[str, ...]] = {
 }
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class CredentialResolution:
     """Resolved credential values alongside their originating sources."""
 

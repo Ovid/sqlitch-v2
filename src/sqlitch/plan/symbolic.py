@@ -21,7 +21,7 @@ __all__ = [
 ]
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class SymbolicReference:
     """Parsed symbolic reference with base and offset."""
 

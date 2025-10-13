@@ -8,7 +8,7 @@ from pathlib import Path
 __all__ = ["Script", "ScriptResult"]
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class Script:
     """Represents a SQL script file to be executed.
 
@@ -35,7 +35,7 @@ class Script:
         return cls(path=path, content=content)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class ScriptResult:
     """Represents the result of executing a SQL script.
 

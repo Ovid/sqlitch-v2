@@ -100,7 +100,7 @@ def _redact_payload(payload: Mapping[str, Any]) -> dict[str, Any]:
     return {key: _redact_value(value, key=key) for key, value in payload.items()}
 
 
-@dataclass(slots=True, frozen=True)
+@dataclass(frozen=True)
 class StructuredLogRecord:
     """Immutable representation of an emitted log record."""
 

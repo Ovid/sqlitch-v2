@@ -27,7 +27,7 @@ _SUPPORTED_ENGINES = {
 }
 
 
-@dataclass(slots=True, frozen=True)
+@dataclass(frozen=True)
 class EngineDefinition:
     """Materialised engine configuration entry."""
 

@@ -18,7 +18,7 @@ class UnsupportedEngineError(EngineError):
     """Raised when an engine is not known or has not been registered."""
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class ConnectArguments:
     """Container for positional and keyword arguments passed to a driver."""
 
@@ -61,7 +61,7 @@ def canonicalize_engine_name(name: str) -> str:
     return canonical
 
 
-@dataclass(slots=True)
+@dataclass
 class EngineTarget:
     """Description of a registry/workspace engine target."""
 

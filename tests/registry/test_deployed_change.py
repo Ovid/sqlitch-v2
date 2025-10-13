@@ -137,24 +137,3 @@ class TestDeployedChangeValidation:
         # Should not be able to modify
         with pytest.raises(Exception):  # FrozenInstanceError or AttributeError
             deployed.change_id = "new_id"  # type: ignore
-
-    def test_has_slots(self):
-        """Should use __slots__ for memory efficiency."""
-        row = (
-            "abc123",
-            "deadbeef",
-            "users",
-            "flipr",
-            "",
-            "2025-01-15T10:30:00Z",
-            "Ada",
-            "ada@example.com",
-            "2025-01-14T18:00:00Z",
-            "Ada",
-            "ada@example.com",
-        )
-        deployed = DeployedChange.from_registry_row(row)
-
-        # Should have __slots__, not __dict__
-        assert not hasattr(deployed, "__dict__")
-        assert hasattr(deployed, "__slots__")

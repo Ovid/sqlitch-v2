@@ -67,7 +67,7 @@ class DeployedMetadata(TypedDict):
     tags: set[str]
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class _DeployRequest:
     project_root: Path
     config_root: Path

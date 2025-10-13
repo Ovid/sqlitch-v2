@@ -36,18 +36,6 @@ class TestScriptLoad:
         with pytest.raises(AttributeError):
             script.content = "changed"  # type: ignore[misc]
 
-    def test_has_slots(self, tmp_path: Path) -> None:
-        """Script should use __slots__ for memory efficiency."""
-        script_file = tmp_path / "test.sql"
-        script_file.write_text("SELECT 1;")
-        script = Script.load(script_file)
-
-        assert not hasattr(script, "__dict__")
-
-
-class TestScriptResultFactoryMethods:
-    """Test ScriptResult factory methods."""
-
     def test_ok_creates_success_result(self) -> None:
         """ok() creates successful result."""
         result = ScriptResult.ok()
@@ -65,8 +53,3 @@ class TestScriptResultFactoryMethods:
         result = ScriptResult.ok()
         with pytest.raises(AttributeError):
             result.success = False  # type: ignore[misc]
-
-    def test_has_slots(self) -> None:
-        """ScriptResult should use __slots__ for memory efficiency."""
-        result = ScriptResult.ok()
-        assert not hasattr(result, "__dict__")

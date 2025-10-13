@@ -7,7 +7,7 @@ from dataclasses import dataclass
 LATEST_REGISTRY_VERSION = "1.1"
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class RegistryMigration:
     """Represents a registry migration SQL script for a specific target version."""
 

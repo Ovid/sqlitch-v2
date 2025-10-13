@@ -22,7 +22,7 @@ __all__ = ["log_command"]
 logger = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class LogEvent:
     """Represents a registry event emitted for log output."""
 

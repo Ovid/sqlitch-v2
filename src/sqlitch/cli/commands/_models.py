@@ -9,7 +9,7 @@ from typing import Literal
 __all__ = ["CommandResult", "DeployOptions", "RevertOptions"]
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class CommandResult:
     """Represents the result of executing a CLI command.
 
@@ -65,7 +65,7 @@ class CommandResult:
         )
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class DeployOptions:
     """Options for deploy command execution.
 
@@ -87,7 +87,7 @@ class DeployOptions:
             raise ValueError(f"mode must be one of: all, change, tag (got {self.mode!r})")
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class RevertOptions:
     """Options for revert command execution.
 

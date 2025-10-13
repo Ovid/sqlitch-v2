@@ -12,7 +12,7 @@ class ArtifactConflictError(RuntimeError):
     """Raised when both SQLitch and Sqitch artifacts are present."""
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class ArtifactResolution:
     """Represents the resolved artifact and whether it is a drop-in fallback."""
 

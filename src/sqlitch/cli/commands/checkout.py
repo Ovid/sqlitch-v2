@@ -23,7 +23,7 @@ from ._plan_utils import resolve_plan_path
 __all__ = ["checkout_command"]
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class _CheckoutRequest:
     project_root: Path
     env: Mapping[str, str]

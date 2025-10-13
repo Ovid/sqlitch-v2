@@ -18,7 +18,7 @@ DEFAULT_LOG_DESTINATION = "stderr"
 """Default stderr destination used for structured logging sinks."""
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class LogConfiguration:
     """Immutable structured logging configuration for a CLI invocation.
 
@@ -82,7 +82,7 @@ def generate_run_identifier() -> str:
     return uuid4().hex
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class CredentialOverrides:
     """Credential values supplied via CLI flags prior to precedence resolution."""
 

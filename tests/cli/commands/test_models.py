@@ -62,11 +62,6 @@ class TestCommandResultValidation:
         with pytest.raises(AttributeError):
             result.message = "changed"  # type: ignore[misc]
 
-    def test_has_slots(self) -> None:
-        """CommandResult should use __slots__ for memory efficiency."""
-        result = CommandResult.ok()
-        assert not hasattr(result, "__dict__")
-
     def test_data_is_mapping_proxy(self) -> None:
         """data field should be immutable MappingProxyType."""
         result = CommandResult.ok(data={"key": "value"})
@@ -138,15 +133,6 @@ class TestDeployOptionsValidation:
         with pytest.raises(AttributeError):
             options.mode = "change"  # type: ignore[misc]
 
-    def test_has_slots(self) -> None:
-        """DeployOptions should use __slots__ for memory efficiency."""
-        options = DeployOptions()
-        assert not hasattr(options, "__dict__")
-
-
-class TestRevertOptionsValidation:
-    """Test RevertOptions validation logic."""
-
     def test_requires_to_change_or_to_tag(self) -> None:
         """Should raise ValueError if neither to_change nor to_tag specified."""
         with pytest.raises(ValueError, match="Must specify either to_change or to_tag"):
@@ -174,8 +160,3 @@ class TestRevertOptionsValidation:
         options = RevertOptions(to_change="users")
         with pytest.raises(AttributeError):
             options.to_change = "other"  # type: ignore[misc]
-
-    def test_has_slots(self) -> None:
-        """RevertOptions should use __slots__ for memory efficiency."""
-        options = RevertOptions(to_change="users")
-        assert not hasattr(options, "__dict__")

@@ -27,7 +27,7 @@ from ._plan_utils import resolve_default_engine, resolve_plan_path
 __all__ = ["rebase_command"]
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class _RebaseRequest:
     project_root: Path
     config_root: Path

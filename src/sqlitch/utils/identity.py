@@ -44,7 +44,7 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class UserIdentity:
     """Represents user identity from configuration.
 

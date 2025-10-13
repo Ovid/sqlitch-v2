@@ -40,7 +40,7 @@ __all__ = ["revert_command"]
 logger = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class _RevertRequest:
     project_root: Path
     env: Mapping[str, str]

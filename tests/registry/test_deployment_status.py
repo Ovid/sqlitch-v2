@@ -81,17 +81,6 @@ class TestDeploymentStatusValidation:
         with pytest.raises(AttributeError):
             status.project = "other"  # type: ignore[misc]
 
-    def test_has_slots(self) -> None:
-        """DeploymentStatus should use __slots__ for memory efficiency."""
-        status = DeploymentStatus(
-            project="flipr",
-            deployed_changes=(),
-            pending_changes=(),
-            deployed_tags=(),
-            last_deployed_change=None,
-        )
-        assert not hasattr(status, "__dict__")
-
     def test_uses_tuples_for_immutability(self) -> None:
         """Fields should use tuples for immutable sequences."""
         status = DeploymentStatus(

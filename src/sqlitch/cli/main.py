@@ -30,7 +30,7 @@ _CLI_SUBCOMMAND_META_KEY = "sqlitch_cli_subcommand"
 _CLI_START_TIME_META_KEY = "sqlitch_cli_start_time"
 
 
-@dataclass(slots=True)
+@dataclass
 class CLIContext:
     """Resolved execution context shared across CLI commands.
 

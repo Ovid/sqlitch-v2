@@ -22,7 +22,7 @@ __all__ = [
 ]
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class DeployedChange:
     """Represents a change currently deployed to the database.
 
@@ -78,7 +78,7 @@ class DeployedChange:
         )
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class DeploymentEvent:
     """Represents a deployment event in the registry.
 
@@ -141,7 +141,7 @@ class DeploymentEvent:
         )
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class DeploymentStatus:
     """Represents the deployment status of a project target.
 
@@ -170,7 +170,7 @@ def _ordering_key(entry: "RegistryEntry") -> tuple[datetime, str, str]:
     return (entry.committed_at, entry.change_name, entry.change_id)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class RegistryEntry:
     """Represents the latest deployment state recorded in the Sqitch registry."""
 
