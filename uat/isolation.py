@@ -36,6 +36,9 @@ def create_isolated_environment(work_dir: Path) -> dict[str, Any]:
     # Start with parent environment
     env = os.environ.copy()
 
+    # Resolve work_dir to absolute path to ensure environment variables are absolute
+    work_dir = work_dir.resolve()
+
     # Create isolated temp directories within work_dir
     isolated_root = work_dir / ".isolated"
     isolated_root.mkdir(parents=True, exist_ok=True)

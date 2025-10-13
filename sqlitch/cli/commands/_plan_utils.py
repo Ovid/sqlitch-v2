@@ -72,16 +72,6 @@ def resolve_default_engine(
         if header_engine:
             return header_engine
 
-        try:
-            from sqlitch.plan.parser import PlanParseError, parse_plan
-
-            parse_plan(plan_path)
-        except (PlanParseError, ValueError) as exc:
-            raise CommandError(str(exc)) from exc
-        except OSError:
-            # IOErrors will be surfaced during the actual command operation.
-            pass
-
     raise CommandError(
         "No default engine configured. Specify an engine via --engine or configure [core].engine."
     )

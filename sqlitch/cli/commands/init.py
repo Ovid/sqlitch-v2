@@ -208,6 +208,13 @@ def _determine_plan_path(
 
 
 def _determine_config_path(project_root: Path) -> Path:
+    """Determine where to create the config file, respecting environment overrides."""
+
+    # Check for SQLITCH_CONFIG or SQITCH_CONFIG environment variables
+    env_config = os.environ.get("SQLITCH_CONFIG") or os.environ.get("SQITCH_CONFIG")
+    if env_config:
+        return Path(env_config)
+
     try:
         resolution = resolve_config_file(project_root)
     except ArtifactConflictError as exc:  # pragma: no cover - integration coverage
@@ -276,7 +283,21 @@ def _format_display_path(path: Path, project_root: Path) -> str:
     try:
         return path.relative_to(project_root).as_posix()
     except ValueError:
-        return os.path.relpath(path, project_root).replace(os.sep, "/")
+        # Path is outside project_root
+        # If it's an environment override (in a temp directory with ../../../),
+        # just show the basename for cleaner output
+        try:
+            cwd_rel = path.relative_to(Path.cwd()).as_posix()
+            if not cwd_rel.startswith("../"):
+                return cwd_rel
+        except ValueError:
+            pass
+
+        # For paths that would show many ../ levels, use basename
+        rel_path = os.path.relpath(path, project_root).replace(os.sep, "/")
+        if rel_path.count("../") >= 3:
+            return path.name
+        return rel_path
 
 
 def _format_directory_display(path: Path, project_root: Path) -> str:

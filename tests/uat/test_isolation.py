@@ -167,11 +167,11 @@ def test_create_isolated_environment_prevents_etc_config_access(tmp_path: Path):
 def test_create_isolated_environment_uses_unique_locations_per_work_dir():
     """Verify that different work directories get different isolated environments."""
     with tempfile.TemporaryDirectory() as tmp1, tempfile.TemporaryDirectory() as tmp2:
-        path1 = Path(tmp1)
-        path2 = Path(tmp2)
+        path1 = Path(tmp1).resolve()
+        path2 = Path(tmp2).resolve()
 
-        env1 = create_isolated_environment(path1)
-        env2 = create_isolated_environment(path2)
+        env1 = create_isolated_environment(Path(tmp1))
+        env2 = create_isolated_environment(Path(tmp2))
 
         # Config paths should be different
         assert env1["SQITCH_CONFIG"] != env2["SQITCH_CONFIG"]
