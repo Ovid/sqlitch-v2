@@ -9,7 +9,6 @@ import pytest
 from sqlitch.cli.commands import CommandError
 from sqlitch.cli.commands import _plan_utils as plan_utils
 from sqlitch.config.loader import ConfigProfile
-from sqlitch.plan.parser import PlanParseError
 
 
 @pytest.fixture()

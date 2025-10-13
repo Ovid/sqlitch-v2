@@ -123,7 +123,8 @@ def _resolve_template_content(
 @global_sqitch_options
 @global_output_options
 @click.pass_context
-def add_command(
+def add_command(  # pylint: disable=unused-argument
+    # json_mode/verbose/quiet injected by @global_output_options
     ctx: click.Context,
     change_name: str,
     requires: Sequence[str],
