@@ -242,6 +242,8 @@ def resolve_username(env: Mapping[str, str]) -> str:
             # Ensure we return a string (Win32 API can return Any)
             return str(username) if username else "sqitch"
         except Exception as exc:  # pragma: no cover - Windows-specific
+            # pylint: disable=broad-exception-caught
+            # Win32 API can raise various Windows-specific exceptions
             # Win32 API call failed; fall back to default
             logger.debug(
                 "Failed to get Windows username: %s",
@@ -400,6 +402,8 @@ def get_system_fullname(username: str) -> str | None:
             if full_name:
                 return full_name
         except Exception as exc:  # pragma: no cover - Windows-specific
+            # pylint: disable=broad-exception-caught
+            # Win32Net API can raise various Windows-specific exceptions
             # Win32 API call failed; fall back to other methods
             logger.debug(
                 "Failed to get Windows full name via NetUserGetInfo: %s",
@@ -434,4 +438,6 @@ def get_hostname() -> str:
     try:
         return socket.gethostname()
     except Exception:  # pragma: no cover
+        # pylint: disable=broad-exception-caught
+        # socket operations can raise various network exceptions
         return "localhost"

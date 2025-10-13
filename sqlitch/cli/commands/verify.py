@@ -344,7 +344,8 @@ def verify_command(
                     script = Script.load(verify_script_path)
                     _execute_sqlite_verify_script(cursor, script.content)
                     click.echo(f"  * {change_name} .. ok")
-                except Exception as exc:
+                except Exception as exc:  # pylint: disable=broad-exception-caught
+                    # User-friendly error reporting for any verify failure
                     click.echo(f"  # {change_name} .. NOT OK")
                     click.echo(f"  Error: {exc}", err=True)
                     error_count += 1

@@ -408,6 +408,8 @@ def _execute_deploy(request: _DeployRequest) -> None:
         try:
             connection.close()
         except Exception as exc:  # pragma: no cover - best effort cleanup
+            # pylint: disable=broad-exception-caught
+            # Cleanup must never fail the operation
             # Log connection cleanup failure but don't mask the original exception
             _module_logger.warning(
                 "Failed to close database connection during cleanup: %s",
@@ -1181,7 +1183,8 @@ def _resolve_committer_identity(
             config_root=config_root,
             env=env,
         )
-    except Exception:
+    except Exception:  # pylint: disable=broad-exception-caught
+        # Config loading is non-fatal, fall back to env-only identity resolution
         config_profile = None
 
     username = resolve_username(env)

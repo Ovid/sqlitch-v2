@@ -605,7 +605,8 @@ def _resolve_committer_identity(
         user_section = config.settings.get("user", {})
         config_name = user_section.get("name")
         config_email = user_section.get("email")
-    except Exception as exc:
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        # Config loading is non-fatal, fall back to env variables
         # Config loading failure is non-fatal; fall back to environment variables
         logger.debug(
             "Failed to load config for user identity: %s",

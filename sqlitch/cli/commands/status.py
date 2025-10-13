@@ -350,6 +350,8 @@ def _load_registry_state(
 
         failure_row = _load_last_failure_event(connection, expected_project)
     except Exception as exc:  # pragma: no cover - query failures propagated
+        # pylint: disable=broad-exception-caught
+        # Catch all DB errors to check for missing registry
         if _registry_schema_missing(exc):
             rows = []
             columns = []
@@ -363,6 +365,8 @@ def _load_registry_state(
             try:
                 cursor.close()
             except Exception as exc:  # pragma: no cover - best effort cleanup
+                # pylint: disable=broad-exception-caught
+                # Cleanup must never fail the operation
                 logger.warning(
                     "Failed to close cursor during cleanup: %s",
                     exc,
@@ -371,6 +375,8 @@ def _load_registry_state(
         try:
             connection.close()
         except Exception as exc:  # pragma: no cover - best effort cleanup
+            # pylint: disable=broad-exception-caught
+            # Cleanup must never fail the operation
             logger.warning(
                 "Failed to close database connection during cleanup: %s",
                 exc,
@@ -466,6 +472,8 @@ def _load_last_failure_event(
             try:
                 failure_cursor.close()
             except Exception as exc:  # pragma: no cover - best effort cleanup
+                # pylint: disable=broad-exception-caught
+                # Cleanup must never fail the operation
                 logger.warning(
                     "Failed to close failure cursor during cleanup: %s",
                     exc,
