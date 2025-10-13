@@ -241,10 +241,8 @@ def resolve_username(env: Mapping[str, str]) -> str:
             username = win32api.GetUserName()
             # Ensure we return a string (Win32 API can return Any)
             return str(username) if username else "sqitch"
-        except Exception as exc:  # pragma: no cover - Windows-specific
-            # pylint: disable=broad-exception-caught
-            # Win32 API can raise various Windows-specific exceptions
-            # Win32 API call failed; fall back to default
+        except Exception as exc:  # pylint: disable=broad-exception-caught # pragma: no cover
+            # Win32 API can raise various Windows-specific exceptions; graceful fallback required
             logger.debug(
                 "Failed to get Windows username: %s",
                 exc,
