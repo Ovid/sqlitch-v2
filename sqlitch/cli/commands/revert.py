@@ -645,11 +645,11 @@ def _resolve_committer_identity(
     return name, email
 
 
-def _resolve_planner_identity(
+def _resolve_planner_identity(  # pylint: disable=unused-argument
+    # env reserved for future environment-based identity resolution
     planner: str,
     env: Mapping[str, str],
-    fallback_email: str,  # pylint: disable=unused-argument
-    # env reserved for future environment-based identity resolution
+    fallback_email: str,
 ) -> tuple[str, str]:
     """Parse planner identity string into name and email components."""
     name, email = _parse_identity(planner)

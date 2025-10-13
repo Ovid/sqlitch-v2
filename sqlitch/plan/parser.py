@@ -349,7 +349,8 @@ def _apply_rework_metadata(
     return tuple(adjusted)
 
 
-def _resolve_reworked_script_paths(
+def _resolve_reworked_script_paths(  # pylint: disable=unused-argument
+    # base_dir reserved for future script path resolution
     *,
     change_name: str,
     script_paths: dict[str, Path | None],

@@ -96,7 +96,11 @@ def write_plan(
     )
 
 
-def _format_change(change: Change, base_path: Path) -> str:
+def _format_change(  # pylint: disable=unused-argument
+    # base_path reserved for future relative path formatting
+    change: Change,
+    base_path: Path,
+) -> str:
     """Format a change entry in compact Sqitch format.
 
     Format: <name> [<dependencies>] <timestamp> <planner> # <note>

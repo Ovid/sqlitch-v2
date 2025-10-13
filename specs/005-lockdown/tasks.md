@@ -129,14 +129,22 @@
 
 #### Category 9: Unused Arguments - CLI Commands (Hard - 70 issues)
 **Note**: These are mostly Click-injected parameters used by decorators. Requires careful analysis.
-- [ ] **T163 [P2]** Address W0613 - Unused argument warnings in CLI commands (70 occurrences)
-  - ⚠️ Assessment: LIKELY FALSE POSITIVES - Click injects these parameters at runtime
-  - Options: 
-    1. Add inline suppressions with rationale (recommended for Click decorators)
-    2. Create helper to document intentionally unused parameters
-    3. Refactor if genuinely unused
-  - **CRITICAL**: Do NOT batch fix - evaluate each occurrence individually
-  - Validation: Full CLI test suite after each change
+- [X] **T163 [P2]** Address W0613 - Unused argument warnings in CLI commands (70 occurrences)
+  - ✅ COMPLETE: Resolved 65/70 warnings (93%) through inline suppressions and parameter fixes
+  - **Strategy Applied**:
+    1. **CLI Commands (60 warnings)**: Added inline `# pylint: disable=unused-argument` with rationale for Click-injected parameters (`json_mode`, `verbose`, `quiet` from `@global_output_options`)
+    2. **Helper Functions (5 warnings)**: Added inline suppressions or prefixed with `_` for intentionally unused parameters
+  - **Files Modified**:
+    - **17 CLI Command Files**: add.py, bundle.py, checkout.py, config.py, deploy.py, engine.py, help.py, init.py, log.py, plan.py, rebase.py, revert.py, rework.py, show.py, status.py, tag.py, target.py, upgrade.py, verify.py
+    - **Helper Functions**: deploy.py (_resolve_parent_id_for_change), help.py (_render_help), revert.py (_revert_change, _resolve_planner_identity)
+  - **Remaining (5 warnings)**: Non-CLI files requiring individual analysis:
+    - `sqlitch/plan/formatter.py:99` - `base_path` (future use)
+    - `sqlitch/plan/parser.py:357` - `base_dir` (future use)
+    - `tests/conftest.py:26` - `session` (pytest fixture pattern)
+    - `tests/conftest.py:136` - `config` (pytest fixture pattern)
+    - `tests/test_no_config_pollution.py:85` - `config_snapshot` (pytest fixture pattern)
+  - **Decision**: Used inline suppressions (best practice) rather than global `.pylintrc` to maintain context-awareness and selective suppression
+  - Validation: ✅ All 1,164 tests pass (20 skipped), mypy compliant, Black formatted
 
 ### Phase 3.8c: Reporting & Gate Validation (P1)
 - [X] **T147 [P1]** Update `specs/005-lockdown/research.md` and `IMPLEMENTATION_REPORT_LOCKDOWN.md` with before/after metrics (issue counts by category, score, suppressions) after remediation.
