@@ -151,7 +151,7 @@ def test_sample_tests_from_each_directory():
     This is a smoke test to catch any non-migrated tests that might
     still be polluting the filesystem.
     """
-    sqlitch_dir, sqitch_dir = get_config_dirs()
+    sqlitch_dir, _ = get_config_dirs()
 
     # Get repo root from this test file's location
     repo_root = Path(__file__).parent.parent

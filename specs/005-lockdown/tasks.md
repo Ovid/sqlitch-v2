@@ -21,10 +21,11 @@
 **⚠️ CRITICAL WORKFLOW**: Fix ONE task at a time, validate with tests, get user approval, then proceed to next
 
 #### Category 1: Unused Variables (Easiest - 6 issues)
-- [ ] **T150 [P2]** Fix W0612 in `tests/test_no_config_pollution.py:154` - Remove unused variable `sqitch_dir`
-  - ⚠️ Assessment: Genuine issue - variable assigned but never used
-  - Fix: Remove the assignment or use the variable
-  - Validation: `pytest tests/test_no_config_pollution.py -xvs`
+- [X] **T150 [P2]** Fix W0612 in `tests/test_no_config_pollution.py:154` - Remove unused variable `sqitch_dir`
+  - ✅ COMPLETE: Changed `sqlitch_dir, sqitch_dir = get_config_dirs()` to `sqlitch_dir, _ = get_config_dirs()`
+  - Assessment: Genuine issue - variable assigned but never used (only sqlitch_dir checked in this test)
+  - Fix: Used underscore to indicate intentionally unused second return value
+  - Validation: ✅ `pytest tests/test_no_config_pollution.py -xvs` - All 5 tests pass
 
 - [ ] **T151 [P2]** Fix W0612 in `sqlitch/cli/commands/verify.py:310` - Remove unused variable `change_id`
   - ⚠️ Assessment: Likely genuine - check if variable is needed for future logic
