@@ -12,11 +12,11 @@ $ARGUMENTS
 
 
 2. Load and analyze the implementation context:
-    - **REQUIRED**: Read constitution.md for full understanding of what you are and are not allowed to do.
-    - **REQUIRED**: Read plan.md for tech stack, architecture, and file structure.
-    - **IF EXISTS**: Read data-model.md for entities and relationships.
-    - **IF EXISTS**: Read contracts/ for API specifications.
-    - **IF EXISTS**: Read research.md for technical decisions and constraints.
-    - **IF EXISTS**: Read quickstart.md for integration scenarios.
+    - **REQUIRED**: Read .specify/memory/constitution.md for full understanding of what you are and are not allowed to do.
+    - **REQUIRED**: Read specs/<current-branch>plan.md for tech stack, architecture, and file structure.
+    - **IF EXISTS**: Read specs/<current-branch>data-model.md for entities and relationships.
+    - **IF EXISTS**: Read specs/<current-branch>contracts/ for API specifications.
+    - **IF EXISTS**: Read specs/<current-branch>research.md for technical decisions and constraints.
+    - **IF EXISTS**: Read specs/<current-branch>quickstart.md for integration scenarios.
 
 3. Tell the user you have refreshed your understanding.
