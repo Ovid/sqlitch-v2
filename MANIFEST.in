@@ -1,22 +1,12 @@
-# Include Perl Sqitch reference implementation for parity testing
-recursive-include sqitch *.sql *.pm *.pod
-include sqitch/README.md
-
-# Include test support files (needed for running tests from source distribution)
-recursive-include tests/support *
-
-# Include specification docs (development/documentation transparency)
-recursive-include specs *
-
-# Include UAT scripts and documentation
-recursive-include uat *.py *.pod *.md
+# Include tests so users can run the test suite from source distribution
+recursive-include tests *
 
 # Include additional documentation (beyond auto-included README.md, LICENSE)
 include CONTRIBUTING.md
 include CHANGELOG.md
 include TODO.md
 
-# Include development tool configs (allows users to run tests/linters from sdist)
+# Include test/dev tool configs (allows users to run tests/linters from sdist)
 include tox.ini
 include pytest.ini
 include mypy.ini
