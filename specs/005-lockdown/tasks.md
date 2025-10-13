@@ -65,22 +65,29 @@
   - Validation: ✅ `pylint sqlitch/cli/commands/revert.py` - No W0511 warnings, `pytest tests/cli/commands/test_revert*.py -x` - All 15 tests pass
 
 #### Category 3: Reimported Modules (Easy - 1 issue)
-- [ ] **T157 [P2]** Fix W0404 - Module reimported issue
-  - ⚠️ Assessment: Need to examine specific reimport case
-  - Options: (1) Remove duplicate import (2) Document if intentional
-  - Validation: Run affected module tests
+- [X] **T157 [P2]** Fix W0404 - Module reimported issue
+  - ✅ COMPLETE: Removed duplicate import of config_resolver in revert.py
+  - Assessment: `sqlitch.config.resolver` was imported at module level (line 15) and unnecessarily reimported inside function (line 770)
+  - Fix: Removed the function-level import since module-level import is sufficient and already in scope
+  - Validation: ✅ `pylint sqlitch/cli/commands/revert.py` - No W0404 warnings, `pytest tests/cli/commands/test_revert*.py -xvs` - All 15 tests pass
 
 #### Category 4: Shadowed Names (Medium - 2 issues)
-- [ ] **T158 [P2]** Fix W0621 - Redefining name from outer scope (2 occurrences)
-  - ⚠️ Assessment: May cause confusion - rename inner variable
-  - Options: (1) Rename inner variable (2) Document if intentional shadowing
-  - Validation: Run affected tests
+- [X] **T158 [P2]** Fix W0621 - Redefining name from outer scope (2 occurrences)
+  - ✅ COMPLETE: Suppressed false positive in pytest test file
+  - Assessment: Pytest fixture injection REQUIRES parameter name to match fixture name - this is standard pytest syntax, not a code smell
+  - Location: `tests/test_no_config_pollution.py:83` - function parameter `config_snapshot` receives pytest fixture `config_snapshot`
+  - Fix: Added pylint suppression with rationale explaining pytest fixture injection pattern
+  - Note: Task description mentioned 2 occurrences, but only 1 found in current pylint report (possibly already fixed earlier)
+  - Validation: ✅ `pylint tests/test_no_config_pollution.py` - No W0621 warnings, `pytest tests/test_no_config_pollution.py -x` - All 5 tests pass
 
 #### Category 5: Exception Chaining (Medium - 1 issue)
-- [ ] **T159 [P2]** Fix W0707 - Consider explicitly re-raising exception
-  - ⚠️ Assessment: May lose traceback context
-  - Options: (1) Use `raise ... from` (2) Document if intentional (3) Suppress if appropriate
-  - Validation: Test error handling paths
+- [X] **T159 [P2]** Fix W0707 - Consider explicitly re-raising exception
+  - ✅ COMPLETE: Added proper exception chaining with `raise ... from`
+  - Location: `sqlitch/cli/commands/plan.py:119`
+  - Assessment: Code was re-raising a previously caught exception without preserving traceback context
+  - Fix: Changed `raise engine_error` to `raise engine_error from parse_error` to preserve exception chain
+  - Impact: Better debugging - developers will now see both the engine resolution error AND the parse error that triggered the re-raise
+  - Validation: ✅ `pylint sqlitch/cli/commands/plan.py` - No W0707 warnings, `pytest tests/cli/contracts/test_plan_contract.py tests/cli/test_plan_helpers.py tests/cli/test_plan_utils_unit.py -x` - All 37 tests pass
 
 #### Category 6: Subprocess Run Without Check (Medium - 8 issues)
 - [ ] **T160 [P2]** Fix W1510 - `subprocess.run` without explicit `check=True` (8 occurrences)
