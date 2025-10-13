@@ -43,6 +43,7 @@ class TestMypyCompliance:
             cwd=PROJECT_ROOT,
             capture_output=True,
             text=True,
+            check=False,  # Intentionally allow mypy to fail; we check error count manually
         )
 
         # Count actual errors (lines containing "error:")

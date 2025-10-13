@@ -97,6 +97,7 @@ def test_no_direct_isolated_filesystem_usage() -> None:
         cwd=repo_root,
         capture_output=True,
         text=True,
+        check=False,  # Intentionally check returncode manually to handle git grep exit codes
     )
 
     # If git grep returns 1, no matches found (which is what we want)

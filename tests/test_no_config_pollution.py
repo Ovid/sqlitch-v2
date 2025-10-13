@@ -121,6 +121,7 @@ def test_config_functional_tests_are_isolated():
         capture_output=True,
         text=True,
         cwd=repo_root,  # Ensure we run from repo root
+        check=False,  # Intentionally allow test failures; we check pollution regardless
     )
 
     # Tests should pass (or at least not crash)
@@ -176,6 +177,7 @@ def test_sample_tests_from_each_directory():
             capture_output=True,
             text=True,
             cwd=repo_root,  # Ensure we run from repo root
+            check=False,  # Intentionally allow test failures; we check pollution regardless
         )
 
         # Check for pollution after each test file

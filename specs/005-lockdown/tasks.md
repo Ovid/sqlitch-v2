@@ -90,11 +90,18 @@
   - Validation: ✅ `pylint sqlitch/cli/commands/plan.py` - No W0707 warnings, `pytest tests/cli/contracts/test_plan_contract.py tests/cli/test_plan_helpers.py tests/cli/test_plan_utils_unit.py -x` - All 37 tests pass
 
 #### Category 6: Subprocess Run Without Check (Medium - 8 issues)
-- [ ] **T160 [P2]** Fix W1510 - `subprocess.run` without explicit `check=True` (8 occurrences)
-  - ⚠️ Assessment: May silently ignore command failures
-  - Options: (1) Add `check=True` (2) Add explicit error handling (3) Document why check is not needed
-  - Note: Review each occurrence individually as they may have different requirements
-  - Validation: Test command execution paths
+- [X] **T160 [P2]** Fix W1510 - `subprocess.run` without explicit `check=True` (8 occurrences)
+  - ✅ COMPLETE: Added explicit `check=False` with rationale to all subprocess calls
+  - Assessment: All 8 occurrences are in test files where returncode is explicitly checked
+  - Locations:
+    - `tests/test_test_isolation_enforcement.py:95` - git grep with manual returncode handling
+    - `tests/conftest.py:57` - git grep with manual returncode handling  
+    - `tests/test_type_safety.py:41` - mypy execution with error count checking
+    - `tests/test_no_config_pollution.py:112, 174` - pytest execution checking for pollution
+    - `tests/test_formatting.py:28, 52, 76` - black/isort/flake8 with custom assertions
+  - Fix: Added `check=False` with inline comments explaining the intentional manual error handling
+  - Rationale: These tests NEED to handle both success and failure to provide helpful error messages
+  - Validation: ✅ All pylint warnings cleared, `pytest tests/test_formatting.py tests/test_type_safety.py tests/test_no_config_pollution.py -x` - All 9 tests pass
 
 #### Category 7: Broad Exception Catching (Medium/Hard - 13 issues)
 - [ ] **T161 [P2]** Fix W0718 - Catching too general exception (13 occurrences)
