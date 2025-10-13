@@ -6,7 +6,7 @@ from bisect import bisect_right
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, cast
+from typing import cast
 
 from sqlitch.utils.time import coerce_datetime, isoformat_utc, parse_iso_datetime
 
@@ -43,7 +43,10 @@ class DeployedChange:
     planner_email: str
 
     @classmethod
-    def from_registry_row(cls, row: tuple[Any, ...]) -> DeployedChange:
+    def from_registry_row(
+        cls,
+        row: tuple[str, str, str, str, str, str, str, str, str, str, str],
+    ) -> DeployedChange:
         """Create DeployedChange from database row.
 
         Args:
@@ -102,7 +105,10 @@ class DeploymentEvent:
     planner_email: str
 
     @classmethod
-    def from_registry_row(cls, row: tuple[Any, ...]) -> DeploymentEvent:
+    def from_registry_row(
+        cls,
+        row: tuple[str, str, str, str, str, str, str, str, str, str, str, str, str, str],
+    ) -> DeploymentEvent:
         """Create DeploymentEvent from database row.
 
         Args:
