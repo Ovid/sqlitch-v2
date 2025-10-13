@@ -199,6 +199,16 @@ Post-design constitution check: ✅ unchanged (still compliant).
    - Detailed breakdown by type, symbol, and file
    - Implementation strategy and validation protocol documented
 
+### Test Safety Enforcement (2025-10-13)
+
+**New Constitutional Requirement**: `tests/support/test_helpers.py` must delete every `SQITCH_*`, `SQLITCH_*`, and other sqlitch-specific environment variables on import to keep the test suite hermetic.
+
+Execution plan:
+1. Add a failing regression test (T035) that seeds representative `SQITCH_*`/`SQLITCH_*` variables, imports `tests.support.test_helpers`, and asserts the module clears them before exposing helpers.
+2. Update the helper module (T124) to scrub the agreed variable list at import time, maintain a comment documenting the allowlist/denylist source, and expose a utility function for future additions.
+3. Refresh `IMPLEMENTATION_REPORT_LOCKDOWN.md` with the verified variable matrix and capture validation evidence (pytest run, environment snapshot) once the test passes.
+4. Link the new safety gate into the Release Checklist so manual UAT runs re-use the sanitized helper instead of touching real user config.
+
 ### Remediation Milestones
 
 **Baseline Snapshot (2025-10-12)**:

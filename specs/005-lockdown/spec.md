@@ -118,6 +118,9 @@ This principle applies to ALL future work, not just lockdown tasks.
 - **Execution Expectation**: All three scripts run as part of the documented release checklist; CI integration is optional.
 - **Evidence**: Each manual run must be summarized in a comment on the release pull request with links to sanitized logs.
 
+### 6. Test Safety
+- `tests/support/test_helpers.py` MUST, on import, delete every environment variable used by Sqitch or SQLitch (e.g., `SQITCH_*`, `SQLITCH_*`, `SQLITCH_CONFIG`, `SQLITCH_TARGET`) to guarantee tests never read or write user/system configuration outside the isolated workspace. This requirement is critical for constitutional test isolation compliance.
+
 ---
 
 ## Success Criteria
@@ -134,6 +137,7 @@ This principle applies to ALL future work, not just lockdown tasks.
   - No remaining `fatal` or `error` diagnostics; any suppression is documented with rationale in code and in `IMPLEMENTATION_REPORT_LOCKDOWN.md`.
   - Warnings/refactors either resolved or tracked with dated follow-up tasks and ownership in `tasks.md`.
   - Lint gate (`tox -e lint` or equivalent) runs in CI and fails the build on new pylint regressions or score < **9.00**.
+- `tests/support/test_helpers.py` is validated to clear Sqitch/SQLitch environment variables before any helper logic executes, ensuring tests run against a sanitized environment.
 - All TODO comments addressed or ticketed
 
 ### Functional Gates

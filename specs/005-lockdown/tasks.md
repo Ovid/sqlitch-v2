@@ -120,6 +120,7 @@ pytest --cov=sqlitch --cov-report=term
 - [X] **T032 [P1][P]** Add CLI contract test for `sqlitch target` in `tests/cli/commands/test_target_lockdown.py` *(satisfied by existing test_target_contract.py)*
 - [X] **T033 [P1][P]** Add CLI contract test for `sqlitch upgrade` in `tests/cli/commands/test_upgrade_lockdown.py` *(satisfied by existing test_upgrade_contract.py)*
 - [X] **T034 [P1][P]** Add CLI contract test for `sqlitch verify` in `tests/cli/commands/test_verify_lockdown.py` *(satisfied by existing test_verify_contract.py)*
+- [ ] **T035 [P1]** Add regression test in `tests/support/test_test_helpers.py` ensuring `tests/support/test_helpers.py` clears Sqitch/SQLitch environment variables (`SQITCH_*`, `SQLITCH_*`, `SQLITCH_CONFIG`, `SQLITCH_TARGET`) on import; seed variables, import the module, assert they are removed.
 
 ## Phase 3.3 · Implementation & Coverage (execute only after corresponding tests are red)
 - [X] **T110 [P1]** Raise `sqlitch/config/resolver.py` coverage ≥90% by implementing edge cases and error messaging referenced by T010
@@ -132,6 +133,9 @@ pytest --cov=sqlitch --cov-report=term
 - [X] **T117 [P1]** Implement `uat/backward-compat.py` using shared helpers and ensure parity with SQLitch sequencing (green T017) *(script exists with proper CLI, uses shared helpers, tests pass with skip mode)*
 - [X] **T118 [P1]** Wire helper modules into packaging/import paths (update `uat/__init__.py`, `pyproject.toml` entry points if needed) *(helpers properly exposed via __init__.py, import verified)*
 - [X] **T119 [P1]** Update quickstart automation scripts or Make targets for running new UAT harnesses (align with T016-T017) *(UAT scripts designed for manual execution, usage documented in spec.md, no automation framework to update)*
+
+### Phase 3.3c · Test Safety Hardening (added 2025-10-13)
+- [ ] **T124 [P1]** Update `tests/support/test_helpers.py` to scrub the full list of Sqitch/SQLitch environment variables on import, document the allowlist/denylist mapping, and expose a helper for adding future variables. Validation: `pytest tests/support/test_test_helpers.py -k "test_environment_scrubbed_on_import"` (from T035) passes and `env` snapshot confirms variables removed.
 
 ### Phase 3.3a · Quality Signal Remediation (added 2025-10-12)
 - [X] **T120 [P1]** Resolve the current `mypy --strict` backlog (70 reported errors across CLI command modules), refactor signatures or helper types as needed, and add a regression guard (pytest or tox environment) that fails when mypy reports new issues.
