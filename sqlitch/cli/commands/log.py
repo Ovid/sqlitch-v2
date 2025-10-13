@@ -206,8 +206,7 @@ def _load_log_events(
         if cursor is not None:
             try:
                 cursor.close()
-            except Exception as exc:  # pragma: no cover - best effort cleanup
-                # pylint: disable=broad-exception-caught
+            except Exception as exc:  # pylint: disable=broad-exception-caught # pragma: no cover
                 # Cleanup must never fail the operation
                 logger.warning(
                     "Failed to close cursor during cleanup: %s",
@@ -216,8 +215,7 @@ def _load_log_events(
                 )
         try:
             connection.close()
-        except Exception as exc:  # pragma: no cover - best effort cleanup
-            # pylint: disable=broad-exception-caught
+        except Exception as exc:  # pylint: disable=broad-exception-caught # pragma: no cover
             # Cleanup must never fail the operation
             logger.warning(
                 "Failed to close database connection during cleanup: %s",
